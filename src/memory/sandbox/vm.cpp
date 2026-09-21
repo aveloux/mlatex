@@ -1,81 +1,103 @@
-#include "vm.hpp"
+/// @file
+/// @brief One self-contained run of the language.
+#include "memory/sandbox/vm.hpp"
 #include "logger.hpp"
-#include "syntax/primitives/definitions.hpp"
-#include "syntax/primitives/expansion.hpp"
-#include "syntax/primitives/input.hpp"
-#include "syntax/primitives/registers.hpp"
-#include "syntax/primitives/streams.hpp"
 
+#include <format>
 #include <fstream>
-#include <sstream>
+#include <string>
 
 namespace sandbox {
 
-VM::VM(const Policy& policy, std::size_t limit)
-    : policy(policy),
-      memory(std::make_unique<Allocator>(limit)),
-      lexicon(arena),
-      gate(lexicon),
-      mouth(cursor, state, lexicon, arena)
-{
-    bind();
-}
-
-void VM::bind() {
-    syntax::primitives::definitions::ingest(mouth);
-    syntax::primitives::expansion::ingest(mouth, registers);
-    syntax::primitives::registers::ingest(mouth, registers);
-    gate.ingest(mouth, registers);
-
-    if (policy.read || policy.write) {
-        syntax::primitives::streams::ingest(mouth, registers, gate);
+    VM::VM(const Policy& rules, const std::size_t limit)
+        : policy(rules),
+          memory(limit),
+          arena(limit),
+          state{},
+          lexicon(arena),
+          wrapper(lexicon),
+          // Context holds references, so both targets must already exist. The
+          // register bank comes from `state`: Union owns the one the scoping
+          // machinery unwinds, and a second bank would silently not be scoped.
+          context{policy, state.registers(), wrapper.conditionals()},
+          mouth(syntax::Cursor{}, state, lexicon, arena) {
+        wrapper(mouth, context);
     }
 
-    if (policy.read) {
-        syntax::primitives::input::ingest(mouth);
-    }
-
-    if (!policy.shell) {
-        mouth.bind("\\pipe", [](syntax::Mouth&) {
-            Logger::log(Logger::Type::Semantics, Logger::Level::Warning, "pipe blocked");
-        });
-    }
-}
-
-bool VM::eval(const std::string_view code) {
-    try {
+    bool VM::eval(const std::string_view code) {
+        faults.clear();
         mouth.ingest(code);
-        std::size_t count = 0;
 
-        while (mouth.step()) {
-            if (++count > policy.tokens) {
-                Logger::log(Logger::Type::Semantics, Logger::Level::Error, "token limit reached");
-                return false;
+        // Drive the expander to exhaustion. Everything the document produces
+        // is handled by a primitive or passes through as text; this loop is
+        // what makes those primitives actually run.
+        while (true) {
+            const syntax::Token token = mouth.expand();
+
+            if (mouth.failed()) {
+                break;
+            }
+            if (token.empty()) {
+                break;
+            }
+
+            if (++served > policy.tokens) {
+                faults.emplace_back(syntax::Traceback::Type::Memory, token.location,
+                                    std::format("run consumed more than {} tokens", policy.tokens));
+                break;
+            }
+
+            if (state.scope().depth() > policy.depth) {
+                faults.emplace_back(syntax::Traceback::Type::Scope, token.location,
+                                    std::format("scope nested deeper than {}", policy.depth));
+                break;
             }
         }
 
-        return true;
-    } catch (const std::exception& error) {
-        Logger::fmt(Logger::Type::Semantics, Logger::Level::Error, "{}", error.what());
-        return false;
-    }
-}
-
-bool VM::run(const std::string_view path) {
-    if (!policy.read) {
-        Logger::log(Logger::Type::Semantics, Logger::Level::Error, "read access denied");
-        return false;
+        return !failed();
     }
 
-    std::ifstream file{std::string(path)};
-    if (!file.is_open()) {
-        Logger::fmt(Logger::Type::Semantics, Logger::Level::Error, "file open failed: {}", path);
-        return false;
+    bool VM::run(const std::string_view path) {
+        if (!policy.read) {
+            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                "policy denies reading files");
+            Logger::log(Logger::Type::Semantics, Logger::Level::Error,
+                        "policy denies reading files");
+            return false;
+        }
+
+        std::ifstream file{std::string(path), std::ios::binary | std::ios::ate};
+        if (!file) {
+            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                std::format("cannot open {}", path));
+            return false;
+        }
+
+        const std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::string content(static_cast<std::size_t>(size), '\0');
+        if (size > 0 && !file.read(content.data(), size)) {
+            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                std::format("cannot read {}", path));
+            return false;
+        }
+
+        return eval(content);
     }
 
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    return eval(buffer.str());
-}
+    std::vector<syntax::Traceback> VM::tracebacks() const {
+        std::vector<syntax::Traceback> gathered = wrapper.tracebacks();
+
+        const auto& expansion = mouth.history();
+        gathered.insert(gathered.end(), expansion.begin(), expansion.end());
+        gathered.insert(gathered.end(), faults.begin(), faults.end());
+
+        return gathered;
+    }
+
+    bool VM::failed() const noexcept {
+        return wrapper.failed() || mouth.failed() || !mouth.history().empty() || !faults.empty();
+    }
 
 }

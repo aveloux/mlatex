@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <optional>
-#include <cstdint> // MSYS requires this, since it's not provided by default.
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -11,15 +12,15 @@ namespace syntax::expression {
     class Unicodes {
     public:
         enum class Category : std::uint8_t {
-            Ordinary,    // Standard math symbols, variables, and digits (e.g., x, 1)
-            Operator,    // Prefix operators and functions (e.g., \sum, \sin)
-            Binary,      // Binary operations (e.g., +, \times)
-            Relation,    // Comparison operators (e.g., =, \le)
-            Opening,     // Left delimiters (e.g., (, [)
-            Closing,     // Right delimiters (e.g., ), ])
-            Punctuation, // Punctuation marks (e.g., ,, ;)
-            Inner,       // Enclosed structures like fractions
-            Accent       // Math diacritics (e.g., \hat, \vec)
+            Ordinary,    ///< Standard math symbols, variables, and digits (e.g., x, 1)
+            Operator,    ///< Prefix operators and functions (e.g., \\sum, \\sin)
+            Binary,      ///< Binary operations (e.g., +, \\times)
+            Relation,    ///< Comparison operators (e.g., =, \\le)
+            Opening,     ///< Left delimiters (e.g., (, [)
+            Closing,     ///< Right delimiters (e.g., ), ])
+            Punctuation, ///< Punctuation marks (e.g., ,, ;)
+            Inner,       ///< Enclosed structures like fractions
+            Accent       ///< Math diacritics (e.g., \\hat, \\vec)
         };
 
         struct Symbol {

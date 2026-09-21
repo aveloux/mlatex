@@ -1,14 +1,22 @@
+/// @file
+/// @brief Parser implementation: token stream to a flat list of AST nodes.
+///
+/// Error handling follows TeX: report and carry on. An undefined control
+/// sequence costs that one token, not the rest of the document, and errors are
+/// collected rather than printed, so nested parses cannot report them twice.
 #include "syntax/parser.hpp"
 #include "logger.hpp"
 
 #include <algorithm>
-#include <iostream>
+#include <ostream>
+#include <string>
 #include <vector>
 
 namespace syntax {
 
     Parser::Parser(Mouth& mouth, memory::Arena& arena)
         : mouth_(mouth), arena_(arena) {
+        paragraph = mouth_.lexicon().intern("\\par");
         Logger::log(Logger::Type::Parser, Logger::Level::Informative, "Parser subsystem initialized");
     }
 
@@ -21,17 +29,23 @@ namespace syntax {
     }
 
     memory::Slice<Node*> Parser::parse(const char closing) {
-        Logger::log(Logger::Type::Parser, Logger::Level::Informative, "Starting AST syntax parsing pass...");
+        Logger::fmt(Logger::Type::Parser, Logger::Level::Informative,
+                    "Starting AST syntax parsing pass (depth {})...", nesting);
+
+        nesting++;
+        struct Guard {
+            std::size_t& nesting;
+            ~Guard() { --nesting; }
+        } guard{nesting};
 
         std::vector<Node*> nodes;
-        nodes.reserve(1024);
+        nodes.reserve(nesting == 1 ? 1024 : 16);
 
-        const Symbol paragraph = mouth_.lexicon().intern("\\par");
         std::string buffer;
         buffer.reserve(256);
 
-        using Location = decltype(mouth_.expand().location);
-        Location position{};
+        memory::Location position{};
+        bool terminated = closing == 0;
 
         auto flush = [&] {
             if (!buffer.empty()) {
@@ -46,83 +60,91 @@ namespace syntax {
         };
 
         while (true) {
-            const auto [symbol, category, location, values] = mouth_.expand();
+            const Token token = mouth_.expand();
 
-            if (closing != 0 && category == CatCodes::Category::Group && values.size() == 1 && values[0] == closing) {
+            if (mouth_.failed()) {
                 flush();
+                for (auto&& trace : mouth_.drain()) {
+                    tracebacks_.push_back(std::move(trace));
+                }
+                Logger::log(Logger::Type::Parser, Logger::Level::Error,
+                            "Parsing abandoned: expansion aborted");
                 break;
             }
 
-            if (values.empty()) {
+            if (closing != 0 && token.is(CatCodes::Category::Group, closing)) {
                 flush();
-                Logger::log(Logger::Type::Parser, Logger::Level::Debug, "Parser reached end of expansion stream");
+                terminated = true;
                 break;
             }
 
-            if (symbol < handlers.size() && handlers[symbol]) {
+            if (token.empty()) {
+                flush();
+                Logger::log(Logger::Type::Parser, Logger::Level::Debug,
+                            "Parser reached end of expansion stream");
+                break;
+            }
+
+            if (token.symbol < handlers.size() && handlers[token.symbol]) {
                 flush();
                 Logger::fmt(Logger::Type::Parser, Logger::Level::Debug,
-                            "Dispatching custom node handler for text {} ('{}')", symbol, values);
-                if (Node* node = handlers[symbol](*this)) {
+                            "Dispatching custom node handler for '{}'", token.values);
+                if (Node* node = handlers[token.symbol](*this)) {
                     nodes.push_back(node);
                 }
                 continue;
             }
 
-            if (symbol == paragraph) {
+            if (token.symbol == paragraph) {
                 flush();
                 Logger::fmt(Logger::Type::Parser, Logger::Level::Debug,
-                            "Constructed Paragraph node at line {} column {}", location.line, location.column);
-                nodes.push_back(arena_.compose<Node>(Node::Type::Paragraph, values, location, memory::Slice<Node*>{}));
+                            "Constructed Paragraph node at line {} column {}",
+                            token.location.line, token.location.column);
+                nodes.push_back(arena_.compose<Node>(
+                    Node::Type::Paragraph, std::string_view{}, token.location, memory::Slice<Node*>{}));
                 continue;
             }
 
-            if (category == CatCodes::Category::Escape && (symbol >= handlers.size() || !handlers[symbol])) {
+            if (token.category == CatCodes::Category::Escape) {
                 flush();
-                const std::string message = "Undefined macro or unhandled command primitive: " + std::string(values);
 
-                Logger::fmt(Logger::Type::Parser, Logger::Level::Error,
-                            "Parsing error at line {} column {}: {}", location.line, location.column, message);
+                if (tracebacks_.size() < tolerance) {
+                    const std::string message =
+                        "Undefined macro or unhandled command primitive: " + std::string(token.values);
 
-                this->tracebacks_.emplace_back(
-                    Traceback::Type::Macro,
-                    location,
-                    message
-                );
+                    Logger::fmt(Logger::Type::Parser, Logger::Level::Error,
+                                "Parsing error at line {} column {}: {}",
+                                token.location.line, token.location.column, message);
 
-                while (true) {
-                    const Token token = mouth_.expand();
-                    if (token.values.empty()) {
-                        Logger::log(Logger::Type::Parser, Logger::Level::Debug, "Recovery reached stream end");
-                        break;
-                    }
-                    if (token.symbol == paragraph) {
-                        Logger::fmt(Logger::Type::Parser, Logger::Level::Debug,
-                                    "Recovered at paragraph synchronization boundary at line {} column {}", token.location.line, token.location.column);
-                        nodes.push_back(arena_.compose<Node>(Node::Type::Paragraph, token.values, token.location, memory::Slice<Node*>{}));
-                        break;
-                    }
+                    tracebacks_.emplace_back(Traceback::Type::Macro, token.location, message);
                 }
+
+                if (tracebacks_.size() >= tolerance) {
+                    Logger::log(Logger::Type::Parser, Logger::Level::Error,
+                                "Too many errors; abandoning this parse pass");
+                    break;
+                }
+
                 continue;
             }
 
             if (buffer.empty()) {
-                position = location;
+                position = token.location;
             }
-            buffer += values;
+            buffer += token.values;
         }
 
-        if (!this->tracebacks_.empty()) {
-            Logger::fmt(Logger::Type::Parser, Logger::Level::Warning,
-                        "Parse pass completed with {} traceback error(s) recorded", this->tracebacks_.size());
+        if (!terminated) {
+            const std::string message =
+                std::string("Unclosed group: expected '") + closing + "' before end of input";
+            Logger::log(Logger::Type::Parser, Logger::Level::Error, message);
+            tracebacks_.emplace_back(Traceback::Type::Group, position, message);
+        }
 
-            for (const auto& traceback : this->tracebacks_) {
-                const std::string message = traceback.format();
-                Logger::log(Logger::Type::Parser, Logger::Level::Error, message);
-                std::cerr << message << "\n";
+        if (nesting == 1) {
+            for (auto&& trace : mouth_.drain()) {
+                tracebacks_.push_back(std::move(trace));
             }
-        } else {
-            Logger::log(Logger::Type::Parser, Logger::Level::Informative, "Parse pass completed cleanly with zero errors");
         }
 
         memory::Slice<Node*> slice = arena_.allocate<Node*>(nodes.size());
@@ -136,17 +158,30 @@ namespace syntax {
         return slice;
     }
 
+    void Parser::report(std::ostream& stream) const {
+        for (const auto& traceback : tracebacks_) {
+            stream << traceback.format() << '\n';
+        }
+        if (tracebacks_.size() >= tolerance) {
+            stream << "(further errors suppressed)\n";
+        }
+    }
+
+    bool Parser::failed() const noexcept {
+        return !tracebacks_.empty() || mouth_.failed();
+    }
+
     void Parser::bind(const std::string_view name, Handler handler) {
         this->bind(mouth_.lexicon().intern(name), std::move(handler));
     }
 
     void Parser::bind(const Symbol symbol, Handler handler) {
-        const auto size = static_cast<std::size_t>(symbol) + 1;
-        if (symbol >= handlers.size()) {
-            handlers.resize(std::max<std::size_t>(size, handlers.size() * 2));
+        const auto needed = static_cast<std::size_t>(symbol) + 1;
+        if (needed > handlers.size()) {
+            handlers.resize(std::max<std::size_t>(needed, handlers.size() * 2));
         }
         Logger::fmt(Logger::Type::Parser, Logger::Level::Debug,
-                    "Bound custom AST node handler for text {}", symbol);
+                    "Bound custom AST node handler for symbol {}", symbol);
         handlers[symbol] = std::move(handler);
     }
 

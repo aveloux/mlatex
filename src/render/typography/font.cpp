@@ -107,4 +107,15 @@ namespace render::typography {
         };
     }
 
+    std::uint32_t Font::glyph(const std::uint32_t codepoint) const noexcept {
+        if (!handle) return 0;
+        std::uint32_t result = 0;
+        return hb_font_get_nominal_glyph(handle, codepoint, &result) ? result : 0;
+    }
+
+    float Font::advance(const std::uint32_t glyph, const float scale) const noexcept {
+        if (!handle || scale == 0.0f) return 0.0f;
+        return static_cast<float>(hb_font_get_glyph_h_advance(handle, glyph)) / scale;
+    }
+
 }

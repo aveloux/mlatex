@@ -1,58 +1,38 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
-#include <string>
-#include <string_view>
+#include <format>
 #include <fstream>
 #include <mutex>
-#include <format>
 #include <source_location>
-#include <utility>
+#include <string>
+#include <string_view>
 
 class Logger {
 public:
     enum class Type : std::uint32_t {
         None      = 0,
-        Lexer     = 1 << 0,
-        Mouth     = 1 << 1,
-        Parser    = 1 << 2,
-        Layout    = 1 << 3,
-        Memory    = 1 << 4,
-        Semantics = 1 << 5,
-        All       = 0xFFFFFFFF
+        Lexer     = 1u << 0,
+        Mouth     = 1u << 1,
+        Parser    = 1u << 2,
+        Layout    = 1u << 3,
+        Memory    = 1u << 4,
+        Semantics = 1u << 5,
+        All       = 0x3Fu
     };
 
-    friend constexpr Type operator|(const Type alpha, const Type beta) noexcept {
-        return static_cast<Type>(static_cast<std::uint32_t>(alpha) | static_cast<std::uint32_t>(beta));
-    }
-
-    friend constexpr Type operator&(const Type alpha, const Type beta) noexcept {
-        return static_cast<Type>(static_cast<std::uint32_t>(alpha) & static_cast<std::uint32_t>(beta));
-    }
-
-    friend constexpr Type operator~(const Type alpha) noexcept {
-        return static_cast<Type>(~static_cast<std::uint32_t>(alpha));
-    }
-
-    friend constexpr Type& operator|=(Type& alpha, const Type beta) noexcept {
-        alpha = alpha | beta;
-        return alpha;
-    }
-
-    friend constexpr Type& operator&=(Type& alpha, const Type beta) noexcept {
-        alpha = alpha & beta;
-        return alpha;
-    }
-
     enum class Level : std::uint8_t {
-        Traceback,
-        Debug,
-        Informative,
-        Warning,
-        Error
+        Traceback   = 0,
+        Debug       = 1,
+        Informative = 2,
+        Warning     = 3,
+        Error       = 4,
+        Silent      = 5
     };
 
     static void init(int count, char** arguments);
+
     static void types(Type target) noexcept;
     static void enable(Type target) noexcept;
     static void disable(Type target) noexcept;
@@ -61,35 +41,50 @@ public:
     static void file(const std::string& path);
     static void close();
 
-    [[nodiscard]] static bool check(Type target, Level value = Level::Debug) noexcept;
+    [[nodiscard]] static bool check(Type target, Level value) noexcept;
 
     static void log(Type target, Level value, std::string_view text,
-                    const std::source_location& location = std::source_location::current());
+                    const std::source_location& location = std::source_location::current()) noexcept;
 
-    static void log(const Type target, const std::string_view text,
-                    const std::source_location& location = std::source_location::current()) {
-        log(target, Level::Debug, text, location);
-    }
-
-    template <typename... Arguments>
-    static void fmt(const Type target, const Level value, std::format_string<Arguments...> pattern, Arguments&&... arguments) {
+    template <typename... Args>
+    static void fmt(const Type target, const Level value,
+                    const std::format_string<Args...> pattern, Args&&... args) noexcept {
         if (!check(target, value)) return;
-        const std::string text = std::format(pattern, std::forward<Arguments>(arguments)...);
-        log(target, value, text);
+        try {
+            log(target, value, std::vformat(pattern.get(), std::make_format_args(args...)));
+        } catch (...) {
+        }
     }
 
-    template <typename... Arguments>
-    static void fmt(const Type target, std::format_string<Arguments...> pattern, Arguments&&... arguments) {
-        fmt(target, Level::Debug, pattern, std::forward<Arguments>(arguments)...);
-    }
+    [[nodiscard]] static std::string_view name(Type target) noexcept;
+    [[nodiscard]] static std::string_view name(Level value) noexcept;
 
 private:
-    static inline auto mask = Type::All;
-    static inline auto threshold = Level::Traceback;
-    static inline bool ansi = false;
-    static inline std::ofstream stream;
-    static inline std::mutex mutex;
-
-    static std::string_view name(Type target) noexcept;
-    static std::string_view name(Level value) noexcept;
+    inline static std::mutex mutex{};
+    inline static std::atomic<Type> mask{Type::None};          // read by check() without the lock
+    inline static std::atomic<Level> threshold{Level::Error};
+    inline static std::atomic<bool> ansi{true};
+    inline static std::ofstream stream{};
 };
+
+[[nodiscard]] constexpr Logger::Type operator|(const Logger::Type left, const Logger::Type right) noexcept {
+    return static_cast<Logger::Type>(static_cast<std::uint32_t>(left) | static_cast<std::uint32_t>(right));
+}
+
+[[nodiscard]] constexpr Logger::Type operator&(const Logger::Type left, const Logger::Type right) noexcept {
+    return static_cast<Logger::Type>(static_cast<std::uint32_t>(left) & static_cast<std::uint32_t>(right));
+}
+
+[[nodiscard]] constexpr Logger::Type operator~(const Logger::Type value) noexcept {
+    return static_cast<Logger::Type>(~static_cast<std::uint32_t>(value) & static_cast<std::uint32_t>(Logger::Type::All));
+}
+
+constexpr Logger::Type& operator|=(Logger::Type& left, const Logger::Type right) noexcept {
+    left = left | right;
+    return left;
+}
+
+constexpr Logger::Type& operator&=(Logger::Type& left, const Logger::Type right) noexcept {
+    left = left & right;
+    return left;
+}

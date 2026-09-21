@@ -1,7 +1,9 @@
 #include "layout/breaker.hpp"
 #include "layout/line.hpp"
+#include "typography/font.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 
 namespace render::layout {
@@ -146,11 +148,41 @@ namespace render::layout {
                                 border->type() == Node::Type::Pause;
             const std::size_t end = waste ? mark : current->index;
 
-            const std::size_t length = end - start;
+            const bool hyphenated = border->type() == Node::Type::Penalty && border->penalty().flag;
+            const Node* preceding = nullptr;
+
+            if (hyphenated) {
+                for (std::size_t cursor = end; cursor > start; --cursor) {
+                    if (input[cursor - 1]->type() == Node::Type::Glyph && input[cursor - 1]->glyph().font) {
+                        preceding = input[cursor - 1];
+                        break;
+                    }
+                }
+            }
+
+            const std::size_t length = end - start + (preceding ? 1 : 0);
             auto slice = arena.allocate<Node*>(length);
-            for (std::size_t step = 0; step < length; ++step) {
+            for (std::size_t step = 0; step < end - start; ++step) {
                 slice[step] = input[start + step];
             }
+
+            if (preceding) {
+                const typography::Font* font = preceding->glyph().font;
+                const std::uint32_t id = font->glyph(static_cast<std::uint32_t>('-'));
+
+                auto* hyphen = arena.compose<Node>(Node::Type::Glyph);
+                hyphen->glyph({
+                    .width = font->advance(id),
+                    .height = preceding->glyph().height,
+                    .depth = preceding->glyph().depth,
+                    .x = 0.0f,
+                    .y = 0.0f,
+                    .code = id,
+                    .font = font
+                });
+                slice[end - start] = hyphen;
+            }
+
             result[row] = Line::horizontal(arena, slice, static_cast<float>(configuration.target));
 
             current = current->link;

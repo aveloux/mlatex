@@ -1,11 +1,12 @@
 #pragma once
 
-#include "layout/cache.hpp"
+#include "layout/ledger.hpp"
 #include "layout/paragraph.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 #include "syntax/expression/node.hpp"
 #include "typography/font.hpp"
+#include "typography/hyphenator.hpp"
 #include "typography/shaper.hpp"
 
 #include <cstdint>
@@ -28,13 +29,15 @@ namespace render::layout {
         struct Element {
             enum class Type : std::uint8_t {
                 Paragraph,
-                Expression
+                Expression,
+                Directive
             };
 
             Type type{Type::Paragraph};
             Paragraph* paragraph{nullptr};
             const syntax::expression::Node* expression{nullptr};
             const typography::Font* font{nullptr};
+            Node* node{nullptr};
             Element* next{nullptr};
         };
 
@@ -48,7 +51,7 @@ namespace render::layout {
             memory::Arena& arena,
             memory::Arena& scratch,
             typography::Shaper& shaper,
-            const Configuration& config
+            const Configuration& configuration_
         ) noexcept;
 
         Paragraph* append(
@@ -62,6 +65,10 @@ namespace render::layout {
             const typography::Font& font
         ) noexcept;
 
+        void append(Node* node) noexcept;
+
+        void hyphenate(const typography::Hyphenator& value) noexcept;
+
         void layout() noexcept;
 
         [[nodiscard]] memory::Slice<Element*> elements() const noexcept;
@@ -73,8 +80,9 @@ namespace render::layout {
         memory::Arena& arena;
         memory::Arena& scratch;
         typography::Shaper& shaper;
-        Cache cache;
-        Configuration config{};
+        Ledger ledger;
+        Configuration configuration_{};
+        const typography::Hyphenator* hyphenator{nullptr};
 
         Element* head{nullptr};
         Element* tail{nullptr};

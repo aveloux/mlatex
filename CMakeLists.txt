@@ -6,6 +6,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_definitions(SK_SUPPORT_PDF=1 SK_ENABLE_SKPDF=1)
 
+find_package(Doxygen)
+
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_PROJECT_NAME "latex")
+    set(DOXYGEN_OUTPUT_DIRECTORY "${binary}/docs")
+    set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN_GENERATE_LATEX NO)
+    set(DOXYGEN_GENERATE_TREEVIEW YES)
+    set(DOXYGEN_FULL_SIDEBAR NO)
+    set(DOXYGEN_EXTRACT_ALL YES)
+    set(DOXYGEN_EXTRACT_STATIC YES)
+    set(DOXYGEN_EXTRACT_PRIVATE YES)
+    set(DOXYGEN_JAVADOC_AUTOBRIEF YES)
+    set(DOXYGEN_MARKDOWN_SUPPORT YES)
+    set(DOXYGEN_SOURCE_BROWSER YES)
+    set(DOXYGEN_REFERENCED_BY_RELATION YES)
+    set(DOXYGEN_DOT_IMAGE_FORMAT svg)
+    set(DOXYGEN_INTERACTIVE_SVG YES)
+    set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+    set(DOXYGEN_QUIET YES)
+    set(DOXYGEN_ALIASES [["complexity=@par Complexity:^^"]])
+
+    doxygen_add_docs(docs "${source}/include" "${source}/src")
+endif()
+
 find_program(GPERF_EXECUTABLE gperf REQUIRED)
 
 find_package(unofficial-skia CONFIG REQUIRED)

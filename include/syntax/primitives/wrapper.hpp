@@ -1,0 +1,89 @@
+#pragma once
+
+#include "syntax/mouth.hpp"
+#include "syntax/primitives/blocks.hpp"
+#include "syntax/primitives/compute.hpp"
+#include "syntax/primitives/context.hpp"
+#include "syntax/primitives/loops.hpp"
+#include "syntax/primitives/macros.hpp"
+#include "syntax/primitives/relay.hpp"
+#include "syntax/primitives/values.hpp"
+#include "syntax/traceback.hpp"
+
+#include <vector>
+
+namespace syntax::primitives {
+
+    /// @brief Every core primitive, installed in one call.
+    ///
+    /// Each module is a Primitive -- a callable taking `(Mouth&, Context&)` --
+    /// so this type holds them and folds over them. Adding a module is a
+    /// member and a name in the pack; nothing declares or calls `ingest`.
+    ///
+    /// @par Cost
+    /// The fold is expanded at compile time, so installation is a straight run
+    /// of bind() calls with no loop, no indirection and no allocation beyond
+    /// the handler table itself. Dispatch afterwards is an array index on the
+    /// interned symbol, so a primitive costs O(1) to reach however many are
+    /// installed.
+    ///
+    /// @par Use
+    /// @code
+    /// syntax::primitives::Wrapper core(lexicon);
+    /// syntax::primitives::Context context{policy, registers, core.conditionals()};
+    /// core(mouth, context);
+    ///
+    /// // ... run the document, then collect what the core reported ...
+    /// for (const auto& fault : core.tracebacks()) {
+    ///     std::cerr << fault.format() << '\n';
+    /// }
+    /// @endcode
+    ///
+    /// Context needs a Relay reference and Wrapper owns one, so build the
+    /// Wrapper first and hand conditionals() to the Context.
+    class Wrapper {
+    public:
+        /// @brief Constructs every module against one interning table.
+        /// @param names Interning table, shared with the expander.
+        explicit Wrapper(Lexicon& names) noexcept;
+
+        /// @brief Installs every module.
+        /// @param mouth   Expander to bind into.
+        /// @param context Engine services, passed through to each module.
+        void operator()(Mouth& mouth, Context& context) const;
+
+        /// @brief The conditional module, for building a Context.
+        [[nodiscard]] Relay& conditionals() noexcept { return relay; }
+        [[nodiscard]] const Relay& conditionals() const noexcept { return relay; }   ///< @copydoc conditionals()
+
+        /// @brief Every error the core reported, gathered from each module.
+        ///
+        /// Modules keep their own lists, so nothing has to be constructed and
+        /// threaded through them. This merges those lists on demand, which is
+        /// a once-per-run cost rather than a per-error one.
+        ///
+        /// @return A fresh vector holding every module's tracebacks.
+        /// @complexity O(n) in the number of errors reported.
+        [[nodiscard]] std::vector<Traceback> tracebacks() const;
+
+        /// @brief Did any module report an error?
+        /// @complexity O(1) per module, with no allocation.
+        [[nodiscard]] bool failed() const noexcept;
+
+        /// @brief The block module, whose depth() reports unclosed blocks.
+        [[nodiscard]] const Blocks& structure() const noexcept { return blocks; }
+
+    private:
+        // Declared first because Context is built from conditionals() and the
+        // other modules are handed that same Context.
+        Relay relay;       ///< Conditionals; Context holds a reference to this.
+        Blocks blocks;     ///< `\\enter` and `\\leave`.
+        Macros macros;     ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
+        Values values;     ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
+        Compute compute;   ///< `\\evaluate`.
+        Loops loops;       ///< `\\repeat`, `\\group`, `\\ungroup`.
+    };
+
+    static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");
+
+}

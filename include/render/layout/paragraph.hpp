@@ -1,10 +1,11 @@
 #pragma once
 
-#include "layout/cache.hpp"
+#include "layout/ledger.hpp"
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 #include "typography/font.hpp"
+#include "typography/hyphenator.hpp"
 #include "typography/shaper.hpp"
 
 #include <string_view>
@@ -31,10 +32,11 @@ namespace render::layout {
 
         float layout(
             const typography::Shaper& shaper,
-            Cache& cache,
+            Ledger& ledger,
             memory::Arena& scratch,
             float width,
-            float leading
+            float leading,
+            const typography::Hyphenator* hyphenator = nullptr
         ) noexcept;
 
     private:

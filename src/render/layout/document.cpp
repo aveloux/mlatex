@@ -7,15 +7,15 @@ namespace render::layout {
         memory::Arena& scratch,
         typography::Shaper& shaper
     ) noexcept
-        : arena(arena), scratch(scratch), shaper(shaper), cache(arena) {}
+        : arena(arena), scratch(scratch), shaper(shaper), ledger(arena) {}
 
     Document::Document(
         memory::Arena& arena,
         memory::Arena& scratch,
         typography::Shaper& shaper,
-        const Configuration& config
+        const Configuration& configuration_
     ) noexcept
-        : arena(arena), scratch(scratch), shaper(shaper), cache(arena), config(config) {}
+        : arena(arena), scratch(scratch), shaper(shaper), ledger(arena), configuration_(configuration_) {}
 
     Paragraph* Document::append(
         const std::string_view text,
@@ -58,12 +58,32 @@ namespace render::layout {
         ++count;
     }
 
+    void Document::append(Node* node) noexcept {
+        if (!node) return;
+
+        auto* element = arena.compose<Element>();
+        element->type = Element::Type::Directive;
+        element->node = node;
+
+        if (!head) {
+            head = element;
+        } else {
+            tail->next = element;
+        }
+        tail = element;
+        ++count;
+    }
+
+    void Document::hyphenate(const typography::Hyphenator& value) noexcept {
+        hyphenator = &value;
+    }
+
     void Document::layout() noexcept {
-        const float target = config.width - config.left - config.right;
+        const float target = configuration_.width - configuration_.left - configuration_.right;
         Element* current = head;
         while (current) {
             if (current->type == Element::Type::Paragraph && current->paragraph) {
-                current->paragraph->layout(shaper, cache, scratch, target, config.leading);
+                current->paragraph->layout(shaper, ledger, scratch, target, configuration_.leading, hyphenator);
             }
             current = current->next;
         }
@@ -111,11 +131,11 @@ namespace render::layout {
     }
 
     const Document::Configuration& Document::configuration() const noexcept {
-        return config;
+        return configuration_;
     }
 
     Document::Configuration& Document::configuration() noexcept {
-        return config;
+        return configuration_;
     }
 
 }

@@ -39,6 +39,8 @@ namespace render::typography {
 
         [[nodiscard]] Metric metrics(float scale = 64.0f) const noexcept;
         [[nodiscard]] Box bounds(std::uint32_t glyph, float scale = 64.0f) const noexcept;
+        [[nodiscard]] std::uint32_t glyph(std::uint32_t codepoint) const noexcept;
+        [[nodiscard]] float advance(std::uint32_t glyph, float scale = 64.0f) const noexcept;
 
         [[nodiscard]] hb_font_t* hb() const noexcept { return handle; }
         [[nodiscard]] const Face* face() const noexcept { return parent; }

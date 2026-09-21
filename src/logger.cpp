@@ -1,15 +1,51 @@
+/// @file
+/// @brief Logger implementation: filtering, formatting and sinks.
+///
+/// The filter state lives in atomics so that check() can be called from
+/// noexcept paths without taking the mutex -- log() takes it a moment later,
+/// and std::mutex is not recursive. Every entry point here swallows its own
+/// failures: Cursor::advance and Registers::fetch are noexcept and call
+/// straight into this file, so a throwing std::format would mean terminate().
 #include "logger.hpp"
 
 #include <chrono>
+#include <ctime>
 #include <format>
 #include <iostream>
 
+namespace {
+
+    [[nodiscard]] std::string_view tint(const Logger::Level value) noexcept {
+        switch (value) {
+            case Logger::Level::Traceback:   return "\x1b[90m";
+            case Logger::Level::Debug:       return "\x1b[36m";
+            case Logger::Level::Informative: return "\x1b[32m";
+            case Logger::Level::Warning:     return "\x1b[33m";
+            case Logger::Level::Error:       return "\x1b[31m";
+            default:                         return "";
+        }
+    }
+
+    constexpr std::string_view plain = "\x1b[0m";
+
+}
+
 void Logger::init(const int count, char** arguments) {
+    types(Type::None);
+    level(Level::Error);
+    color(true);
+
     bool selective = false;
 
     for (int index = 1; index < count; ++index) {
-        if (const std::string_view option(arguments[index]); option == "--debug" || option == "-d") {
+        const std::string_view option(arguments[index]);
+
+        if (option == "--debug" || option == "-d") {
             types(Type::All);
+            level(Level::Debug);
+        } else if (option == "--trace") {
+            types(Type::All);
+            level(Level::Traceback);
         } else if (option.starts_with("--debug=")) {
             if (!selective) {
                 types(Type::None);
@@ -23,6 +59,15 @@ void Logger::init(const int count, char** arguments) {
             if (value.contains("memory"))    enable(Type::Memory);
             if (value.contains("semantics")) enable(Type::Semantics);
             if (value.contains("all"))       enable(Type::All);
+            level(Level::Debug);
+        } else if (option.starts_with("--log-level=")) {
+            const std::string_view value = option.substr(12);
+            if (value == "traceback")   level(Level::Traceback);
+            else if (value == "debug")  level(Level::Debug);
+            else if (value == "info")   level(Level::Informative);
+            else if (value == "warn")   level(Level::Warning);
+            else if (value == "error")  level(Level::Error);
+            else if (value == "silent") level(Level::Silent);
         } else if (option.starts_with("--log-file=")) {
             file(std::string(option.substr(11)));
         } else if (option == "--no-color") {
@@ -32,28 +77,29 @@ void Logger::init(const int count, char** arguments) {
 }
 
 void Logger::types(const Type target) noexcept {
-    const std::lock_guard guard(mutex);
-    mask = target;
+    mask.store(target, std::memory_order_relaxed);
 }
 
 void Logger::enable(const Type target) noexcept {
-    const std::lock_guard guard(mutex);
-    mask |= target;
+    Type current = mask.load(std::memory_order_relaxed);
+    while (!mask.compare_exchange_weak(current, current | target,
+                                       std::memory_order_relaxed, std::memory_order_relaxed)) {
+    }
 }
 
 void Logger::disable(const Type target) noexcept {
-    const std::lock_guard guard(mutex);
-    mask &= ~target;
+    Type current = mask.load(std::memory_order_relaxed);
+    while (!mask.compare_exchange_weak(current, current & ~target,
+                                       std::memory_order_relaxed, std::memory_order_relaxed)) {
+    }
 }
 
 void Logger::level(const Level value) noexcept {
-    const std::lock_guard guard(mutex);
-    threshold = value;
+    threshold.store(value, std::memory_order_relaxed);
 }
 
 void Logger::color(const bool flag) noexcept {
-    const std::lock_guard guard(mutex);
-    ansi = flag;
+    ansi.store(flag, std::memory_order_relaxed);
 }
 
 void Logger::file(const std::string& path) {
@@ -72,28 +118,50 @@ void Logger::close() {
 }
 
 bool Logger::check(const Type target, const Level value) noexcept {
-    if (static_cast<std::uint8_t>(value) < static_cast<std::uint8_t>(threshold)) {
+    if (static_cast<std::uint8_t>(value) < static_cast<std::uint8_t>(threshold.load(std::memory_order_relaxed))) {
         return false;
     }
-    return (static_cast<std::uint32_t>(mask & target) != 0);
+    return static_cast<std::uint32_t>(mask.load(std::memory_order_relaxed) & target) != 0;
 }
 
-void Logger::log(const Type target, const Level value, const std::string_view text, const std::source_location& location) {
+void Logger::log(const Type target, const Level value, const std::string_view text,
+                 const std::source_location& location) noexcept {
     if (!check(target, value)) return;
 
-    const std::lock_guard guard(mutex);
+    try {
+        const auto now = std::chrono::system_clock::now();
+        const std::time_t seconds = std::chrono::system_clock::to_time_t(now);
+        std::tm parts{};
+    #if defined(_WIN32)
+        localtime_s(&parts, &seconds);
+    #else
+        localtime_r(&seconds, &parts);
+    #endif
 
-    const auto now = std::chrono::system_clock::now();
-    const std::string stamp = std::format("{:%H:%M:%S}", std::chrono::floor<std::chrono::seconds>(now));
-    const std::string_view tag = name(target);
-    const std::string_view rank = name(value);
+        const std::string stamp = std::format("{:02}:{:02}:{:02}", parts.tm_hour, parts.tm_min, parts.tm_sec);
+        const std::string_view tag = name(target);
+        const std::string_view rank = name(value);
 
-    const std::string output = std::format("[{}] [{}] [{}] {}\n", stamp, tag, rank, text);
+        const bool colored = ansi.load(std::memory_order_relaxed);
+        const std::string output = std::format("[{}] [{}] [{}] {}\n", stamp, tag, rank, text);
 
-    std::clog << output << std::flush;
-    if (stream.is_open()) {
-        stream << output;
-        stream.flush();
+        const std::lock_guard guard(mutex);
+
+        if (colored) {
+            std::clog << tint(value) << output << plain << std::flush;
+        } else {
+            std::clog << output << std::flush;
+        }
+
+        if (stream.is_open()) {
+            stream << output;
+            if (value >= Level::Warning) {
+                stream << std::format("    at {}:{} ({})\n",
+                                      location.file_name(), location.line(), location.function_name());
+            }
+            stream.flush();
+        }
+    } catch (...) {
     }
 }
 

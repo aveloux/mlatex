@@ -1,28 +1,63 @@
+/// @file
+/// @brief Expression parser implementation: a Pratt parser over math tokens.
+///
+/// Lookahead is lazy and at most one token deep, and whatever is still
+/// buffered at destruction goes back to the expander. That is what keeps the
+/// token after a formula -- the `.` in `\\(x\\).` -- from disappearing.
 #include "syntax/expression/parser.hpp"
 #include "logger.hpp"
 
+#include <algorithm>
 #include <array>
-#include <cctype>
+#include <format>
+#include <span>
+#include <string>
 
 namespace syntax::expression {
 
-    Parser::Parser(Mouth& mouth, const Unicodes& unicodes, memory::Arena& arena, const Node::Style style)
-        : mouth(mouth), unicodes(unicodes), arena(arena), style(style) {
-        current = mouth.expand();
+    // Fails with one clear, named message when this source is compiled
+    // against an older syntax/expression/parser.hpp. The concept has to take a
+    // template parameter: a requires-expression over a concrete type is
+    // checked immediately and would hard-error instead of yielding false.
+    namespace {
+        template <typename T>
+        concept Current = requires(T rule) { rule.arity; };
+    }
+    static_assert(Current<Parser::Rule>,
+                  "stale syntax/expression/parser.hpp: update the header to the one matching this source");
+
+
+    Parser::Parser(Mouth& engine, const Unicodes& glyphs, memory::Arena& storage, const Node::Style mode)
+        : mouth(engine), unicodes(glyphs), arena(storage), style(mode) {
     }
 
-    Token Parser::advance() {
-        const Token previous = current;
-        current = mouth.expand();
-        return previous;
+    Parser::~Parser() {
+        if (primed && !current.empty()) {
+            mouth.inject(std::span{&current, 1});
+            primed = false;
+        }
     }
 
     Token Parser::lookahead() const noexcept {
+        if (!primed) {
+            current = mouth.expand();
+            primed = true;
+        }
         return current;
     }
 
+    Token Parser::advance() {
+        const Token token = lookahead();
+        current = {};
+        primed = false;
+        return token;
+    }
+
     Token Parser::pending() const noexcept {
-        return current;
+        const Token token = lookahead();
+        current = {};
+        primed = false;
+        return token;
     }
 
     Node* Parser::compose(const Node::Type type) const {
@@ -31,27 +66,50 @@ namespace syntax::expression {
         return node;
     }
 
-    void Parser::bind(const Symbol symbol, const Node::Type type, const int weight, const bool right, const bool structural) {
+    Parser::Rule Parser::rule(const Symbol symbol) const noexcept {
+        if (const auto index = static_cast<std::size_t>(symbol); index < rules.size()) {
+            return rules[index];
+        }
+        return Rule{};
+    }
+
+    void Parser::fault(const Traceback::Type type, const memory::Location& location,
+                       const std::string_view message) {
+        Logger::fmt(Logger::Type::Parser, Logger::Level::Error,
+                    "Math error at {}:{}: {}", location.line, location.column, message);
+        faults.emplace_back(type, location, message);
+    }
+
+    void Parser::bind(const Symbol symbol, const Node::Type type, const int weight,
+                      const bool right, const bool structural, const int arity) {
         const auto index = static_cast<std::size_t>(symbol);
         if (index >= rules.size()) {
-            rules.resize(index + 1, Rule{Node::Type::Variable, 0, false, false});
+            rules.resize(index + 1, Rule{});
         }
-        rules[index] = Rule{type, weight, right, structural};
-        Logger::fmt(Logger::Type::Parser, Logger::Level::Debug, "Bound symbol {} to rule type={}, weight={}, right={}, structural={}",
-                    index, static_cast<int>(type), weight, right, structural);
+        rules[index] = Rule{type, weight, right, structural, arity};
+        Logger::fmt(Logger::Type::Parser, Logger::Level::Debug,
+                    "Bound symbol {} to rule type={}, weight={}, right={}, structural={}, arity={}",
+                    index, static_cast<int>(type), weight, right, structural, arity);
+    }
+
+    void Parser::declare(const Symbol symbol, const int arity) {
+        const auto index = static_cast<std::size_t>(symbol);
+        if (index >= rules.size()) {
+            rules.resize(index + 1, Rule{});
+        }
+        rules[index].arity = arity;
     }
 
     Node* Parser::sequence(const char closing, const Symbol stop) {
         if (depth >= limit) {
-            const memory::Location location = current.location;
-            Logger::fmt(Logger::Type::Parser, Logger::Level::Error, "Recursion limit threshold hit at {}:{}", location.line, location.column);
+            fault(Traceback::Type::Recursion, lookahead().location, "Expression nesting limit reached");
             return nullptr;
         }
 
         struct Guard {
-            std::size_t& depth;
-            explicit Guard(std::size_t& depth) : depth(depth) { ++depth; }
-            ~Guard() { --depth; }
+            std::size_t& counter;
+            explicit Guard(std::size_t& value) : counter(value) { ++counter; }
+            ~Guard() { --counter; }
         } guard(depth);
 
         std::array<Node*, 32> stack{};
@@ -59,6 +117,7 @@ namespace syntax::expression {
         std::size_t count = 0;
 
         auto push = [&](Node* item) {
+            if (!item) return;
             if (count < stack.size()) {
                 stack[count] = item;
             } else {
@@ -71,12 +130,17 @@ namespace syntax::expression {
             ++count;
         };
 
+        const bool bounded = closing != 0 || stop != kInvalidSymbol;
+
         while (true) {
             const Token next = lookahead();
-            if (next.values.empty()) {
-                if (closing != 0 || stop != kInvalidSymbol) {
-                    Logger::fmt(Logger::Type::Parser, Logger::Level::Warning, "Unexpected EOF while waiting for closing delimiter at {}:{}",
-                                next.location.line, next.location.column);
+
+            if (next.empty()) {
+                if (bounded) {
+                    fault(Traceback::Type::End, next.location,
+                          closing != 0
+                              ? std::format("Unexpected end of input; expected '{}'", closing)
+                              : std::string("Unexpected end of input inside a formula"));
                 }
                 break;
             }
@@ -86,28 +150,31 @@ namespace syntax::expression {
                 break;
             }
 
-            if (closing != 0 && next.values.size() == 1 && next.values[0] == closing) {
+            if (closing != 0 && next.is(closing)) {
                 advance();
                 break;
             }
 
-            if (closing == 0 && stop == kInvalidSymbol && next.values.size() == 1 && (next.values[0] == '}' || next.values[0] == ')')) {
-                break;
+            if (next.is('}') || next.is(')') || next.is(']')) {
+                if (closing != 0) {
+                    fault(Traceback::Type::Delimiter, next.location,
+                          std::format("Mismatched delimiter '{}'; expected '{}'", next.values, closing));
+                    break;
+                }
+
+                advance();
+                fault(Traceback::Type::Group, next.location,
+                      std::format("Unmatched '{}' in formula", next.values));
+                continue;
             }
 
             auto* item = step(0);
-            if (!item) {
-                break;
-            }
+            if (!item) break;
             push(item);
         }
 
-        if (count == 0) {
-            return nullptr;
-        }
-        if (count == 1) {
-            return stack[0];
-        }
+        if (count == 0) return nullptr;
+        if (count == 1) return stack[0];
 
         auto* node = compose(Node::Type::Sequence);
         auto slice = arena.allocate<Node*>(count);
@@ -122,62 +189,70 @@ namespace syntax::expression {
 
     Node* Parser::group(const char closing) {
         auto* node = compose(Node::Type::Group);
+
+        if (closing == ')') { node->open = '('; node->close = ')'; }
+        else if (closing == ']') { node->open = '['; node->close = ']'; }
+
         node->left = sequence(closing);
         return node;
+    }
+
+    Node* Parser::argument() {
+        const Token next = lookahead();
+        if (next.empty()) return nullptr;
+
+        if (next.is(CatCodes::Category::Group, '{')) {
+            advance();
+            return sequence('}');
+        }
+        return core();
     }
 
     Node* Parser::command(const Token& token) {
         auto* node = compose(Node::Type::Sequence);
         node->value = token.values;
 
-        const Token lead = lookahead();
-        if (lead.values.size() == 1 && lead.values[0] == '[') {
+        const Rule found = rule(token.symbol);
+
+        if (lookahead().is('[')) {
             advance();
             node->subscript = sequence(']');
         }
 
-        std::array<Node*, 16> stack{};
-        std::vector<Node*> heap{};
-        std::size_t count = 0;
-
-        auto push = [&](Node* item) {
-            if (count < stack.size()) {
-                stack[count] = item;
-            } else {
-                if (heap.empty()) {
-                    heap.reserve(32);
-                    heap.assign(stack.begin(), stack.end());
-                }
-                heap.push_back(item);
-            }
-            ++count;
-        };
-
-        while (true) {
-            const Token next = lookahead();
-            if (next.values.empty()) break;
-
-            if (next.category == CatCodes::Category::Group && next.values.size() == 1 && next.values[0] == '{') {
-                advance();
-                push(sequence('}'));
-            } else if (next.category == CatCodes::Category::Escape ||
-                       (next.values.size() == 1 && std::isalnum(static_cast<unsigned char>(next.values[0])))) {
-                push(core());
-            } else {
-                break;
-            }
+        int wanted = found.arity;
+        if (wanted < 0) {
+            wanted = lookahead().is(CatCodes::Category::Group, '{') ? 1 : 0;
         }
 
-        if (count > 0) {
-            auto slice = arena.allocate<Node*>(count);
-            if (heap.empty()) {
-                std::copy_n(stack.begin(), count, slice.begin());
-            } else {
-                std::copy_n(heap.begin(), count, slice.begin());
+        if (wanted <= 0) {
+            return node;
+        }
+
+        // Gathered locally first, then allocated at exactly the size that was
+        // filled. Building a Slice by hand would assume its field order, and
+        // a command may also run out of arguments partway through.
+        std::array<Node*, 16> gathered{};
+        const int capacity = wanted < static_cast<int>(gathered.size())
+                                 ? wanted
+                                 : static_cast<int>(gathered.size());
+        std::size_t filled = 0;
+
+        for (int index = 0; index < capacity; ++index) {
+            Node* item = argument();
+            if (!item) {
+                fault(Traceback::Type::Argument, token.location,
+                      std::format("{} expects {} argument(s)", token.values, wanted));
+                break;
             }
+            gathered[filled++] = item;
+        }
+
+        if (filled > 0) {
+            auto slice = arena.allocate<Node*>(filled);
+            std::copy_n(gathered.begin(), filled, slice.begin());
             node->arguments = slice;
             node->left = slice[0];
-            if (count >= 2) node->right = slice[1];
+            if (filled > 1) node->right = slice[1];
         }
 
         return node;
@@ -187,17 +262,16 @@ namespace syntax::expression {
         auto* node = compose(type);
 
         if (type == Node::Type::Radical) {
-            const Token next = lookahead();
-            if (next.values.size() == 1 && next.values[0] == '[') {
+            if (lookahead().is('[')) {
                 advance();
                 node->left = sequence(']');
             }
-            node->right = core();
+            node->right = argument();
         } else if (type == Node::Type::Fraction) {
-            node->left = core();
-            node->right = core();
+            node->left = argument();
+            node->right = argument();
         } else if (type == Node::Type::Accent) {
-            node->left = core();
+            node->left = argument();
         }
 
         return node;
@@ -205,16 +279,15 @@ namespace syntax::expression {
 
     Node* Parser::core() {
         const Token token = advance();
-        if (token.values.empty()) {
+        if (token.empty()) {
             return nullptr;
         }
 
-        if (token.values.size() == 1) {
-            if (token.values[0] == '{') return group('}');
-            if (token.values[0] == '(') return group(')');
-        }
+        if (token.is(CatCodes::Category::Group, '{')) return group('}');
+        if (token.is('(')) return group(')');
 
-        if (const auto index = static_cast<std::size_t>(token.symbol); index < rules.size() && rules[index].structural) {
+        if (const auto index = static_cast<std::size_t>(token.symbol);
+            index < rules.size() && rules[index].structural) {
             return structural(rules[index].type);
         }
 
@@ -243,7 +316,19 @@ namespace syntax::expression {
     Node* Parser::atom() {
         const Token next = lookahead();
 
-        if (const auto index = static_cast<std::size_t>(next.symbol); index < rules.size() && rules[index].type == Node::Type::Unary && rules[index].weight == 0) {
+        if (const auto index = static_cast<std::size_t>(next.symbol);
+            index < rules.size() && rules[index].type == Node::Type::Unary && rules[index].weight == 0) {
+
+            if (depth >= limit) {
+                fault(Traceback::Type::Recursion, next.location, "Expression nesting limit reached");
+                return nullptr;
+            }
+            struct Guard {
+                std::size_t& counter;
+                explicit Guard(std::size_t& value) : counter(value) { ++counter; }
+                ~Guard() { --counter; }
+            } guard(depth);
+
             const Token token = advance();
             auto* unary = compose(Node::Type::Unary);
             unary->value = token.values;
@@ -262,12 +347,23 @@ namespace syntax::expression {
 
         while (true) {
             const Token next = lookahead();
-            if (next.category == CatCodes::Category::Index || (next.values.size() == 1 && next.values[0] == '_')) {
+
+            if (next.category == CatCodes::Category::Index || next.is('_')) {
                 advance();
-                subscript = core();
-            } else if (next.category == CatCodes::Category::Mark || (next.values.size() == 1 && next.values[0] == '^')) {
+                Node* item = core();
+                if (subscript) {
+                    fault(Traceback::Type::Syntax, next.location, "Double subscript");
+                } else {
+                    subscript = item;
+                }
+            } else if (next.category == CatCodes::Category::Mark || next.is('^')) {
                 advance();
-                superscript = core();
+                Node* item = core();
+                if (superscript) {
+                    fault(Traceback::Type::Syntax, next.location, "Double superscript");
+                } else {
+                    superscript = item;
+                }
             } else {
                 break;
             }
@@ -290,21 +386,14 @@ namespace syntax::expression {
 
         while (true) {
             const Token next = lookahead();
-            if (next.values.empty()) break;
-            if (next.values.size() == 1 && (next.values[0] == '}' || next.values[0] == ')' || next.values[0] == ']')) {
-                break;
-            }
+            if (next.empty()) break;
+            if (next.is('}') || next.is(')') || next.is(']')) break;
 
-            const auto index = static_cast<std::size_t>(next.symbol);
-            Rule rule{Node::Type::Variable, 0, false, false};
-            if (index < rules.size()) {
-                rule = rules[index];
-            }
+            const Rule found = rule(next.symbol);
 
-            if (rule.type == Node::Type::Unary && rule.weight > 0) {
-                if (rule.weight < priority) {
-                    break;
-                }
+            if (found.type == Node::Type::Unary && found.weight > 0) {
+                if (found.weight < priority) break;
+
                 const Token token = advance();
                 auto* postfix = compose(Node::Type::Unary);
                 postfix->value = token.values;
@@ -313,20 +402,25 @@ namespace syntax::expression {
                 continue;
             }
 
-            if (rule.weight > 0 && !rule.structural) {
-                if (rule.weight < priority || (rule.weight == priority && !rule.right)) {
+            if (found.weight > 0 && !found.structural) {
+                if (found.weight < priority || (found.weight == priority && !found.right)) {
                     break;
                 }
 
                 const Token token = advance();
-                auto* binary = compose(rule.type);
+                auto* binary = compose(found.type);
                 binary->value = token.values;
                 binary->left = left;
-                binary->right = step(rule.weight);
+                binary->right = step(found.weight);
+                if (!binary->right) {
+                    fault(Traceback::Type::Syntax, token.location,
+                          std::format("Missing right operand for '{}'", token.values));
+                }
                 left = script(binary);
-            } else {
-                break;
+                continue;
             }
+
+            break;
         }
 
         return left;

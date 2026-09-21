@@ -20,8 +20,8 @@ namespace syntax::semantics {
             catcodes_.pop();
         }
 
-        [[nodiscard]] syntax::CatCodes& catcodes() noexcept { return catcodes_; }
-        [[nodiscard]] const syntax::CatCodes& catcodes() const noexcept { return catcodes_; }
+        [[nodiscard]] CatCodes& catcodes() noexcept { return catcodes_; }
+        [[nodiscard]] const CatCodes& catcodes() const noexcept { return catcodes_; }
 
         [[nodiscard]] Registers& registers() noexcept { return registers_; }
         [[nodiscard]] const Registers& registers() const noexcept { return registers_; }
@@ -30,7 +30,7 @@ namespace syntax::semantics {
         [[nodiscard]] const Scope& scope() const noexcept { return scopes; }
 
     private:
-        syntax::CatCodes catcodes_{};
+        CatCodes catcodes_{};
         Registers registers_{};
         Scope scopes{};
     };

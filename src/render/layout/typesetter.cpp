@@ -249,6 +249,8 @@ namespace render::layout {
                 if (Node* box = lower(element->expression, *element->font, width)) {
                     slice[mark++] = box;
                 }
+            } else if (element->type == Document::Element::Type::Directive && element->node) {
+                slice[mark++] = element->node;
             }
         }
 
