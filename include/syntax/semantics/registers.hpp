@@ -24,7 +24,7 @@ namespace syntax::semantics {
     /// index on the symbol.
     ///
     /// @par Scoping
-    /// Each slot carries a level stamp, exactly as CatCodes does: a local
+    /// Each slot carries a level stamp, exactly as Catcodes does: a local
     /// assignment records the old value once per group, a global one stamps
     /// the slot 0, and pop() skips records for slots stamped 0 since. Every
     /// operation is O(1).
@@ -109,12 +109,7 @@ namespace syntax::semantics {
         /// @complexity O(1).
         [[nodiscard]] std::optional<Target> target(Symbol symbol) const noexcept;
 
-        /// @brief Width of an em in scaled points: what `1em` scans as.
-        [[nodiscard]] std::int32_t quad() const noexcept { return quad_; }
-
-        /// @brief Sets the width of an em.
-        /// @param value Width in scaled points.
-        void quad(const std::int32_t value) noexcept { quad_ = value; }
+        std::int32_t quad{10 * 65536};   ///< Width of an em in scaled points: what `1em` scans as.
 
     private:
         /// @brief One undo record.
@@ -137,7 +132,6 @@ namespace syntax::semantics {
         std::vector<Record> records{};                             ///< Undo log.
         std::vector<std::size_t> marks{};                          ///< Undo-log height at each open group.
         std::vector<Name> names{};                                 ///< What each symbol names.
-        std::int32_t quad_{10 * 65536};                            ///< Width of an em.
     };
 
 }

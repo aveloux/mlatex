@@ -70,8 +70,8 @@ namespace engine {
     /// }});
     /// session.provide("chart.png", png);
     ///
-    /// if (!session.typeset(document)) std::cerr << session.error();
-    /// send(session.pdf());
+    /// if (!session.typeset(document)) std::cerr << session.error;
+    /// send(session.pdf);
     /// @endcode
     ///
     /// Values, commands and files persist from one document to the next until
@@ -115,32 +115,17 @@ namespace engine {
         /// @param document The document's text.
         /// @return True when the document compiled with nothing left broken.
         ///         A PDF may still have been made when some part of it was not;
-        ///         pdf() is empty when none could be made at all.
+        ///         #pdf is empty when none could be made at all.
         bool typeset(std::string_view document);
 
-        /// @brief The last PDF made, or nothing when none could be.
-        [[nodiscard]] const std::string& pdf() const noexcept { return pdf_; }
+        std::filesystem::path assets{};    ///< The assets directory the session reads.
+        Host host{};                       ///< Everything the next document will be handed.
+        std::string pdf{};                 ///< The last PDF made, or nothing when none could be.
+        std::string error{};               ///< What went wrong the last time, one error per line; empty when nothing did.
 
-        /// @brief What went wrong the last time, one error per line; empty
-        ///        when nothing did.
-        [[nodiscard]] const std::string& error() const noexcept { return error_; }
-
-        /// @brief Each page of the last PDF made, as its text: what a reader
-        ///        copying it would get, a line of the page to a line.
-        [[nodiscard]] const std::vector<std::string>& pages() const noexcept { return pages_; }
-
-        /// @brief Everything the next document will be handed.
-        [[nodiscard]] const Host& host() const noexcept { return host_; }
-
-        /// @brief The assets directory the session reads.
-        [[nodiscard]] const std::filesystem::path& assets() const noexcept { return assets_; }
-
-    private:
-        std::filesystem::path assets_{};   ///< The engine's assets directory.
-        Host host_{};                      ///< What every document is handed.
-        std::string pdf_{};                ///< The last PDF made.
-        std::string error_{};              ///< What went wrong last time.
-        std::vector<std::string> pages_{}; ///< Each page of the last PDF made, as its text.
+        /// Each page of the last PDF made, as its text: what a reader copying
+        /// it would get, a line of the page to a line.
+        std::vector<std::string> pages{};
     };
 
     /// @brief Finds the engine's assets directory from where a binary lives.

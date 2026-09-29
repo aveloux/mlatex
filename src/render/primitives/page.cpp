@@ -68,11 +68,11 @@ namespace render::primitives {
             "\\textheight", "\\paperwidth", "\\paperheight", "\\baselineskip",
         };
         for (std::size_t index = 0; index < extents.size(); ++index) {
-            context.registers.bind(parser.mouth().lexicon().intern(extents[index]), Registers::Type::Dimension,
+            context.registers.bind(parser.mouth.lexicon.intern(extents[index]), Registers::Type::Dimension,
                                    Registers::reserved + index);
         }
         const auto publish = [&context] {
-            const Configuration& page = context.document.configuration();
+            const Configuration& page = context.document.configuration;
             const float column = context.document.column(page.columns);
             const std::array<float, extents.size()> values{
                 page.width - page.left - page.right, column, column, column, page.height - page.top - page.bottom,
@@ -95,7 +95,7 @@ namespace render::primitives {
         }
 
         for (const auto& [name, field] : fields) {
-            parser.mouth().bind(name, [this, &context, field, name, publish](syntax::Mouth& mouth) {
+            parser.mouth.bind(name, [this, &context, field, name, publish](syntax::Mouth& mouth) {
                 // The `=` is noise, as it is everywhere in the language: read
                 // it if it is there, and put back whatever else was.
                 syntax::Token equals = mouth.read();
@@ -103,7 +103,7 @@ namespace render::primitives {
 
                 const auto scanned = syntax::Number::dimension(mouth, context.registers);
                 if (!scanned) {
-                    tracebacks_.emplace_back(
+                    tracebacks.emplace_back(
                         syntax::Traceback::Type::Dimension, mouth.lookahead().location,
                         std::string(name) + " needs a dimension");
                     return;
@@ -111,7 +111,7 @@ namespace render::primitives {
 
                 // Dimensions are scanned in scaled points; the page is in
                 // points, which is what the renderer draws in.
-                context.document.configuration().*field =
+                context.document.configuration.*field =
                     static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale);
                 publish();
             });
@@ -128,7 +128,7 @@ namespace render::primitives {
         // kept where it stands; any other is a register, as \\newlength
         // makes one, set or added to as \\set and \\increase would.
         const auto adjust = [&context](const std::string& name, const float amount, const bool added) {
-            Configuration& page = context.document.configuration();
+            Configuration& page = context.document.configuration;
             const float column = page.width - page.left - page.right;
             const float tall = page.height - page.top - page.bottom;
             const auto apply = [added, amount](const float current) { return added ? current + amount : amount; };
@@ -161,7 +161,7 @@ namespace render::primitives {
         };
 
         for (const bool added : {false, true}) {
-            parser.mouth().bind(added ? "\\addtolength" : "\\setlength", [&context, adjust, added, publish](syntax::Mouth& mouth) {
+            parser.mouth.bind(added ? "\\addtolength" : "\\setlength", [&context, adjust, added, publish](syntax::Mouth& mouth) {
                 std::string name;
                 for (const syntax::Token& token : mouth.argument({}, 0)) name += token.text;
                 const std::string value = syntax::Argument::text(mouth);
@@ -184,7 +184,7 @@ namespace render::primitives {
         // and the pages made once the document ends, so it is then that the
         // page takes what its registers hold.
         context.blocks.watch("document", {}, [&context, publish](syntax::Mouth& mouth) {
-            Configuration& page = context.document.configuration();
+            Configuration& page = context.document.configuration;
             const auto held = [&context](const std::size_t index) {
                 return static_cast<float>(context.registers.get(Registers::Type::Dimension, Registers::reserved + index)) /
                        65536.0f;
@@ -195,10 +195,10 @@ namespace render::primitives {
             if (moved(held(0), page.width - page.left - page.right)) page.right = page.width - page.left - held(0);
             if (moved(held(4), page.height - page.top - page.bottom)) page.bottom = page.height - page.top - held(4);
             if (moved(held(7), page.leading)) page.leading = held(7);
-            if (const auto skip = context.registers.target(mouth.lexicon().intern("\\parskip"))) {
+            if (const auto skip = context.registers.target(mouth.lexicon.intern("\\parskip"))) {
                 page.skip = static_cast<float>(context.registers.get(skip->type, skip->slot)) / 65536.0f;
             }
-            if (const auto gap = context.registers.target(mouth.lexicon().intern("\\columnsep"))) {
+            if (const auto gap = context.registers.target(mouth.lexicon.intern("\\columnsep"))) {
                 page.gap = static_cast<float>(context.registers.get(gap->type, gap->slot)) / 65536.0f;
             }
 
@@ -207,7 +207,7 @@ namespace render::primitives {
             // counters, and the space round a float its registers.
             layout::Pager::Placement& rules = page.placement;
             const auto fraction = [&mouth](const std::string_view name, float& field) {
-                const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon().intern(name));
+                const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon.intern(name));
                 if (!macro) return;
                 std::string written;
                 for (const syntax::Token& token : macro->body) written += token.text;
@@ -235,17 +235,17 @@ namespace render::primitives {
                 number("dbltopnumber", rules.spans);
             }
             const auto length = [&context, &mouth](const std::string_view name, float& field) {
-                if (const auto slot = context.registers.target(mouth.lexicon().intern(name))) {
+                if (const auto slot = context.registers.target(mouth.lexicon.intern(name))) {
                     field = static_cast<float>(context.registers.get(slot->type, slot->slot)) / 65536.0f;
                 }
             };
             length("\\floatsep", rules.apart);
-            length("\\textfloatsep", rules.clear);
+            length("\\textfloatsep", rules.clearance);
             length("\\intextsep", rules.amid);
             publish();
         });
 
-        parser.mouth().bind("\\documentclass", [this, &context, publish](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\documentclass", [this, &context, publish](syntax::Mouth& mouth) {
             std::string options;
             for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
@@ -275,9 +275,9 @@ namespace render::primitives {
             }};
             const auto known = std::ranges::find(classes, std::string_view(name), &Class::name);
             const std::string module = name + "/main.mtex";
-            const bool carried = syntax::modules::find(module).has_value();
+            const bool carried = syntax::modules::get(module).has_value();
             if (known == classes.end() && !carried) {
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     syntax::Traceback::Type::Warning, origin,
                     std::format("File `{}.cls' not found; the document is set as article", name));
             }
@@ -345,7 +345,7 @@ namespace render::primitives {
             constexpr float foot = 30.0f;           // \footskip
             const float top = 72.0f + (height - 144.0f - head - tall - foot) * 0.5f + head;
 
-            Configuration page = context.document.configuration();
+            Configuration page = context.document.configuration;
             page.width = width;
             page.height = height;
             page.left = (width - line) * 0.5f;
@@ -356,7 +356,7 @@ namespace render::primitives {
             page.indent = indent;
             page.size = body;
             page.columns = columns;
-            context.document.configuration() = page;
+            context.document.configuration = page;
             spread.assign(1, columns);
             publish();
 
@@ -374,15 +374,15 @@ namespace render::primitives {
             // The body's face at the body's size, and the formulas' beside it.
             if (const typography::Font* text = Styles::resolve(context, Styles::Cut::Normal, body)) {
                 context.selection.text(text);
-                context.document.furniture().face = text;
+                context.document.furniture.face = text;
             }
             if (const typography::Font* formula = context.selection.formula()) {
                 if (const typography::Font* sized = context.registry.get({.family = formula->family(), .size = body})) {
                     context.selection.formula(sized);
                 }
             }
-            context.document.fallback(context.selection.formula());
-            context.registers.quad(static_cast<std::int32_t>(body * 65536.0f));
+            context.document.fallback = context.selection.formula();
+            context.registers.quad = static_cast<std::int32_t>(body * 65536.0f);
 
             // The class's own module, read as a package is: its options kept
             // as its variables, and itself marked loaded.
@@ -400,12 +400,12 @@ namespace render::primitives {
         // foot for `[b]`. An overlay, `<2->`, is read and let go: every slide
         // of a frame is the one page here. How a title looks is the class's
         // \frametitle and \framesubtitle.
-        const syntax::Symbol titled = parser.mouth().lexicon().intern("\\frametitle");
-        const syntax::Symbol subtitled = parser.mouth().lexicon().intern("\\framesubtitle");
+        const syntax::Symbol titled = parser.mouth.lexicon.intern("\\frametitle");
+        const syntax::Symbol subtitled = parser.mouth.lexicon.intern("\\framesubtitle");
         context.blocks.watch(
             "frame",
             [this, titled, subtitled](syntax::Mouth& mouth) {
-                using Category = syntax::CatCodes::Category;
+                using Category = syntax::Catcodes::Category;
                 const auto blank = [&mouth] {
                     while (mouth.lookahead().category == Category::Space) mouth.read();
                 };
@@ -457,10 +457,10 @@ namespace render::primitives {
                     if (heads[which].empty()) continue;
                     const syntax::Symbol command = which == 0 ? titled : subtitled;
                     std::vector<syntax::Token> written{
-                        {.symbol = command, .category = Category::Escape, .text = mouth.lexicon().resolve(command)},
-                        {.symbol = mouth.lexicon().intern("{"), .category = Category::Group, .text = "{"}};
+                        {.symbol = command, .category = Category::Escape, .text = mouth.lexicon.resolve(command)},
+                        {.symbol = mouth.lexicon.intern("{"), .category = Category::Group, .text = "{"}};
                     written.insert(written.end(), heads[which].begin(), heads[which].end());
-                    written.push_back({.symbol = mouth.lexicon().intern("}"), .category = Category::Group, .text = "}"});
+                    written.push_back({.symbol = mouth.lexicon.intern("}"), .category = Category::Group, .text = "}"});
                     mouth.stream().inject(std::span{written});
                 }
             },
@@ -489,13 +489,13 @@ namespace render::primitives {
         // A plain page's number is set in the face the text starts in, and a
         // character that face lacks looked for in the formulas' face, which
         // carries the symbols.
-        context.document.furniture().face = context.selection.text();
-        context.document.fallback(context.selection.formula());
+        context.document.furniture.face = context.selection.text();
+        context.document.fallback = context.selection.formula();
 
         // The page's number, where it is written: in a head or a foot, or in
         // the text, where it takes the room two digits would.
         parser.bind("\\thepage", [&context](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
+            memory::Arena& arena = parser.arena;
             const typography::Font* font = context.selection.text();
 
             float width = 0.0f;
@@ -508,7 +508,7 @@ namespace render::primitives {
 
             auto* node = arena.compose<layout::Node>();
             node->directive({.command = Directive::Command::Number, .width = width, .font = font});
-            return directive(arena, node, parser.mouth().lookahead().location);
+            return directive(arena, node, parser.mouth.lookahead().location);
         });
 
         // `\\@columns 2`: the text from here on in so many columns side by
@@ -518,18 +518,18 @@ namespace render::primitives {
         // measured against \\linewidth from here on is measured against a
         // column.
         parser.bind("\\@columns", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             const std::int32_t asked = syntax::Number::integer(mouth, context.registers).value_or(1);
-            if (spread.empty()) spread.push_back(context.document.configuration().columns);
+            if (spread.empty()) spread.push_back(context.document.configuration.columns);
             if (asked > 0) {
                 spread.push_back(static_cast<std::size_t>(asked));
             } else if (spread.size() > 1) {
                 spread.pop_back();
             }
 
-            if (const auto gap = context.registers.target(mouth.lexicon().intern("\\columnsep"))) {
-                context.document.configuration().gap =
+            if (const auto gap = context.registers.target(mouth.lexicon.intern("\\columnsep"))) {
+                context.document.configuration.gap =
                     static_cast<float>(context.registers.get(gap->type, gap->slot)) / 65536.0f;
             }
             const float width = context.document.column(spread.back());
@@ -538,9 +538,9 @@ namespace render::primitives {
                                       static_cast<std::int32_t>(width * 65536.0f), false);
             }
 
-            auto* node = parser.arena().compose<layout::Node>(layout::Node::Type::Directive);
+            auto* node = parser.arena.compose<layout::Node>(layout::Node::Type::Directive);
             node->directive({.command = Directive::Command::Columns, .index = spread.back()});
-            return directive(parser.arena(), node, origin, true);
+            return directive(parser.arena, node, origin, true);
         });
 
         // multicol's block, `\\begin{multicols}{3}[a heading across them]`:
@@ -573,13 +573,13 @@ namespace render::primitives {
         for (const bool local : {false, true}) {
             parser.bind(local ? "\\thispagestyle" : "\\pagestyle",
                         [this, local](syntax::Parser& parser) -> syntax::Node* {
-                memory::Arena& arena = parser.arena();
-                const memory::Location origin = parser.mouth().lookahead().location;
-                const std::string name = syntax::Argument::text(parser.mouth());
+                memory::Arena& arena = parser.arena;
+                const memory::Location origin = parser.mouth.lookahead().location;
+                const std::string name = syntax::Argument::text(parser.mouth);
 
                 const auto found = std::ranges::find(styles, name, &std::pair<std::string_view, Directive::Style>::first);
                 if (found == styles.end()) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              "Unknown page style '" + name + "'");
                     return directive(arena, nullptr, origin);
                 }
@@ -591,9 +591,9 @@ namespace render::primitives {
         }
 
         parser.bind("\\pagenumbering", [this](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
-            const std::string name = syntax::Argument::text(parser.mouth());
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const std::string name = syntax::Argument::text(parser.mouth);
 
             Directive order{.command = Directive::Command::Page};
             if (name == "arabic") {
@@ -605,7 +605,7 @@ namespace render::primitives {
                 order.numbering = Directive::Numbering::Alphabetic;
                 order.capital = name == "Alph";
             } else {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "Unknown page numbering '" + name + "'");
                 return directive(arena, nullptr, origin);
             }
@@ -618,9 +618,9 @@ namespace render::primitives {
         // `\@folio{5}`: the number the page this lands on takes, the pages
         // after it counting on -- what `\setcounter{page}{5}` asks for.
         parser.bind("\\@folio", [](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
-            const std::string written = syntax::Argument::text(parser.mouth());
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const std::string written = syntax::Argument::text(parser.mouth);
             std::size_t number = 0;
             if (std::from_chars(written.data(), written.data() + written.size(), number).ec != std::errc{}) {
                 return directive(arena, nullptr, origin);
@@ -635,8 +635,8 @@ namespace render::primitives {
         // which are one and the same here -- and set now, in the face in use,
         // so the page only has to place it.
         const auto furnishing = [this, &context](syntax::Parser& parser, const bool head, const bool foot) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             std::string places;
@@ -645,8 +645,8 @@ namespace render::primitives {
             }
 
             syntax::Token open = mouth.read();
-            if (!open.is(syntax::CatCodes::Category::Group, '{')) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "A head or a foot needs its text in braces");
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 return directive(arena, nullptr, origin);
@@ -662,7 +662,7 @@ namespace render::primitives {
             std::ranges::copy(gathered, nodes.begin());
 
             const bool every = places.find_first_of("LCR") == std::string::npos;
-            layout::Document::Furniture& furniture = context.document.furniture();
+            layout::Document::Furniture& furniture = context.document.furniture;
             for (std::size_t place = 0; place < 3; ++place) {
                 if (!every && places.find("LCR"[place]) == std::string::npos) continue;
                 if (head) furniture.head[place] = nodes;
@@ -674,23 +674,23 @@ namespace render::primitives {
         parser.bind("\\fancyfoot", [furnishing](syntax::Parser& parser) { return furnishing(parser, false, true); });
         parser.bind("\\fancyhf", [furnishing](syntax::Parser& parser) { return furnishing(parser, true, true); });
 
-        parser.mouth().bind("\\pagerules", [&context](syntax::Mouth& mouth) {
-            std::array<float, 2> widths{context.document.furniture().rule, context.document.furniture().line};
+        parser.mouth.bind("\\pagerules", [&context](syntax::Mouth& mouth) {
+            std::array<float, 2> widths{context.document.furniture.rule, context.document.furniture.line};
             for (float& width : widths) {
                 syntax::Token open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{') && !open.empty()) {
+                if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});
                 }
                 if (const auto scanned = syntax::Number::dimension(mouth, context.registers)) {
                     width = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale);
                 }
                 syntax::Token close = mouth.read();
-                if (!close.is(syntax::CatCodes::Category::Group, '}') && !close.empty()) {
+                if (!close.is(syntax::Catcodes::Category::Group, '}') && !close.empty()) {
                     mouth.stream().inject(std::span{&close, 1});
                 }
             }
-            context.document.furniture().rule = widths[0];
-            context.document.furniture().line = widths[1];
+            context.document.furniture.rule = widths[0];
+            context.document.furniture.line = widths[1];
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound page primitives");

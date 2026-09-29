@@ -112,10 +112,10 @@ namespace syntax::primitives {
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief What to run when one named block opens or closes.
@@ -131,7 +131,7 @@ namespace syntax::primitives {
         /// @return The interned name, or none when the group was empty.
         [[nodiscard]] Symbol title(Mouth& mouth) const;
 
-        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
         mutable std::vector<Symbol> open{};             ///< Names of the blocks currently entered.
         mutable std::vector<Symbol> closing{};          ///< A document's blocks whose end code is being read.
         mutable std::vector<Hook> hooks{};              ///< Indexed by interned block name.

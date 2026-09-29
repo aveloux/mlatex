@@ -54,7 +54,7 @@ int main() {
         bool clean = true;
         for (const layout::Node* line : lines) {
             const layout::Node* first = line->box().list.empty() ? nullptr : line->box().list[0];
-            clean = clean && first && first->type() != layout::Node::Type::Glue;
+            clean = clean && first && first->type != layout::Node::Type::Glue;
         }
         assert((clean) && "no line opens with the space it was broken at");
     }

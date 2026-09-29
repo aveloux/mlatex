@@ -40,29 +40,19 @@ namespace syntax {
         /// @param location Where it happened; zero means unknown.
         /// @param message  Explanation; copied.
         Traceback(const Type type, const memory::Location location, const std::string_view message)
-            : type_(type), location_(location), message_(message) {}
-
-        /// @brief Kind of error.
-        [[nodiscard]] Type type() const noexcept { return type_; }
-
-        /// @brief Where it happened.
-        [[nodiscard]] const memory::Location& location() const noexcept { return location_; }
-
-        /// @brief Explanation.
-        [[nodiscard]] const std::string& message() const noexcept { return message_; }
+            : type(type), location(location), message(message) {}
 
         /// @brief Whether it stops the document being clean: every kind but a warning does.
-        [[nodiscard]] bool fatal() const noexcept { return type_ != Type::Warning; }
+        [[nodiscard]] bool fatal() const noexcept { return type != Type::Warning; }
 
         /// @brief Renders as `line:column: error (kind): message`, or
         ///        `line:column: warning: message`.
         /// @return The rendered text; the position is omitted when unknown.
         [[nodiscard]] std::string format() const;
 
-    private:
-        Type type_;                  ///< Kind of error.
-        memory::Location location_;  ///< Where it happened.
-        std::string message_;        ///< Explanation.
+        Type type;                  ///< Kind of error.
+        memory::Location location;  ///< Where it happened.
+        std::string message;        ///< Explanation.
     };
 
 }

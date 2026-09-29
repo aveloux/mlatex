@@ -36,7 +36,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers(), core.conditionals(), core.variables()};
+    syntax::primitives::Context context{state.registers, core.relay, core.variables};
     core(mouth, context);
     mouth.ingest(arena.copy(document));
     syntax::Parser parser(mouth, arena);
@@ -61,7 +61,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.tracebacks(), mouth.tracebacks(), core.tracebacks()}) {
+    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
         for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
     }
     return {folded, errors};
@@ -119,9 +119,9 @@ static bool holds(const std::string_view text, const std::string_view part) {
 
 int main() {
     // --- The table --------------------------------------------------------------
-    assert((syntax::modules::find("main.mtex").has_value()) && "the prelude is compiled in");
-    assert((syntax::modules::find("core/main.mtex").has_value()) && "and the core package");
-    assert((!syntax::modules::find("nosuch/main.mtex").has_value()) && "a file that is not there is none");
+    assert((syntax::modules::get("main.mtex").has_value()) && "the prelude is compiled in");
+    assert((syntax::modules::get("core/main.mtex").has_value()) && "and the core package");
+    assert((!syntax::modules::get("nosuch/main.mtex").has_value()) && "a file that is not there is none");
 
     // --- Every package loads ------------------------------------------------------
     static constexpr std::string_view packages[] = {

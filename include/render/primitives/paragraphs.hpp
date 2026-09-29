@@ -69,12 +69,12 @@ namespace render::primitives {
 
         /// @brief Errors this module has recorded: a `\\leftskip` with no
         ///        dimension after it.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
 
         /// What each open alignment block opened with, innermost last: the
         /// source that ends the paragraph and sets that block's alignment,

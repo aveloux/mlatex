@@ -92,11 +92,11 @@ namespace render::primitives {
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -116,7 +116,7 @@ namespace render::primitives {
         /// set apart far enough to read as columns.
         static constexpr float gutter = 12.0f;
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
         mutable std::vector<Opening> openings{};                ///< Tables opened and not yet read.
         mutable Customs customs{};                              ///< The column types \\newcolumntype made.
 

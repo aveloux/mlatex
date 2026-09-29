@@ -38,11 +38,11 @@ namespace render {
     /// @par Use
     /// @code
     /// render::Composer composer(arena, scratch, shaper, typesetter);
-    /// composer.document().append(text, font, 12.0f);
+    /// composer.document.append(text, font, 12.0f);
     ///
-    /// for (const auto& page : typesetter.compose(composer.document())) {
+    /// for (const auto& page : typesetter.compose(composer.document)) {
     ///     const std::string_view content = composer.draw(page.nodes, page.notes, left, top);
-    ///     // ... hand `content` and composer.faces() to the writer ...
+    ///     // ... hand `content` and composer.faces to the writer ...
     /// }
     /// @endcode
     class Composer {
@@ -96,55 +96,12 @@ namespace render {
         [[nodiscard]] std::string_view draw(memory::Slice<layout::Node*> nodes, memory::Slice<const layout::Node*> notes,
                                             float left, float top);
 
-        /// @brief Every face the pages drawn so far have used.
-        ///
-        /// Indexed the way the page description names them: entry `n` is the
-        /// resource the description calls `/F<n>`.
-        [[nodiscard]] const std::vector<Entry>& faces() const noexcept { return used; }
-
-        /// @brief Every opacity the pages drawn so far have used.
-        ///
-        /// Indexed the way the page description names them: entry `n` is the
-        /// resource the description calls `/GS<n>`. An opaque document -- by
-        /// far the common case -- draws none at all, so nothing is reserved
-        /// for this until a color with alpha under one is actually seen.
-        [[nodiscard]] const std::vector<float>& opacities() const noexcept { return transparency; }
-
-        /// @brief Every image the pages drawn so far have used.
-        ///
-        /// Indexed the way the page description names them: entry `n` is the
-        /// resource the description calls `/Im<n>`. The same image used
-        /// twice is one entry, embedded once.
-        [[nodiscard]] const std::vector<const graphics::Image*>& pictures() const noexcept { return pictures_; }
-
-        /// @brief Every page of another PDF the pages drawn so far have used.
-        ///
-        /// Indexed as pictures() is: entry `n` is the form the page
-        /// description calls `/Fm<n>`, embedded once however often drawn.
-        [[nodiscard]] const std::vector<const graphics::Drawing*>& drawings() const noexcept { return drawings_; }
-
-        /// @brief The document being composed.
-        [[nodiscard]] layout::Document& document() noexcept { return document_; }
-        [[nodiscard]] const layout::Document& document() const noexcept { return document_; }   ///< @copydoc Composer::document()
-
-        /// @brief The page each anchor was drawn on, as that page is
-        ///        numbered, by the anchor's index; empty for one not drawn.
-        ///
-        /// What a second pass reads to print a `\\pageref` or a table of
-        /// contents: known only once the pages are, which is after the text
-        /// that asks for them has been set.
-        [[nodiscard]] const std::vector<std::string>& anchors() const noexcept { return anchors_; }
-
         /// @brief Where an anchor was drawn: which page, counted from 0, and
         ///        how far down it, in points from the page's top.
         struct Place {
             std::size_t page{0};   ///< The page.
             float down{0.0f};      ///< From its top.
         };
-
-        /// @brief Where each anchor was drawn, by its index -- what a link to
-        ///        it, or a bookmark, goes to.
-        [[nodiscard]] const std::vector<Place>& places() const noexcept { return places_; }
 
         /// @brief A link as it was drawn: where it goes, and the area of each
         ///        line it covers.
@@ -155,17 +112,50 @@ namespace render {
             std::vector<std::array<float, 4>> areas{};   ///< Left, top, right and bottom, from the page's top left.
         };
 
-        /// @brief Every link drawn, by the page it was drawn on.
-        [[nodiscard]] const std::vector<std::vector<Link>>& links() const noexcept { return links_; }
+        layout::Typesetter& typesetter;   ///< The layout engine this composer was built with.
+        layout::Document document;        ///< The document being composed.
 
-        /// @brief Every page drawn so far, as its text: what a reader copying
-        ///        it would get -- a ligature as its letters, a word space as a
-        ///        space, each line on a line of its own -- recorded as the
-        ///        page is drawn, so reading it back costs nothing.
-        [[nodiscard]] const std::vector<std::string>& texts() const noexcept { return texts_; }
+        /// Every face the pages drawn so far have used, indexed the way the
+        /// page description names them: entry `n` is the resource the
+        /// description calls `/F<n>`.
+        std::vector<Entry> faces{};
 
-        /// @brief The layout engine this composer was built with.
-        [[nodiscard]] layout::Typesetter& engine() const noexcept { return typesetter; }
+        /// Every opacity the pages drawn so far have used, indexed the way
+        /// the page description names them: entry `n` is the resource the
+        /// description calls `/GS<n>`. An opaque document -- by far the
+        /// common case -- draws none at all, so nothing is reserved for this
+        /// until a color with alpha under one is actually seen.
+        std::vector<float> opacities{};
+
+        /// Every image the pages drawn so far have used, indexed the way the
+        /// page description names them: entry `n` is the resource the
+        /// description calls `/Im<n>`. The same image used twice is one
+        /// entry, embedded once.
+        std::vector<const graphics::Image*> pictures{};
+
+        /// Every page of another PDF the pages drawn so far have used,
+        /// indexed as #pictures is: entry `n` is the form the page
+        /// description calls `/Fm<n>`, embedded once however often drawn.
+        std::vector<const graphics::Drawing*> drawings{};
+
+        /// The page each anchor was drawn on, as that page is numbered, by
+        /// the anchor's index; empty for one not drawn. What a second pass
+        /// reads to print a `\\pageref` or a table of contents: known only
+        /// once the pages are, which is after the text that asks for them
+        /// has been set.
+        std::vector<std::string> anchors{};
+
+        /// Where each anchor was drawn, by its index -- what a link to it, or
+        /// a bookmark, goes to.
+        std::vector<Place> places{};
+
+        std::vector<std::vector<Link>> links{};   ///< Every link drawn, by the page it was drawn on.
+
+        /// Every page drawn so far, as its text: what a reader copying it
+        /// would get -- a ligature as its letters, a word space as a space,
+        /// each line on a line of its own -- recorded as the page is drawn,
+        /// so reading it back costs nothing.
+        std::vector<std::string> texts{};
 
     private:
         /// @brief How far below a node's top its reference point sits.
@@ -244,9 +234,7 @@ namespace render {
         /// @return How far it reaches.
         float numeral(const typography::Font* font, float position, float baseline);
 
-        layout::Typesetter& typesetter;   ///< Layout engine.
         const typography::Shaper& shaper; ///< Text into glyphs, for a page's number.
-        layout::Document document_;       ///< The document being composed.
 
         // The page being drawn: its number, how pages are numbered from here,
         // and the style pages are furnished in from here.
@@ -256,10 +244,7 @@ namespace render {
         layout::Node::Directive::Style style{layout::Node::Directive::Style::Plain};   ///< From here on.
 
         std::string content{};       ///< The page description being built.
-        std::vector<Entry> used{};   ///< Faces used, in resource order.
-        std::vector<std::string> anchors_{};   ///< The page of each anchor drawn so far.
-        std::string transcript{};              ///< The text of the page being drawn.
-        std::vector<std::string> texts_{};     ///< The text of every page drawn so far.
+        std::string transcript{};    ///< The text of the page being drawn.
 
         // The open run: which face and size it is in, and where its pen is.
         const typography::Font* running{nullptr};   ///< Its font, or null when no run is open.
@@ -269,18 +254,11 @@ namespace render {
 
         // The color last set, so a page of the one color -- nearly every one
         // -- costs one operator rather than one per glyph and rule.
-        layout::Node::Color fill_{};     ///< Fill color in use.
-        layout::Node::Color stroke_{};   ///< Stroke color in use.
+        layout::Node::Color filling{};    ///< Fill color in use.
+        layout::Node::Color stroking{};   ///< Stroke color in use.
+        float opacity = 1.0f;             ///< Opacity in use.
 
-        std::vector<float> transparency{};   ///< Opacities used, in resource order.
-        float opacity_ = 1.0f;               ///< Opacity in use.
-
-        std::vector<const graphics::Image*> pictures_{};   ///< Images used, in resource order.
-        std::vector<const graphics::Drawing*> drawings_{};   ///< Pages of other PDFs used, in resource order.
-
-        std::vector<Place> places_{};                 ///< Where each anchor drawn so far stands.
-        std::vector<std::vector<Link>> links_{};      ///< The links of every page drawn so far.
-        std::vector<Link> open_{};                    ///< The links being drawn, innermost last.
+        std::vector<Link> opened{};       ///< The links being drawn, innermost last.
 
         /// @brief Takes in what was just drawn into the innermost open link:
         ///        its area on the line it stands on, a new area once it is

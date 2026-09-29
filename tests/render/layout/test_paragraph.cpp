@@ -59,7 +59,7 @@ int main() {
     assert((column && column->box().alignment == layout::Node::Alignment::Vertical) && "laid out, it is a column");
 
     std::size_t lines = 0;
-    for (const layout::Node* line : column->box().list) lines += line->type() == layout::Node::Type::Box;
+    for (const layout::Node* line : column->box().list) lines += line->type == layout::Node::Type::Box;
     assert((lines >= 3) && "of several lines");
     assert((std::abs(column->box().list[0]->box().width - 150.0f) < 0.01f) && "each as wide as the column");
 
@@ -82,7 +82,7 @@ int main() {
     const layout::Node* opening = reversed.node()->box().list[0];
     assert((std::abs(opening->box().width - 100.0f) < 0.01f && opening->box().offset == 30.0f) &&
            "read right to left, a line is moved in by the right margin");
-    assert((opening->box().list[0]->type() == layout::Node::Type::Glyph &&
+    assert((opening->box().list[0]->type == layout::Node::Type::Glyph &&
             opening->box().list[0]->glyph().point == 'A') && "and a run of Latin words in it keeps their order");
 
     return 0;

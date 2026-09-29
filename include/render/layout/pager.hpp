@@ -69,7 +69,7 @@ namespace render::layout {
             std::size_t most{3};     ///< `totalnumber`: in a column, wherever they stand.
             std::size_t spans{2};    ///< `dbltopnumber`: across the columns at a page's head.
             float apart{12.0f};      ///< `\\floatsep`: between two floats.
-            float clear{20.0f};      ///< `\\textfloatsep`: between the floats and the text.
+            float clearance{20.0f};      ///< `\\textfloatsep`: between the floats and the text.
             float amid{12.0f};       ///< `\\intextsep`: above and below a float set in the text.
         };
 

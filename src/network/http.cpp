@@ -126,9 +126,9 @@ namespace network {
             const std::size_t start = response.body.size();
             response.body.resize(start + available);
 
-            DWORD read_ = 0;
-            if (!WinHttpReadData(request, response.body.data() + start, available, &read_)) break;
-            response.body.resize(start + read_);
+            DWORD received = 0;
+            if (!WinHttpReadData(request, response.body.data() + start, available, &received)) break;
+            response.body.resize(start + received);
         }
 
         return response;

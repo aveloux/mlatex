@@ -58,19 +58,15 @@ namespace render::primitives {
         /// @param context Engine services; symbol names come from its tables.
         void operator()(syntax::Parser& parser, Context& context) const;
 
-        /// @brief The grammar every formula is read by: built once, here,
-        ///        rather than again for each formula.
-        [[nodiscard]] const syntax::expression::Grammar& grammar() const noexcept { return grammar_; }
-
         /// @brief Errors this module has recorded.
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -137,8 +133,13 @@ namespace render::primitives {
             syntax::Symbol stop
         ) const;
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
-        syntax::expression::Grammar grammar_;                  ///< What every formula is read by.
+    public:
+        /// The grammar every formula is read by: built once, here, rather
+        /// than again for each formula.
+        syntax::expression::Grammar grammar;
+
+    private:
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
 
         /// The number the display being read will carry, as printed, or empty
         /// for none. Set when an `equation` block opens rather than when its

@@ -96,6 +96,6 @@ int main(int count, char* arguments[]) {
 
     const bool ok = engine::compose(assets, source, destination, host);
 
-    Logger::close();
+    Logger::dispose();
     return ok ? 0 : 1;
 }

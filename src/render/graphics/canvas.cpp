@@ -41,9 +41,9 @@ namespace render::graphics {
         // The area the box takes, in the canvas's own coordinates, y up: the
         // declared one, or none at all when the drawing is to be its own size.
         float left = 0.0f;
-        float right = room == Room::Drawn ? 0.0f : width_;
+        float right = room == Room::Drawn ? 0.0f : size.x;
         float bottom = 0.0f;
-        float top = room == Room::Drawn ? 0.0f : height_;
+        float top = room == Room::Drawn ? 0.0f : size.y;
 
         // Everything drawn, taken in unless the canvas is pinned where it was
         // declared: a projected drawing lands wherever its projection puts it,

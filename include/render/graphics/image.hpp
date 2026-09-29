@@ -31,26 +31,6 @@ namespace render::graphics {
         ///         three signatures, or the matching library rejects them.
         [[nodiscard]] static std::optional<Image> decode(std::span<const std::byte> bytes);
 
-        [[nodiscard]] int width() const noexcept { return width_; }
-        [[nodiscard]] int height() const noexcept { return height_; }
-
-        /// @brief The pixels, row-major, top row first, three bytes each;
-        ///        empty when the image is kept encoded().
-        [[nodiscard]] const std::vector<std::uint8_t>& pixels() const noexcept { return pixels_; }
-
-        /// @brief A JPEG's own bytes, kept whole for a PDF to decode; empty
-        ///        for an image kept as pixels().
-        [[nodiscard]] const std::vector<std::uint8_t>& encoded() const noexcept { return encoded_; }
-
-        /// @brief How many colour components encoded() holds: 1 for grey, 3
-        ///        for colour.
-        [[nodiscard]] int components() const noexcept { return components_; }
-
-        /// @brief How many of its pixels make an inch, as the file says:
-        ///        PNG's pHYs, JPEG's JFIF density. 72 when it says nothing,
-        ///        so a pixel is a point, as pdfTeX has it.
-        [[nodiscard]] float resolution() const noexcept { return resolution_; }
-
         /// @param width      Pixels across.
         /// @param height     Pixels down.
         /// @param pixels     Three bytes a pixel, or none when @p encoded holds it.
@@ -59,16 +39,19 @@ namespace render::graphics {
         /// @param resolution Pixels to the inch.
         Image(int width, int height, std::vector<std::uint8_t> pixels, std::vector<std::uint8_t> encoded = {},
               int components = 3, float resolution = 72.0f) noexcept
-            : width_(width), height_(height), pixels_(std::move(pixels)), encoded_(std::move(encoded)),
-              components_(components), resolution_(resolution) {}
+            : width(width), height(height), pixels(std::move(pixels)), encoded(std::move(encoded)),
+              components(components), resolution(resolution) {}
 
-    private:
-        int width_;
-        int height_;
-        std::vector<std::uint8_t> pixels_;
-        std::vector<std::uint8_t> encoded_;
-        int components_;
-        float resolution_;
+        int width;                           ///< Pixels across.
+        int height;                          ///< Pixels down.
+        std::vector<std::uint8_t> pixels;    ///< Row-major, top row first, three bytes each; empty when kept #encoded.
+        std::vector<std::uint8_t> encoded;   ///< A JPEG's own bytes, kept whole for a PDF to decode; empty for #pixels.
+        int components;                      ///< How many colour components #encoded holds: 1 for grey, 3 for colour.
+
+        /// How many of its pixels make an inch, as the file says: PNG's pHYs,
+        /// JPEG's JFIF density. 72 when it says nothing, so a pixel is a
+        /// point, as pdfTeX has it.
+        float resolution;
     };
 
 }

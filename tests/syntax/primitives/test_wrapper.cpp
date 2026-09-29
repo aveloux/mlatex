@@ -19,7 +19,7 @@ int main() {
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
 
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers(), core.conditionals(), core.variables()};
+    syntax::primitives::Context context{state.registers, core.relay, core.variables};
     core(mouth, context);
 
     // Each module's names are bound: one from each of several.
@@ -34,7 +34,7 @@ int main() {
     // Faults from two modules arrive in one list.
     mouth.ingest("\\end{a}\\variable{never}");
     while (!mouth.expand().empty()) {}
-    const std::vector<syntax::Traceback>& faults = core.tracebacks();
+    const std::vector<syntax::Traceback>& faults = core.traceback();
     bool block = false;
     bool variable = false;
     for (const syntax::Traceback& fault : faults) {

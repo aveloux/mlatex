@@ -21,7 +21,7 @@ namespace syntax::primitives {
     void Loops::operator()(Mouth& mouth, Context& context) const {
         mouth.bind("\\repeat", [this, &context, &mouth](Mouth&) {
             if (!mouth.lookahead().is('[')) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
                               "\\repeat needs a count in brackets");
                 return;
             }
@@ -29,13 +29,13 @@ namespace syntax::primitives {
 
             const auto count = Number::integer(mouth, context.registers);
             if (!count || *count < 0 || *count > passes) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
                               std::format("\\repeat count must be between 0 and {}", passes));
                 return;
             }
 
             if (!mouth.lookahead().is(']')) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
                               "\\repeat count is missing its ']'");
                 return;
             }
@@ -48,7 +48,7 @@ namespace syntax::primitives {
 
             const std::size_t total = body.size() * static_cast<std::size_t>(*count);
             if (total > production) {
-                tracebacks_.emplace_back(Traceback::Type::Memory, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Memory, mouth.lookahead().location,
                               std::format("\\repeat would produce {} tokens, past the limit of {}",
                                           total, production));
                 return;
@@ -71,13 +71,13 @@ namespace syntax::primitives {
         // and injected at once, so a loop cannot run away. A list may count
         // on from its first two items with `...`, in numbers or letters.
         mouth.bind("\\@foreach", [this](Mouth& mouth) {
-            Lexicon& lexicon = mouth.lexicon();
-            const auto character = [&lexicon](const std::string_view text, const CatCodes::Category category) {
+            Lexicon& lexicon = mouth.lexicon;
+            const auto character = [&lexicon](const std::string_view text, const Catcodes::Category category) {
                 const Symbol symbol = lexicon.intern(text);
                 return Token{.symbol = symbol, .category = category, .text = lexicon.resolve(symbol)};
             };
             const auto blank = [&mouth] {
-                while (mouth.lookahead().category == CatCodes::Category::Space) mouth.read();
+                while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
             };
 
             // The variables, `/` between them, then `[count=\\i]`, then `in`.
@@ -86,15 +86,15 @@ namespace syntax::primitives {
             blank();
             while (!mouth.lookahead().empty()) {
                 const Token token = mouth.lookahead();
-                if (token.category == CatCodes::Category::Escape) {
+                if (token.category == Catcodes::Category::Escape) {
                     variables.push_back(mouth.read());
-                } else if (token.is('/') || token.category == CatCodes::Category::Space) {
+                } else if (token.is('/') || token.category == Catcodes::Category::Space) {
                     mouth.read();
                 } else if (token.is('[')) {
                     mouth.read();
                     std::string key;
                     for (Token inside = mouth.read(); !inside.empty() && !inside.is(']'); inside = mouth.read()) {
-                        if (inside.category == CatCodes::Category::Escape && key.ends_with("count=")) counter = inside;
+                        if (inside.category == Catcodes::Category::Escape && key.ends_with("count=")) counter = inside;
                         else key += inside.text;
                     }
                 } else {
@@ -103,7 +103,7 @@ namespace syntax::primitives {
             }
             blank();
             if (!mouth.lookahead().is('i')) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, mouth.lookahead().location, "\\foreach needs 'in' before its list");
+                tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location, "\\foreach needs 'in' before its list");
                 return;
             }
             mouth.read();
@@ -113,7 +113,7 @@ namespace syntax::primitives {
             // The list, its macros opened, cut at its commas outside braces.
             std::vector<Token> list;
             for (const Token& token : mouth.argument({}, 1)) {
-                if (token.category != CatCodes::Category::Escape) {
+                if (token.category != Catcodes::Category::Escape) {
                     list.push_back(token);
                     continue;
                 }
@@ -124,13 +124,13 @@ namespace syntax::primitives {
             std::vector<std::vector<Token>> items(1);
             int depth = 0;
             for (const Token& token : list) {
-                if (token.is(CatCodes::Category::Group, '{')) ++depth;
-                if (token.is(CatCodes::Category::Group, '}')) --depth;
+                if (token.is(Catcodes::Category::Group, '{')) ++depth;
+                if (token.is(Catcodes::Category::Group, '}')) --depth;
                 if (depth == 0 && token.is(',')) {
                     items.emplace_back();
                     continue;
                 }
-                if (token.category == CatCodes::Category::Space && items.back().empty()) continue;
+                if (token.category == Catcodes::Category::Space && items.back().empty()) continue;
                 items.back().push_back(token);
             }
             const auto spelled = [](const std::vector<Token>& tokens) {
@@ -149,7 +149,7 @@ namespace syntax::primitives {
                 std::vector<std::vector<Token>> made;
                 if (from.size() == 1 && to.size() == 1 && std::isalpha(static_cast<unsigned char>(from[0]))) {
                     for (char letter = static_cast<char>(from[0] + 1); letter < to[0]; ++letter) {
-                        made.push_back({character(std::string_view(&letter, 1), CatCodes::Category::Letter)});
+                        made.push_back({character(std::string_view(&letter, 1), Catcodes::Category::Letter)});
                     }
                 } else {
                     double first = 0.0;
@@ -170,7 +170,7 @@ namespace syntax::primitives {
                         const std::string text = rounded == std::floor(rounded) ? std::to_string(static_cast<long long>(rounded))
                                                                                 : std::format("{}", rounded);
                         std::vector<Token> number;
-                        for (const char digit : text) number.push_back(character(std::string_view(&digit, 1), CatCodes::Category::Other));
+                        for (const char digit : text) number.push_back(character(std::string_view(&digit, 1), Catcodes::Category::Other));
                         made.push_back(std::move(number));
                     }
                 }
@@ -182,7 +182,7 @@ namespace syntax::primitives {
             // The body: a group, or the path up to its semicolon.
             blank();
             std::vector<Token> body;
-            if (mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+            if (mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                 body = mouth.argument({}, 1);
             } else {
                 for (Token token = mouth.read(); !token.empty(); token = mouth.read()) {
@@ -191,9 +191,9 @@ namespace syntax::primitives {
                 }
             }
 
-            const Token define = character("\\define", CatCodes::Category::Escape);
-            const Token open = character("{", CatCodes::Category::Group);
-            const Token close = character("}", CatCodes::Category::Group);
+            const Token define = character("\\define", Catcodes::Category::Escape);
+            const Token open = character("{", Catcodes::Category::Group);
+            const Token close = character("}", Catcodes::Category::Group);
             std::vector<Token> produced;
             std::size_t count = 0;
             for (const std::vector<Token>& item : items) {
@@ -215,14 +215,14 @@ namespace syntax::primitives {
                 if (!counter.empty()) {
                     produced.insert(produced.end(), {define, counter, open});
                     for (const char digit : std::to_string(count)) {
-                        produced.push_back(character(std::string_view(&digit, 1), CatCodes::Category::Other));
+                        produced.push_back(character(std::string_view(&digit, 1), Catcodes::Category::Other));
                     }
                     produced.push_back(close);
                 }
                 produced.insert(produced.end(), body.begin(), body.end());
                 produced.push_back(close);
                 if (produced.size() > production) {
-                    tracebacks_.emplace_back(Traceback::Type::Memory, mouth.lookahead().location,
+                    tracebacks.emplace_back(Traceback::Type::Memory, mouth.lookahead().location,
                                              std::format("\\foreach would produce past the limit of {} tokens", production));
                     return;
                 }

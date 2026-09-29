@@ -14,7 +14,7 @@ int main() {
         const bool clean = vm.evaluate("\\set\\integer0 = \\evaluate{6*7}\\begin{document}Hello\\end{document}");
         assert((clean && !vm.error()) && "a document expands cleanly");
         assert((vm.consumed() > 0) && "and the tokens it read are counted");
-        assert((vm.expander().lexicon().resolve(vm.expander().lexicon().intern("\\set")) == "\\set") &&
+        assert((vm.lexicon.resolve(vm.lexicon.intern("\\set")) == "\\set") &&
                "the expander it ran is the VM's own");
     }
 
@@ -24,7 +24,7 @@ int main() {
         const bool clean = vm.evaluate("\\define\\again{x\\again}\\again");
         assert((!clean && vm.error()) && "an endless document is stopped");
         bool named = false;
-        for (const syntax::Traceback& fault : vm.tracebacks()) {
+        for (const syntax::Traceback& fault : vm.traceback()) {
             named = named || fault.format().find("tokens") != std::string::npos;
         }
         assert((named) && "and the ceiling is what it says stopped it");
@@ -34,7 +34,7 @@ int main() {
     {
         sandbox::VM vm({.read = false}, 1024 * 1024);
         assert((!vm.run("anything.tex") && vm.error()) && "reading a file is refused by default");
-        assert((!vm.rules().read) && "which is what the policy says");
+        assert((!vm.policy.read) && "which is what the policy says");
     }
 
     return 0;

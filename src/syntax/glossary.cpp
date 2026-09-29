@@ -14,20 +14,10 @@
 
 namespace syntax {
 
-// #embed is C++26's, and Clang still calls it an extension of its own there.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc23-extensions"
-#endif
-
     /// The glossary, as it stands in assets.
     static constexpr char source[] = {
 #embed "../../assets/glossary.mtex" suffix(,)
         0};
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
     /// How many commands it holds: its lines that begin with a backslash.
     /// Everything else -- a blank line, a comment -- is only for its reader.
@@ -77,7 +67,7 @@ namespace syntax {
 
         // A name the parser reads itself means something already.
         if (mouth.known(token.symbol)) return false;
-        const auto line = catalog.find(token.text);
+        const auto line = catalog.get(token.text);
         if (!line) return false;
 
         // The stream is a stack: the line goes in front of the name, and
@@ -90,8 +80,8 @@ namespace syntax {
         return true;
     }
 
-    std::optional<std::string_view> Glossary::find(const std::string_view name) noexcept {
-        return catalog.find(name);
+    std::optional<std::string_view> Glossary::get(const std::string_view name) noexcept {
+        return catalog.get(name);
     }
 
     std::size_t Glossary::size() noexcept {

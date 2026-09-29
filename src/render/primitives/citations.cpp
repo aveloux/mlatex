@@ -38,8 +38,8 @@ namespace render::primitives {
         // form falls back to the entries' numbers or labels.
         std::vector<const Mark*> found;
         found.reserve(citation.keys.size());
-        const std::string* style = context.variables.find("biblatex.style");
-        bool yeared = context.variables.find("cite.natbib") && !context.variables.find("natbib.numbers") &&
+        const std::string* style = context.variables.get("biblatex.style");
+        bool yeared = context.variables.get("cite.natbib") && !context.variables.get("natbib.numbers") &&
                       (!style || style->starts_with("authoryear") || style->starts_with("apa"));
         for (const std::string& key : citation.keys) {
             const auto mark = marks.find(key);
@@ -136,8 +136,8 @@ namespace render::primitives {
             });
 
         parser.bind("\\bibitem", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // `\\bibitem[Knu84]{knuth}`: a label of the document's own, which
@@ -150,14 +150,14 @@ namespace render::primitives {
 
             const std::string key = syntax::Argument::text(mouth);
             if (key.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\bibitem needs a key");
                 return nullptr;
             }
 
             Mark& mark = marks[key];
             if (mark.defined) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          "Citation `" + key + "' multiply defined");
                 return nullptr;
             }
@@ -192,7 +192,7 @@ namespace render::primitives {
 
             // Blanks right after the key are the source's own layout.
             syntax::Token next = mouth.read();
-            while (next.category == syntax::CatCodes::Category::Space) next = mouth.read();
+            while (next.category == syntax::Catcodes::Category::Space) next = mouth.read();
             if (!next.empty()) mouth.stream().inject(std::span{&next, 1});
 
             const typography::Font* font = context.selection.text();
@@ -201,9 +201,9 @@ namespace render::primitives {
 
             // natbib's author-year list sets no label: each entry hangs, its
             // first line an em left of the rest.
-            const std::string* style = context.variables.find("biblatex.style");
-            hung = !mark.author.empty() && context.variables.find("cite.natbib") &&
-                   !context.variables.find("natbib.numbers") &&
+            const std::string* style = context.variables.get("biblatex.style");
+            hung = !mark.author.empty() && context.variables.get("cite.natbib") &&
+                   !context.variables.get("natbib.numbers") &&
                    (!style || style->starts_with("authoryear") || style->starts_with("apa"));
             layout::Node* label = nullptr;
             if (font && !hung) {
@@ -276,8 +276,8 @@ namespace render::primitives {
         }};
         for (const auto& [name, form] : forms) {
             parser.bind(name, [this, &context, form, name](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 if (mouth.lookahead().is('*')) mouth.read();
@@ -286,7 +286,7 @@ namespace render::primitives {
                 std::size_t given = 0;
                 while (given < notes.size() && mouth.lookahead().is('[')) {
                     for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                        const bool blank = token.category == syntax::CatCodes::Category::Space || token.text == "~";
+                        const bool blank = token.category == syntax::Catcodes::Category::Space || token.text == "~";
                         notes[given] += blank ? std::string_view{" "} : token.text;
                     }
                     ++given;
@@ -302,7 +302,7 @@ namespace render::primitives {
                     if (!key.empty()) citation.keys.emplace_back(key);
                 }
                 if (citation.keys.empty()) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              std::format("{} needs a key", name));
                 }
 
@@ -331,7 +331,7 @@ namespace render::primitives {
 
         // \nocite: keys listed without being cited, or `*` for every entry of
         // every file; biblatex's \addbibresource, a file its list is read from.
-        parser.mouth().bind("\\nocite", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\nocite", [this](syntax::Mouth& mouth) {
             const std::string written = syntax::Argument::text(mouth);
             for (const auto piece : std::views::split(written, ',')) {
                 std::string_view key(piece.begin(), piece.end());
@@ -340,7 +340,7 @@ namespace render::primitives {
                 if (!key.empty()) extra.emplace_back(key);
             }
         });
-        parser.mouth().bind("\\addbibresource", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\addbibresource", [this](syntax::Mouth& mouth) {
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             resources.push_back(syntax::Argument::text(mouth));
         });
@@ -375,7 +375,7 @@ namespace render::primitives {
                 }
                 if (!text && context.disk) text = context.disk(name);
                 if (!text) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                              std::format("No bibliography file named '{}' could be read", name));
                     continue;
                 }
@@ -518,10 +518,10 @@ namespace render::primitives {
             // alpha's labels for alphabetic; in the order cited for nature,
             // science, the physics styles and `sorting=none`; plain's else.
             std::string style = "plain";
-            if (const std::string* named = context.variables.find("bibliography.style")) style = *named;
-            if (const std::string* named = context.variables.find("biblatex.style")) {
+            if (const std::string* named = context.variables.get("bibliography.style")) style = *named;
+            if (const std::string* named = context.variables.get("biblatex.style")) {
                 const std::string_view picked = *named;
-                const std::string* sorting = context.variables.find("biblatex.sorting");
+                const std::string* sorting = context.variables.get("biblatex.sorting");
                 style = picked.starts_with("authoryear") || picked.starts_with("apa") || picked.starts_with("chicago") ||
                                 picked.starts_with("harvard") || picked.starts_with("authortitle")
                             ? "plainnat"
@@ -549,7 +549,7 @@ namespace render::primitives {
             // An entry knows its author and year whenever a citation may name
             // them: in natbib's styles, and in biblatex's numeric one too,
             // whose \\textcite writes `Knuth [1]`.
-            const bool named = natural || context.variables.find("biblatex.style") != nullptr;
+            const bool named = natural || context.variables.get("biblatex.style") != nullptr;
             const bool ordered = style.starts_with("unsrt") || style == "ieeetr" || style == "IEEEtran" ||
                                  style.starts_with("apsrev") || style.starts_with("aip") || style == "naturemag" ||
                                  (house == House::Elsevier && !natural);
@@ -1082,7 +1082,7 @@ namespace render::primitives {
             for (const auto& [key, place] : wanted) {
                 if (std::ranges::none_of(chosen, [&key](const Entry& entry) { return entry.key == key; }) &&
                     !marks[key].defined) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                              std::format("Citation `{}' undefined", key));
                 }
             }
@@ -1091,7 +1091,7 @@ namespace render::primitives {
         };
 
         parser.bind("\\bibliography", [compile, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             std::vector<std::string> files;
             for (const auto piece : std::views::split(syntax::Argument::text(mouth), ',')) {
                 std::string file(piece.begin(), piece.end());
@@ -1119,7 +1119,7 @@ namespace render::primitives {
             });
             if (!named) {
                 std::string job;
-                if (const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon().intern("\\jobname"))) {
+                if (const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon.intern("\\jobname"))) {
                     for (const syntax::Token& token : macro->body) job += token.text;
                 }
                 if (const std::string* made = job.empty() ? nullptr : readable(job + ".bbl")) {
@@ -1134,7 +1134,7 @@ namespace render::primitives {
         // for none, `bibintoc` listed in the contents, `title={...}` its own.
         parser.bind("\\printbibliography", [this, compile](syntax::Parser& parser) -> syntax::Node* {
             std::string options;
-            for (const syntax::Token& token : parser.mouth().argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token& token : parser.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') options += ' ';
             }
@@ -1156,7 +1156,7 @@ namespace render::primitives {
                 heading = "\\csname\\@bibkind\\endcsname*{" + title + "}" +
                           (kind.contains("intoc") ? "\\addcontentsline{toc}{\\@bibkind}{" + title + "}" : "");
             }
-            compile(parser.mouth(), resources);
+            compile(parser.mouth, resources);
             return nullptr;
         });
 

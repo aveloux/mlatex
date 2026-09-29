@@ -45,14 +45,14 @@ int main() {
         }
         assert((text.find("Welcome") != std::string::npos && text.find("second") != std::string::npos) &&
                "the text is kept as written");
-        assert((harness.parser.tracebacks().empty()) && "and nothing is reported");
+        assert((harness.parser.traceback().empty()) && "and nothing is reported");
     }
 
     // A command a module binds builds its own node.
     {
         Harness harness;
         harness.parser.bind("\\mark", [](syntax::Parser& parser) -> syntax::Node* {
-            auto* node = parser.arena().compose<syntax::Node>();
+            auto* node = parser.arena.compose<syntax::Node>();
             node->type = syntax::Node::Type::Directive;
             return node;
         });
@@ -65,7 +65,7 @@ int main() {
         Harness harness;
         const auto nodes = harness.parse("before \\nosuch after");
         bool named = false;
-        for (const syntax::Traceback& fault : harness.parser.tracebacks()) {
+        for (const syntax::Traceback& fault : harness.parser.traceback()) {
             named = named || fault.format().find("\\nosuch") != std::string::npos;
         }
         assert((named) && "an unknown command is reported by name");

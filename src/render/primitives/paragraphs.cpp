@@ -44,10 +44,10 @@ namespace render::primitives {
 
         for (const auto& [name, command, justification] : switches) {
             parser.bind(name, [command, justification](syntax::Parser& parser) -> syntax::Node* {
-                memory::Arena& arena = parser.arena();
+                memory::Arena& arena = parser.arena;
                 auto* node = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 node->directive({.command = command, .justification = justification});
-                return directive(arena, node, parser.mouth().lookahead().location);
+                return directive(arena, node, parser.mouth.lookahead().location);
             });
         }
 
@@ -61,8 +61,8 @@ namespace render::primitives {
 
         for (const auto& [name, trailing] : edges) {
             parser.bind(name, [this, &context, trailing, name](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // The `=` is noise: read it if it is there, put back what is not.
@@ -71,7 +71,7 @@ namespace render::primitives {
 
                 const auto scanned = syntax::Number::dimension(mouth, context.registers);
                 if (!scanned) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Dimension, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Dimension, origin,
                                              std::string(name) + " needs a dimension");
                     return nullptr;
                 }

@@ -121,7 +121,7 @@ int main() {
         const auto points = [](const layout::Node* line) {
             std::vector<std::uint32_t> found;
             for (const layout::Node* node : line->box().list) {
-                if (node->type() == layout::Node::Type::Glyph) found.push_back(node->glyph().point);
+                if (node->type == layout::Node::Type::Glyph) found.push_back(node->glyph().point);
             }
             return found;
         };

@@ -41,7 +41,7 @@ namespace render::primitives {
         if (form == Form::Number || mark.kind.empty()) return number;
 
         // The name the document or cleveref gave the kind, or the kind itself.
-        const std::string* named = context.variables.find((form == Form::Capital ? "Cref." : "cref.") + mark.kind);
+        const std::string* named = context.variables.get((form == Form::Capital ? "Cref." : "cref.") + mark.kind);
         std::string name = named ? *named : mark.kind;
         if (!named && form == Form::Capital && !name.empty() && name[0] >= 'a' && name[0] <= 'z') {
             name[0] = static_cast<char>(name[0] - 'a' + 'A');
@@ -51,9 +51,9 @@ namespace render::primitives {
 
     References::Hyperlink References::hyperlink(Context& context, const std::string_view target, const std::size_t anchor,
                                                 const std::string_view kind) {
-        if (!context.variables.find("links")) return {};
+        if (!context.variables.get("links")) return {};
         const auto option = [&context](const std::string_view key) {
-            return context.variables.find("hyperref." + std::string(key));
+            return context.variables.get("hyperref." + std::string(key));
         };
         const auto on = [&option](const std::string_view key) {
             const std::string* value = option(key);
@@ -103,13 +103,13 @@ namespace render::primitives {
     }
 
     void References::operator()(syntax::Parser& parser, Context& context) const {
-        parser.mouth().bind("\\label", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\label", [this, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
 
             Mark& mark = marks[name];
             if (mark.defined) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          "Label `" + name + "' multiply defined");
                 return;
             }
@@ -127,8 +127,8 @@ namespace render::primitives {
             } else {
                 mark.anchor = context.anchors++;
                 waiting.push_back(mark.anchor);
-                const syntax::Token token{.symbol = place, .category = syntax::CatCodes::Category::Escape,
-                                          .text = mouth.lexicon().resolve(place)};
+                const syntax::Token token{.symbol = place, .category = syntax::Catcodes::Category::Escape,
+                                          .text = mouth.lexicon.resolve(place)};
                 mouth.stream().inject(std::span{&token, 1});
             }
 
@@ -150,7 +150,7 @@ namespace render::primitives {
         // A text given further on than it is used, by key: \@forward leaves
         // it waiting, as a reference waits for its label, and \@fulfil
         // gives it, expanded.
-        parser.mouth().bind("\\@fulfil", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\@fulfil", [this, &context](syntax::Mouth& mouth) {
             Mark& mark = forwards[syntax::Argument::text(mouth)];
             mark.title = syntax::Argument::expanded(mouth);
             mark.defined = true;
@@ -158,22 +158,22 @@ namespace render::primitives {
             mark.references.clear();
         });
         parser.bind("\\@forward", [this](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            Mark& mark = forwards[syntax::Argument::text(parser.mouth())];
+            memory::Arena& arena = parser.arena;
+            Mark& mark = forwards[syntax::Argument::text(parser.mouth)];
             auto* text = arena.compose<syntax::Node>(syntax::Node::Type::Text,
                                                      mark.defined ? arena.copy(mark.title) : std::string_view{"??"},
-                                                     parser.mouth().lookahead().location);
+                                                     parser.mouth.lookahead().location);
             if (!mark.defined) mark.references.emplace_back(text, Form::Title);
             return text;
         });
 
         parser.bind(place, [this](syntax::Parser& parser) -> syntax::Node* {
             if (waiting.empty()) return nullptr;
-            memory::Arena& arena = parser.arena();
+            memory::Arena& arena = parser.arena;
             auto* anchor = arena.compose<layout::Node>(layout::Node::Type::Directive);
             anchor->directive({.command = layout::Node::Directive::Command::Anchor, .index = waiting.back()});
             waiting.pop_back();
-            return directive(arena, anchor, parser.mouth().lookahead().location);
+            return directive(arena, anchor, parser.mouth.lookahead().location);
         });
 
         // `\\ref` is the number alone; `\\eqref` puts it in the parentheses an
@@ -196,8 +196,8 @@ namespace render::primitives {
 
         for (const auto& [name, form, enclosed] : forms) {
             parser.bind(name, [this, &context, form, enclosed](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // hyperref's starred forms are the same reference, unlinked.
@@ -234,18 +234,18 @@ namespace render::primitives {
         // Without hyperref, the text alone.
         for (const bool address : {true, false}) {
             parser.bind(address ? "\\@link" : "\\@linkto", [this, &context, address](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
                 // The address as written, `\#` and `\_` their characters.
                 std::string target;
                 for (const syntax::Token& token : mouth.argument({}, 0)) {
-                    target += token.category == syntax::CatCodes::Category::Escape && token.text.size() == 2
+                    target += token.category == syntax::Catcodes::Category::Escape && token.text.size() == 2
                                   ? token.text.substr(1) : token.text;
                 }
                 syntax::Token open = mouth.read();
-                while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+                while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+                if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                     if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                     return nullptr;
                 }
@@ -269,7 +269,7 @@ namespace render::primitives {
             for (const auto& [label, origin] : awaited) {
                 if (marks[label].defined || std::ranges::contains(said, label)) continue;
                 said.push_back(label);
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          "Reference `" + label + "' undefined");
             }
         });

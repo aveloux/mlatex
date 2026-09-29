@@ -82,7 +82,7 @@ namespace syntax::primitives {
         static constexpr int precision = 6;                ///< Decimal places a value keeps.
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief State threaded through one evaluation.
@@ -158,7 +158,7 @@ namespace syntax::primitives {
 
         mutable std::string grouping{","};   ///< Between each three digits of the whole part.
         mutable std::string point{"."};      ///< Between the whole part and the fraction.
-        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
     };
 
 }

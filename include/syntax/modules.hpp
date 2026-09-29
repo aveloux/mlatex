@@ -20,6 +20,6 @@ namespace syntax::modules {
     ///             `amsthm/main.mtex`.
     /// @return Its text, or std::nullopt when no such file is embedded.
     /// @complexity O(1) average.
-    [[nodiscard]] std::optional<std::string_view> find(std::string_view name) noexcept;
+    [[nodiscard]] std::optional<std::string_view> get(std::string_view name) noexcept;
 
 }

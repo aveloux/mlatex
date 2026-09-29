@@ -22,8 +22,8 @@ namespace render::layout {
         const Typesetter& typesetter,
         const Configuration& page
     ) noexcept
-        : arena(arena), scratch(scratch), shaper(shaper), typesetter(typesetter),
-          ledger(arena), words(arena, 4096), configuration_(page) {
+        : configuration(page), arena(arena), scratch(scratch), shaper(shaper), typesetter(typesetter),
+          ledger(arena), words(arena, 4096) {
         pending.reserve(1024);
     }
 
@@ -66,7 +66,7 @@ namespace render::layout {
             const std::size_t first = pending.size();
             append(text, font, size, nullptr);
             for (std::size_t index = first; index < pending.size(); ++index) {
-                if (pending[index]->type() != Node::Type::Glyph) continue;
+                if (pending[index]->type != Node::Type::Glyph) continue;
                 Node::Glyph mark = pending[index]->glyph();
                 mark.color = *color;
                 auto* copy = arena.compose<Node>(Node::Type::Glyph);
@@ -88,7 +88,7 @@ namespace render::layout {
             known.remove_prefix(first == std::string_view::npos ? known.size() : first);
         }
         const Ledger::Key key{.font = &font, .text = known, .size = size};
-        if (const memory::Slice<Node*> cached = ledger.find(key); !cached.empty()) {
+        if (const memory::Slice<Node*> cached = ledger.get(key); !cached.empty()) {
             pending.insert(pending.end(), cached.begin(), cached.end());
             if (const std::size_t end = text.find_last_not_of(" \t\n"); end != std::string_view::npos) {
                 factor = weigh(text.substr(0, end + 1), factor);
@@ -106,7 +106,7 @@ namespace render::layout {
             const memory::Slice<Node*> shaped = arena.allocate<Node*>(pending.size() - start);
             std::copy(pending.begin() + static_cast<std::ptrdiff_t>(start), pending.end(),
                       shaped.begin());
-            ledger.insert(key, shaped);
+            ledger.set(key, shaped);
         }
     }
 
@@ -124,7 +124,7 @@ namespace render::layout {
         const memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
         for (std::size_t index = 0; index < nodes.size(); ++index) {
             slice[index] = nodes[index];
-            if (!color || nodes[index]->type() != Node::Type::Glyph) continue;
+            if (!color || nodes[index]->type != Node::Type::Glyph) continue;
             Node::Glyph mark = nodes[index]->glyph();
             mark.color = *color;
             auto* copy = arena.compose<Node>(Node::Type::Glyph);
@@ -164,8 +164,8 @@ namespace render::layout {
     void Document::divide(std::vector<Node*>& into, const std::string_view text, const typography::Font& font,
                           const bool opening) {
         const std::size_t first = into.size();
-        const typography::Font* fonts[] = {&font, fallback_};
-        const std::size_t faces = fallback_ && fallback_ != &font ? 2 : 1;
+        const typography::Font* fonts[] = {&font, fallback};
+        const std::size_t faces = fallback && fallback != &font ? 2 : 1;
 
         // One piece of the run -- a word, a dash, a quotation mark, the space
         // between two words -- as the nodes it sets as, shaped and hyphenated
@@ -177,7 +177,7 @@ namespace render::layout {
         // one entry.
         const auto piece = [&](const std::string_view part, const bool breakable) -> memory::Slice<Node*> {
             const Ledger::Key known{.font = &font, .text = part, .size = font.size()};
-            if (const memory::Slice<Node*> cached = words.find(known); !cached.empty()) return cached;
+            if (const memory::Slice<Node*> cached = words.get(known); !cached.empty()) return cached;
 
             const memory::Slice<Node*> glyphs = shaper.shape(memory::Slice{fonts, faces}, part, {});
             if (glyphs.empty()) return {};
@@ -276,7 +276,7 @@ namespace render::layout {
                 }
             }
 
-            words.insert(known, nodes);
+            words.set(known, nodes);
             return nodes;
         };
 
@@ -300,7 +300,7 @@ namespace render::layout {
                 // and a third of a space more after a stop or a colon.
                 if (const memory::Slice<Node*> space = piece(" ", false); !space.empty()) {
                     Node* gap = space[0];
-                    if (factor != 1000 && gap->type() == Node::Type::Glue) {
+                    if (factor != 1000 && gap->type == Node::Type::Glue) {
                         Node::Glue spread = gap->glue();
                         const float ratio = static_cast<float>(factor) / 1000.0f;
                         if (factor >= 2000) spread.width += spread.width / 3.0f;
@@ -406,7 +406,7 @@ namespace render::layout {
 
         // \abovedisplayskip and \belowdisplayskip: the body's size either
         // side, as LaTeX's classes set them, giving a little and taking half.
-        const float skip = configuration_.size;
+        const float skip = configuration.size;
         const auto space = [this, skip] {
             auto* glue = arena.compose<Node>(Node::Type::Glue);
             glue->glue({.width = skip, .stretch = skip * 0.2f, .shrink = skip * 0.5f});
@@ -419,11 +419,11 @@ namespace render::layout {
 
     void Document::append(Node* node, const bool block) {
         if (!node) return;
-        if (node->type() != Node::Type::Directive) factor = 1000;
+        if (node->type != Node::Type::Directive) factor = 1000;
 
         // An instruction, not material: it changes how the paragraphs from
         // here on are assembled and takes no room of its own.
-        if (node->type() == Node::Type::Directive) {
+        if (node->type == Node::Type::Directive) {
             const Node::Directive& order = node->directive();
             switch (order.command) {
                 case Node::Directive::Command::Indent:
@@ -434,7 +434,7 @@ namespace render::layout {
                         suppression = false;
                     } else {
                         auto* space = arena.compose<Node>(Node::Type::Kern);
-                        space->kern({.width = configuration_.indent});
+                        space->kern({.width = configuration.indent});
                         pending.push_back(space);
                     }
                     break;
@@ -533,7 +533,7 @@ namespace render::layout {
         Line::reorder(arena, node, reversed);
 
         const float room = column() - margin - gutter;
-        const bool material = node->type() == Node::Type::Box || node->type() == Node::Type::Bitmap;
+        const bool material = node->type == Node::Type::Box || node->type == Node::Type::Bitmap;
         if (material && Line::advance(node) < room - 0.5f &&
             (justification == Node::Justification::Center || justification == Node::Justification::Right ||
              margin > 0.0f || gutter > 0.0f || reversed)) {
@@ -570,7 +570,7 @@ namespace render::layout {
         // Text straight after a display or a table carries on from it rather
         // than starting afresh, so LaTeX does not indent it. Space and page
         // breaks are not material and leave the rule as it was.
-        if (node->type() == Node::Type::Box) indentation = false;
+        if (node->type == Node::Type::Box) indentation = false;
     }
 
     void Document::separate() {
@@ -586,13 +586,13 @@ namespace render::layout {
         // only a justified paragraph has one: LaTeX's ragged and centred
         // settings take it away.
         const bool indented = indentation && justification == Node::Justification::Full &&
-                              configuration_.indent > 0.0f;
+                              configuration.indent > 0.0f;
         const std::size_t lead = indented ? 1 : 0;
 
         const memory::Slice<Node*> content = arena.allocate<Node*>(pending.size() + lead);
         if (indented) {
             auto* space = arena.compose<Node>(Node::Type::Kern);
-            space->kern({.width = configuration_.indent});
+            space->kern({.width = configuration.indent});
             content[0] = space;
         }
         std::copy(pending.begin(), pending.end(), content.begin() + lead);
@@ -601,7 +601,7 @@ namespace render::layout {
         auto* element = arena.compose<Element>();
         element->type = Element::Type::Paragraph;
         element->paragraph = arena.compose<Paragraph>(arena, content, justification, margin, gutter, reversed);
-        element->columns = split ? split : configuration_.columns;
+        element->columns = split ? split : configuration.columns;
         attach(element);
 
         indentation = true;
@@ -615,7 +615,7 @@ namespace render::layout {
 
         for (Element* element = head; element; element = element->next) {
             if (element->type == Element::Type::Paragraph && element->paragraph) {
-                element->paragraph->layout(scratch, column(element->columns), configuration_.leading);
+                element->paragraph->layout(scratch, column(element->columns), configuration.leading);
             }
         }
     }

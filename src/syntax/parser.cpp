@@ -17,16 +17,16 @@
 namespace syntax {
 
     Parser::Parser(Mouth& mouth, memory::Arena& arena)
-        : mouth_(mouth), arena_(arena) {
-        symbol_ = mouth_.lexicon().intern("\\par");
-        assign = mouth_.lexicon().intern("\\@set");
-        mouth_.reader.means = [this](const Symbol symbol) {
+        : mouth(mouth), arena(arena) {
+        paragraph = mouth.lexicon.intern("\\par");
+        assign = mouth.lexicon.intern("\\@set");
+        mouth.reader.means = [this](const Symbol symbol) {
             return symbol < handlers.size() && handlers[symbol] != nullptr;
         };
         // Copied before bind() may grow the table out from under it; a
         // source with no meaning here takes the name's away, as TeX's
         // `\let\name\undefined` does.
-        mouth_.reader.lend = [this](const Symbol name, const Symbol source) {
+        mouth.reader.lend = [this](const Symbol name, const Symbol source) {
             Handler handler = source < handlers.size() && handlers[source] ? *handlers[source] : Handler{};
             const bool meant = static_cast<bool>(handler);
             if (meant || name < handlers.size()) bind(name, std::move(handler));
@@ -36,7 +36,7 @@ namespace syntax {
     }
 
     Parser::~Parser() {
-        mouth_.reader = {};
+        mouth.reader = {};
     }
 
     memory::Slice<Node*> Parser::parse(const char closing) {
@@ -71,23 +71,23 @@ namespace syntax {
         std::uint64_t seen = 0;
         auto flush = [&] {
             if (!buffer.empty()) {
-                text->value = arena_.copy(buffer);
+                text->value = arena.copy(buffer);
                 nodes.push_back(text);
                 buffer.clear();
             }
         };
 
         while (true) {
-            const Token token = mouth_.expand();
+            const Token token = mouth.expand();
 
-            if (mouth_.error()) {
+            if (mouth.error) {
                 flush();
                 Logger::log(Logger::Type::Parser, Logger::Level::Error,
                             "Parsing abandoned: expansion aborted");
                 break;
             }
 
-            if (closing != 0 && token.is(CatCodes::Category::Group, closing)) {
+            if (closing != 0 && token.is(Catcodes::Category::Group, closing)) {
                 flush();
                 terminated = true;
                 break;
@@ -110,43 +110,43 @@ namespace syntax {
             // A character a document made ordinary -- `\catcode`\$=12` --
             // is text, whatever the character means otherwise.
             if (token.symbol < handlers.size() && handlers[token.symbol] &&
-                token.category != CatCodes::Category::Other && token.category != CatCodes::Category::Letter) {
+                token.category != Catcodes::Category::Other && token.category != Catcodes::Category::Letter) {
                 flush();
                 Logger::log(Logger::Type::Parser, Logger::Level::Debug,
                             "Dispatching custom node handler for '{}'", token.text);
                 if (Node* node = (*handlers[token.symbol])(*this)) {
                     // A block standing on its own ends the paragraph it
                     // interrupts; text a command set starts one.
-                    if (node->display) mouth_.vertical(true);
-                    if (node->type == Node::Type::Text) mouth_.vertical(false);
+                    if (node->display) mouth.vertical = true;
+                    if (node->type == Node::Type::Text) mouth.vertical = false;
                     nodes.push_back(node);
                 }
                 continue;
             }
 
-            if (token.symbol == symbol_) {
+            if (token.symbol == paragraph) {
                 flush();
-                mouth_.vertical(true);
+                mouth.vertical = true;
                 Logger::log(Logger::Type::Parser, Logger::Level::Debug,
                             "Constructed Paragraph node at line {} column {}",
                             token.location.line, token.location.column);
-                nodes.push_back(arena_.compose<Node>(
+                nodes.push_back(arena.compose<Node>(
                     Node::Type::Paragraph, std::string_view{}, token.location, memory::Slice<Node*>{}));
                 continue;
             }
 
-            if (token.category == CatCodes::Category::Escape) {
+            if (token.category == Catcodes::Category::Escape) {
                 flush();
 
                 // A register's name standing on its own is an assignment to
                 // it, as TeX reads one: `\parskip=6pt`, `\count0 5`.
-                const semantics::Registers& registers = mouth_.state().registers();
+                const semantics::Registers& registers = mouth.state.registers;
                 if (registers.target(token.symbol) || registers.bank(token.symbol)) {
                     const std::array<Token, 2> assignment{
-                        Token{assign, CatCodes::Category::Escape, token.location, mouth_.lexicon().resolve(assign)},
+                        Token{assign, Catcodes::Category::Escape, token.location, mouth.lexicon.resolve(assign)},
                         token,
                     };
-                    mouth_.stream().inject(std::span{assignment});
+                    mouth.stream().inject(std::span{assignment});
                     continue;
                 }
 
@@ -154,7 +154,7 @@ namespace syntax {
                 // TeX's \relax does not.
                 if (token.symbol == none) continue;
 
-                if (tracebacks_.size() < tolerance) {
+                if (tracebacks.size() < tolerance) {
                     const std::string message =
                         "Undefined control sequence " + std::string(token.text);
 
@@ -162,10 +162,10 @@ namespace syntax {
                                 "Parsing error at line {} column {}: {}",
                                 token.location.line, token.location.column, message);
 
-                    tracebacks_.emplace_back(Traceback::Type::Macro, token.location, message);
+                    tracebacks.emplace_back(Traceback::Type::Macro, token.location, message);
                 }
 
-                if (tracebacks_.size() >= tolerance) {
+                if (tracebacks.size() >= tolerance) {
                     Logger::log(Logger::Type::Parser, Logger::Level::Error,
                                 "Too many errors; abandoning this parse pass");
                     break;
@@ -179,13 +179,13 @@ namespace syntax {
             if (changes && *changes != seen) flush();
             if (buffer.empty()) {
                 position = token.location;
-                text = arena_.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node*>{});
+                text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node*>{});
                 if (stamp) stamp(*text);
                 if (changes) seen = *changes;
             }
             // A character starts a paragraph; a space between paragraphs
             // does not, as TeX's does not.
-            if (token.category != CatCodes::Category::Space) mouth_.vertical(false);
+            if (token.category != Catcodes::Category::Space) mouth.vertical = false;
             buffer += token.text;
         }
 
@@ -193,10 +193,10 @@ namespace syntax {
             const std::string message =
                 std::string("Unclosed group: expected '") + closing + "' before end of input";
             Logger::log(Logger::Type::Parser, Logger::Level::Error, "{}", message);
-            tracebacks_.emplace_back(Traceback::Type::Group, position, message);
+            tracebacks.emplace_back(Traceback::Type::Group, position, message);
         }
 
-        memory::Slice<Node*> slice = arena_.allocate<Node*>(nodes.size());
+        memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
         if (!nodes.empty()) {
             std::ranges::copy(nodes, slice.begin());
         }
@@ -208,7 +208,7 @@ namespace syntax {
     }
 
     void Parser::bind(const std::string_view name, Handler handler) {
-        this->bind(mouth_.lexicon().intern(name), std::move(handler));
+        this->bind(mouth.lexicon.intern(name), std::move(handler));
     }
 
     void Parser::bind(const Symbol symbol, Handler handler) {

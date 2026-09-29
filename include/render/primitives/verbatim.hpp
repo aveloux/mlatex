@@ -53,7 +53,7 @@ namespace render::primitives {
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief A block opened and not yet read: what it is, and its options.
@@ -63,7 +63,7 @@ namespace render::primitives {
             bool headed{false};    ///< Its caption, if it has one, has been read.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
         mutable std::vector<Opening> openings{};                ///< Blocks opened, innermost last.
 
         syntax::Symbol start{};   ///< The mark a block's opening leaves; no document can write it.

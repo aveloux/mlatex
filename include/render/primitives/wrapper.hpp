@@ -61,12 +61,12 @@ namespace render::primitives {
     /// render::primitives::Wrapper visuals(lexicon);
     /// render::primitives::Context context{
     ///     document, typesetter, registers, registry, library,
-    ///     shaper, unicodes, core.structure(), core.variables(), arena, selection
+    ///     shaper, unicodes, core.blocks, core.variables, arena, selection
     /// };
     /// visuals(parser, context);
     ///
     /// // ... run the document, then collect what the layer reported ...
-    /// for (const auto& fault : visuals.tracebacks()) {
+    /// for (const auto& fault : visuals.traceback()) {
     ///     std::cerr << fault.format() << '\n';
     /// }
     /// @endcode
@@ -89,7 +89,7 @@ namespace render::primitives {
         ///
         /// @return A fresh vector holding every module's tracebacks.
         /// @complexity O(n) in the number of errors reported.
-        [[nodiscard]] std::vector<syntax::Traceback> tracebacks() const;
+        [[nodiscard]] std::vector<syntax::Traceback> traceback() const;
 
     private:
         Page page;             ///< `\\documentclass`, the sheet and the margins.

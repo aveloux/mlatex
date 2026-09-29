@@ -29,7 +29,7 @@ namespace syntax::primitives {
     }
 
     bool Relay::opens(const Mouth& mouth, const Token& token) const noexcept {
-        return token.category == CatCodes::Category::Escape &&
+        return token.category == Catcodes::Category::Escape &&
                (token.text.starts_with("\\if") || token.text.starts_with("\\@if")) &&
                mouth.macro(token.symbol) == nullptr && mouth.handler(token.symbol) != nullptr &&
                !std::ranges::contains(forms, token.symbol);
@@ -70,8 +70,8 @@ namespace syntax::primitives {
                 // category.
                 const bool start = mouth.handler(first.symbol) != nullptr;
                 const bool end = mouth.handler(second.symbol) != nullptr;
-                const bool named = first.category == CatCodes::Category::Escape &&
-                                   second.category == CatCodes::Category::Escape;
+                const bool named = first.category == Catcodes::Category::Escape &&
+                                   second.category == Catcodes::Category::Escape;
                 condition = start || end ? start && end && mouth.primitive(first.symbol) == mouth.primitive(second.symbol)
                             : named      ? true
                                          : first.text == second.text && first.category == second.category;
@@ -86,8 +86,8 @@ namespace syntax::primitives {
         // TeX's other modes: between paragraphs, or inside one, as the parser
         // has said while reading. No file is ever open to read, so each is at
         // its end.
-        mouth.bind("\\ifhmode", [this, &mouth](Mouth&) { path(mouth, !mouth.formula() && !mouth.vertical()); });
-        mouth.bind("\\ifvmode", [this, &mouth](Mouth&) { path(mouth, !mouth.formula() && mouth.vertical()); });
+        mouth.bind("\\ifhmode", [this, &mouth](Mouth&) { path(mouth, !mouth.formula() && !mouth.vertical); });
+        mouth.bind("\\ifvmode", [this, &mouth](Mouth&) { path(mouth, !mouth.formula() && mouth.vertical); });
         mouth.bind("\\ifinner", [this, &mouth](Mouth&) { path(mouth, false); });
         mouth.bind("\\ifeof", [this, &context, &mouth](Mouth&) {
             static_cast<void>(Number::integer(mouth, context.registers));
@@ -123,7 +123,7 @@ namespace syntax::primitives {
 
             while (true) {
                 if (++count > limit) {
-                    tracebacks_.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
+                    tracebacks.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
                           "\\ifcsname exceeded scan limit");
                     break;
                 }
@@ -131,7 +131,7 @@ namespace syntax::primitives {
                 if (token.symbol == terminate || token.empty()) break;
                 content += token.text;
             }
-            path(mouth, mouth.known(mouth.lexicon().intern(content)));
+            path(mouth, mouth.known(mouth.lexicon.intern(content)));
         });
 
         mouth.bind("\\ifnum", [this, &context, &mouth](Mouth&) {
@@ -144,7 +144,7 @@ namespace syntax::primitives {
                 if (relation.is('<')) condition = *first < *second;
                 else if (relation.is('>')) condition = *first > *second;
                 else if (relation.is('=')) condition = *first == *second;
-                else tracebacks_.emplace_back(Traceback::Type::Argument, relation.location,
+                else tracebacks.emplace_back(Traceback::Type::Argument, relation.location,
                            "\\ifnum needs one of < > = between its operands");
             }
             path(mouth, condition);
@@ -160,7 +160,7 @@ namespace syntax::primitives {
                 if (relation.is('<')) condition = *first < *second;
                 else if (relation.is('>')) condition = *first > *second;
                 else if (relation.is('=')) condition = *first == *second;
-                else tracebacks_.emplace_back(Traceback::Type::Argument, relation.location,
+                else tracebacks.emplace_back(Traceback::Type::Argument, relation.location,
                            "\\ifdim needs one of < > = between its operands");
             }
             path(mouth, condition);
@@ -184,7 +184,7 @@ namespace syntax::primitives {
 
             while (remaining > 0) {
                 if (++count > limit) {
-                    tracebacks_.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
+                    tracebacks.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
                           "\\ifcase exceeded scan limit");
                     return;
                 }
@@ -219,14 +219,14 @@ namespace syntax::primitives {
 
         while (true) {
             if (++count > limit) {
-                tracebacks_.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
                       "conditional skip exceeded scan limit");
                 return;
             }
 
             const Token token = mouth.read();
             if (token.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::End, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::End, mouth.lookahead().location,
                       "conditional reached the end of the document without \\fi");
                 return;
             }
@@ -250,14 +250,14 @@ namespace syntax::primitives {
 
         while (true) {
             if (++count > limit) {
-                tracebacks_.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Recursion, mouth.lookahead().location,
                       "conditional drop exceeded scan limit");
                 return;
             }
 
             const Token token = mouth.read();
             if (token.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::End, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::End, mouth.lookahead().location,
                       "conditional reached the end of the document without \\fi");
                 return;
             }

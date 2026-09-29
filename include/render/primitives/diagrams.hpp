@@ -64,7 +64,7 @@ namespace render::primitives {
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One arrow: the cells it joins, counted from 1, how it is
@@ -138,7 +138,7 @@ namespace render::primitives {
         /// @return The name of its root's node.
         static std::string plant(Branch& tree, float left, int depth, int& count, std::string& out);
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
     };
 
 }

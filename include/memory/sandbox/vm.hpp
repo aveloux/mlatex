@@ -34,7 +34,7 @@ namespace sandbox {
     /// @code
     /// sandbox::VM machine;
     /// if (!machine.evaluate("\\set\\integer0 = \\evaluate{6*7}")) {
-    ///     for (const auto& fault : machine.tracebacks()) {
+    ///     for (const auto& fault : machine.traceback()) {
     ///         std::cerr << fault.format() << '\n';
     ///     }
     /// }
@@ -65,12 +65,9 @@ namespace sandbox {
         ///         error recorded, when the policy denies reading.
         [[nodiscard]] bool run(std::string_view path);
 
-        /// @brief The policy this machine was built with.
-        [[nodiscard]] const Policy& rules() const noexcept { return policy; }
-
         /// @brief Every error from the last run: the expander's and the wrapper's.
         /// @complexity O(n) in the number of errors.
-        [[nodiscard]] std::vector<syntax::Traceback> tracebacks() const;
+        [[nodiscard]] std::vector<syntax::Traceback> traceback() const;
 
         /// @brief Did the last run report anything?
         [[nodiscard]] bool error() const noexcept;
@@ -78,20 +75,18 @@ namespace sandbox {
         /// @brief Tokens consumed so far, against Policy::tokens.
         [[nodiscard]] std::uint64_t consumed() const noexcept { return served; }
 
-        /// @brief The expander, for callers that want to drive it directly.
-        [[nodiscard]] syntax::Mouth& expander() noexcept { return mouth; }
+        const Policy policy;                    ///< How much the document is allowed to do.
+        Allocator allocator;                    ///< The byte budget.
+        memory::Arena arena;                    ///< Where the expander and the lexicon allocate.
+        syntax::semantics::Union state;         ///< Registers, catcodes and scopes.
+        syntax::Lexicon lexicon;                ///< The interning table.
+        syntax::primitives::Wrapper wrapper;    ///< The core primitives.
+        syntax::primitives::Context context;    ///< What the primitives share.
+        syntax::Mouth mouth;                    ///< The expander, for callers that want to drive it directly.
 
     private:
-        Policy policy;
-        Allocator allocator;
-        memory::Arena arena;
-        syntax::semantics::Union state;
-        syntax::Lexicon lexicon;
-        syntax::primitives::Wrapper wrapper;
-        syntax::primitives::Context context;
-        syntax::Mouth mouth;
-        std::uint64_t served{0};
-        std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this machine found.
+        std::uint64_t served{0};                ///< Tokens consumed so far.
+        std::vector<syntax::Traceback> tracebacks{};   ///< Errors this machine found.
     };
 
 }

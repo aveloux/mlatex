@@ -29,7 +29,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers(), core.conditionals(), core.variables()};
+    syntax::primitives::Context context{state.registers, core.relay, core.variables};
     core(mouth, context);
     mouth.ingest(arena.copy(document));
     syntax::Parser parser(mouth, arena);
@@ -54,7 +54,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.tracebacks(), mouth.tracebacks(), core.tracebacks()}) {
+    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
         for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
     }
     return {folded, errors};

@@ -67,8 +67,8 @@ namespace render::primitives {
 
         /// @brief Errors this module has recorded: a key reused, a `.bib`
         ///        file missing, a key cited that no list holds.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -124,7 +124,7 @@ namespace render::primitives {
         mutable float widest{0.0f};                              ///< The widest label, from the list's argument, in points.
         mutable bool hung{false};                                ///< The list is set without labels, each entry hung: natbib's author-year list.
         mutable std::optional<std::string> heading{};            ///< The list's heading as \\printbibliography's options give it, once.
-        mutable std::vector<syntax::Traceback> tracebacks_{};    ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};    ///< Errors this module found.
 
         /// The gap between an entry's "[N]" label and its text -- LaTeX's
         /// `\\labelsep` -- in ems, and the space between two entries,

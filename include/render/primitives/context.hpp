@@ -203,7 +203,7 @@ namespace render::primitives {
     ///
     /// Render modules take the Parser rather than the Mouth because most of
     /// them produce a node. The ones that only assign -- the page geometry,
-    /// the font selection -- reach the expander through `parser.mouth()`.
+    /// the font selection -- reach the expander through `parser.mouth`.
     template <typename Module>
     concept Primitive = std::invocable<Module, syntax::Parser&, Context&>;
 
@@ -317,7 +317,7 @@ namespace render::primitives {
                        std::from_chars(factor.data(), factor.data() + factor.size(), amount).ec != std::errc{}) {
                 amount = 1.0f;
             }
-            return amount * context.document.configuration().indent;
+            return amount * context.document.configuration.indent;
         }
 
         // Read as an expression, so a length may be written as the calc
@@ -325,9 +325,9 @@ namespace render::primitives {
         // its end is a mark no document can write, and whatever of the text
         // is left before it -- a glue's `plus 2pt` -- is read and let go,
         // never set as words.
-        const syntax::Symbol end = mouth.lexicon().intern("\\measure:end");
-        const syntax::Token mark{.symbol = end, .category = syntax::CatCodes::Category::Escape,
-                                 .text = mouth.lexicon().resolve(end)};
+        const syntax::Symbol end = mouth.lexicon.intern("\\measure:end");
+        const syntax::Token mark{.symbol = end, .category = syntax::Catcodes::Category::Escape,
+                                 .text = mouth.lexicon.resolve(end)};
         mouth.stream().inject(std::span{&mark, 1});
         mouth.ingest(context.arena.copy("\\dimexpr " + std::string(trimmed) + "\\relax "));
         const auto scanned = syntax::Number::dimension(mouth, context.registers);

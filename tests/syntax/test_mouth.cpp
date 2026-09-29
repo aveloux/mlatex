@@ -36,7 +36,7 @@ int main() {
     // Closing the wrong kind is reported rather than silently accepted, which
     // is what lets `\begin{a} ... }` be told apart from `\begin{a} ... \end{a}`.
     assert((!mouth.pop(Type::Alignment)) && "closing the wrong kind fails");
-    assert((!mouth.tracebacks().empty()) && "and is reported");
+    assert((!mouth.traceback().empty()) && "and is reported");
     assert((mouth.nesting() == 0) && "the scope is closed all the same");
 
     // A definition made inside a group does not outlive it.

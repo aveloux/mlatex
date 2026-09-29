@@ -140,7 +140,7 @@ namespace render {
     std::string Pdf::render(Composer& composer, const memory::Slice<layout::Pager::Page> pages) {
         if (pages.empty()) return {};
 
-        const layout::Document::Configuration& page = composer.document().configuration();
+        const layout::Document::Configuration& page = composer.document.configuration;
         if (page.width <= 0.0f || page.height <= 0.0f) return {};
 
         File file;
@@ -175,7 +175,7 @@ namespace render {
         // to whichever thread claims it first, and the writing thread claims
         // them too: while the face it has to write next is still being cut
         // elsewhere, it cuts a later one rather than wait for it.
-        const std::vector<Composer::Entry>& faces = composer.faces();
+        const std::vector<Composer::Entry>& faces = composer.faces;
 
         /// @brief One face's cut, and whether it has been made yet.
         struct Cut {
@@ -502,9 +502,9 @@ namespace render {
         // same operator, and a document that never wrote anything but opaque
         // colors reserves none of this at all.
         std::vector<std::size_t> states;
-        states.reserve(composer.opacities().size());
+        states.reserve(composer.opacities.size());
 
-        for (const float value : composer.opacities()) {
+        for (const float value : composer.opacities) {
             const std::size_t state = file.reserve();
             file.open(state);
             file.bytes += "<</Type /ExtGState\n/ca ";
@@ -519,31 +519,31 @@ namespace render {
         // One Image XObject per distinct image an \includegraphics drew,
         // named the way the page descriptions call them: entry `n` is `/Imn`.
         std::vector<std::size_t> pictures;
-        pictures.reserve(composer.pictures().size());
+        pictures.reserve(composer.pictures.size());
 
-        for (const graphics::Image* source : composer.pictures()) {
+        for (const graphics::Image* source : composer.pictures) {
             // The image, already decoded to plain pixels, as an XObject; 0
             // when it could not be compressed into the file.
             const std::size_t object = !source ? 0 : [&file, &picture = *source]() -> std::size_t {
                 // A JPEG kept as it came: its own bytes, which the reader
                 // decodes -- DCTDecode is the compression it already has.
-                if (const std::vector<std::uint8_t>& encoded = picture.encoded(); !encoded.empty()) {
+                if (const std::vector<std::uint8_t>& encoded = picture.encoded; !encoded.empty()) {
                     const std::size_t object = file.reserve();
                     std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
-                    number(extra, picture.width());
+                    number(extra, picture.width);
                     extra += "\n/Height ";
-                    number(extra, picture.height());
-                    extra += picture.components() == 1 ? "\n/ColorSpace /DeviceGray" : "\n/ColorSpace /DeviceRGB";
+                    number(extra, picture.height);
+                    extra += picture.components == 1 ? "\n/ColorSpace /DeviceGray" : "\n/ColorSpace /DeviceRGB";
                     extra += "\n/BitsPerComponent 8\n/Filter /DCTDecode\n";
                     file.stream(object, extra,
                                 std::string_view(reinterpret_cast<const char*>(encoded.data()), encoded.size()));
                     Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                                "Embedded a {}x{} JPEG as it came, in {} bytes", picture.width(), picture.height(),
+                                "Embedded a {}x{} JPEG as it came, in {} bytes", picture.width, picture.height,
                                 encoded.size());
                     return object;
                 }
 
-                const std::vector<std::uint8_t>& pixels = picture.pixels();
+                const std::vector<std::uint8_t>& pixels = picture.pixels;
                 if (pixels.empty()) return 0;
 
                 // The same compression a PNG's own IDAT already used, asked for
@@ -563,15 +563,15 @@ namespace render {
                 const std::size_t object = file.reserve();
 
                 std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
-                number(extra, picture.width());
+                number(extra, picture.width);
                 extra += "\n/Height ";
-                number(extra, picture.height());
+                number(extra, picture.height);
                 extra += "\n/ColorSpace /DeviceRGB\n/BitsPerComponent 8\n/Filter /FlateDecode\n";
 
                 file.stream(object, extra, compressed);
 
                 Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                            "Embedded a {}x{} image in {} bytes", picture.width(), picture.height(), compressed.size());
+                            "Embedded a {}x{} image in {} bytes", picture.width, picture.height, compressed.size());
                 return object;
             }();
             if (object == 0) {
@@ -586,10 +586,10 @@ namespace render {
         // objects it reaches copied in first, each under a number of this
         // file's, and its references renumbered to them.
         std::vector<std::size_t> forms;
-        forms.reserve(composer.drawings().size());
-        for (const graphics::Drawing* drawn : composer.drawings()) {
+        forms.reserve(composer.drawings.size());
+        for (const graphics::Drawing* drawn : composer.drawings) {
             using Value = graphics::Drawing::Value;
-            const std::vector<graphics::Drawing::Object>& objects = drawn->objects();
+            const std::vector<graphics::Drawing::Object>& objects = drawn->objects;
             std::vector<std::size_t> numbers(objects.size());
             for (std::size_t& slot : numbers) slot = file.reserve();
 
@@ -646,7 +646,7 @@ namespace render {
                 }
             }
 
-            const std::string& content = drawn->content();
+            const std::string& content = drawn->content;
             uLongf bound = compressBound(static_cast<uLong>(content.size()));
             std::string compressed(bound, '\0');
             const bool packed = compress2(reinterpret_cast<Bytef*>(compressed.data()), &bound,
@@ -658,17 +658,17 @@ namespace render {
             std::string extra = "/Type /XObject /Subtype /Form /BBox [";
             for (std::size_t corner = 0; corner < 4; ++corner) {
                 if (corner > 0) extra += ' ';
-                fraction(extra, drawn->box()[corner]);
+                fraction(extra, drawn->box[corner]);
             }
             extra += "] /Resources ";
-            if (drawn->resources().type == Value::Type::Null) {
+            if (drawn->resources.type == Value::Type::Null) {
                 extra += "<<>>";
             } else {
-                write(extra, drawn->resources());
+                write(extra, drawn->resources);
             }
-            if (drawn->group().type != Value::Type::Null) {
+            if (drawn->group.type != Value::Type::Null) {
                 extra += " /Group ";
-                write(extra, drawn->group());
+                write(extra, drawn->group);
             }
             extra += packed ? " /Filter /FlateDecode " : " ";
             file.stream(form, extra, packed ? std::string_view(compressed) : std::string_view(content));
@@ -718,7 +718,7 @@ namespace render {
 
         // Where an anchor stands, as a destination a reader goes to: its
         // page, a little above it.
-        const std::vector<Composer::Place>& places = composer.places();
+        const std::vector<Composer::Place>& places = composer.places;
         const auto destination = [&](std::string& out, const std::size_t anchor) {
             if (anchor >= places.size() || places[anchor].page >= sheets.size()) return false;
             out += '[';
@@ -732,7 +732,7 @@ namespace render {
         // The links of each page: an annotation each area they cover, framed
         // as hyperref frames one or not at all, going to an address or to an
         // anchor's place. Each marked to print, as PDF/A has every one.
-        const std::vector<std::vector<Composer::Link>>& links = composer.links();
+        const std::vector<std::vector<Composer::Link>>& links = composer.links;
         std::vector<std::vector<std::size_t>> annotations(sheets.size());
         for (std::size_t sheet = 0; sheet < sheets.size() && sheet < links.size(); ++sheet) {
             for (const Composer::Link& link : links[sheet]) {
@@ -856,7 +856,7 @@ namespace render {
 
         // The outline a reader lists beside the pages: each bookmark under
         // the nearest before it that stands higher, going to its heading.
-        const layout::Document::Metadata& about = composer.document().metadata();
+        const layout::Document::Metadata& about = composer.document.metadata;
         const std::vector<layout::Document::Bookmark>& marks = about.bookmarks;
         std::size_t outline = 0;
         if (!marks.empty()) {

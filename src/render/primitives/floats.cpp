@@ -29,8 +29,8 @@ namespace render::primitives {
 
     syntax::Node* Floats::caption(syntax::Parser& parser, Context& context, const std::string& kind,
                                   const bool ruled) const {
-        syntax::Mouth& mouth = parser.mouth();
-        memory::Arena& arena = parser.arena();
+        syntax::Mouth& mouth = parser.mouth;
+        memory::Arena& arena = parser.arena;
         const memory::Location origin = mouth.lookahead().location;
 
         // `\caption[short]{long}`: the short form is what the list of
@@ -41,16 +41,16 @@ namespace render::primitives {
         }
 
         syntax::Token open = mouth.read();
-        while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-        if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+        while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+        if (!open.is(syntax::Catcodes::Category::Group, '{')) {
             if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
-            tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin, "\\caption needs a brace group");
+            tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "\\caption needs a brace group");
             return nullptr;
         }
 
         const typography::Font* restore = context.selection.text();
         if (!restore) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+            tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                      "\\caption needs a text face to be set in");
             return nullptr;
         }
@@ -95,16 +95,16 @@ namespace render::primitives {
 
         // The caption package's settings: the label's weight, the caption's
         // size, and what stands between the two.
-        const std::string* labelfont = context.variables.find("caption.labelfont");
-        const std::string* font = context.variables.find("caption.font");
-        const std::string* labelsep = context.variables.find("caption.labelsep");
+        const std::string* labelfont = context.variables.get("caption.labelfont");
+        const std::string* font = context.variables.get("caption.font");
+        const std::string* labelsep = context.variables.get("caption.labelsep");
         const bool bold = ruled || (labelfont && labelfont->find("bf") != std::string::npos);
         std::string separator = ruled || sub ? " " : ": ";
         if (labelsep && *labelsep == "period") separator = ". ";
         if (labelsep && (*labelsep == "space" || *labelsep == "quad")) separator = " ";
         if (labelsep && *labelsep == "newline") separator = " ";
 
-        const layout::Document::Configuration& page = context.document.configuration();
+        const layout::Document::Configuration& page = context.document.configuration;
         Styles::Size step = Styles::Size::Normal;
         if (font && font->find("small") != std::string::npos) step = Styles::Size::Small;
         if (font && font->find("footnotesize") != std::string::npos) step = Styles::Size::Footnote;
@@ -273,8 +273,8 @@ namespace render::primitives {
                     // heading is.
                     if (name.ends_with('*')) mouth.ingest("\\@columns1 ");
                     const syntax::Symbol opening = here ? fixed : hold;
-                    const syntax::Token mark{.symbol = opening, .category = syntax::CatCodes::Category::Escape,
-                                             .text = mouth.lexicon().resolve(opening)};
+                    const syntax::Token mark{.symbol = opening, .category = syntax::Catcodes::Category::Escape,
+                                             .text = mouth.lexicon.resolve(opening)};
                     mouth.stream().inject(std::span{&mark, 1});
                 },
                 [this](syntax::Mouth& mouth) {
@@ -285,8 +285,8 @@ namespace render::primitives {
                     // The closing mark goes in first, so it is read after the
                     // closing text and the space below it -- and after the
                     // columns a starred float changed go back as they were.
-                    const syntax::Token mark{.symbol = release, .category = syntax::CatCodes::Category::Escape,
-                                             .text = mouth.lexicon().resolve(release)};
+                    const syntax::Token mark{.symbol = release, .category = syntax::Catcodes::Category::Escape,
+                                             .text = mouth.lexicon.resolve(release)};
                     mouth.stream().inject(std::span{&mark, 1});
                     if (across) mouth.ingest("\\par\\@columns0 ");
                     mouth.ingest(ruled ? "\\par\\vskip 2pt\\hrule height 0.4pt\\vskip 12pt plus 2pt minus 2pt"
@@ -313,7 +313,7 @@ namespace render::primitives {
               std::tuple{fixed, layout::Node::Directive::Command::Hold, true},
               std::tuple{release, layout::Node::Directive::Command::Release, false}}) {
             parser.bind(symbol, [this, command, stays](syntax::Parser& parser) -> syntax::Node* {
-                memory::Arena& arena = parser.arena();
+                memory::Arena& arena = parser.arena;
                 auto* mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 layout::Node::Directive order{.command = command, .fixed = stays};
                 // A Hold says where its float may go, and what kind it is --
@@ -325,7 +325,7 @@ namespace render::primitives {
                     order.index = current.kind == "figure" ? 0 : current.kind == "table" ? 1 : 2;
                 }
                 mark->directive(order);
-                return directive(arena, mark, parser.mouth().lookahead().location);
+                return directive(arena, mark, parser.mouth.lookahead().location);
             });
         }
 
@@ -333,10 +333,10 @@ namespace render::primitives {
         // set before what follows it, on pages of their own. placeins's
         // \\FloatBarrier is this.
         parser.bind("\\@floatbarrier", [](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
+            memory::Arena& arena = parser.arena;
             auto* mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
             mark->directive({.command = layout::Node::Directive::Command::Barrier});
-            return directive(arena, mark, parser.mouth().lookahead().location, true);
+            return directive(arena, mark, parser.mouth.lookahead().location, true);
         });
 
         parser.bind("\\caption", [this, &context](syntax::Parser& parser) -> syntax::Node* {
@@ -347,7 +347,7 @@ namespace render::primitives {
         // The caption package's: a caption of a kind named outright, wherever
         // it stands.
         parser.bind("\\captionof", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            const std::string kind = syntax::Argument::text(parser.mouth());
+            const std::string kind = syntax::Argument::text(parser.mouth);
             return caption(parser, context, kind.empty() ? "figure" : kind, false);
         });
 

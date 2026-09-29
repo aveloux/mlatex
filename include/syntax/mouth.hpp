@@ -36,7 +36,7 @@ namespace syntax {
     ///
     /// @par Scoping
     /// Macro definitions are group-scoped by the same level-stamp scheme
-    /// Registers and CatCodes use: each macro slot records the group depth at
+    /// Registers and Catcodes use: each macro slot records the group depth at
     /// which its current meaning was established, a global definition sets
     /// that stamp to 0, and pop() discards records for slots that have since
     /// been made global. Defining is O(1) whether local or global.
@@ -45,7 +45,7 @@ namespace syntax {
     /// expand() counts the expansions it performs while trying to produce one
     /// token and gives up past #budget, so `\\define\\a{\\a}` terminates instead
     /// of spinning. It also caps how many tokens may be pending at once, which
-    /// catches `\\define\\a{\\a\\a}`. Either sets error(); callers must check it,
+    /// catches `\\define\\a{\\a\\a}`. Either sets #error; callers must check it,
     /// because an abandoned expand() returns an empty token and so is otherwise
     /// indistinguishable from end of input.
     ///
@@ -109,15 +109,6 @@ namespace syntax {
         /// @param arena Allocator for anything the expander composes.
         Mouth(Cursor stream, semantics::Union& state, Lexicon& lexicon, memory::Arena& arena);
 
-        /// @brief The interning table this expander was built with.
-        [[nodiscard]] Lexicon& lexicon() noexcept { return lexicon_; }
-
-        /// @brief The engine state this expander was built with.
-        [[nodiscard]] semantics::Union& state() noexcept { return state_; }
-
-        /// @brief The allocator this expander was built with.
-        [[nodiscard]] memory::Arena& arena() const noexcept { return arena_; }
-
         /// @brief Opens a scope of a given kind.
         ///
         /// The kind is recorded so that pop() can report a mismatch. Passing
@@ -130,7 +121,7 @@ namespace syntax {
         /// @brief Closes a scope and checks its kind.
         /// @param expected The kind the caller believes it is closing.
         /// @return True when the open scope matched; false on a mismatch or an
-        ///         unbalanced pop, both of which are recorded in tracebacks().
+        ///         unbalanced pop, both of which are recorded in traceback().
         /// @complexity O(k) in the number of distinct macros defined inside.
         bool pop(semantics::Scope::Type expected);
 
@@ -153,19 +144,6 @@ namespace syntax {
             return false;
         }
 
-        /// @brief Whether the text stands between paragraphs -- TeX's vertical
-        ///        mode, what `\\ifvmode` asks -- rather than inside one.
-        ///
-        /// The parser says which as it reads: a character starts a
-        /// paragraph, and a paragraph's end or a block standing on its own
-        /// ends one. A document starts between paragraphs.
-        /// @complexity O(1).
-        [[nodiscard]] bool vertical() const noexcept { return vertical_; }
-
-        /// @brief Says whether the text stands between paragraphs.
-        /// @param value True between paragraphs, false inside one.
-        void vertical(const bool value) noexcept { vertical_ = value; }
-
         /// @brief Takes the next token without expanding it.
         /// @return The token, or an empty one at end of input.
         /// @complexity O(1).
@@ -176,7 +154,7 @@ namespace syntax {
         /// Runs handlers and macros until something unexpandable surfaces.
         ///
         /// @return The token, or an empty one at end of input **or** on an
-        ///         abandoned expansion. Check error() to tell those apart.
+        ///         abandoned expansion. Check #error to tell those apart.
         /// @complexity O(1) amortized per token in the common case; bounded by
         ///             #budget expansions before it gives up.
         Token expand();
@@ -200,7 +178,7 @@ namespace syntax {
         /// The cursor is a stack, so the buffer ingested **last** is read
         /// **first**. The tokens view the buffer, which must outlive them.
         ///
-        /// @param source Text to lex. Illegal bytes are reported into tracebacks().
+        /// @param source Text to lex. Illegal bytes are reported into traceback().
         /// @param origin Where every token is to say it came from, in place of
         ///               where each stands in @p source: a Location of line 0
         ///               for text that belongs to no line of the document. Left
@@ -220,7 +198,7 @@ namespace syntax {
         /// @param category  What it now is.
         /// @param global    Whether the change outlives the group it is made in.
         /// @complexity O(n) in the document's tokens still unread.
-        void recategorize(char character, CatCodes::Category category, bool global);
+        void recategorize(char character, Catcodes::Category category, bool global);
 
         /// @brief Attaches a primitive implementation to a name.
         /// @param name    Control sequence, interned on the caller's behalf.
@@ -245,7 +223,7 @@ namespace syntax {
         ///        one.
         /// @param keep True while an `\\edef` reads.
         /// @return What it was before.
-        bool robust(const bool keep) noexcept { return std::exchange(robust_, keep); }
+        bool robust(const bool keep) noexcept { return std::exchange(keeping, keep); }
 
         /// @brief The primitive a name was bound as, followed through lend():
         ///        itself for one bound directly.
@@ -263,7 +241,7 @@ namespace syntax {
         /// @param symbol Interned control sequence.
         /// @param global True to remove it past every open group.
         /// @complexity O(1), global or not.
-        void undefine(Symbol symbol, bool global);
+        void forget(Symbol symbol, bool global);
 
         /// @brief Puts a token by to be read as the innermost open group
         ///        closes: TeX's `\\aftergroup`. Outside every group it is
@@ -282,7 +260,7 @@ namespace syntax {
         /// @param symbol Interned control sequence.
         /// @return The definition, or nullptr when undefined. The pointee
         ///         lives in this object; it is invalidated by the next
-        ///         define() or undefine().
+        ///         define() or forget().
         /// @complexity O(1).
         [[nodiscard]] const Macro* macro(Symbol symbol) const noexcept;
 
@@ -303,13 +281,7 @@ namespace syntax {
         Reader reader{};   ///< The Parser reading from this expander, as far as names go.
 
         /// @brief Errors recorded so far.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
-
-        /// @brief Was an expansion abandoned?
-        /// @return True after a runaway expansion or a pending-token overflow.
-        ///         An empty token from expand() means end of input only when
-        ///         this is false.
-        [[nodiscard]] bool error() const noexcept { return error_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
         /// @brief The raw token stack behind read() and expand().
         ///
@@ -318,7 +290,7 @@ namespace syntax {
         /// included, which is what this exists for. A handler that needs to
         /// push tokens back reaches the same stack's inject() through here
         /// rather than through a second method on Mouth. Everything else
-        /// here is bind(), define() and undefine(), and the plumbing under
+        /// here is bind(), define() and forget(), and the plumbing under
         /// them.
         ///
         /// @return The stream, mutable: reading from it is reading from Mouth.
@@ -336,17 +308,32 @@ namespace syntax {
             std::uint32_t level = 0;                   ///< Level stamp to put back with it.
         };
 
-        Cursor cursor{};                 ///< The token stack being read.
-        semantics::Union& state_;        ///< Registers, catcodes and scopes.
-        Lexicon& lexicon_;               ///< Interning table.
-        memory::Arena& arena_;           ///< Allocator for what handlers compose.
+    public:
+        semantics::Union& state;   ///< Registers, catcodes and scopes, shared with the caller.
+        Lexicon& lexicon;          ///< Interning table, shared with the caller.
+        memory::Arena& arena;      ///< Allocator for what handlers compose.
 
-        Symbol symbol_ = none;   ///< `\\par`, the one name the expander knows by itself.
+        /// Set when an expansion was abandoned: after a runaway expansion or a
+        /// pending-token overflow. An empty token from expand() means end of
+        /// input only when this is false.
+        bool error = false;
+
+        /// Whether the text stands between paragraphs -- TeX's vertical mode,
+        /// what `\\ifvmode` asks -- rather than inside one. The parser says
+        /// which as it reads: a character starts a paragraph, and a
+        /// paragraph's end or a block standing on its own ends one. A
+        /// document starts between paragraphs.
+        bool vertical = true;
+
+    private:
+        Cursor cursor{};           ///< The token stack being read.
+
+        Symbol paragraph = none;   ///< `\\par`, the one name the expander knows by itself.
         Glossary glossary{};     ///< Meanings for the names nothing else here gives one.
 
         std::vector<std::size_t> marks{};                ///< Undo-log height at each open scope.
         std::vector<semantics::Scope::Type> types{}; ///< What each open scope was opened as.
-        std::vector<Traceback> tracebacks_{}; ///< Errors recorded so far.
+        std::vector<Traceback> tracebacks{}; ///< Errors recorded so far.
         std::vector<Record> records{}; ///< The macro undo log.
         std::vector<std::pair<std::size_t, Token>> deferred{};   ///< \\aftergroup's tokens, each with its group's depth.
 
@@ -357,10 +344,7 @@ namespace syntax {
         /// itself when the table grows; null means none.
         std::vector<std::unique_ptr<const Handler>> handlers{};
         std::vector<Symbol> lent{};   ///< By name, the primitive lend() bound it as; none for one bound directly.
-        bool robust_{false};          ///< Robust macros are kept as written: an `\\edef` is reading.
-
-        bool error_ = false; ///< Set when an expansion was abandoned.
-        bool vertical_ = true; ///< Set between paragraphs, cleared inside one.
+        bool keeping{false};          ///< Robust macros are kept as written: an `\\edef` is reading.
 
         std::size_t depth = 0; ///< Re-entrant expand() calls in progress.
         std::size_t limit = 256; ///< Re-entrant expand() calls allowed.

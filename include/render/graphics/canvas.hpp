@@ -35,7 +35,7 @@ namespace render::graphics {
     public:
         /// @param width  The canvas's own width, in points.
         /// @param height The canvas's own height, in points.
-        Canvas(const float width, const float height) noexcept : width_(width), height_(height) {}
+        Canvas(const float width, const float height) noexcept : size{width, height} {}
 
         /// @brief Draws a straight line between two points already in 2D.
         /// @param from, to Endpoints, in the canvas's own coordinates.
@@ -139,9 +139,8 @@ namespace render::graphics {
             Color color;                   ///< Its fill.
         };
 
-        float width_;
-        float height_;
-        std::vector<Segment> segments{};
+        Point2 size;                    ///< The declared size: its width across, its height up.
+        std::vector<Segment> segments{};  ///< Every line drawn, in order.
         std::vector<Label> labels{};    ///< Every box placed, in order.
         std::vector<Region> regions{};  ///< Every region filled, in order.
     };

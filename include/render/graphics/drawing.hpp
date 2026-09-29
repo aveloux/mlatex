@@ -42,13 +42,13 @@ namespace render::graphics {
                 Text,        ///< A string, #text with its delimiters: `(...)` or `<...>`.
                 List,        ///< An array: #items.
                 Table,       ///< A dictionary: #items, keys and values in turn.
-                Reference    ///< An indirect object: #number, one of objects().
+                Reference    ///< An indirect object: #number, one of Drawing::objects.
             };
 
             Type type{Type::Null};         ///< What it is.
             std::string text{};            ///< For Plain, Name and Text: as written.
             std::vector<Value> items{};    ///< For List and Table.
-            std::uint32_t number{0};       ///< For Reference: its index in objects().
+            std::uint32_t number{0};       ///< For Reference: its index in Drawing::objects.
         };
 
         /// @brief One object the page reaches.
@@ -67,34 +67,17 @@ namespace render::graphics {
         ///             the file's length when its cross-reference is broken.
         [[nodiscard]] static std::optional<Drawing> decode(std::span<const std::byte> bytes, int page = 1);
 
-        /// @brief The page's box, in its own points: left, bottom, right, top.
-        [[nodiscard]] const std::array<float, 4>& box() const noexcept { return box_; }
-
         /// @brief How wide the page is, in points.
-        [[nodiscard]] float width() const noexcept { return box_[2] - box_[0]; }
+        [[nodiscard]] float width() const noexcept { return box[2] - box[0]; }
 
         /// @brief How tall the page is, in points.
-        [[nodiscard]] float height() const noexcept { return box_[3] - box_[1]; }
+        [[nodiscard]] float height() const noexcept { return box[3] - box[1]; }
 
-        /// @brief What the page draws: its contents, decompressed and joined.
-        [[nodiscard]] const std::string& content() const noexcept { return content_; }
-
-        /// @brief The page's resources: a Table, or a Reference to one, its
-        ///        references to objects().
-        [[nodiscard]] const Value& resources() const noexcept { return resources_; }
-
-        /// @brief The page's transparency group, or a Null value for none.
-        [[nodiscard]] const Value& group() const noexcept { return group_; }
-
-        /// @brief Every object the resources and the group reach.
-        [[nodiscard]] const std::vector<Object>& objects() const noexcept { return objects_; }
-
-    private:
-        std::array<float, 4> box_{0.0f, 0.0f, 0.0f, 0.0f};   ///< Left, bottom, right, top.
-        std::string content_{};                                  ///< The contents, decompressed.
-        Value resources_{};                                      ///< The resources, renumbered.
-        Value group_{};                                          ///< The group, renumbered.
-        std::vector<Object> objects_{};                          ///< What they reach.
+        std::array<float, 4> box{0.0f, 0.0f, 0.0f, 0.0f};   ///< The page's box, in its own points: left, bottom, right, top.
+        std::string content{};                                ///< What the page draws: its contents, decompressed and joined.
+        Value resources{};     ///< The page's resources, renumbered: a Table, or a Reference to one, into #objects.
+        Value group{};         ///< The page's transparency group, renumbered, or a Null value for none.
+        std::vector<Object> objects{};                        ///< Every object the resources and the group reach.
     };
 
 }

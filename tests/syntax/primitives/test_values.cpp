@@ -35,7 +35,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers(), core.conditionals(), core.variables()};
+    syntax::primitives::Context context{state.registers, core.relay, core.variables};
     core(mouth, context);
     mouth.ingest(arena.copy(document));
     syntax::Parser parser(mouth, arena);
@@ -60,7 +60,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.tracebacks(), mouth.tracebacks(), core.tracebacks()}) {
+    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
         for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
     }
     return {folded, errors};
@@ -94,9 +94,9 @@ static std::optional<std::int32_t> dimension(const std::string_view text, const 
     syntax::semantics::Union state{};
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
-    state.registers().quad(quad);
+    state.registers.quad = quad;
     mouth.ingest(arena.copy(text));
-    return syntax::Number::dimension(mouth, state.registers());
+    return syntax::Number::dimension(mouth, state.registers);
 }
 
 /// @brief Scans one integer from a text.
@@ -106,7 +106,7 @@ static std::optional<std::int32_t> integer(const std::string_view text) {
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     mouth.ingest(arena.copy(text));
-    return syntax::Number::integer(mouth, state.registers());
+    return syntax::Number::integer(mouth, state.registers);
 }
 
 /// @brief Within a scaled point or two of what was expected: TeX itself

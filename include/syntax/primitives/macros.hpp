@@ -18,7 +18,7 @@ namespace syntax::primitives {
     /// \define\greeting{hello}                 % no parameters
     /// \define\twice[1]{#1#1}                  % one parameter, used as #1
     /// \define\pair[2]{#1 and #2}
-    /// \forget\greeting                        % undefine
+    /// \forget\greeting                        % forget
     /// \alias\hi\greeting                      % second name for one meaning
     /// \alias\hi=\greeting                     % the same, as TeX may write it
     ///
@@ -83,13 +83,13 @@ namespace syntax::primitives {
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
 
         Symbol integer{};     ///< Interned `\\integer`, so `[\integer0]` scans.
         Symbol alias{};       ///< `\\@alias`, which a switch's two macros are written with.

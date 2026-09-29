@@ -12,18 +12,18 @@
 // space and an empty line is \par, and a comment takes its own line ending
 // with it.
 
-using Category = syntax::CatCodes::Category;
+using Category = syntax::Catcodes::Category;
 
 /// @brief Every token a text lexes into.
 static std::vector<syntax::Token> lex(syntax::Lexicon& lexicon, const std::string_view text,
                                       std::size_t* errors = nullptr) {
-    syntax::CatCodes codes;
+    syntax::Catcodes codes;
     syntax::Lexer lexer(text, codes, lexicon);
     std::vector<syntax::Token> tokens;
     while (!lexer.empty()) {
         if (const syntax::Token token = lexer.advance(); !token.empty()) tokens.push_back(token);
     }
-    if (errors) *errors = lexer.tracebacks().size();
+    if (errors) *errors = lexer.traceback().size();
     return tokens;
 }
 

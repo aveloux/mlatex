@@ -37,7 +37,7 @@ namespace render::primitives {
     /// @return The three, as one group.
     static syntax::Node* displayed(const Context& context, memory::Arena& arena, layout::Node* box,
                                    const memory::Location origin) {
-        const float skip = context.document.configuration().size;
+        const float skip = context.document.configuration.size;
         const memory::Slice<syntax::Node*> parts = arena.allocate<syntax::Node*>(3);
         for (const std::size_t index : {0uz, 2uz}) {
             auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
@@ -48,7 +48,7 @@ namespace render::primitives {
         return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
     }
 
-    Expressions::Expressions(syntax::Lexicon& lexicon) : grammar_(lexicon) {
+    Expressions::Expressions(syntax::Lexicon& lexicon) : grammar(lexicon) {
         lexicon.intern("$");
         lexicon.intern("\\(");
         lexicon.intern("\\[");
@@ -183,7 +183,7 @@ namespace render::primitives {
         }};
 
         for (const auto& [name, type, weight, structural] : table) {
-            grammar_.bind(lexicon.intern(name), type, weight, false, structural);
+            grammar.bind(lexicon.intern(name), type, weight, false, structural);
         }
 
         // The sixteen fixed delimiter sizes: a delimiter follows each one
@@ -193,7 +193,7 @@ namespace render::primitives {
             "\\bigg", "\\biggl", "\\biggr", "\\biggm", "\\Bigg", "\\Biggl", "\\Biggr", "\\Biggm",
         };
         for (const std::string_view name : sizes) {
-            grammar_.bind(lexicon.intern(name), Type::Variable, 0, false, true);
+            grammar.bind(lexicon.intern(name), Type::Variable, 0, false, true);
         }
 
         // The alphabets, and the marks that span what they are written over.
@@ -208,12 +208,12 @@ namespace render::primitives {
             "\\mathscr",
         };
         for (const std::string_view name : spanning) {
-            grammar_.declare(lexicon.intern(name), 1);
+            grammar.declare(lexicon.intern(name), 1);
         }
 
         // A mark over or under something: two groups, the mark first.
         for (const std::string_view name : {"\\overset", "\\underset", "\\stackrel"}) {
-            grammar_.declare(lexicon.intern(name), 2);
+            grammar.declare(lexicon.intern(name), 2);
         }
 
         // The named functions. Each is one word set upright, which is the
@@ -227,13 +227,13 @@ namespace render::primitives {
             "\\arg", "\\liminf", "\\limsup", "\\sgn",
         };
         for (const std::string_view name : functions) {
-            grammar_.declare(lexicon.intern(name), 0);
+            grammar.declare(lexicon.intern(name), 0);
         }
 
         // The spaces, which take nothing: `\\!{}_{2}` is a space taken back
         // and then an empty base with a subscript, never a space over `{}`.
         for (const std::string_view name : {"\\,", "\\:", "\\;", "\\!", "\\ ", "\\quad", "\\qquad"}) {
-            grammar_.declare(lexicon.intern(name), 0);
+            grammar.declare(lexicon.intern(name), 0);
         }
 
         // Read and set as nothing. A style switch is the typesetter's to
@@ -246,7 +246,7 @@ namespace render::primitives {
             "\\mathstrut", "\\strut",
         };
         for (const std::string_view name : silent) {
-            grammar_.silence(lexicon.intern(name));
+            grammar.silence(lexicon.intern(name));
         }
     }
 
@@ -343,8 +343,8 @@ namespace render::primitives {
         const char delimiter,
         const syntax::Symbol stop
     ) const {
-        syntax::Mouth& mouth = parser.mouth();
-        memory::Arena& arena = parser.arena();
+        syntax::Mouth& mouth = parser.mouth;
+        memory::Arena& arena = parser.arena;
         const memory::Location origin = mouth.lookahead().location;
 
         // A display that holds a picture -- a tikz-cd, amscd or xy-pic
@@ -353,7 +353,7 @@ namespace render::primitives {
         // own with its number beside it, as LaTeX sets the box it makes.
         if (display) {
             std::size_t ahead = 0;
-            while (mouth.lookahead(ahead).category == syntax::CatCodes::Category::Space) ++ahead;
+            while (mouth.lookahead(ahead).category == syntax::Catcodes::Category::Space) ++ahead;
             const syntax::Token first = mouth.lookahead(ahead);
             std::string name;
             if (first.text == "\\begin" && mouth.lookahead(ahead + 1).is('{')) {
@@ -368,7 +368,7 @@ namespace render::primitives {
             if (std::ranges::contains(pictures, name) || first.text.starts_with("\\xymatrix") ||
                 first.text.starts_with("\\Qcircuit")) {
                 setting = Layout::Single;
-                const syntax::Symbol closer = delimiter == '$' ? mouth.lexicon().intern("$") : stop;
+                const syntax::Symbol closer = delimiter == '$' ? mouth.lexicon.intern("$") : stop;
                 syntax::Symbol matched = syntax::none;
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const memory::Slice<syntax::Node*> read = parser.parse(0, std::span{&closer, 1}, matched);
@@ -405,7 +405,7 @@ namespace render::primitives {
         // token it had read ahead -- before that token is looked at.
         {
             syntax::expression::Parser inner(
-                mouth, context.unicodes, grammar_, arena,
+                mouth, context.unicodes, grammar, arena,
                 display ? syntax::expression::Node::Style::Display
                         : syntax::expression::Node::Style::Inline);
 
@@ -443,8 +443,8 @@ namespace render::primitives {
             tree = delimiter != 0 ? inner.parse(delimiter) : inner.parse(stop);
             leftover = inner.pending();
 
-            for (const syntax::Traceback& fault : inner.tracebacks()) {
-                tracebacks_.push_back(fault);
+            for (const syntax::Traceback& fault : inner.traceback()) {
+                tracebacks.push_back(fault);
             }
         }
 
@@ -578,7 +578,7 @@ namespace render::primitives {
 
     void Expressions::operator()(syntax::Parser& parser, Context& context) const {
         parser.bind("$", [this, &context](syntax::Parser& parser) {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
 
             // A second dollar makes it displayed; anything else belongs to the
             // formula and goes back.
@@ -590,11 +590,11 @@ namespace render::primitives {
         });
 
         parser.bind("\\(", [this, &context](syntax::Parser& parser) {
-            return enter(parser, context, false, 0, parser.mouth().lexicon().intern("\\)"));
+            return enter(parser, context, false, 0, parser.mouth.lexicon.intern("\\)"));
         });
 
         parser.bind("\\[", [this, &context](syntax::Parser& parser) {
-            return enter(parser, context, true, 0, parser.mouth().lexicon().intern("\\]"));
+            return enter(parser, context, true, 0, parser.mouth.lexicon.intern("\\]"));
         });
 
         // The numbered display and its unnumbered form: each block opens a
@@ -723,10 +723,10 @@ namespace render::primitives {
                 retract(context);
             }
         };
-        parser.mouth().bind("\\nonumber", unnumbered);
-        parser.mouth().bind("\\notag", unnumbered);
+        parser.mouth.bind("\\nonumber", unnumbered);
+        parser.mouth.bind("\\notag", unnumbered);
 
-        parser.mouth().bind("\\tag", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\tag", [this, &context](syntax::Mouth& mouth) {
             const bool bare = mouth.lookahead().is('*');
             if (bare) mouth.read();
             const std::string text = syntax::Argument::text(mouth);

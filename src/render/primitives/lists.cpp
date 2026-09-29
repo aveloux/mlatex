@@ -67,7 +67,7 @@ namespace render::primitives {
             const Level& level = levels.back();
             const float own = between ? level.spacing : level.around;
             if (own >= 0.0f) return own;
-            const float scale = context.document.configuration().size / 10.0f;
+            const float scale = context.document.configuration.size / 10.0f;
             return (between ? spacings[depth].second : spacings[depth].first) * scale;
         };
 
@@ -91,7 +91,7 @@ namespace render::primitives {
         // enumitem's \setlist[itemize]{noitemsep}, and with no kind named,
         // for every list: kept to be read before each list's own options.
         // A level after the kind, `[itemize,1]`, is read as the kind's.
-        parser.mouth().bind("\\setlist", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\setlist", [this](syntax::Mouth& mouth) {
             if (mouth.lookahead().is('*')) mouth.read();
             std::string kinds;
             for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
@@ -247,12 +247,12 @@ namespace render::primitives {
             leaving);
 
         parser.bind("\\item", [this, &context, measure](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             if (levels.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Environment, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
                                          "\\item outside any list");
                 // Carried on with a bulleted level so that the rest of the
                 // document still sets, as TeX would.
@@ -266,7 +266,7 @@ namespace render::primitives {
             // source's layout rather than a word space.
             const auto skip = [&mouth] {
                 syntax::Token next = mouth.read();
-                while (next.category == syntax::CatCodes::Category::Space) next = mouth.read();
+                while (next.category == syntax::Catcodes::Category::Space) next = mouth.read();
                 if (!next.empty()) mouth.stream().inject(std::span{&next, 1});
             };
             skip();
@@ -361,7 +361,7 @@ namespace render::primitives {
                         static constexpr std::array<std::string_view, 4> named{"\\labelitemi", "\\labelitemii",
                                                                                "\\labelitemiii", "\\labelitemiv"};
                         const std::size_t at = (depth - 1) % bullets.size();
-                        label = mouth.macro(mouth.lexicon().intern(named[at])) ? named[at] : bullets[at];
+                        label = mouth.macro(mouth.lexicon.intern(named[at])) ? named[at] : bullets[at];
                         break;
                     }
                 }

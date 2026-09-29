@@ -53,7 +53,7 @@ namespace syntax {
         /// @param name A command's name, backslash and all: `\\selectlanguage`.
         /// @return Its whole line, name first, or std::nullopt when it holds none.
         /// @complexity O(1) expected.
-        [[nodiscard]] static std::optional<std::string_view> find(std::string_view name) noexcept;
+        [[nodiscard]] static std::optional<std::string_view> get(std::string_view name) noexcept;
 
         /// @brief How many commands it holds.
         [[nodiscard]] static std::size_t size() noexcept;

@@ -97,10 +97,10 @@ namespace syntax::primitives {
         /// @return Its text, or nullptr when nothing was set under that name.
         ///         Valid until that name is set again.
         /// @complexity O(1) average.
-        [[nodiscard]] const std::string* find(std::string_view name) const noexcept;
+        [[nodiscard]] const std::string* get(std::string_view name) const noexcept;
 
         /// @brief Errors this module has recorded: names read that were never set.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// Every value, by name. Mutable because the module is installed as a
@@ -108,7 +108,7 @@ namespace syntax::primitives {
         /// document runs.
         mutable memory::Dictionary<std::string> values{};
 
-        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
     };
 
 }

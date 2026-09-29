@@ -59,7 +59,7 @@ namespace render::primitives {
 
         /// @brief Errors this module has recorded: a color model it does not
         ///        know, or a value that does not fit its model.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
         /// @brief Reads a color as a document writes one: a name it defined,
         ///        any form graphics::Color::parse() reads, or an xcolor mixture
@@ -87,7 +87,7 @@ namespace render::primitives {
         /// @brief A color as text graphics::Color::parse() reads back exactly.
         [[nodiscard]] static std::string write(const graphics::Color& color);
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
     };
 
 }

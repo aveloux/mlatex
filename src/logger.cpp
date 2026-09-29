@@ -88,7 +88,7 @@ void Logger::file(const std::string& path) {
     stream.open(path, std::ios::out | std::ios::app);
 }
 
-void Logger::close() {
+void Logger::dispose() {
     const std::lock_guard guard(mutex);
     if (stream.is_open()) {
         stream.close();

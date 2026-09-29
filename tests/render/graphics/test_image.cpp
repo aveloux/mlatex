@@ -66,20 +66,20 @@ int main() {
     const std::string png = dot();
     const auto decoded = graphics::Image::decode(std::as_bytes(std::span{png}));
     assert((decoded.has_value()) && "a PNG decodes");
-    assert((decoded && decoded->width() == 1 && decoded->height() == 1) && "to its own size");
-    assert((decoded && decoded->pixels().size() == 3 && decoded->encoded().empty()) && "as its pixels");
-    assert((decoded && decoded->resolution() == 72.0f) && "a point to a pixel when it gives no resolution");
+    assert((decoded && decoded->width == 1 && decoded->height == 1) && "to its own size");
+    assert((decoded && decoded->pixels.size() == 3 && decoded->encoded.empty()) && "as its pixels");
+    assert((decoded && decoded->resolution == 72.0f) && "a point to a pixel when it gives no resolution");
 
     const std::string sharp = fine();
     const auto measured = graphics::Image::decode(std::as_bytes(std::span{sharp}));
-    assert((measured && std::abs(measured->resolution() - 300.0f) < 0.1f) && "a PNG's pHYs resolution is read");
+    assert((measured && std::abs(measured->resolution - 300.0f) < 0.1f) && "a PNG's pHYs resolution is read");
 
     const std::string jpeg = photo();
     const auto kept = graphics::Image::decode(std::as_bytes(std::span{jpeg}));
-    assert((kept && kept->width() == 2 && kept->height() == 1) && "a JPEG's size is read from its header");
-    assert((kept && kept->pixels().empty() && kept->encoded().size() == jpeg.size() && kept->components() == 3) &&
+    assert((kept && kept->width == 2 && kept->height == 1) && "a JPEG's size is read from its header");
+    assert((kept && kept->pixels.empty() && kept->encoded.size() == jpeg.size() && kept->components == 3) &&
            "and its bytes kept as they came, undecoded, for a PDF to decode");
-    assert((kept && kept->resolution() == 144.0f) && "with its JFIF density");
+    assert((kept && kept->resolution == 144.0f) && "with its JFIF density");
 
     const std::string noise = "not a picture";
     assert((!graphics::Image::decode(std::as_bytes(std::span{noise})).has_value()) &&

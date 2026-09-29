@@ -16,14 +16,14 @@ namespace render::primitives {
 
     void Requests::operator()(syntax::Parser& parser, Context&) const {
         parser.bind("\\httpget", [this](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
             const auto response = network::compose("GET", url);
             if (!response) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\httpget could not reach '" + url + "'");
                 return directive(arena, nullptr, origin);
             }
@@ -33,8 +33,8 @@ namespace render::primitives {
         });
 
         parser.bind("\\httppost", [this](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
@@ -42,7 +42,7 @@ namespace render::primitives {
 
             const auto response = network::compose("POST", url, body);
             if (!response) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\httppost could not reach '" + url + "'");
                 return directive(arena, nullptr, origin);
             }

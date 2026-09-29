@@ -16,7 +16,7 @@ namespace syntax {
     /// Tokens are trivially copyable and copied freely.
     struct Token {
         Symbol symbol = none;                                         ///< Interned name, or #none.
-        CatCodes::Category category = CatCodes::Category::Invalid;    ///< Category when lexed.
+        Catcodes::Category category = Catcodes::Category::Invalid;    ///< Category when lexed.
         memory::Location location{};                                  ///< Source position.
         std::string_view text{};                                      ///< Interned text.
 
@@ -26,7 +26,7 @@ namespace syntax {
         /// @brief Tests for one character of one category.
         /// @param want      Required category.
         /// @param character Required character.
-        [[nodiscard]] constexpr bool is(const CatCodes::Category want, const char character) const noexcept {
+        [[nodiscard]] constexpr bool is(const Catcodes::Category want, const char character) const noexcept {
             return category == want && text.size() == 1 && text[0] == character;
         }
 

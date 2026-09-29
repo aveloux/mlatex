@@ -164,7 +164,7 @@ namespace network {
         if (!session || !document) return 0;
 
         const bool made = session->typeset(std::string_view(document, length));
-        if (const std::string& bytes = session->pdf(); !bytes.empty()) {
+        if (const std::string& bytes = session->pdf; !bytes.empty()) {
             if (pdf) *pdf = reinterpret_cast<const unsigned char*>(bytes.data());
             if (size) *size = bytes.size();
         }
@@ -173,7 +173,7 @@ namespace network {
 
     /// @brief Latex::error.
     static const char* error(const Session* session) {
-        return session ? session->error().c_str() : "";
+        return session ? session->error.c_str() : "";
     }
 
     extern "C" {

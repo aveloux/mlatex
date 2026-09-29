@@ -17,8 +17,8 @@ namespace render::primitives {
 
     void Penalties::operator()(syntax::Parser& parser, Context& context) const {
         parser.bind("\\penalty", [&context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const auto scanned = syntax::Number::integer(mouth, context.registers);
@@ -57,8 +57,8 @@ namespace render::primitives {
 
         for (const auto& [name, value, page, optional, sheet] : fixed) {
             parser.bind(name, [&context, name, value, page, optional, sheet](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // LaTeX's optional forms -- `\\*`, `\\[4pt]`, `\\linebreak[3]`

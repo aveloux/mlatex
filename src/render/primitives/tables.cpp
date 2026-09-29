@@ -194,24 +194,24 @@ namespace render::primitives {
 
     void Tables::operator()(syntax::Parser& parser, Context& context) const {
         parser.bind("\\halign", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // A table is written across several lines, so the blanks between
             // its parts are layout in the source and mean nothing here. Each
             // place a separator is expected skips them first.
             const auto blanks = [&mouth] {
-                while (mouth.lookahead().category == syntax::CatCodes::Category::Space) {
+                while (mouth.lookahead().category == syntax::Catcodes::Category::Space) {
                     mouth.read();
                 }
             };
 
             blanks();
             syntax::Token open = mouth.read();
-            if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
-                tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Group, origin,
                                          "\\halign needs a brace group for its rows");
                 return directive(arena, nullptr, origin);
             }
@@ -228,7 +228,7 @@ namespace render::primitives {
                 // one cell rather than the whole table.
                 blanks();
                 syntax::Token brace = mouth.read();
-                if (!brace.is(syntax::CatCodes::Category::Group, '{') && !brace.empty()) {
+                if (!brace.is(syntax::Catcodes::Category::Group, '{') && !brace.empty()) {
                     mouth.stream().inject(std::span{&brace, 1});
                 }
 
@@ -259,7 +259,7 @@ namespace render::primitives {
                     // else is the first cell of the next row.
                     blanks();
                     const syntax::Token close = mouth.read();
-                    if (close.is(syntax::CatCodes::Category::Group, '}') || close.empty()) {
+                    if (close.is(syntax::Catcodes::Category::Group, '}') || close.empty()) {
                         closed = true;
                         break;
                     }
@@ -269,14 +269,14 @@ namespace render::primitives {
 
                 // Neither separator: the row ends here and so does the table.
                 if (!line.empty()) grid.push_back(std::move(line));
-                closed = next.is(syntax::CatCodes::Category::Group, '}') || next.empty();
+                closed = next.is(syntax::Catcodes::Category::Group, '}') || next.empty();
                 break;
             }
 
             mouth.pop(syntax::semantics::Scope::Type::Alignment);
 
             if (!closed) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Group, origin,
                                          "\\halign ran past the end of its rows");
             }
             if (grid.empty()) return directive(arena, nullptr, origin, true);
@@ -382,7 +382,7 @@ namespace render::primitives {
         // array's \newcolumntype{C}[1]{>{\centering}p{#1}}: a letter that
         // stands for a preamble of its own, with up to nine arguments, which
         // any table's preamble may use from here on.
-        parser.mouth().bind("\\newcolumntype", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\newcolumntype", [this](syntax::Mouth& mouth) {
             const std::string letter = syntax::Argument::text(mouth);
             std::string count;
             for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
@@ -400,12 +400,12 @@ namespace render::primitives {
         });
 
         parser.bind("\\tabular", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             if (openings.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Environment, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
                                          "\\tabular outside a tabular block");
                 return directive(arena, nullptr, origin, true);
             }
@@ -413,7 +413,7 @@ namespace render::primitives {
             const Opening opening = std::move(openings.back());
             openings.pop_back();
 
-            syntax::Lexicon& lexicon = mouth.lexicon();
+            syntax::Lexicon& lexicon = mouth.lexicon;
             const syntax::Symbol ampersand = column;
             const syntax::Symbol newline = lexicon.intern("\\\\");
             const syntax::Symbol alternative = lexicon.intern("\\tabularnewline");
@@ -512,7 +512,7 @@ namespace render::primitives {
                     if (!node || node->type == syntax::Node::Type::Paragraph) return true;
                     if (node->type == syntax::Node::Type::Directive) {
                         const auto* inside = static_cast<const layout::Node*>(node->directive);
-                        return !inside || inside->type() == layout::Node::Type::Directive;
+                        return !inside || inside->type == layout::Node::Type::Directive;
                     }
                     return node->type == syntax::Node::Type::Text &&
                            node->value.find_first_not_of(" \t\n") == std::string_view::npos;
@@ -618,8 +618,8 @@ namespace render::primitives {
                     const std::vector<Column> format = preamble(mouth.argument({}, 0), &customs);
 
                     syntax::Token open = mouth.read();
-                    while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-                    if (open.is(syntax::CatCodes::Category::Group, '{')) {
+                    while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+                    if (open.is(syntax::Catcodes::Category::Group, '{')) {
                         const typography::Font* restore = context.selection.text();
                         mouth.push(syntax::semantics::Scope::Type::Group);
                         const memory::Slice<syntax::Node*> inside = parser.parse('}');
@@ -684,7 +684,7 @@ namespace render::primitives {
             }
 
             if (!closed) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Environment, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
                                          "A tabular ran past the end of the document");
             }
 
@@ -700,7 +700,7 @@ namespace render::primitives {
             if (count == 0) return directive(arena, nullptr, origin, true);
             columns.resize(count, Column{});
 
-            const layout::Document::Configuration& page = context.document.configuration();
+            const layout::Document::Configuration& page = context.document.configuration;
 
             // Pass one: every cell's material, and how wide each column must be.
             struct Piece {
@@ -805,7 +805,7 @@ namespace render::primitives {
                         // says -- the one a `>{...}` put there, most often.
                         layout::Node::Justification setting = layout::Node::Justification::Full;
                         for (const layout::Node* node : piece.material) {
-                            if (node && node->type() == layout::Node::Type::Directive &&
+                            if (node && node->type == layout::Node::Type::Directive &&
                                 node->directive().command == layout::Node::Directive::Command::Align) {
                                 setting = node->directive().justification;
                             }
@@ -813,11 +813,11 @@ namespace render::primitives {
                         auto* paragraph = arena.compose<layout::Paragraph>(arena, piece.material, setting, 0.0f, 0.0f);
                         paragraph->layout(arena, measure, page.leading);
                         layout::Node* broken = paragraph->node();
-                        if (broken && broken->type() == layout::Node::Type::Box && !broken->box().list.empty()) {
+                        if (broken && broken->type == layout::Node::Type::Box && !broken->box().list.empty()) {
                             // Hung from its first line's baseline, as `p` sets a
                             // cell: the first line level with the row's others.
                             const layout::Node* first = broken->box().list[0];
-                            const float top = first && first->type() == layout::Node::Type::Box ? first->box().height
+                            const float top = first && first->type == layout::Node::Type::Box ? first->box().height
                                                                                                   : size * 0.7f;
                             // A column hangs from its top edge, so it is raised by
                             // that line's height to bring the line's baseline up.
@@ -981,7 +981,7 @@ namespace render::primitives {
             // sets a table in a line or in another table's cell.
             layout::Node::Box shape = table->box();
             const auto rim = [](const layout::Node* row, const bool top) {
-                if (!row || row->type() != layout::Node::Type::Box) return 0.0f;
+                if (!row || row->type != layout::Node::Type::Box) return 0.0f;
                 return top ? row->box().height : row->box().depth;
             };
             shape.shift = opening.position == 't'   ? -rim(stack.front(), true)

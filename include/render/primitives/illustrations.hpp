@@ -131,9 +131,9 @@ namespace render::primitives {
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        /// Wrapper::traceback() gathers them when a run finishes.
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -184,7 +184,7 @@ namespace render::primitives {
             bool round{false};           ///< A circle or an ellipse rather than a rectangle.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};       ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};       ///< Errors this module found.
         mutable std::unordered_map<std::string, Landmark> landmarks{};   ///< The open picture's named nodes and coordinates.
         mutable std::unordered_map<std::string, std::string> styles{};   ///< TikZ's styles by name: \\tikzset's and a picture's own.
         mutable std::vector<float> distances{};                    ///< Each open picture's `node distance`, in points.

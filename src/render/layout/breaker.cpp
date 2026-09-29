@@ -43,7 +43,7 @@ namespace render::layout {
 
         for (std::size_t index = 0; index < count; ++index) {
             const Node* item = input[index];
-            const bool elastic = item && item->type() == Node::Type::Glue;
+            const bool elastic = item && item->type == Node::Type::Glue;
 
             width[index + 1] = width[index] + Line::advance(item);
             stretch[index + 1] = stretch[index] + (elastic ? item->glue().stretch : 0.0f);
@@ -102,35 +102,35 @@ namespace render::layout {
                 float cost = 0.0f;
                 bool hyphen = false;
 
-                if (node->type() == Node::Type::Penalty) {
+                if (node->type == Node::Type::Penalty) {
                     allowed = hyphenating || !node->penalty().flag;
                     cost = static_cast<float>(node->penalty().value);
                     const Node* prior = cursor > 0 ? input[cursor - 1] : nullptr;
                     hyphen = node->penalty().flag ||
-                             (prior && prior->type() == Node::Type::Glyph && prior->glyph().point == '-');
-                } else if (node->type() == Node::Type::Pause) {
+                             (prior && prior->type == Node::Type::Glyph && prior->glyph().point == '-');
+                } else if (node->type == Node::Type::Pause) {
                     allowed = true;
                     cost = static_cast<float>(node->pause().penalty.value);
-                } else if (node->type() == Node::Type::Glue && cursor > 0) {
+                } else if (node->type == Node::Type::Glue && cursor > 0) {
                     const Node* prior = input[cursor - 1];
-                    allowed = prior && (prior->type() == Node::Type::Glyph ||
-                                        prior->type() == Node::Type::Box ||
-                                        prior->type() == Node::Type::Rule);
+                    allowed = prior && (prior->type == Node::Type::Glyph ||
+                                        prior->type == Node::Type::Box ||
+                                        prior->type == Node::Type::Rule);
                 }
 
                 const bool forced = cursor + 1 == count ||
-                                    (node->type() == Node::Type::Penalty &&
+                                    (node->type == Node::Type::Penalty &&
                                      node->penalty().value <= -10000) ||
-                                    (node->type() == Node::Type::Pause &&
+                                    (node->type == Node::Type::Pause &&
                                      node->pause().penalty.value <= -10000);
                 if (forced) allowed = true;
                 if (!allowed) continue;
 
                 // Glue and penalties at a break are discardable: the line ends
                 // before them, and they do not print at the start of the next.
-                const bool discarded = node->type() == Node::Type::Glue ||
-                                       node->type() == Node::Type::Penalty ||
-                                       node->type() == Node::Type::Pause;
+                const bool discarded = node->type == Node::Type::Glue ||
+                                       node->type == Node::Type::Penalty ||
+                                       node->type == Node::Type::Pause;
                 const std::size_t reach = discarded ? cursor : cursor + 1;
 
                 const Candidate* best = nullptr;
@@ -263,9 +263,9 @@ namespace render::layout {
             const std::size_t mark = current->index - 1;
 
             const Node* border = input[mark];
-            const bool discarded = border && (border->type() == Node::Type::Glue ||
-                                              border->type() == Node::Type::Penalty ||
-                                              border->type() == Node::Type::Pause);
+            const bool discarded = border && (border->type == Node::Type::Glue ||
+                                              border->type == Node::Type::Penalty ||
+                                              border->type == Node::Type::Pause);
             const std::size_t stop = discarded ? mark : current->index;
 
             // What follows a break only ever separated it from what came
@@ -273,18 +273,18 @@ namespace render::layout {
             // start of the next line, as TeX drops it. Not at the start of the
             // paragraph, whose indentation is a kern that has to stay.
             while (start > 0 && start < stop && input[start] &&
-                   (input[start]->type() == Node::Type::Glue ||
-                    input[start]->type() == Node::Type::Kern ||
-                    input[start]->type() == Node::Type::Penalty)) {
+                   (input[start]->type == Node::Type::Glue ||
+                    input[start]->type == Node::Type::Kern ||
+                    input[start]->type == Node::Type::Penalty)) {
                 ++start;
             }
 
             // A break taken at a flagged penalty is a hyphenated one, and the
             // hyphen is only drawn now that the break has actually been taken.
             const Node* preceding = nullptr;
-            if (border && border->type() == Node::Type::Penalty && border->penalty().flag) {
+            if (border && border->type == Node::Type::Penalty && border->penalty().flag) {
                 for (std::size_t index = stop; index > start; --index) {
-                    if (input[index - 1]->type() == Node::Type::Glyph &&
+                    if (input[index - 1]->type == Node::Type::Glyph &&
                         input[index - 1]->glyph().font) {
                         preceding = input[index - 1];
                         break;
@@ -307,9 +307,9 @@ namespace render::layout {
             // proof's mark is. Every other line fills the column with the
             // glue between words when justified, and with the edge glue above
             // when not.
-            const bool forced = border && ((border->type() == Node::Type::Penalty &&
+            const bool forced = border && ((border->type == Node::Type::Penalty &&
                                             border->penalty().value <= -10000) ||
-                                           (border->type() == Node::Type::Pause &&
+                                           (border->type == Node::Type::Pause &&
                                             border->pause().penalty.value <= -10000));
             const bool natural = !ragged && (current == last || forced);
 

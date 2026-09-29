@@ -20,13 +20,13 @@ namespace sandbox {
           // Context holds references, so both targets must already exist. The
           // register bank comes from `state`: Union owns the one the scoping
           // machinery unwinds, and a second bank would silently not be scoped.
-          context{state.registers(), wrapper.conditionals(), wrapper.variables()},
+          context{state.registers, wrapper.relay, wrapper.variables},
           mouth(syntax::Cursor{}, state, lexicon, arena) {
         wrapper(mouth, context);
     }
 
     bool VM::evaluate(const std::string_view code) {
-        tracebacks_.clear();
+        tracebacks.clear();
         mouth.ingest(code);
 
         // Drive the expander to exhaustion. Everything the document produces
@@ -35,7 +35,7 @@ namespace sandbox {
         while (true) {
             const syntax::Token token = mouth.expand();
 
-            if (mouth.error()) {
+            if (mouth.error) {
                 break;
             }
             if (token.empty()) {
@@ -43,14 +43,14 @@ namespace sandbox {
             }
 
             if (++served > policy.tokens) {
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     syntax::Traceback::Type::Memory, token.location,
                     std::format("run consumed more than {} tokens", policy.tokens));
                 break;
             }
 
             if (mouth.nesting() > policy.depth) {
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     syntax::Traceback::Type::Scope, token.location,
                     std::format("scope nested deeper than {}", policy.depth));
                 break;
@@ -62,7 +62,7 @@ namespace sandbox {
 
     bool VM::run(const std::string_view path) {
         if (!policy.read) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+            tracebacks.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
                                      "policy denies reading files");
             Logger::log(Logger::Type::Semantics, Logger::Level::Error,
                         "policy denies reading files");
@@ -71,7 +71,7 @@ namespace sandbox {
 
         std::ifstream file{std::string(path), std::ios::binary | std::ios::ate};
         if (!file) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+            tracebacks.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
                                      std::format("cannot open {}", path));
             return false;
         }
@@ -81,7 +81,7 @@ namespace sandbox {
 
         std::string content(static_cast<std::size_t>(size), '\0');
         if (size > 0 && !file.read(content.data(), size)) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+            tracebacks.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
                                      std::format("cannot read {}", path));
             return false;
         }
@@ -89,12 +89,12 @@ namespace sandbox {
         return evaluate(content);
     }
 
-    std::vector<syntax::Traceback> VM::tracebacks() const {
-        std::vector<syntax::Traceback> gathered = wrapper.tracebacks();
+    std::vector<syntax::Traceback> VM::traceback() const {
+        std::vector<syntax::Traceback> gathered = wrapper.traceback();
 
-        const auto& expansion = mouth.tracebacks();
+        const auto& expansion = mouth.traceback();
         gathered.insert(gathered.end(), expansion.begin(), expansion.end());
-        gathered.insert(gathered.end(), tracebacks_.begin(), tracebacks_.end());
+        gathered.insert(gathered.end(), tracebacks.begin(), tracebacks.end());
 
         return gathered;
     }
@@ -104,7 +104,7 @@ namespace sandbox {
         const auto fatal = [](const std::vector<syntax::Traceback>& faults) {
             return std::ranges::any_of(faults, [](const syntax::Traceback& fault) { return fault.fatal(); });
         };
-        return mouth.error() || fatal(wrapper.tracebacks()) || fatal(mouth.tracebacks()) || fatal(tracebacks_);
+        return mouth.error || fatal(wrapper.traceback()) || fatal(mouth.traceback()) || fatal(tracebacks);
     }
 
 }

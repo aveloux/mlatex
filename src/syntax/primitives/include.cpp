@@ -45,14 +45,14 @@ namespace syntax::primitives {
         // The cursor is a stack, so the marker goes in first and the file in
         // front of it: the file is read, then the marker, then whatever came
         // after the \include.
-        const Token marker{.symbol = leave, .category = CatCodes::Category::Escape,
-                           .text = mouth.lexicon().resolve(leave)};
+        const Token marker{.symbol = leave, .category = Catcodes::Category::Escape,
+                           .text = mouth.lexicon.resolve(leave)};
         mouth.stream().inject(std::span{&marker, 1});
         // One of the engine's own files stands on no line of the document,
         // and says so: what its macros report is reported where the
         // document's own tokens stand, or without a place, never at a line
         // of a file the document's writer has never seen.
-        const auto embedded = modules::find(key);
+        const auto embedded = modules::get(key);
         mouth.ingest(text, embedded && embedded->data() == text.data() ? std::optional{memory::Location{}}
                                                                        : std::nullopt);
 
@@ -74,11 +74,11 @@ namespace syntax::primitives {
         return found;
     }
 
-    std::optional<std::string_view> Include::find(const Context& context, const std::string_view key) {
+    std::optional<std::string_view> Include::get(const Context& context, const std::string_view key) {
         if (context.files) {
             if (const auto file = context.files->find(key); file != context.files->end()) return file->second;
         }
-        if (const auto module = modules::find(key)) return module;
+        if (const auto module = modules::get(key)) return module;
         if (context.disk) {
             if (const std::string* file = context.disk(key)) return *file;
         }
@@ -90,21 +90,21 @@ namespace syntax::primitives {
         if (loaded(name)) return;
 
         const std::string key = std::string(name) + "/main.mtex";
-        const auto found = find(context, key);
+        const auto found = get(context, key);
 
         if (!found) {
             // A package that is another under a newer or an older name --
             // xurl is url, soulutf8 is soul -- as the core names them: that
             // one, loaded, and this marked loaded beside it.
             packages.emplace(name);
-            if (const std::string* other = context.variables.find("alias." + std::string(name)); other && *other != name) {
+            if (const std::string* other = context.variables.get("alias." + std::string(name)); other && *other != name) {
                 load(mouth, context, *other, origin);
                 return;
             }
             // Otherwise not a failure: marked loaded, as LaTeX would have
             // it, and the package's commands found in the glossary where it
             // knows them. What it does not know is reported where it is used.
-            tracebacks_.emplace_back(
+            tracebacks.emplace_back(
                 Traceback::Type::Warning, origin,
                 std::format("File `{}.sty' not found; its commands are read as the glossary knows them", name));
             return;
@@ -128,7 +128,7 @@ namespace syntax::primitives {
             while (!name.empty() && name.front() == ' ') name.erase(name.begin());
 
             if (name.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(Traceback::Type::Argument, origin,
                                          "\\include needs a file name");
                 return;
             }
@@ -149,19 +149,19 @@ namespace syntax::primitives {
             candidates[count++] = name + ".tex";
 
             for (std::size_t index = 0; index < count; ++index) {
-                if (const auto found = find(context, candidates[index])) {
+                if (const auto found = get(context, candidates[index])) {
                     read(mouth, candidates[index], *found);
                     return;
                 }
             }
 
             // A folder is a package, and reading one is loading it.
-            if (find(context, name + "/main.mtex")) {
+            if (get(context, name + "/main.mtex")) {
                 load(mouth, context, name, origin);
                 return;
             }
 
-            tracebacks_.emplace_back(Traceback::Type::Primitive, origin,
+            tracebacks.emplace_back(Traceback::Type::Primitive, origin,
                                      std::format("File `{}.tex' not found", name));
         };
 
@@ -183,7 +183,7 @@ namespace syntax::primitives {
             const std::vector<std::string> asked = split(Argument::text(mouth));
 
             if (asked.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(Traceback::Type::Argument, origin,
                                          "\\usepackage needs a package name");
                 return;
             }
@@ -226,8 +226,8 @@ namespace syntax::primitives {
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const bool found = !name.empty() && (find(context, name) || find(context, name + ".mtex") ||
-                                                 find(context, name + "/main.mtex"));
+            const bool found = !name.empty() && (get(context, name) || get(context, name + ".mtex") ||
+                                                 get(context, name + "/main.mtex"));
             const std::vector<Token>& chosen = found ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
@@ -253,14 +253,14 @@ namespace syntax::primitives {
         // \PackageWarning and \ClassWarning are built on it.
         mouth.bind("\\warning", [this](Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
-            tracebacks_.emplace_back(Traceback::Type::Warning, origin, Argument::expanded(mouth));
+            tracebacks.emplace_back(Traceback::Type::Warning, origin, Argument::expanded(mouth));
         });
         mouth.bind("\\openout", [&context](Mouth& mouth) {
             static_cast<void>(Number::integer(mouth, context.registers));
             if (mouth.lookahead().is('=')) mouth.read();
             // The name, to the space or the \relax that ends it.
-            for (Token token = mouth.lookahead(); !token.empty() && token.category != CatCodes::Category::Space &&
-                                                  token.category != CatCodes::Category::Escape;
+            for (Token token = mouth.lookahead(); !token.empty() && token.category != Catcodes::Category::Space &&
+                                                  token.category != Catcodes::Category::Escape;
                  token = mouth.lookahead()) {
                 mouth.read();
             }

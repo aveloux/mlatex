@@ -39,7 +39,7 @@ namespace render::layout {
         }
     }
 
-    memory::Slice<Node*> Ledger::find(const Key& key) const noexcept {
+    memory::Slice<Node*> Ledger::get(const Key& key) const noexcept {
         if (entries == 0) return {};
 
         const std::size_t start = digest(key) & (limit - 1);
@@ -53,7 +53,7 @@ namespace render::layout {
         return {};
     }
 
-    void Ledger::insert(const Key& key, const memory::Slice<Node*> nodes) noexcept {
+    void Ledger::set(const Key& key, const memory::Slice<Node*> nodes) noexcept {
         // A full table stops caching rather than evicting. Evicting would mean
         // re-shaping something a caller may still be holding glyphs from.
         // Full is three quarters, not every slot: past that a lookup that

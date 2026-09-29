@@ -106,7 +106,7 @@ namespace syntax {
         std::vector<Token> tokens{};
         std::size_t depth = 0;    ///< How many of #tokens are still to be read.
         std::size_t served = 0;   ///< How many tokens have been read in total.
-        std::size_t source_ = 0;  ///< How many of #tokens, from the first, are the document's unread.
+        std::size_t unread = 0;  ///< How many of #tokens, from the first, are the document's unread.
     };
 
 }

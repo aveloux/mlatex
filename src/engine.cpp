@@ -188,7 +188,7 @@ namespace engine {
         const std::filesystem::path language = assets / "hyphens" / "hyph-en-us.pat.txt";
         std::size_t patterns = hyphenator.embed(language.filename().string());
         if (patterns == 0) patterns = hyphenator.compose(language.string());
-        composer.document().hyphenate(&hyphenator);
+        composer.document.hyphenate(&hyphenator);
 
         const auto hyphenated = std::chrono::high_resolution_clock::now();
 
@@ -244,14 +244,14 @@ namespace engine {
         }
 
         syntax::primitives::Wrapper core(lexicon);
-        syntax::primitives::Context expansion{state.registers(), core.conditionals(), core.variables()};
+        syntax::primitives::Context expansion{state.registers, core.relay, core.variables};
         expansion.files = &host.files;
         expansion.disk = disk;
         core(mouth, expansion);
 
         // Whatever the caller handed in, set before the first token is read,
         // so the document and every package see it from their first line.
-        for (const auto& [name, value] : host.variables) core.variables().define(name, value);
+        for (const auto& [name, value] : host.variables) core.variables.define(name, value);
 
         // The calling program's own commands, bound beside the primitives
         // and read the way a primitive reads: arguments expanded, handed
@@ -271,7 +271,7 @@ namespace engine {
                 }
 
                 const std::string answer = command.handler(arguments);
-                if (!answer.empty()) mouth.ingest(mouth.arena().copy(answer));
+                if (!answer.empty()) mouth.ingest(mouth.arena.copy(answer));
             });
         }
 
@@ -281,15 +281,15 @@ namespace engine {
 
         // An em is the body face's size, which is what `1em` means to the
         // expander from here on.
-        state.registers().quad(static_cast<std::int32_t>(prose->size() * 65536.0f));
+        state.registers.quad = static_cast<std::int32_t>(prose->size() * 65536.0f);
 
         // The render layer's Context names the block module the syntax layer
         // owns, which is how a list environment hooks `\\begin` without
         // either layer having to know about the other's modules.
         const render::primitives::Wrapper visuals(lexicon);
         render::primitives::Context rendering{
-            composer.document(), typesetter, state.registers(), registry, library,
-            shaper, unicodes, core.structure(), core.variables(), arena, selection
+            composer.document, typesetter, state.registers, registry, library,
+            shaper, unicodes, core.blocks, core.variables, arena, selection
         };
         rendering.files = &host.files;
         rendering.disk = disk;
@@ -340,7 +340,7 @@ namespace engine {
 
         const auto loaded = std::chrono::high_resolution_clock::now();
 
-        const auto prelude = syntax::modules::find("main.mtex");
+        const auto prelude = syntax::modules::get("main.mtex");
         if (!prelude) {
             errors << "Embedded module 'main.mtex' not found\n";
             return false;
@@ -359,7 +359,7 @@ namespace engine {
         // its extension, as LaTeX takes it -- what finds the .bbl BibTeX
         // wrote beside it.
         if (source) {
-            mouth.ingest(mouth.arena().copy("\\@define\\jobname{" + source->stem().string() + "}"), memory::Location{});
+            mouth.ingest(mouth.arena.copy("\\@define\\jobname{" + source->stem().string() + "}"), memory::Location{});
         }
         mouth.ingest(*prelude, memory::Location{});
 
@@ -388,14 +388,14 @@ namespace engine {
             }
         };
         if (!again) {
-            collect(parser.tracebacks());
-            collect(mouth.tracebacks());
-            collect(core.tracebacks());
-            collect(visuals.tracebacks());
+            collect(parser.traceback());
+            collect(mouth.traceback());
+            collect(core.traceback());
+            collect(visuals.traceback());
         }
 
-        if (const std::size_t unclosed = core.structure().depth(); unclosed != 0 && !again) {
-            const std::string_view innermost = core.structure().innermost();
+        if (const std::size_t unclosed = core.blocks.depth(); unclosed != 0 && !again) {
+            const std::string_view innermost = core.blocks.innermost();
             errors << (innermost == "document" ? std::string("*** (job aborted, no legal \\end found)")
                                                : std::format("error (environment): \\begin{{{}}} ended by \\end{{document}}",
                                                              innermost))
@@ -428,13 +428,13 @@ namespace engine {
                         break;
                     case syntax::Node::Type::Text:
                         if (face ? face : selection.text()) {
-                            composer.document().append(node->value, face ? *face : *selection.text(), body,
+                            composer.document.append(node->value, face ? *face : *selection.text(), body,
                                                        static_cast<const render::layout::Node::Color*>(node->tint));
                         }
                         break;
                     case syntax::Node::Type::Expression:
                         if (face ? face : selection.formula()) {
-                            composer.document().append(node->expression,
+                            composer.document.append(node->expression,
                                                        face ? *face : *selection.formula(),
                                                        static_cast<const render::layout::Node::Color*>(node->tint));
                         }
@@ -443,11 +443,11 @@ namespace engine {
                         // `display` is the primitive saying whether its box
                         // stands on its own or belongs in the line it was
                         // written in.
-                        composer.document().append(
+                        composer.document.append(
                             static_cast<render::layout::Node*>(node->directive), node->display);
                         break;
                     case syntax::Node::Type::Paragraph:
-                        composer.document().separate();
+                        composer.document.separate();
                         break;
                     default:
                         break;
@@ -458,7 +458,7 @@ namespace engine {
         // The language chosen last while the document was read was told to
         // the document then, for the boxes; its text goes in from the start,
         // where the language is the one the run began with.
-        composer.document().hyphenate(&hyphenator);
+        composer.document.hyphenate(&hyphenator);
         gather(gather, outputs);
 
         // What the file says of itself, as hyperref's \hypersetup gave it, and
@@ -466,17 +466,17 @@ namespace engine {
         // LaTeX's `\DocumentMetadata{pdfstandard=A-2b}`.
         {
             using Metadata = render::layout::Document::Metadata;
-            Metadata& about = composer.document().metadata();
+            Metadata& about = composer.document.metadata;
             for (const auto& [key, field] : {std::pair{"hyperref.pdftitle", &Metadata::title},
                                              std::pair{"hyperref.pdfauthor", &Metadata::author},
                                              std::pair{"hyperref.pdfsubject", &Metadata::subject},
                                              std::pair{"hyperref.pdfkeywords", &Metadata::keywords}}) {
-                if (const std::string* value = core.variables().find(key)) about.*field = *value;
+                if (const std::string* value = core.variables.get(key)) about.*field = *value;
             }
-            const std::string* standard = core.variables().find("metadata.pdfstandard");
+            const std::string* standard = core.variables.get("metadata.pdfstandard");
             about.archival = (standard && (standard->contains('a') || standard->contains('A'))) ||
                              std::ranges::any_of(std::array{"pdfx.a-1b", "pdfx.a-2b", "pdfx.a-2u", "pdfx.a-3b", "pdfx.a-3u"},
-                                                 [&core](const char* key) { return core.variables().find(key) != nullptr; });
+                                                 [&core](const char* key) { return core.variables.get(key) != nullptr; });
         }
 
         const auto composed = std::chrono::high_resolution_clock::now();
@@ -486,15 +486,15 @@ namespace engine {
         // engine's, and the rest belongs to the PDF writer and the fonts it
         // embeds.
         const memory::Slice<render::layout::Pager::Page> pages =
-            typesetter.compose(composer.document());
+            typesetter.compose(composer.document);
         const auto laid = std::chrono::high_resolution_clock::now();
 
         if (again) {
-            const render::layout::Document::Configuration& page = composer.document().configuration();
+            const render::layout::Document::Configuration& page = composer.document.configuration;
             for (const render::layout::Pager::Page& sheet : pages) {
                 static_cast<void>(composer.draw(sheet.nodes, sheet.notes, page.left, page.top));
             }
-            return run(assets, source, text, destination, pdf, texts, host, report, errors, &composer.anchors());
+            return run(assets, source, text, destination, pdf, texts, host, report, errors, &composer.anchors);
         }
 
         if (destination) {
@@ -509,7 +509,7 @@ namespace engine {
                 return false;
             }
         }
-        if (texts) *texts = composer.texts();
+        if (texts) *texts = composer.texts;
 
         const auto finished = std::chrono::high_resolution_clock::now();
 
@@ -520,7 +520,7 @@ namespace engine {
         if (!report) return !broken;
 
         std::ostream& out = *report;
-        const render::layout::Document::Configuration& page = composer.document().configuration();
+        const render::layout::Document::Configuration& page = composer.document.configuration;
 
         out << std::fixed << std::setprecision(1);
         out << "Pipeline\n";
@@ -528,11 +528,11 @@ namespace engine {
         out << "  Font bytes resident     : " << library.resident() << '\n';
         out << "  Fonts built             : " << registry.count() << '\n';
         out << "  Faces opened            : " << registry.opened() << '\n';
-        out << "  Faces embedded          : " << composer.faces().size() << '\n';
-        out << "  Images embedded         : " << composer.pictures().size() << '\n';
+        out << "  Faces embedded          : " << composer.faces.size() << '\n';
+        out << "  Images embedded         : " << composer.pictures.size() << '\n';
         out << "  Hyphenation patterns    : " << patterns << '\n';
         out << "  Top-level nodes         : " << outputs.count << '\n';
-        out << "  Document blocks         : " << composer.document().count() << '\n';
+        out << "  Document blocks         : " << composer.document.count() << '\n';
         out << "  Pages                   : " << pages.count << '\n';
         out << "  Page size               : " << page.width << " by " << page.height << " pt\n";
         out << "  Output file             : " << (destination ? destination->string() : "(memory)") << '\n';
@@ -563,47 +563,47 @@ namespace engine {
         return name;
     }
 
-    Session::Session(std::filesystem::path assets) : assets_(std::move(assets)) {}
+    Session::Session(std::filesystem::path assets) : assets(std::move(assets)) {}
 
     void Session::set(const std::string_view name, const std::string_view value) {
-        const auto known = std::ranges::find(host_.variables, name, &Variables::value_type::first);
-        if (known != host_.variables.end()) {
+        const auto known = std::ranges::find(host.variables, name, &Variables::value_type::first);
+        if (known != host.variables.end()) {
             known->second = value;
         } else {
-            host_.variables.emplace_back(name, value);
+            host.variables.emplace_back(name, value);
         }
     }
 
     void Session::unset(const std::string_view name) {
-        std::erase_if(host_.variables, [name](const auto& pair) { return pair.first == name; });
+        std::erase_if(host.variables, [name](const auto& pair) { return pair.first == name; });
     }
 
     void Session::define(Command command) {
         command.name = std::string(bare(command.name));
-        const auto known = std::ranges::find(host_.commands, command.name, &Command::name);
-        if (known != host_.commands.end()) {
+        const auto known = std::ranges::find(host.commands, command.name, &Command::name);
+        if (known != host.commands.end()) {
             *known = std::move(command);
         } else {
-            host_.commands.push_back(std::move(command));
+            host.commands.push_back(std::move(command));
         }
     }
 
     void Session::forget(const std::string_view name) {
-        std::erase_if(host_.commands, [name = bare(name)](const Command& command) { return command.name == name; });
+        std::erase_if(host.commands, [name = bare(name)](const Command& command) { return command.name == name; });
     }
 
     void Session::provide(const std::string_view name, std::string bytes) {
-        host_.files.insert_or_assign(std::string(name), std::move(bytes));
+        host.files.insert_or_assign(std::string(name), std::move(bytes));
     }
 
     void Session::withdraw(const std::string_view name) {
-        if (const auto known = host_.files.find(name); known != host_.files.end()) host_.files.erase(known);
+        if (const auto known = host.files.find(name); known != host.files.end()) host.files.erase(known);
     }
 
     bool Session::typeset(const std::string_view document) {
         std::ostringstream errors;
-        const bool made = engine::typeset(assets_, document, pdf_, host_, errors, &pages_);
-        error_ = errors.str();
+        const bool made = engine::typeset(assets, document, pdf, host, errors, &pages);
+        error = errors.str();
         return made;
     }
 

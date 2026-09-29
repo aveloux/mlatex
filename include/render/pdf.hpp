@@ -45,7 +45,7 @@ namespace render {
     ///
     /// @par Use
     /// @code
-    /// const auto pages = typesetter.compose(composer.document());
+    /// const auto pages = typesetter.compose(composer.document);
     /// if (!render::Pdf::compose(composer, pages, "build/main.pdf")) {
     ///     // the path could not be written
     /// }

@@ -36,7 +36,7 @@ namespace render::primitives {
         std::string digits;
         while (true) {
             const syntax::Token token = mouth.lookahead(offset);
-            if (token.category == syntax::CatCodes::Category::Space && digits.empty()) {
+            if (token.category == syntax::Catcodes::Category::Space && digits.empty()) {
                 ++offset;
                 continue;
             }
@@ -88,8 +88,8 @@ namespace render::primitives {
 
         for (const auto& [name, elastic, block] : measured) {
             parser.bind(name, [&context, elastic, block](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // A glue register -- `\\vskip\\topsep` -- brings what it may
@@ -174,8 +174,8 @@ namespace render::primitives {
 
         for (const auto& [name, width, stretch, shrink, order, block] : named) {
             parser.bind(name, [&context, width, stretch, shrink, order, block](syntax::Parser& parser) -> syntax::Node* {
-                memory::Arena& arena = parser.arena();
-                const memory::Location origin = parser.mouth().lookahead().location;
+                memory::Arena& arena = parser.arena;
+                const memory::Location origin = parser.mouth.lookahead().location;
 
                 // An em of whatever face the text is in where the space is
                 // written, so a quad in a heading is a heading's quad.
@@ -204,8 +204,8 @@ namespace render::primitives {
         // for "Mr.~Smith" and "Figure~3". Measured from the face itself
         // rather than an em fraction, so it matches the spaces around it.
         parser.bind("~", [&context](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
 
             const typography::Font* font = context.selection.text();
             float width = font ? font->size() * 0.25f : 2.5f;   // a plausible space, if there is no face yet
@@ -214,7 +214,7 @@ namespace render::primitives {
                 const typography::Font* fonts[] = {font};
                 const memory::Slice<layout::Node*> shaped =
                     context.shaper.shape(memory::Slice{fonts, 1uz}, " ", {});
-                if (shaped.count == 1 && shaped[0]->type() == layout::Node::Type::Glue) {
+                if (shaped.count == 1 && shaped[0]->type == layout::Node::Type::Glue) {
                     width = shaped[0]->glue().width;
                 }
             }
@@ -229,8 +229,8 @@ namespace render::primitives {
         // in a box .44em wide, as LaTeX's own.
         for (const bool dotted : {false, true}) {
             parser.bind(dotted ? "\\dotfill" : "\\hrulefill", [&context, dotted](syntax::Parser& parser) -> syntax::Node* {
-                memory::Arena& arena = parser.arena();
-                const memory::Location origin = parser.mouth().lookahead().location;
+                memory::Arena& arena = parser.arena;
+                const memory::Location origin = parser.mouth.lookahead().location;
 
                 layout::Node* leader = arena.compose<layout::Node>(layout::Node::Type::Rule);
                 leader->rule({.height = 0.4f});
@@ -260,14 +260,14 @@ namespace render::primitives {
         // spaces around it do. A backslash ending a line is the same thing,
         // the line's end standing for the space.
         const auto spaced = [&context](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
 
             if (const typography::Font* font = context.selection.text()) {
                 const typography::Font* fonts[] = {font};
                 const memory::Slice<layout::Node*> shaped =
                     context.shaper.shape(memory::Slice{fonts, 1uz}, " ", {});
-                if (shaped.count == 1 && shaped[0]->type() == layout::Node::Type::Glue) {
+                if (shaped.count == 1 && shaped[0]->type == layout::Node::Type::Glue) {
                     return directive(arena, shaped[0], origin);
                 }
             }
@@ -283,9 +283,9 @@ namespace render::primitives {
         // and are read past -- expanding as it goes, so a `\label` standing
         // between them is still run.
         parser.bind("\\ignorespaces", [](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
-                if (token.category == syntax::CatCodes::Category::Space) continue;
+                if (token.category == syntax::Catcodes::Category::Space) continue;
                 mouth.stream().inject(std::span{&token, 1});
                 break;
             }

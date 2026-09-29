@@ -49,7 +49,7 @@ namespace render::primitives {
     ) {
         for (float& value : values) {
             syntax::Token open = mouth.read();
-            if (!open.is(syntax::CatCodes::Category::Group, '{') && !open.empty()) {
+            if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                 mouth.stream().inject(std::span{&open, 1});
             }
 
@@ -58,7 +58,7 @@ namespace render::primitives {
             }
 
             syntax::Token close = mouth.read();
-            if (!close.is(syntax::CatCodes::Category::Group, '}') && !close.empty()) {
+            if (!close.is(syntax::Catcodes::Category::Group, '}') && !close.empty()) {
                 mouth.stream().inject(std::span{&close, 1});
             }
         }
@@ -202,12 +202,12 @@ namespace render::primitives {
         int samples = 25;
 
         const auto fail = [this, origin](std::string message) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin, std::move(message));
+            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, std::move(message));
         };
         // What TikZ draws and this engine does not: the picture is drawn
         // without it, and the document hears so.
         const auto miss = [this, origin](std::string message) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin, std::move(message));
+            tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin, std::move(message));
         };
 
         static constexpr std::array<std::pair<std::string_view, float>, 7> widths{{
@@ -724,8 +724,8 @@ namespace render::primitives {
             if (!wide.empty()) source = "\\parbox{" + wide + "}{" + (centred ? "\\centering " : "") + source + "}";
             source = before + source;
             layout::Node* setting = [&]() -> layout::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 mouth.ingest(arena.copy("{" + source + "}"));
                 mouth.read();
 
@@ -1458,9 +1458,9 @@ namespace render::primitives {
             std::string text;
             int depth = 0;
             for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
-                if (depth == 0 && token.is(syntax::CatCodes::Category::Other, ';')) break;
-                if (token.is(syntax::CatCodes::Category::Group, '{')) ++depth;
-                if (token.is(syntax::CatCodes::Category::Group, '}')) --depth;
+                if (depth == 0 && token.is(syntax::Catcodes::Category::Other, ';')) break;
+                if (token.is(syntax::Catcodes::Category::Group, '{')) ++depth;
+                if (token.is(syntax::Catcodes::Category::Group, '}')) --depth;
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
@@ -1474,12 +1474,12 @@ namespace render::primitives {
              {std::tuple{"\\draw", true, false}, std::tuple{"\\fill", false, true},
               std::tuple{"\\filldraw", true, true}, std::tuple{"\\path", false, false}}) {
             parser.bind(name, [this, &context, path, stroked, filled, name](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
+                syntax::Mouth& mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
                 std::string options;
                 const std::string text = path(mouth, options);
                 if (canvases.empty()) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                              std::string(name) + " needs an open picture");
                     return nullptr;
                 }
@@ -1490,12 +1490,12 @@ namespace render::primitives {
 
         // \node[options] (name) at (x,y) {text}; -- a path of one node.
         parser.bind("\\node", [this, &context, path](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
             if (canvases.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\node needs an open picture");
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\node needs an open picture");
                 return nullptr;
             }
             draw(parser, "", "node[" + options + "] " + text, origin, context, false, false);
@@ -1504,7 +1504,7 @@ namespace render::primitives {
 
         // A named point: `\\coordinate (a) at (1,2);`, a path of one.
         parser.bind("\\coordinate", [this, &context, path](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
@@ -1520,12 +1520,12 @@ namespace render::primitives {
         // sep` and `row sep` between their edges, and the whole stands
         // centred on its point, or by the anchor it names.
         parser.bind("\\matrix", [this, &context, path](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
             if (canvases.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\matrix needs an open picture");
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\matrix needs an open picture");
                 return nullptr;
             }
             const float scale = scales.back();
@@ -1741,7 +1741,7 @@ namespace render::primitives {
         // TikZ's styles, named once and used by name after: `\\tikzset{
         // block/.style={draw, fill=blue!10}}`, and the older
         // `\\tikzstyle{block}=[draw]`.
-        parser.mouth().bind("\\tikzset", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\tikzset", [this](syntax::Mouth& mouth) {
             std::string options;
             for (const syntax::Token& token : mouth.argument({}, 1)) {
                 options += token.text;
@@ -1749,7 +1749,7 @@ namespace render::primitives {
             }
             static_cast<void>(expand(options, styles));
         });
-        parser.mouth().bind("\\tikzstyle", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\tikzstyle", [this](syntax::Mouth& mouth) {
             const std::string name = syntax::Argument::text(mouth);
             if (mouth.lookahead().is('=')) mouth.read();
             std::string options;
@@ -1760,7 +1760,7 @@ namespace render::primitives {
             styles[name] = options;
         });
 
-        parser.mouth().bind("\\linecolor", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\linecolor", [this, &context](syntax::Mouth& mouth) {
             const float carried = color.alpha;
             color = Colors::resolve(syntax::Argument::text(mouth), context.variables);
             // A color written without its own alpha -- a hex triplet, a
@@ -1769,7 +1769,7 @@ namespace render::primitives {
             if (color.alpha >= 1.0f) color.alpha = carried;
         });
 
-        parser.mouth().bind("\\lineopacity", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\lineopacity", [this](syntax::Mouth& mouth) {
             const std::string text = syntax::Argument::text(mouth);
             float value = color.alpha;
             if (const auto [stop, failure] =
@@ -1779,29 +1779,29 @@ namespace render::primitives {
             }
         });
 
-        parser.mouth().bind("\\linestyle", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\linestyle", [this](syntax::Mouth& mouth) {
             dashed = syntax::Argument::text(mouth) == "dashed";
         });
 
-        parser.mouth().bind("\\lineweight", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\lineweight", [this, &context](syntax::Mouth& mouth) {
             measure(mouth, context.registers, std::span{&weight, 1});
         });
 
-        parser.mouth().bind("\\planar", [this](syntax::Mouth&) { view = graphics::Projection::planar(); });
-        parser.mouth().bind("\\isometric", [this](syntax::Mouth&) { view = graphics::Projection::isometric(); });
+        parser.mouth.bind("\\planar", [this](syntax::Mouth&) { view = graphics::Projection::planar(); });
+        parser.mouth.bind("\\isometric", [this](syntax::Mouth&) { view = graphics::Projection::isometric(); });
 
-        parser.mouth().bind("\\orthographic", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\orthographic", [this, &context](syntax::Mouth& mouth) {
             std::array<std::int32_t, 2> angles{};
             for (std::int32_t& angle : angles) {
                 syntax::Token open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{') && !open.empty()) {
+                if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});
                 }
                 if (const auto scanned = syntax::Number::integer(mouth, context.registers)) {
                     angle = *scanned;
                 }
                 syntax::Token close = mouth.read();
-                if (!close.is(syntax::CatCodes::Category::Group, '}') && !close.empty()) {
+                if (!close.is(syntax::Catcodes::Category::Group, '}') && !close.empty()) {
                     mouth.stream().inject(std::span{&close, 1});
                 }
             }
@@ -1809,9 +1809,9 @@ namespace render::primitives {
                 static_cast<float>(angles[0]), static_cast<float>(angles[1]));
         });
 
-        parser.mouth().bind("\\line", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\line", [this, &context](syntax::Mouth& mouth) {
             if (canvases.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, mouth.lookahead().location,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, mouth.lookahead().location,
                                          "\\line needs an open picture");
                 return;
             }
@@ -1824,9 +1824,9 @@ namespace render::primitives {
                 color, weight, dashed);
         });
 
-        parser.mouth().bind("\\spaceline", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\spaceline", [this, &context](syntax::Mouth& mouth) {
             if (canvases.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, mouth.lookahead().location,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, mouth.lookahead().location,
                                          "\\spaceline needs an open picture");
                 return;
             }
@@ -1842,13 +1842,13 @@ namespace render::primitives {
 
         // graphicx's \graphicspath{{figures/}{plots/}}: the folders a picture
         // named without one is looked for in, after the document's own.
-        parser.mouth().bind("\\graphicspath", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\graphicspath", [this](syntax::Mouth& mouth) {
             folders.clear();
             std::string folder;
             std::size_t depth = 0;
             for (const syntax::Token& token : mouth.argument({}, 0)) {
-                if (token.is(syntax::CatCodes::Category::Group, '{') && depth++ == 0) continue;
-                if (token.is(syntax::CatCodes::Category::Group, '}') && --depth == 0) {
+                if (token.is(syntax::Catcodes::Category::Group, '{') && depth++ == 0) continue;
+                if (token.is(syntax::Catcodes::Category::Group, '}') && --depth == 0) {
                     if (!folder.empty() && !folder.ends_with('/')) folder += '/';
                     if (!folder.empty()) folders.push_back(std::move(folder));
                     folder.clear();
@@ -1859,8 +1859,8 @@ namespace render::primitives {
         });
 
         parser.bind("\\includegraphics", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // LaTeX's own form first, `\includegraphics[width=5cm]{file}`: the
@@ -1875,7 +1875,7 @@ namespace render::primitives {
             const std::string source = syntax::Argument::text(mouth);
 
             std::array<float, 2> size{};
-            const bool given = mouth.lookahead().is(syntax::CatCodes::Category::Group, '{');
+            const bool given = mouth.lookahead().is(syntax::Catcodes::Category::Group, '{');
             if (given) measure(mouth, context.registers, size);
 
             // `plot.png`, or the name with the extensions LaTeX tries for a
@@ -1913,7 +1913,7 @@ namespace render::primitives {
                 if (received) encoded = std::as_bytes(std::span{*received});
             }
             if (encoded.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\includegraphics could not read '" + source + "'");
                 return directive(arena, nullptr, origin, true);
             }
@@ -1984,7 +1984,7 @@ namespace render::primitives {
                 // A picture in a form this engine does not draw --
                 // PostScript, SVG -- leaves its place framed and empty, as
                 // wide and as tall as its keys ask, and says so.
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     syntax::Traceback::Type::Warning, origin,
                     "\\includegraphics: '" + source + "' is in a form this engine does not draw; its place is kept");
                 std::string width = given ? std::format("{:.2f}pt", size[0]) : std::string("0.5\\linewidth");
@@ -2009,7 +2009,7 @@ namespace render::primitives {
             // The part of a PDF's page shown, in its own points; the whole
             // box unless the keys chose less.
             if (drawn) {
-                const std::array<float, 4>& box = drawn->box();
+                const std::array<float, 4>& box = drawn->box;
                 if (!windowed) {
                     window = box;
                 } else if (trimmed) {
@@ -2023,9 +2023,9 @@ namespace render::primitives {
             // Its own size in points: a picture's pixels at the resolution
             // its file gives, a point each when it gives none; a PDF page's
             // window onto it.
-            const float point = stored ? 72.0f / stored->resolution() : 1.0f;
+            const float point = stored ? 72.0f / stored->resolution : 1.0f;
             const std::array<float, 2> natural =
-                stored ? std::array{static_cast<float>(stored->width()) * point, static_cast<float>(stored->height()) * point}
+                stored ? std::array{static_cast<float>(stored->width) * point, static_cast<float>(stored->height) * point}
                        : std::array{window[2] - window[0], window[3] - window[1]};
 
             if (!given) {
@@ -2069,7 +2069,7 @@ namespace render::primitives {
                         } else if (key == "page" || key == "viewport" || key == "trim" || key == "clip") {
                             // Read above: which part of a PDF is drawn.
                         } else {
-                            tracebacks_.emplace_back(syntax::Traceback::Type::Warning, mouth.lookahead().location,
+                            tracebacks.emplace_back(syntax::Traceback::Type::Warning, mouth.lookahead().location,
                                                      "\\includegraphics: the '" + std::string(key) + "' key is not supported");
                         }
                     }
@@ -2099,14 +2099,14 @@ namespace render::primitives {
         // the picture lands where its block stood in the parse, by the same
         // clock every other node does.
         parser.bind(flush, [this](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
             layout::Node* built = pending;
             pending = nullptr;
             // A picture stands in the line, as LaTeX's boxes do -- two side by
             // side with `\hfill` between, one centred by `\centering` -- and
             // an overlay, pinned to the page, apart from it.
-            const bool pinned = built && built->type() == layout::Node::Type::Box && built->box().anchored;
+            const bool pinned = built && built->type == layout::Node::Type::Box && built->box().anchored;
             return directive(arena, built, origin, pinned);
         });
 

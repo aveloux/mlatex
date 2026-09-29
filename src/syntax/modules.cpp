@@ -11,20 +11,10 @@
 
 namespace syntax::modules {
 
-// #embed is C++26's, and Clang still calls it an extension of its own there.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc23-extensions"
-#endif
-
 #include "modules.inc"
 
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-
-    std::optional<std::string_view> find(const std::string_view name) noexcept {
-        return catalog.find(name);
+    std::optional<std::string_view> get(const std::string_view name) noexcept {
+        return catalog.get(name);
     }
 
 }

@@ -28,7 +28,7 @@ namespace syntax::primitives {
     }
 
     void Macros::operator()(Mouth& mouth, Context& context) const {
-        Lexicon& lexicon = mouth.lexicon();
+        Lexicon& lexicon = mouth.lexicon;
 
         // Prefixes. Each sets a flag the next definition takes, so they
         // compose and may be written in any order.
@@ -42,7 +42,7 @@ namespace syntax::primitives {
         // end is marked with a name nothing means, which expand() therefore
         // hands back as it stands.
         const auto flatten = [this, &mouth, &lexicon](const std::vector<Token>& tokens) {
-            const Token end{finish, CatCodes::Category::Escape, {}, lexicon.resolve(finish)};
+            const Token end{finish, Catcodes::Category::Escape, {}, lexicon.resolve(finish)};
             mouth.stream().inject(std::span{&end, 1});
             mouth.stream().inject(std::span{tokens});
 
@@ -55,7 +55,7 @@ namespace syntax::primitives {
                 // no symbol, which is what kept it from expanding; kept, it is
                 // itself again.
                 if (token.symbol == none && !token.text.empty() &&
-                    (token.category == CatCodes::Category::Escape || token.category == CatCodes::Category::Active)) {
+                    (token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active)) {
                     token.symbol = lexicon.intern(token.text);
                 }
                 written.push_back(token);
@@ -69,7 +69,7 @@ namespace syntax::primitives {
         // before a brace group, e-TeX's own `\\expanded{...}`: the group,
         // expanded through and put back.
         mouth.bind("\\expanded", [&context, &mouth, flatten](Mouth&) {
-            if (!mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+            if (!mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                 context.expanded = true;
                 return;
             }
@@ -84,18 +84,18 @@ namespace syntax::primitives {
         // stepped over. An empty token when there is none.
         const auto named = [this, &mouth](std::string_view primitive) -> Token {
             Token name = mouth.read();
-            if (name.is(CatCodes::Category::Other, '*')) name = mouth.read();
-            if (name.is(CatCodes::Category::Group, '{')) {
+            if (name.is(Catcodes::Category::Other, '*')) name = mouth.read();
+            if (name.is(Catcodes::Category::Group, '{')) {
                 const Token inner = mouth.read();
-                if (!mouth.read().is(CatCodes::Category::Group, '}')) {
-                    tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+                if (!mouth.read().is(Catcodes::Category::Group, '}')) {
+                    tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                                   std::format("{} needs one control sequence in its braces", primitive));
                     return {};
                 }
                 name = inner;
             }
-            if (name.category != CatCodes::Category::Escape && name.category != CatCodes::Category::Active) {
-                tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+            if (name.category != Catcodes::Category::Escape && name.category != Catcodes::Category::Active) {
+                tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                               std::format("{} needs a control sequence to name", primitive));
                 return {};
             }
@@ -133,14 +133,14 @@ namespace syntax::primitives {
                 mouth.read();
                 const auto scanned = Number::integer(mouth, context.registers);
                 if (!scanned || *scanned < 0 || *scanned > parameters) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, name.location,
+                    tracebacks.emplace_back(Traceback::Type::Argument, name.location,
                                   std::format("\\define{} takes between 0 and {} parameters",
                                               name.text, parameters));
                     return;
                 }
                 declared = *scanned;
                 if (!mouth.lookahead().is(']')) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, name.location,
+                    tracebacks.emplace_back(Traceback::Type::Argument, name.location,
                                   "\\define parameter count is missing its ']'");
                     return;
                 }
@@ -165,11 +165,11 @@ namespace syntax::primitives {
             std::vector<std::vector<Token>> delimiters;
             std::vector<Token> prefix;
 
-            if (!mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+            if (!mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                 // What stands before the first parameter, matched where the
                 // macro is used.
                 while (!mouth.lookahead().empty() && !mouth.lookahead().is('#') &&
-                       !mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+                       !mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                     prefix.push_back(mouth.read());
                 }
                 while (mouth.lookahead().is('#')) {
@@ -178,14 +178,14 @@ namespace syntax::primitives {
                     const Token digit = mouth.read();
                     if (digit.text.size() != 1 ||
                         digit.text[0] != static_cast<char>('1' + declared)) {
-                        tracebacks_.emplace_back(
+                        tracebacks.emplace_back(
                             Traceback::Type::Argument, name.location,
                             std::format("\\define{} expects #{} here", name.text, declared + 1));
                         return;
                     }
 
                     if (++declared > parameters) {
-                        tracebacks_.emplace_back(
+                        tracebacks.emplace_back(
                             Traceback::Type::Argument, name.location,
                             std::format("\\define{} takes at most {} parameters",
                                         name.text, parameters));
@@ -194,7 +194,7 @@ namespace syntax::primitives {
 
                     std::vector<Token> delimiter;
                     while (!mouth.lookahead().is('#') &&
-                           !mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+                           !mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                         const Token next = mouth.read();
                         if (next.empty()) break;
                         delimiter.push_back(next);
@@ -247,7 +247,7 @@ namespace syntax::primitives {
             if (name.empty()) return;
 
             const std::vector<Token> specification = mouth.argument({}, 0);
-            const auto make = [&lexicon, &name](std::string_view text, CatCodes::Category category) {
+            const auto make = [&lexicon, &name](std::string_view text, Catcodes::Category category) {
                 const Symbol symbol = lexicon.intern(text);
                 return Token{symbol, category, name.location, lexicon.resolve(symbol)};
             };
@@ -256,14 +256,14 @@ namespace syntax::primitives {
             // spells it, so \IfNoValueTF can tell it from anything written.
             std::vector<Token> missing;
             for (const char letter : std::string_view("-NoValue-")) {
-                missing.push_back(make(std::string_view(&letter, 1), letter == '-' ? CatCodes::Category::Other
-                                                                                   : CatCodes::Category::Letter));
+                missing.push_back(make(std::string_view(&letter, 1), letter == '-' ? Catcodes::Category::Other
+                                                                                   : Catcodes::Category::Letter));
             }
 
             Mouth::Macro macro;
             for (std::size_t index = 0; index < specification.size(); ++index) {
                 const Token& letter = specification[index];
-                if (letter.category == CatCodes::Category::Space || letter.is('!')) continue;
+                if (letter.category == Catcodes::Category::Space || letter.is('!')) continue;
                 if (letter.is('+')) {
                     macro.spanning = true;
                     continue;
@@ -280,32 +280,32 @@ namespace syntax::primitives {
                     std::size_t depth = 0;
                     while (++index < specification.size()) {
                         const Token& item = specification[index];
-                        if (depth == 0 && item.category == CatCodes::Category::Space) continue;
-                        if (item.is(CatCodes::Category::Group, '{') && depth++ == 0) continue;
-                        if (item.is(CatCodes::Category::Group, '}') && --depth == 0) break;
+                        if (depth == 0 && item.category == Catcodes::Category::Space) continue;
+                        if (item.is(Catcodes::Category::Group, '{') && depth++ == 0) continue;
+                        if (item.is(Catcodes::Category::Group, '}') && --depth == 0) break;
                         parameter.fallbacks.push_back(item);
                         if (depth == 0) break;
                     }
                 } else if (letter.is('s') || letter.is('t')) {
-                    const Token mark = letter.is('s') ? make("*", CatCodes::Category::Other)
+                    const Token mark = letter.is('s') ? make("*", Catcodes::Category::Other)
                                        : index + 1 < specification.size() ? specification[++index]
                                                                           : Token{};
                     if (mark.empty()) {
-                        tracebacks_.emplace_back(Traceback::Type::Argument, letter.location,
+                        tracebacks.emplace_back(Traceback::Type::Argument, letter.location,
                                       std::format("\\declare{}: t needs the token it looks for", name.text));
                         return;
                     }
-                    parameter.present = {mark, make("\\BooleanTrue", CatCodes::Category::Escape)};
-                    parameter.fallbacks = {make("\\BooleanFalse", CatCodes::Category::Escape)};
+                    parameter.present = {mark, make("\\BooleanTrue", Catcodes::Category::Escape)};
+                    parameter.fallbacks = {make("\\BooleanFalse", Catcodes::Category::Escape)};
                 } else if (!letter.is('m')) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, letter.location,
+                    tracebacks.emplace_back(Traceback::Type::Argument, letter.location,
                                   std::format("\\declare{}: an argument of kind {} is not supported",
                                               name.text, letter.text));
                     return;
                 }
 
                 if (macro.parameters.size() == static_cast<std::size_t>(parameters)) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, name.location,
+                    tracebacks.emplace_back(Traceback::Type::Argument, name.location,
                                   std::format("\\declare{} takes at most {} arguments", name.text, parameters));
                     return;
                 }
@@ -322,9 +322,9 @@ namespace syntax::primitives {
         // macros that turn it.
         mouth.bind("\\switch", [this, &context, &mouth, &lexicon](Mouth&) {
             const Token name = mouth.read();
-            if (name.category != CatCodes::Category::Escape || !name.text.starts_with("\\if") ||
+            if (name.category != Catcodes::Category::Escape || !name.text.starts_with("\\if") ||
                 name.text.size() == 3) {
-                tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+                tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                               "\\switch needs a name that begins with \\if");
                 return;
             }
@@ -337,25 +337,25 @@ namespace syntax::primitives {
                 const Symbol symbol = lexicon.intern(std::format("\\{}{}", stem, value ? "true" : "false"));
                 const Symbol meaning = value ? truth : falsehood;
                 Mouth::Macro macro;
-                macro.body = {Token{alias, CatCodes::Category::Escape, name.location, lexicon.resolve(alias)}, name,
-                              Token{meaning, CatCodes::Category::Escape, name.location, lexicon.resolve(meaning)}};
+                macro.body = {Token{alias, Catcodes::Category::Escape, name.location, lexicon.resolve(alias)}, name,
+                              Token{meaning, Catcodes::Category::Escape, name.location, lexicon.resolve(meaning)}};
                 mouth.define(symbol, std::move(macro), global);
             }
         });
 
         mouth.bind("\\forget", [this, &context, &mouth](Mouth&) {
             const Token name = mouth.read();
-            if (name.category != CatCodes::Category::Escape) {
-                tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+            if (name.category != Catcodes::Category::Escape) {
+                tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                               "\\forget needs a control sequence");
                 return;
             }
             if (mouth.macro(name.symbol) == nullptr) {
-                tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+                tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                               std::format("\\forget{} is not defined", name.text));
                 return;
             }
-            mouth.undefine(name.symbol, std::exchange(context.global, false));
+            mouth.forget(name.symbol, std::exchange(context.global, false));
         });
 
         mouth.bind("\\alias", [this, &context, &mouth](Mouth&) {
@@ -364,15 +364,15 @@ namespace syntax::primitives {
             // TeX's optional equals sign, and the one space it allows after:
             // `\let\a=\b` and `\let\a = \b` are `\let\a\b`.
             Token source = mouth.read();
-            while (source.category == CatCodes::Category::Space) source = mouth.read();
-            if (source.is(CatCodes::Category::Other, '=')) {
+            while (source.category == Catcodes::Category::Space) source = mouth.read();
+            if (source.is(Catcodes::Category::Other, '=')) {
                 source = mouth.read();
-                if (source.category == CatCodes::Category::Space) source = mouth.read();
+                if (source.category == Catcodes::Category::Space) source = mouth.read();
             }
 
-            if ((name.category != CatCodes::Category::Escape && name.category != CatCodes::Category::Active) ||
+            if ((name.category != Catcodes::Category::Escape && name.category != Catcodes::Category::Active) ||
                 source.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Macro, name.location,
+                tracebacks.emplace_back(Traceback::Type::Macro, name.location,
                               "\\alias needs a control sequence and what it is to mean");
                 return;
             }
@@ -385,7 +385,7 @@ namespace syntax::primitives {
 
             // Whatever else the name comes to mean, a macro it had would go
             // on winning over it, so that goes first.
-            if (mouth.macro(name.symbol)) mouth.undefine(name.symbol, global);
+            if (mouth.macro(name.symbol)) mouth.forget(name.symbol, global);
 
             // Aliasing a primitive copies its handler, so the new name behaves
             // identically rather than merely expanding to the old one.
@@ -404,7 +404,7 @@ namespace syntax::primitives {
             // undefined name, which leaves this one undefined too, as TeX's
             // `\let\name\undefined` does.
             if (mouth.reader.lend && mouth.reader.lend(name.symbol, source.symbol)) return;
-            if (source.category != CatCodes::Category::Escape) {
+            if (source.category != Catcodes::Category::Escape) {
                 Mouth::Macro macro;
                 macro.body = {source};
                 macro.implicit = true;
@@ -423,7 +423,7 @@ namespace syntax::primitives {
                 const std::string_view piece = written.substr(at, span);
                 at += span;
                 const Symbol symbol = lexicon.intern(piece);
-                tokens.push_back(Token{symbol, piece == " " ? CatCodes::Category::Space : CatCodes::Category::Other,
+                tokens.push_back(Token{symbol, piece == " " ? Catcodes::Category::Space : Catcodes::Category::Other,
                                        location, lexicon.resolve(symbol)});
             }
             return tokens;
@@ -435,7 +435,7 @@ namespace syntax::primitives {
             std::string text;
             for (const Token& token : tokens) {
                 text += token.text;
-                if (token.category == CatCodes::Category::Escape && token.text.size() > 1 &&
+                if (token.category == Catcodes::Category::Escape && token.text.size() > 1 &&
                     ((token.text.back() >= 'a' && token.text.back() <= 'z') ||
                      (token.text.back() >= 'A' && token.text.back() <= 'Z') || token.text.back() == '@')) {
                     text += ' ';
@@ -470,10 +470,10 @@ namespace syntax::primitives {
                     meaning += std::format("#{}", index + 1) + written(found->parameters[index].delimiters);
                 }
                 meaning += "->" + written(found->body);
-            } else if (token.category == CatCodes::Category::Escape || token.category == CatCodes::Category::Active) {
+            } else if (token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active) {
                 meaning = mouth.known(token.symbol) ? std::string(token.text) : "undefined";
             } else {
-                meaning = (token.category == CatCodes::Category::Letter ? "the letter " : "the character ") +
+                meaning = (token.category == Catcodes::Category::Letter ? "the letter " : "the character ") +
                           std::string(token.text);
             }
             const std::vector<Token> tokens = spelled(meaning, token.location);
@@ -487,7 +487,7 @@ namespace syntax::primitives {
         mouth.bind("\\noexpand", [this, &mouth](Mouth&) {
             Token token = mouth.read();
             if (token.empty()) return;
-            const bool name = token.category == CatCodes::Category::Escape || token.category == CatCodes::Category::Active;
+            const bool name = token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active;
             if (flattening > 0 && name) token.symbol = none;
             else if (name && (mouth.macro(token.symbol) || mouth.handler(token.symbol))) return;
             mouth.stream().inject(std::span{&token, 1});
@@ -496,13 +496,13 @@ namespace syntax::primitives {
             // Its text is e-TeX's general text: what stands before the brace
             // is expanded until one does, so `\\unexpanded\\expandafter{\\x}`
             // holds what \\x holds rather than the \\expandafter.
-            while (!mouth.lookahead().empty() && !mouth.lookahead().is(CatCodes::Category::Group, '{') &&
+            while (!mouth.lookahead().empty() && !mouth.lookahead().is(Catcodes::Category::Group, '{') &&
                    mouth.step()) {
             }
             std::vector<Token> tokens = mouth.argument({}, 1);
             if (flattening > 0) {
                 for (Token& token : tokens) {
-                    if (token.category == CatCodes::Category::Escape || token.category == CatCodes::Category::Active) {
+                    if (token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active) {
                         token.symbol = none;
                     }
                 }
@@ -516,7 +516,7 @@ namespace syntax::primitives {
         // change too.
         const auto cased = [&lexicon](std::vector<Token> tokens, const bool upper) {
             for (Token& token : tokens) {
-                if (token.category == CatCodes::Category::Escape || token.text.size() != 1) continue;
+                if (token.category == Catcodes::Category::Escape || token.text.size() != 1) continue;
                 const char letter = token.text[0];
                 const char turned = upper && letter >= 'a' && letter <= 'z'   ? static_cast<char>(letter - 32)
                                     : !upper && letter >= 'A' && letter <= 'Z' ? static_cast<char>(letter + 32)
@@ -553,7 +553,7 @@ namespace syntax::primitives {
             const Token first = mouth.read();
             const Token second = mouth.read();
             const std::array<Token, 5> read{
-                Token{alias, CatCodes::Category::Escape, name.location, lexicon.resolve(alias)}, name, second, first,
+                Token{alias, Catcodes::Category::Escape, name.location, lexicon.resolve(alias)}, name, second, first,
                 second,
             };
             mouth.stream().inject(std::span{read});
@@ -563,7 +563,7 @@ namespace syntax::primitives {
         // under whatever the character categories are now.
         mouth.bind("\\scantokens", [&mouth, written](Mouth&) {
             const std::string text = written(mouth.argument({}, 1));
-            if (!text.empty()) mouth.ingest(mouth.arena().copy(text));
+            if (!text.empty()) mouth.ingest(mouth.arena.copy(text));
         });
 
         // e-TeX's \protected, a prefix saying a macro is not to expand in an
@@ -586,7 +586,7 @@ namespace syntax::primitives {
 
             const Symbol symbol = lexicon.intern(written);
             if (!mouth.known(symbol)) mouth.lend(symbol, relax);
-            const Token made{symbol, CatCodes::Category::Escape, location, lexicon.resolve(symbol)};
+            const Token made{symbol, Catcodes::Category::Escape, location, lexicon.resolve(symbol)};
             mouth.stream().inject(std::span{&made, 1});
         });
 
@@ -610,7 +610,7 @@ namespace syntax::primitives {
             const std::vector<Token> plain = mouth.argument({}, 1);
 
             Token next = mouth.read();
-            while (next.category == CatCodes::Category::Space) next = mouth.read();
+            while (next.category == Catcodes::Category::Space) next = mouth.read();
             const bool star = next.is('*');
             if (!star && !next.empty()) mouth.stream().inject(std::span{&next, 1});
 
@@ -624,12 +624,12 @@ namespace syntax::primitives {
             const std::vector<Token> otherwise = mouth.argument({}, 1);
 
             Token next = mouth.read();
-            while (next.category == CatCodes::Category::Space) next = mouth.read();
+            while (next.category == Catcodes::Category::Space) next = mouth.read();
             // `\@ifnextchar\bgroup` asks after a brace group, which is the
             // one thing no argument can hold alone.
             const bool match = !wanted.empty() && !next.empty() &&
                                (next.text == wanted.front().text ||
-                                (wanted.front().text == "\\bgroup" && next.is(CatCodes::Category::Group, '{')));
+                                (wanted.front().text == "\\bgroup" && next.is(Catcodes::Category::Group, '{')));
             if (!next.empty()) mouth.stream().inject(std::span{&next, 1});
 
             const std::vector<Token>& chosen = match ? matching : otherwise;

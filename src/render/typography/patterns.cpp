@@ -16,21 +16,11 @@
 
 namespace render::typography {
 
-// #embed is C++26's, and Clang still calls it an extension of its own there.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc23-extensions"
-#endif
-
     /// American English, the language a document is broken in unless it
     /// asks for another.
     static constexpr char english[] = {
 #embed "../../../assets/hyphens/hyph-en-us.pat.txt" suffix(,)
         0};
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
     /// @brief A language's trie as the compiler leaves it: the packed trie
     ///        parse() made, copied into arrays of exactly its size.

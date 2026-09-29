@@ -16,7 +16,7 @@ namespace syntax::semantics {
     /// @par Use
     /// @code
     /// state.push();
-    /// state.fonts().text = bold;       // local to the group
+    /// state.fonts.text = bold;         // local to the group
     /// state.pop();                     // the previous face is back
     /// @endcode
     class Union {
@@ -32,33 +32,25 @@ namespace syntax::semantics {
 
         /// @brief Opens a group.
         void push() {
-            catcodes_.push();
-            registers_.push();
-            saved.push_back(fonts_);
+            catcodes.push();
+            registers.push();
+            saved.push_back(fonts);
         }
 
         /// @brief Closes a group.
         void pop() {
-            catcodes_.pop();
-            registers_.pop();
+            catcodes.pop();
+            registers.pop();
             if (saved.empty()) return;
-            fonts_ = saved.back();
+            fonts = saved.back();
             saved.pop_back();
         }
 
-        /// @brief The category table.
-        [[nodiscard]] CatCodes& catcodes() noexcept { return catcodes_; }
-
-        /// @brief The register banks.
-        [[nodiscard]] Registers& registers() noexcept { return registers_; }
-
-        /// @brief The current faces.
-        [[nodiscard]] Fonts& fonts() noexcept { return fonts_; }
+        Catcodes catcodes{};             ///< Category table.
+        Registers registers{};           ///< Register banks.
+        Fonts fonts{};                   ///< Current faces.
 
     private:
-        CatCodes catcodes_{};            ///< Category table.
-        Registers registers_{};          ///< Register banks.
-        Fonts fonts_{};                  ///< Current faces.
         std::vector<Fonts> saved{};      ///< Faces to restore, one per open group.
     };
 

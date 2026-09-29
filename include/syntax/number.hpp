@@ -84,7 +84,7 @@ namespace syntax {
                     registers.get(semantics::Registers::Type::Count, static_cast<std::size_t>(*index))));
             }
 
-            if (lead.category == CatCodes::Category::Escape) {
+            if (lead.category == Catcodes::Category::Escape) {
                 const auto target = registers.target(lead.symbol);
                 if (!target) {
                     Logger::log(Logger::Type::Semantics, Logger::Level::Error,
@@ -111,7 +111,7 @@ namespace syntax {
                 if (cursor.empty()) return std::nullopt;
                 const Token target = cursor.advance();
                 std::string_view text = target.text;
-                if (target.category == CatCodes::Category::Escape && text.size() > 1) {
+                if (target.category == Catcodes::Category::Escape && text.size() > 1) {
                     text.remove_prefix(1);
                 }
                 if (text.empty()) return std::nullopt;
@@ -185,7 +185,7 @@ namespace syntax {
                 whole = *scanned;
                 counted = 1;
                 factored = true;
-            } else if (lead.category == CatCodes::Category::Escape) {
+            } else if (lead.category == Catcodes::Category::Escape) {
                 const auto target = registers.target(lead.symbol);
                 if (!target) {
                     Logger::log(Logger::Type::Semantics, Logger::Level::Error,
@@ -240,7 +240,7 @@ namespace syntax {
             // tenths of whatever that register holds.
             std::optional<Measure> measure;
             blanks(cursor);
-            if (const Token after = cursor.lookahead(0); after.category == CatCodes::Category::Escape) {
+            if (const Token after = cursor.lookahead(0); after.category == Catcodes::Category::Escape) {
                 if (const auto held = registers.target(after.symbol);
                     held && held->type != semantics::Registers::Type::Count) {
                     cursor.advance();
@@ -255,7 +255,7 @@ namespace syntax {
                     }
                 }
             }
-            if (!measure) measure = unit(cursor, registers.quad());
+            if (!measure) measure = unit(cursor, registers.quad);
             if (!measure) {
                 return std::nullopt;
             }
@@ -325,11 +325,11 @@ namespace syntax {
         /// @complexity O(1) amortized: at most one expansion.
         static void settle(Mouth& mouth) noexcept {
             Cursor& cursor = mouth.stream();
-            while (!cursor.empty() && cursor.lookahead(0).category == CatCodes::Category::Space) {
+            while (!cursor.empty() && cursor.lookahead(0).category == Catcodes::Category::Space) {
                 cursor.advance();
             }
             if (const Token next = cursor.lookahead(0);
-                next.category == CatCodes::Category::Escape &&
+                next.category == Catcodes::Category::Escape &&
                 (mouth.macro(next.symbol) || mouth.handler(next.symbol))) {
                 if (const Token produced = mouth.expand(); !produced.empty()) {
                     cursor.inject(std::span{&produced, 1});
@@ -346,7 +346,7 @@ namespace syntax {
         /// @brief Skips a run of spaces.
         /// @param cursor Stream to read from.
         static void blanks(Cursor& cursor) noexcept {
-            while (!cursor.empty() && cursor.lookahead(0).category == CatCodes::Category::Space) {
+            while (!cursor.empty() && cursor.lookahead(0).category == Catcodes::Category::Space) {
                 cursor.advance();
             }
         }
@@ -355,7 +355,7 @@ namespace syntax {
         /// @param cursor Stream to read from.
         /// @complexity O(1).
         static void space(Cursor& cursor) noexcept {
-            if (!cursor.empty() && cursor.lookahead(0).category == CatCodes::Category::Space) {
+            if (!cursor.empty() && cursor.lookahead(0).category == Catcodes::Category::Space) {
                 cursor.advance();
             }
         }
@@ -521,7 +521,7 @@ namespace syntax {
             const Token one = cursor.lookahead(0);
             const Token two = cursor.lookahead(1);
             if (one.text.size() != 1 || two.text.size() != 1) return false;
-            if (one.category != CatCodes::Category::Letter || two.category != CatCodes::Category::Letter) {
+            if (one.category != Catcodes::Category::Letter || two.category != Catcodes::Category::Letter) {
                 return false;
             }
             first = lower(one.text[0]);

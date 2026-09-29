@@ -34,29 +34,29 @@ namespace render::primitives {
                     "Render primitives installed");
     }
 
-    std::vector<syntax::Traceback> Wrapper::tracebacks() const {
+    std::vector<syntax::Traceback> Wrapper::traceback() const {
         // Only the modules that can report. Spacing, rules and penalties have
         // no failure to report: a number they cannot scan means a space or a
         // break of no size, which is what was written and not an error.
         // Colors reports only a color it was asked to define and could not;
         // one it is asked to use and cannot read is just black.
-        const std::array<const std::vector<syntax::Traceback>*, 23> lists_{
-            &page.tracebacks(), &typeface.tracebacks(), &styles.tracebacks(),
-            &boxes.tracebacks(), &tables.tracebacks(), &sections.tracebacks(),
-            &paragraphs.tracebacks(), &lists.tracebacks(), &expressions.tracebacks(),
-            &references.tracebacks(), &citations.tracebacks(), &footnotes.tracebacks(),
-            &counters.tracebacks(), &theorems.tracebacks(), &floats.tracebacks(), &algorithms.tracebacks(),
-            &illustrations.tracebacks(),
-            &requests.tracebacks(),
-            &colors.tracebacks(), &verbatim.tracebacks(), &plots.tracebacks(), &diagrams.tracebacks(), &languages.tracebacks(),
+        const std::array<const std::vector<syntax::Traceback>*, 23> parts{
+            &page.traceback(), &typeface.traceback(), &styles.traceback(),
+            &boxes.traceback(), &tables.traceback(), &sections.traceback(),
+            &paragraphs.traceback(), &lists.traceback(), &expressions.traceback(),
+            &references.traceback(), &citations.traceback(), &footnotes.traceback(),
+            &counters.traceback(), &theorems.traceback(), &floats.traceback(), &algorithms.traceback(),
+            &illustrations.traceback(),
+            &requests.traceback(),
+            &colors.traceback(), &verbatim.traceback(), &plots.traceback(), &diagrams.traceback(), &languages.traceback(),
         };
 
         std::size_t total = 0;
-        for (const auto* list : lists_) total += list->size();
+        for (const auto* list : parts) total += list->size();
 
         std::vector<syntax::Traceback> gathered;
         gathered.reserve(total);
-        for (const auto* list : lists_) {
+        for (const auto* list : parts) {
             gathered.insert(gathered.end(), list->begin(), list->end());
         }
         return gathered;

@@ -165,6 +165,9 @@ sees, newest work last within each group.
   the document's end, as LaTeX's second run reads it -- is spelled out once
   it is; `\acro`'s list is set as a description, and `\acrodef` defines
   without listing. One never defined reads `??`.
+- thmtools' `\declaretheorem[keys]{name}` is `\newtheorem` with its title
+  from `name=` or the name capitalised, `numberwithin=`, `sibling=`,
+  `numbered=no` and `style=`.
 - enumitem's `\setlist[kind]{options}`, and `itemsep` and `topsep`.
   `\renewcommand{\labelitemi}{...}` changes a list's bullets.
 - titlesec's format reads `\color` and the code after its title:
@@ -502,6 +505,35 @@ font folders are listed only for a script the engine carries no face for.
   `\@bibkind`), long definitions, characters and category changes, links and
   text given later, and environments as native blocks. The Doxygen reference
   builds with no warnings.
+
+### Names
+
+- **No name carries an underscore.** A list a class keeps and hands out
+  read-only is the plural, and what hands it out the singular: every module's
+  `tracebacks` and its `traceback()`, the wrappers' `traceback()` merging
+  them. A field an accessor only returned or set is the field itself, public:
+  `mouth.lexicon`, `mouth.arena`, `mouth.state`, `mouth.error`,
+  `mouth.vertical`, `parser.mouth`, `state.registers`, `state.catcodes`,
+  `registers.quad`, `node.type`, a traceback's `type`, `location` and
+  `message`, an image's `width`, `pixels` and `resolution`, a drawing's
+  `box` and `objects`, the document's `configuration`, `furniture`,
+  `metadata` and `fallback`, the composer's `pictures`, `faces`, `anchors`
+  and the rest, a session's `pdf`, `error`, `pages`, `host` and `assets`,
+  and the core wrapper's `relay`, `blocks` and `variables` (which were
+  `conditionals()`, `structure()` and `variables()`). A field a parameter
+  would shadow takes its role: `\par`'s symbol is `paragraph`, the robust
+  switch `keeping`, the composer's colours in use `filling` and `stroking`.
+- **One verb for each thing done.** Every lookup is `get` -- the catalog's,
+  the glossary's, the modules', the ledger's, a language's, the symbol
+  table's (gperf's `Lookup::get`), a variable's -- and every store `set`
+  (the ledger's); what `compose` starts `dispose` ends, the logger included
+  (`Logger::dispose`, which was `close`); the expander's `forget` takes back
+  what `define` gave, as the language's `\forget` does (`undefine`).
+- `CatCodes` is `Catcodes`, and the last snake_case names (in the plots
+  module) are single words.
+- `#embed` needs no pragmas: Clang's claim that it is an extension under
+  C++26 is turned off once in CMakeLists.txt, and the
+  `#if defined(__clang__)` blocks around the three files that embed are gone.
 
 ### Removed
 

@@ -72,52 +72,52 @@ int main() {
     // --- A session and what it holds -------------------------------------------------
     {
         engine::Session session(engine::locate(__FILE__));
-        assert((session.assets() == engine::locate(__FILE__)) && "a session reads the assets it was given");
+        assert((session.assets == engine::locate(__FILE__)) && "a session reads the assets it was given");
 
         session.set("customer", "Acme");
         session.set("customer", "Globex");
         session.set("total", "12");
-        assert((session.host().variables.size() == 2 && session.host().variables[0].second == "Globex") &&
+        assert((session.host.variables.size() == 2 && session.host.variables[0].second == "Globex") &&
                "setting a name again replaces it");
         session.unset("total");
         session.unset("never");
-        assert((session.host().variables.size() == 1) && "a value is taken back, and taking back none is nothing");
+        assert((session.host.variables.size() == 1) && "a value is taken back, and taking back none is nothing");
 
         int calls = 0;
         session.define({.name = "\\shout", .arity = 1, .handler = [&calls](auto arguments) {
             ++calls;
             return arguments[0] + "!";
         }});
-        assert((session.host().commands.size() == 1 && session.host().commands[0].name == "shout") &&
+        assert((session.host.commands.size() == 1 && session.host.commands[0].name == "shout") &&
                "a command is kept by its bare name");
         session.define({.name = "shout", .arity = 1, .handler = [&calls](auto arguments) {
             calls += 10;
             return arguments[0];
         }});
-        assert((session.host().commands.size() == 1) &&
+        assert((session.host.commands.size() == 1) &&
                "defining it again, with or without its backslash, replaces it");
 
         session.provide("house/main.mtex", "\\define\\motto{Onward}");
         session.provide("house/main.mtex", "\\define\\motto{Upward}");
-        assert((session.host().files.size() == 1 && session.host().files.at("house/main.mtex").contains("Upward")) &&
+        assert((session.host.files.size() == 1 && session.host.files.at("house/main.mtex").contains("Upward")) &&
                "a file handed in again replaces it");
 
         const bool made = session.typeset("\\usepackage{house}\\begin{document}\\motto\\ \\shout{\\variable{customer}}"
                                           "\\end{document}");
-        assert((made && session.error().empty() && session.pdf().starts_with("%PDF-")) &&
+        assert((made && session.error.empty() && session.pdf.starts_with("%PDF-")) &&
                "a document uses everything the session holds, and makes a PDF");
         assert((calls == 10) && "the command called is the one defined last");
 
         session.forget("\\shout");
         session.withdraw("house/main.mtex");
-        assert((session.host().commands.empty() && session.host().files.empty()) &&
+        assert((session.host.commands.empty() && session.host.files.empty()) &&
                "commands and files are taken back");
         assert((session.typeset("\\usepackage{house}\\begin{document}x\\end{document}") &&
-               holds(session.error(), "warning: File `house.sty' not found")) &&
+               holds(session.error, "warning: File `house.sty' not found")) &&
                "and missed by name once they are, as a warning");
 
         engine::Session lost(engine::locate(__FILE__).parent_path() / "no-such-assets");
-        assert((!lost.typeset("\\begin{document}x\\end{document}") && lost.pdf().empty() && !lost.error().empty()) &&
+        assert((!lost.typeset("\\begin{document}x\\end{document}") && lost.pdf.empty() && !lost.error.empty()) &&
                "a session with no fonts makes nothing, and says why");
     }
 

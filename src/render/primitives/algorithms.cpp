@@ -21,18 +21,18 @@ namespace render::primitives {
     }
 
     syntax::Node* Algorithms::line(syntax::Parser& parser, Context& context, const bool numbered) const {
-        memory::Arena& arena = parser.arena();
-        const memory::Location origin = parser.mouth().lookahead().location;
+        memory::Arena& arena = parser.arena;
+        const memory::Location origin = parser.mouth.lookahead().location;
 
         if (blocks.empty()) {
-            tracebacks_.emplace_back(syntax::Traceback::Type::Environment, origin,
+            tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
                                      "A pseudocode line outside an algorithmic block");
             blocks.push_back(Block{});
         }
         Block& block = blocks.back();
 
         const float em = context.selection.text() ? context.selection.text()->size()
-                                                  : context.document.configuration().size;
+                                                  : context.document.configuration.size;
         const bool counted = numbered && block.every > 0;
         if (numbered) ++block.lines;
 
@@ -47,7 +47,7 @@ namespace render::primitives {
         // \alglinenumber, `\footnotesize 3:`.
         layout::Node* label = nullptr;
         if (counted && block.lines % block.every == 0) {
-            const float small = Styles::measure(context.document.configuration().size, Styles::Size::Footnote);
+            const float small = Styles::measure(context.document.configuration.size, Styles::Size::Footnote);
             if (const typography::Font* font = Styles::resolve(context, Styles::Cut::Normal, small)) {
                 const typography::Font* fonts[] = {font};
                 const memory::Slice<layout::Node*> shaped = context.shaper.shape(
@@ -109,10 +109,10 @@ namespace render::primitives {
         // A block's opening line is set before its lines step in, and its
         // closing line after they step back out: the package writes these
         // after the one and before the other.
-        parser.mouth().bind("\\algorithmopen", [this](syntax::Mouth&) {
+        parser.mouth.bind("\\algorithmopen", [this](syntax::Mouth&) {
             if (!blocks.empty()) ++blocks.back().depth;
         });
-        parser.mouth().bind("\\algorithmclose", [this](syntax::Mouth&) {
+        parser.mouth.bind("\\algorithmclose", [this](syntax::Mouth&) {
             if (!blocks.empty() && blocks.back().depth > 0) --blocks.back().depth;
         });
 

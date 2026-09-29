@@ -200,8 +200,8 @@ namespace render::primitives {
 
         for (const auto& [name, text] : named) {
             parser.bind(name, [text](const syntax::Parser& parser) -> syntax::Node* {
-                return parser.arena().compose<syntax::Node>(
-                    syntax::Node::Type::Text, text, parser.mouth().lookahead().location);
+                return parser.arena.compose<syntax::Node>(
+                    syntax::Node::Type::Text, text, parser.mouth.lookahead().location);
             });
         }
 
@@ -218,7 +218,7 @@ namespace render::primitives {
             const char accent = name[1];
             const std::size_t row = marks.find(accent);
             parser.bind(name, [accent, row](const syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
+                syntax::Mouth& mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
 
                 const auto letter = [](const syntax::Token& token) -> std::string_view {
@@ -228,12 +228,12 @@ namespace render::primitives {
                 };
 
                 syntax::Token next = mouth.read();
-                while (next.category == syntax::CatCodes::Category::Space) next = mouth.read();
+                while (next.category == syntax::Catcodes::Category::Space) next = mouth.read();
 
                 std::string base;
-                if (next.is(syntax::CatCodes::Category::Group, '{')) {
+                if (next.is(syntax::Catcodes::Category::Group, '{')) {
                     for (syntax::Token token = mouth.read();
-                         !token.empty() && !token.is(syntax::CatCodes::Category::Group, '}');
+                         !token.empty() && !token.is(syntax::Catcodes::Category::Group, '}');
                          token = mouth.read()) {
                         base += letter(token);
                     }
@@ -271,8 +271,8 @@ namespace render::primitives {
                     text = base.substr(0, span) + std::string(mark) + base.substr(span);
                 }
 
-                return parser.arena().compose<syntax::Node>(
-                    syntax::Node::Type::Text, parser.arena().copy(text), origin);
+                return parser.arena.compose<syntax::Node>(
+                    syntax::Node::Type::Text, parser.arena.copy(text), origin);
             });
         }
 
@@ -282,7 +282,7 @@ namespace render::primitives {
         // ends an element -- raised, an arrow drawn as one; a number that
         // starts a term stays a coefficient.
         parser.bind("\\ce", [](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const std::string formula = syntax::Argument::text(mouth);
             std::string written;
             const auto element = [](const char letter) {
@@ -323,7 +323,7 @@ namespace render::primitives {
                     ++at;
                 }
             }
-            mouth.ingest(parser.arena().copy(written));
+            mouth.ingest(parser.arena.copy(written));
             return nullptr;
         });
 

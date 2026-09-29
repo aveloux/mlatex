@@ -40,19 +40,19 @@ namespace render::layout {
     /// @complexity O(n) in the block's nodes.
     static void collect(const Node* node, std::vector<const Node*>& notes) {
         if (!node) return;
-        if (node->type() == Node::Type::Directive) {
+        if (node->type == Node::Type::Directive) {
             const Node::Directive& order = node->directive();
             if (order.command == Node::Directive::Command::Note && order.note) notes.push_back(order.note);
             return;
         }
-        if (node->type() != Node::Type::Box) return;
+        if (node->type != Node::Type::Box) return;
         for (const Node* child : node->box().list) collect(child, notes);
     }
 
     Pager::Pager(memory::Arena& arena) noexcept : arena(arena) {}
 
     memory::Slice<Pager::Page> Pager::paginate(const Node* head, const Context& context) const {
-        if (!head || head->type() != Node::Type::Box) return {};
+        if (!head || head->type != Node::Type::Box) return {};
 
         const memory::Slice<Node*>& column = head->box().list;
         const std::size_t total = column.size();
@@ -62,7 +62,7 @@ namespace render::layout {
         using Directive = Node::Directive;
         const Placement& rules = context.placement;
         const auto space = [](const Node* block) {
-            return block->type() == Node::Type::Glue || block->type() == Node::Type::Kern;
+            return block->type == Node::Type::Glue || block->type == Node::Type::Kern;
         };
         const auto kern = [this](const float amount) {
             auto* made = arena.compose<Node>(Node::Type::Kern);
@@ -198,11 +198,11 @@ namespace render::layout {
                 if (index > 0) set.push_back(kern(rules.apart));
                 set.insert(set.end(), heads[index].blocks.begin(), heads[index].blocks.end());
             }
-            if (!heads.empty() && !filling.empty()) set.push_back(kern(rules.clear));
+            if (!heads.empty() && !filling.empty()) set.push_back(kern(rules.clearance));
             set.insert(set.end(), filling.begin(), filling.end());
             if (!feet.empty() && !set.empty()) {
                 const float free = done ? std::max(context.height - used - reserved - crown - height - sole, 0.0f) : 0.0f;
-                set.push_back(kern(rules.clear + free));
+                set.push_back(kern(rules.clearance + free));
             }
             for (std::size_t index = 0; index < feet.size(); ++index) {
                 if (index > 0) set.push_back(kern(rules.apart));
@@ -254,7 +254,7 @@ namespace render::layout {
                         box->box(shape);
                         row[placed++] = box;
                         for (Node* block : blocked) {
-                            if (block->type() == Node::Type::Directive && block->directive().command == Command::Page) {
+                            if (block->type == Node::Type::Directive && block->directive().command == Command::Page) {
                                 above.push_back(block);
                             }
                         }
@@ -276,7 +276,7 @@ namespace render::layout {
             // changed, an anchor, between two breaks -- is no page, as TeX
             // ships none: its instructions go to the next.
             if (std::ranges::none_of(above, [&](const Node* block) {
-                    return block->type() != Node::Type::Directive && !space(block);
+                    return block->type != Node::Type::Directive && !space(block);
                 })) {
                 std::erase_if(above, space);
                 used = 0.0f;
@@ -289,7 +289,7 @@ namespace render::layout {
                 Node::Order order = Node::Order::Normal;
                 float weight = 0.0f;
                 for (const Node* block : above) {
-                    if (block->type() != Node::Type::Glue || block->glue().stretch <= 0.0f) continue;
+                    if (block->type != Node::Type::Glue || block->glue().stretch <= 0.0f) continue;
                     if (block->glue().expand > order) {
                         order = block->glue().expand;
                         weight = 0.0f;
@@ -299,7 +299,7 @@ namespace render::layout {
                 if (order != Node::Order::Normal && weight > 0.0f) {
                     const float room = std::max(context.height - used - reserved, 0.0f);
                     for (Node*& block : above) {
-                        if (block->type() != Node::Type::Glue || block->glue().expand != order) continue;
+                        if (block->type != Node::Type::Glue || block->glue().expand != order) continue;
                         Node::Glue grown = block->glue();
                         grown.width += room * grown.stretch / weight;
                         block = arena.compose<Node>(Node::Type::Glue);
@@ -409,7 +409,7 @@ namespace render::layout {
                 if (!(item.place & Directive::Top) || before(waiting, item)) break;
                 if (!insisted && (stacked >= rules.spans || taken + item.span > rules.spanning * context.height)) break;
                 const float added = item.span + (stacked > 0 ? rules.apart : 0.0f);
-                if (used + added + rules.clear > context.height) break;
+                if (used + added + rules.clearance > context.height) break;
                 if (stacked > 0) above.push_back(kern(rules.apart));
                 above.insert(above.end(), item.blocks.begin(), item.blocks.end());
                 used += added;
@@ -419,8 +419,8 @@ namespace render::layout {
                 spanning.pop_front();
             }
             if (stacked > 0) {
-                above.push_back(kern(rules.clear));
-                used += rules.clear;
+                above.push_back(kern(rules.clearance));
+                used += rules.clearance;
             }
         };
 
@@ -458,7 +458,7 @@ namespace render::layout {
             const bool forced = item.place & Directive::Force;
             if (!(item.place & Directive::Top) || std::ranges::contains(below, item.kind)) return false;
             if (!forced && (heads.size() >= rules.heads || within >= rules.most || item.span > headroom)) return false;
-            const float added = item.span + (heads.empty() ? rules.clear : rules.apart);
+            const float added = item.span + (heads.empty() ? rules.clearance : rules.apart);
             if (text(forced) + added > left(item.notes)) return false;
             headroom -= item.span + rules.apart;
             crown += added;
@@ -474,7 +474,7 @@ namespace render::layout {
             const bool forced = item.place & Directive::Force;
             if (!(item.place & Directive::Bottom)) return false;
             if (!forced && (feet.size() >= rules.feet || within >= rules.most || item.span > footroom)) return false;
-            const float added = item.span + (feet.empty() ? rules.clear : rules.apart);
+            const float added = item.span + (feet.empty() ? rules.clearance : rules.apart);
             if (text(forced) + added > left(item.notes)) return false;
             footroom -= item.span + rules.apart;
             sole += added;
@@ -574,7 +574,7 @@ namespace render::layout {
             Node* block = column[index];
             if (!block) continue;
 
-            if (block->type() == Node::Type::Directive) {
+            if (block->type == Node::Type::Directive) {
                 const Node::Directive& order = block->directive();
 
                 // The columns change: those open are set down level where
@@ -603,7 +603,7 @@ namespace render::layout {
                     std::size_t depth = 0;
                     for (std::size_t scan = index + 1; scan < total; ++scan) {
                         const Node* mark = column[scan];
-                        if (!mark || mark->type() != Node::Type::Directive) continue;
+                        if (!mark || mark->type != Node::Type::Directive) continue;
                         if (mark->directive().command == Command::Hold) ++depth;
                         if (mark->directive().command == Command::Release) {
                             if (depth == 0) {
@@ -617,7 +617,7 @@ namespace render::layout {
                     std::size_t final = index;
                     for (std::size_t scan = index; scan <= last; ++scan) {
                         const Node* inner = column[scan];
-                        if (inner && !space(inner) && inner->type() != Node::Type::Directive) {
+                        if (inner && !space(inner) && inner->type != Node::Type::Directive) {
                             first = std::min(first, scan);
                             final = scan;
                         }
@@ -665,7 +665,7 @@ namespace render::layout {
             // float still waiting first. The break itself goes on neither
             // side; two in a row make no empty page between them, because
             // seal() refuses one.
-            if (block->type() == Node::Type::Pause && block->pause().penalty.value <= -10000) {
+            if (block->type == Node::Type::Pause && block->pause().penalty.value <= -10000) {
                 if (block->pause().penalty.flag) {
                     flush();
                 } else {

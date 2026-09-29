@@ -16,7 +16,7 @@ namespace layout = render::layout;
 /// @brief How many strokes a canvas's box holds.
 static std::size_t strokes(const layout::Node* box) {
     std::size_t found = 0;
-    for (const layout::Node* child : box->box().list) found += child && child->type() == layout::Node::Type::Path;
+    for (const layout::Node* child : box->box().list) found += child && child->type == layout::Node::Type::Path;
     return found;
 }
 
@@ -29,7 +29,7 @@ int main() {
         canvas.line({0.0f, 0.0f}, {100.0f, 50.0f});
         canvas.line({0.0f, 50.0f}, {100.0f, 0.0f}, graphics::Color{1.0f, 0.0f, 0.0f, 1.0f}, 2.0f, true);
         const layout::Node* box = canvas.compose(arena, graphics::Canvas::Room::Declared);
-        assert((box && box->type() == layout::Node::Type::Box && box->box().absolute) &&
+        assert((box && box->type == layout::Node::Type::Box && box->box().absolute) &&
                "a canvas is a box of its own");
         assert((box->box().width == 100.0f && box->box().depth == 50.0f && box->box().height == 0.0f) &&
                "as large as it declared, hanging from its top edge as any block does");

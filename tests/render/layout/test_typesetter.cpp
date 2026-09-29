@@ -71,7 +71,7 @@ static Ink ink(const layout::Node::Glyph& mark, const float x, const float basel
 
 /// @brief The height a column steps down by to reach a child's reference point.
 static float height(const layout::Node* item) {
-    switch (item->type()) {
+    switch (item->type) {
         case layout::Node::Type::Box: return item->box().height;
         case layout::Node::Type::Glyph: return item->glyph().height;
         case layout::Node::Type::Rule: return item->rule().height;
@@ -83,7 +83,7 @@ static float height(const layout::Node* item) {
 static void walk(const layout::Node* node, const float x, const float baseline, Drawing& drawing) {
     if (!node) return;
 
-    switch (node->type()) {
+    switch (node->type) {
         case layout::Node::Type::Glyph:
             drawing.glyphs.push_back(ink(node->glyph(), x, baseline));
             return;
@@ -107,10 +107,10 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
     // glyph says it is a radical holds every piece of it.
     if (box.absolute) {
         const bool radical = drawing.sign.empty() && box.list.count > 0 &&
-                             box.list[0]->type() == layout::Node::Type::Glyph &&
+                             box.list[0]->type == layout::Node::Type::Glyph &&
                              box.list[0]->glyph().point == 0x221A;
         for (const layout::Node* child : box.list) {
-            if (radical && child->type() == layout::Node::Type::Glyph) {
+            if (radical && child->type == layout::Node::Type::Glyph) {
                 drawing.sign.push_back(ink(child->glyph(), left, line));
                 ++drawing.pieces;
             } else {
@@ -173,7 +173,7 @@ static Measure measure(const std::string& formula, const bool displayed, const t
     mouth.ingest(arena.copy(formula + "$"));
 
     const render::primitives::Expressions expressions(lexicon);
-    syntax::expression::Parser parser(mouth, unicodes, expressions.grammar(), arena,
+    syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
                                       displayed ? syntax::expression::Node::Style::Display
                                                 : syntax::expression::Node::Style::Inline);
     const syntax::expression::Node* tree = parser.parse('$');
@@ -312,7 +312,7 @@ int main() {
         const render::primitives::Expressions expressions(lexicon);
         const auto parse = [&](const std::string& formula, const bool displayed) {
             mouth.ingest(arena.copy(formula + "$"));
-            syntax::expression::Parser parser(mouth, unicodes, expressions.grammar(), arena,
+            syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
                                               displayed ? syntax::expression::Node::Style::Display
                                                         : syntax::expression::Node::Style::Inline);
             return parser.parse('$');

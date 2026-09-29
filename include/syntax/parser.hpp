@@ -36,7 +36,7 @@ namespace syntax {
     /// @code
     /// syntax::Parser parser(mouth, arena);
     /// parser.bind("\\today", [](syntax::Parser& self) -> syntax::Node* {
-    ///     return self.arena().compose<syntax::Node>(
+    ///     return self.arena.compose<syntax::Node>(
     ///         syntax::Node::Type::Text, std::string_view{"today"}, memory::Location{});
     /// });
     ///
@@ -97,14 +97,8 @@ namespace syntax {
         /// @param handler Implementation.
         void bind(Symbol symbol, Handler handler);
 
-        /// @brief The expander this parser reads from.
-        [[nodiscard]] Mouth& mouth() const noexcept { return mouth_; }
-
-        /// @brief The allocator nodes are composed in.
-        [[nodiscard]] memory::Arena& arena() const noexcept { return arena_; }
-
         /// @brief Errors recorded so far; the expander keeps its own.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
         static constexpr std::size_t tolerance = 100;   ///< Errors before giving up, as in TeX.
 
@@ -121,14 +115,15 @@ namespace syntax {
         ///        letters the parser reads one after the other.
         const std::uint64_t* changes{nullptr};
 
+        Mouth& mouth;                           ///< The expander tokens come from.
+        memory::Arena& arena;                   ///< The allocator nodes are composed in.
+
     private:
-        Mouth& mouth_;                          ///< Where tokens come from.
-        memory::Arena& arena_;                  ///< Where nodes go.
         /// Handler per symbol, each in an allocation of its own so the table can
         /// grow while one runs without moving it; null means none.
         std::vector<std::unique_ptr<const Handler>> handlers{};
-        std::vector<Traceback> tracebacks_{};   ///< Errors recorded so far.
-        Symbol symbol_ = none;        ///< `\\par`, the one name the parser knows by itself.
+        std::vector<Traceback> tracebacks{};    ///< Errors recorded so far.
+        Symbol paragraph = none;      ///< `\\par`, the one name the parser knows by itself.
         Symbol assign = none;         ///< `\\@set`, which a register's name standing alone is read through.
         std::size_t nesting = 0;                ///< How many parse() calls are in progress.
     };

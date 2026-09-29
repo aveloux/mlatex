@@ -25,7 +25,7 @@ namespace syntax::expression {
 
     Unicodes::Unicodes() = default;
 
-    std::optional<Unicodes::Symbol> Unicodes::query(const std::string_view name) const noexcept {
+    std::optional<Unicodes::Symbol> Unicodes::get(const std::string_view name) const noexcept {
         if (name.empty()) return std::nullopt;
 
         if (name.size() <= longest) {
@@ -33,7 +33,7 @@ namespace syntax::expression {
             std::memcpy(text, name.data(), name.size());
             text[name.size()] = '\0';
 
-            if (const auto* entry = Lookup::query(text, static_cast<unsigned int>(name.size()))) {
+            if (const auto* entry = Lookup::get(text, static_cast<unsigned int>(name.size()))) {
                 return Symbol{entry->codepoint, static_cast<Category>(entry->category)};
             }
             return std::nullopt;
@@ -41,7 +41,7 @@ namespace syntax::expression {
 
         // Longer than the buffer. Correct, just not allocation-free.
         const std::string heap(name);
-        if (const auto* entry = Lookup::query(heap.c_str(), static_cast<unsigned int>(heap.size()))) {
+        if (const auto* entry = Lookup::get(heap.c_str(), static_cast<unsigned int>(heap.size()))) {
             return Symbol{entry->codepoint, static_cast<Category>(entry->category)};
         }
 

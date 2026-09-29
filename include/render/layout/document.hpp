@@ -55,7 +55,7 @@ namespace render::layout {
     /// @par Use
     /// @code
     /// layout::Document document(arena, scratch, shaper, typesetter);
-    /// document.configuration().width = 595.0f;     // A4
+    /// document.configuration.width = 595.0f;     // A4
     /// document.hyphenate(&hyphenator);
     ///
     /// document.append("some text ", *text, 12.0f);
@@ -250,21 +250,6 @@ namespace render::layout {
             Node::Color background{1.0f, 1.0f, 1.0f};     ///< What the page is painted in: `\\pagecolor`.
         };
 
-        /// @brief Sets the face a character is looked for in when the text's
-        ///        own face has no glyph for it: a check mark, a star, a card's
-        ///        suit in the middle of a sentence.
-        ///
-        /// Asked only for a character the text's face cannot draw, so a run
-        /// it draws whole costs nothing more. The character is set at the
-        /// size this face was loaded at.
-        ///
-        /// @param font The face, or nullptr for none.
-        void fallback(const typography::Font* font) noexcept { fallback_ = font; }
-
-        /// @brief What every page carries besides its column.
-        [[nodiscard]] const Furniture& furniture() const noexcept { return furniture_; }
-        [[nodiscard]] Furniture& furniture() noexcept { return furniture_; }   ///< @copydoc Document::furniture() const
-
         /// @brief One entry of the file's outline, which a reader lists
         ///        beside the pages: a heading, as hyperref bookmarks one.
         struct Bookmark {
@@ -287,14 +272,6 @@ namespace render::layout {
             bool archival{false};                 ///< Kept to PDF/A-2b.
         };
 
-        /// @brief What the file says of itself besides its pages.
-        [[nodiscard]] const Metadata& metadata() const noexcept { return metadata_; }
-        [[nodiscard]] Metadata& metadata() noexcept { return metadata_; }   ///< @copydoc Document::metadata() const
-
-        /// @brief The page geometry.
-        [[nodiscard]] const Configuration& configuration() const noexcept { return configuration_; }
-        [[nodiscard]] Configuration& configuration() noexcept { return configuration_; }   ///< @copydoc Document::configuration() const
-
         /// @brief How many blocks the document holds.
         [[nodiscard]] std::size_t count() const noexcept { return blocks; }
 
@@ -303,14 +280,25 @@ namespace render::layout {
         /// @param count How many columns.
         /// @complexity O(1).
         [[nodiscard]] float column(const std::size_t count) const noexcept {
-            const float text = configuration_.width - configuration_.left - configuration_.right;
+            const float text = configuration.width - configuration.left - configuration.right;
             if (count <= 1) return text;
-            return (text - configuration_.gap * static_cast<float>(count - 1)) / static_cast<float>(count);
+            return (text - configuration.gap * static_cast<float>(count - 1)) / static_cast<float>(count);
         }
 
         /// @brief How wide text is set from here on: one of the columns in force.
         /// @complexity O(1).
-        [[nodiscard]] float column() const noexcept { return column(split ? split : configuration_.columns); }
+        [[nodiscard]] float column() const noexcept { return column(split ? split : configuration.columns); }
+
+        Configuration configuration{};   ///< The page geometry.
+        Furniture furniture{};           ///< What every page carries besides its column.
+        Metadata metadata{};             ///< What the file says of itself besides its pages.
+
+        /// The face a character is looked for in when the text's own face has
+        /// no glyph for it: a check mark, a star, a card's suit in the middle
+        /// of a sentence; null for none. Asked only for a character the
+        /// text's face cannot draw, so a run it draws whole costs nothing
+        /// more. The character is set at the size this face was loaded at.
+        const typography::Font* fallback{nullptr};
 
     private:
         /// @brief Links a freshly built block onto the end of the list.
@@ -341,13 +329,9 @@ namespace render::layout {
         const Typesetter& typesetter;           ///< Formulas into boxes.
         Ledger ledger;                          ///< Cache of already-shaped runs.
         Ledger words;                           ///< Cache of already-shaped words, penalties included.
-        Configuration configuration_{};         ///< The page.
-        Furniture furniture_{};                 ///< What every page carries besides its column.
-        Metadata metadata_{};                   ///< What the file says of itself.
         const typography::Hyphenator* hyphenation{nullptr};  ///< Where words may break.
         std::size_t before{2};                                ///< Least letters a break leaves: `\\lefthyphenmin`.
         std::size_t after{3};                                 ///< Least it carries over: `\\righthyphenmin`.
-        const typography::Font* fallback_{nullptr};           ///< Where a character the text's face lacks is looked for.
 
         std::vector<Node*> pending{};   ///< The paragraph being built.
         bool indentation{true};         ///< Whether the next paragraph opens indented.

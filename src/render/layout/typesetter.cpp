@@ -273,15 +273,15 @@ namespace render::layout {
 
     void Typesetter::paint(Node* node, const Node::Color& color) noexcept {
         if (!node) return;
-        if (node->type() == Node::Type::Glyph) {
+        if (node->type == Node::Type::Glyph) {
             Node::Glyph mark = node->glyph();
             mark.color = color;
             node->glyph(mark);
-        } else if (node->type() == Node::Type::Rule) {
+        } else if (node->type == Node::Type::Rule) {
             Node::Rule bar = node->rule();
             bar.color = color;
             node->rule(bar);
-        } else if (node->type() == Node::Type::Box) {
+        } else if (node->type == Node::Type::Box) {
             for (Node* inner : node->box().list) paint(inner, color);
         }
     }
@@ -317,7 +317,7 @@ namespace render::layout {
 
     Node* Typesetter::enclose(Node* part) const {
         if (!part) return nullptr;
-        if (part->type() == Node::Type::Box && part->box().shift == 0.0f &&
+        if (part->type == Node::Type::Box && part->box().shift == 0.0f &&
             part->box().offset == 0.0f) {
             return part;
         }
@@ -329,7 +329,7 @@ namespace render::layout {
     float Typesetter::bearing(const Node* node) noexcept {
         if (!node) return 0.0f;
 
-        switch (node->type()) {
+        switch (node->type) {
             case Node::Type::Glyph: {
                 const Node::Glyph& mark = node->glyph();
                 return mark.x + (mark.font ? mark.font->bounds(mark.code).x : 0.0f);
@@ -337,7 +337,7 @@ namespace render::layout {
             case Node::Type::Box: {
                 const Node::Box& box = node->box();
                 const auto blank = [](const Node* child) {
-                    return child->type() == Node::Type::Penalty || child->type() == Node::Type::Directive;
+                    return child->type == Node::Type::Penalty || child->type == Node::Type::Directive;
                 };
 
                 // Along a line the edge is the first thing drawn, and space
@@ -346,7 +346,7 @@ namespace render::layout {
                     float offset = box.offset;
                     for (const Node* child : box.list) {
                         if (!child || blank(child)) continue;
-                        if (child->type() == Node::Type::Kern || child->type() == Node::Type::Glue) {
+                        if (child->type == Node::Type::Kern || child->type == Node::Type::Glue) {
                             offset += Line::advance(child);
                             continue;
                         }
@@ -360,8 +360,8 @@ namespace render::layout {
                 // fraction's bar, not the narrower numerator above it.
                 float least = std::numeric_limits<float>::max();
                 for (const Node* child : box.list) {
-                    if (!child || blank(child) || child->type() == Node::Type::Kern ||
-                        child->type() == Node::Type::Glue) {
+                    if (!child || blank(child) || child->type == Node::Type::Kern ||
+                        child->type == Node::Type::Glue) {
                         continue;
                     }
                     least = std::min(least, bearing(child));
@@ -548,7 +548,7 @@ namespace render::layout {
                     // Only a size drawn whole: a script is placed against the
                     // glyph's own corners, which a mark built from parts has not.
                     if (Node* large = delimiter(node->codepoint, scope.display, scope);
-                        large && large->type() == Node::Type::Glyph) {
+                        large && large->type == Node::Type::Glyph) {
                         return large;
                     }
                 }
@@ -1139,7 +1139,7 @@ namespace render::layout {
                 // subscript is pulled in by it instead, to sit under the foot
                 // of an integral rather than out beyond its top.
                 float lean = 0.0f;
-                if (base && base->type() == Node::Type::Glyph) {
+                if (base && base->type == Node::Type::Glyph) {
                     const typography::Expression math(font);
                     lean = math.correction(base->glyph().code);
                 }
@@ -1690,7 +1690,7 @@ namespace render::layout {
         const memory::Slice<Document::Element*> elements = document.elements();
         if (elements.empty()) return {};
 
-        const Document::Configuration& page = document.configuration();
+        const Document::Configuration& page = document.configuration;
 
         // The page's column is every block in reading order -- and a
         // paragraph's own lines opened into it one by one rather than kept as
@@ -1700,7 +1700,7 @@ namespace render::layout {
         const auto opened = [](const Document::Element* element) -> const Node* {
             if (element->type != Document::Element::Type::Paragraph || !element->paragraph) return nullptr;
             const Node* box = element->paragraph->node();
-            if (!box || box->type() != Node::Type::Box || box->box().alignment != Node::Alignment::Vertical ||
+            if (!box || box->type != Node::Type::Box || box->box().alignment != Node::Alignment::Vertical ||
                 box->box().absolute) {
                 return nullptr;
             }
@@ -1729,7 +1729,7 @@ namespace render::layout {
 
         const auto stack = [&](Node* box) {
             if (!box) return;
-            switch (box->type()) {
+            switch (box->type) {
                 case Node::Type::Glue:
                 case Node::Type::Kern:
                 case Node::Type::Pause:
@@ -1744,9 +1744,9 @@ namespace render::layout {
                     break;
             }
 
-            const float height = box->type() == Node::Type::Box      ? box->box().height - box->box().shift
-                                 : box->type() == Node::Type::Bitmap ? box->bitmap().height
-                                 : box->type() == Node::Type::Glyph  ? box->glyph().height
+            const float height = box->type == Node::Type::Box      ? box->box().height - box->box().shift
+                                 : box->type == Node::Type::Bitmap ? box->bitmap().height
+                                 : box->type == Node::Type::Glyph  ? box->glyph().height
                                                                      : 0.0f;
             if (previous) {
                 auto* glue = arena.compose<Node>(Node::Type::Glue);
@@ -1754,7 +1754,7 @@ namespace render::layout {
                 column[filled++] = glue;
             }
             column[filled++] = box;
-            depth = box->type() == Node::Type::Box ? box->box().depth + box->box().shift : 0.0f;
+            depth = box->type == Node::Type::Box ? box->box().depth + box->box().shift : 0.0f;
             previous = true;
         };
 
@@ -1769,14 +1769,14 @@ namespace render::layout {
                 column[filled++] = glue;
             }
             if (text || element->type != Document::Element::Type::Directive ||
-                (element->node && element->node->type() != Node::Type::Directive)) {
+                (element->node && element->node->type != Node::Type::Directive)) {
                 paragraph = text;
             }
             if (const Node* lines = opened(element)) {
                 // Its own interline glue is replaced by the column's, which
                 // measures from the line above whatever block that was.
                 for (Node* line : lines->box().list) {
-                    if (line && line->type() != Node::Type::Glue) stack(line);
+                    if (line && line->type != Node::Type::Glue) stack(line);
                 }
                 continue;
             }

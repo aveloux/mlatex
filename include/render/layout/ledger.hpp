@@ -24,10 +24,10 @@ namespace render::layout {
     /// @par Use
     /// @code
     /// const layout::Ledger::Key key{.font = font, .text = text, .size = 12.0f};
-    /// memory::Slice<layout::Node*> glyphs = ledger.find(key);
+    /// memory::Slice<layout::Node*> glyphs = ledger.get(key);
     /// if (glyphs.empty()) {
     ///     glyphs = shaper.shape(fonts, text, {});
-    ///     ledger.insert(key, glyphs);
+    ///     ledger.set(key, glyphs);
     /// }
     /// @endcode
     class Ledger {
@@ -63,13 +63,13 @@ namespace render::layout {
         /// @param key What is wanted.
         /// @return Its glyphs, or an empty slice when it has not been shaped.
         /// @complexity O(1) average.
-        [[nodiscard]] memory::Slice<Node*> find(const Key& key) const noexcept;
+        [[nodiscard]] memory::Slice<Node*> get(const Key& key) const noexcept;
 
         /// @brief Records a shaped run.
         /// @param key   What was shaped.
         /// @param nodes The glyphs it produced.
         /// @complexity O(1) average; a full table does nothing.
-        void insert(const Key& key, memory::Slice<Node*> nodes) noexcept;
+        void set(const Key& key, memory::Slice<Node*> nodes) noexcept;
 
         /// @brief Forgets every run, keeping the table for the next ones.
         ///

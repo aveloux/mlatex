@@ -77,11 +77,11 @@ static Tree parse(const std::string_view formula, const bool displayed = false) 
     mouth.ingest(arena.copy(std::string(formula) + "$"));
 
     const render::primitives::Expressions expressions(lexicon);
-    expression::Parser parser(mouth, unicodes, expressions.grammar(), arena,
+    expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
                               displayed ? expression::Node::Style::Display : expression::Node::Style::Inline);
     Tree tree;
     print(parser.parse('$'), tree.text);
-    tree.quiet = parser.tracebacks().empty() && mouth.tracebacks().empty();
+    tree.quiet = parser.traceback().empty() && mouth.traceback().empty();
     return tree;
 }
 

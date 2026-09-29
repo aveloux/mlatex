@@ -43,7 +43,7 @@ namespace render::primitives {
         // its own, then whatever the parser reads.
         const auto named = [&variables](const std::string_view name) {
             const std::string_view bare = trim(name);
-            if (const std::string* defined = variables.find("color." + std::string(bare))) {
+            if (const std::string* defined = variables.get("color." + std::string(bare))) {
                 return graphics::Color::parse(*defined);
             }
             return graphics::Color::parse(bare);
@@ -117,7 +117,7 @@ namespace render::primitives {
         // run where they are read and leave only the variable behind. xcolor
         // lets a list of target models stand first in brackets; there is
         // only the one target here, so it is read and set aside.
-        parser.mouth().bind("\\definecolor", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\definecolor", [this, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
@@ -126,13 +126,13 @@ namespace render::primitives {
             const std::string value = syntax::Argument::expanded(mouth);
 
             if (trim(name).empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\definecolor needs a name for the color");
                 return;
             }
             const std::optional<std::string> color = convert(model, value);
             if (!color) {
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     syntax::Traceback::Type::Argument, origin,
                     std::format("\\definecolor{{{}}}: '{}' is not a color in the '{}' model", name, value, model));
                 return;
@@ -140,14 +140,14 @@ namespace render::primitives {
             context.variables.define("color." + std::string(trim(name)), *color);
         });
 
-        parser.mouth().bind("\\colorlet", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\colorlet", [this, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
             const std::string name = syntax::Argument::text(mouth);
             const std::string value = syntax::Argument::expanded(mouth);
             if (trim(name).empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\colorlet needs a name for the color");
                 return;
             }
@@ -178,7 +178,7 @@ namespace render::primitives {
         // \color: the text from here to the end of the group or block it is
         // written in, in a color -- which the text keeps as it is read.
         parser.bind("\\color", [&context, tint](syntax::Parser& parser) -> syntax::Node* {
-            context.selection.color(tint(parser.mouth()));
+            context.selection.color(tint(parser.mouth));
             return nullptr;
         });
         parser.bind("\\normalcolor", [&context](syntax::Parser&) -> syntax::Node* {
@@ -189,16 +189,16 @@ namespace render::primitives {
         // \textcolor{red}{...}: the same, around one group, which a line may
         // still break inside as it would anywhere else.
         parser.bind("\\textcolor", [this, &context, tint](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const layout::Node::Color* color = tint(mouth);
             syntax::Token open = mouth.read();
-            while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-            if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
-                tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin, "\\textcolor needs a brace group");
+                tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "\\textcolor needs a brace group");
                 return nullptr;
             }
 
@@ -213,7 +213,7 @@ namespace render::primitives {
 
         // \pagecolor: what every page is painted in behind its text.
         parser.bind("\\pagecolor", [&context, tint](syntax::Parser& parser) -> syntax::Node* {
-            context.document.furniture().background = *tint(parser.mouth());
+            context.document.furniture.background = *tint(parser.mouth);
             return nullptr;
         });
 

@@ -54,7 +54,7 @@ namespace render::layout {
         // One glue between each pair of lines, sized so the baselines end up
         // the asked-for distance apart. A line deep enough to eat that
         // distance gets the minimum clearance instead of a negative gap.
-        const memory::Slice<Node*> column_ = arena.allocate<Node*>(lines.count * 2 - 1);
+        const memory::Slice<Node*> rows = arena.allocate<Node*>(lines.count * 2 - 1);
         std::size_t filled = 0;
         float depth = 0.0f;
 
@@ -66,7 +66,7 @@ namespace render::layout {
                 auto* glue = arena.compose<Node>(Node::Type::Glue);
                 glue->glue({.width = std::max(leading - depth - line->box().height,
                                               leading * minimum)});
-                column_[filled++] = glue;
+                rows[filled++] = glue;
             }
 
             // Moved in by the margin, which is how every line of a list item
@@ -78,11 +78,11 @@ namespace render::layout {
                 line->box(shape);
             }
 
-            column_[filled++] = line;
+            rows[filled++] = line;
             depth = line->box().depth;
         }
 
-        tree = Line::vertical(arena, memory::Slice{column_.data, filled}, 0.0f);
+        tree = Line::vertical(arena, memory::Slice{rows.data, filled}, 0.0f);
     }
 
 }

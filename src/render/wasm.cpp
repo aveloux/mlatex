@@ -24,7 +24,7 @@ namespace render {
 #if defined(__EMSCRIPTEN__)
 
     emscripten::val Wasm::bytes() const {
-        const std::string& made = pdf();
+        const std::string& made = pdf;
         const auto* data = reinterpret_cast<const unsigned char*>(made.data());
 
         // A view onto the module's own memory would be invalidated by the
@@ -69,7 +69,7 @@ namespace render {
                                      [](Wasm& self, const std::string& document) { return self.typeset(document); }))
             .function("pdf", &Wasm::bytes)
             .function("error", emscripten::optional_override(
-                                   [](const Wasm& self) { return std::string(self.error()); }));
+                                   [](const Wasm& self) { return self.error; }));
     }
 
 #endif

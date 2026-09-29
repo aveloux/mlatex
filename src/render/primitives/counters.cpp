@@ -24,7 +24,7 @@ namespace render::primitives {
     static std::optional<std::int32_t> integer(syntax::Mouth& mouth,
                                                const syntax::semantics::Registers& registers) {
         const std::string expanded = syntax::Argument::expanded(mouth);
-        mouth.ingest(mouth.arena().copy("{" + expanded + "}"));
+        mouth.ingest(mouth.arena.copy("{" + expanded + "}"));
         syntax::Cursor value(mouth.argument({}, 0));
         return syntax::Number::integer(value, registers);
     }
@@ -46,30 +46,30 @@ namespace render::primitives {
 
     void Counters::spell(syntax::Mouth& mouth, const std::string_view name, const std::string_view parent,
                          const std::string_view numeral) {
-        syntax::Lexicon& lexicon = mouth.lexicon();
+        syntax::Lexicon& lexicon = mouth.lexicon;
         std::vector<syntax::Token> body;
 
         const auto word = [&](const std::string& text) {
             const syntax::Symbol bound = lexicon.intern(text);
-            body.push_back(syntax::Token{bound, syntax::CatCodes::Category::Escape, memory::Location{},
+            body.push_back(syntax::Token{bound, syntax::Catcodes::Category::Escape, memory::Location{},
                                          lexicon.resolve(bound)});
         };
-        const auto character = [&](const char written, const syntax::CatCodes::Category category) {
+        const auto character = [&](const char written, const syntax::Catcodes::Category category) {
             const syntax::Symbol bound = lexicon.intern(std::string_view(&written, 1));
             body.push_back(syntax::Token{bound, category, memory::Location{}, lexicon.resolve(bound)});
         };
 
         if (!parent.empty()) {
             word("\\the" + std::string(parent));
-            character('.', syntax::CatCodes::Category::Other);
+            character('.', syntax::Catcodes::Category::Other);
         }
         word(std::string(numeral));
-        character('{', syntax::CatCodes::Category::Group);
+        character('{', syntax::Catcodes::Category::Group);
         for (const char letter : name) {
             const bool alphabetic = (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z');
-            character(letter, alphabetic ? syntax::CatCodes::Category::Letter : syntax::CatCodes::Category::Other);
+            character(letter, alphabetic ? syntax::Catcodes::Category::Letter : syntax::Catcodes::Category::Other);
         }
-        character('}', syntax::CatCodes::Category::Group);
+        character('}', syntax::Catcodes::Category::Group);
 
         // Global, as LaTeX's counters are: a counter made inside a group
         // still prints once the group is over.
@@ -127,13 +127,13 @@ namespace render::primitives {
     }
 
     std::string Counters::print(syntax::Mouth& mouth, const std::string_view name) {
-        mouth.ingest(mouth.arena().copy("{\\the" + std::string(name) + "}"));
+        mouth.ingest(mouth.arena.copy("{\\the" + std::string(name) + "}"));
         return syntax::Argument::expanded(mouth);
     }
 
     void Counters::operator()(syntax::Parser& parser, Context& context) const {
 
-        parser.mouth().bind("\\newcounter", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\newcounter", [this](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
 
@@ -144,12 +144,12 @@ namespace render::primitives {
             }
 
             if (name.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\newcounter needs a name");
                 return;
             }
             if (counters.contains(name)) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "Counter '" + name + "' already exists");
                 return;
             }
@@ -164,18 +164,18 @@ namespace render::primitives {
         // that change one.
         const auto known = [this](const std::string& name, const memory::Location origin) {
             if (counters.contains(name)) return true;
-            tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin, "No counter '" + name + "' defined");
+            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, "No counter '" + name + "' defined");
             return false;
         };
 
-        parser.mouth().bind("\\stepcounter", [this, known](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\stepcounter", [this, known](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
             if (known(name, origin)) step(name);
         });
 
         // Stepped, and made what a `\label` after it refers to.
-        parser.mouth().bind("\\refstepcounter", [this, known, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\refstepcounter", [this, known, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
             if (!known(name, origin)) return;
@@ -184,7 +184,7 @@ namespace render::primitives {
             context.kind = name;
         });
 
-        parser.mouth().bind("\\setcounter", [this, known, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\setcounter", [this, known, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
             // The page's number is the pages' own, known only once they are
@@ -199,21 +199,21 @@ namespace render::primitives {
             const auto scanned = integer(mouth, context.registers);
             if (!exists) return;
             if (!scanned) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\setcounter needs a number");
                 return;
             }
             set(name, *scanned);
         });
 
-        parser.mouth().bind("\\addtocounter", [this, known, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\addtocounter", [this, known, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);
             const bool exists = known(name, origin);
             const auto scanned = integer(mouth, context.registers);
             if (!exists) return;
             if (!scanned) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                          "\\addtocounter needs a number");
                 return;
             }
@@ -231,14 +231,14 @@ namespace render::primitives {
             const std::string parent = syntax::Argument::text(mouth);
             define(mouth, name, parent, starred ? "" : "\\arabic");
         };
-        parser.mouth().bind("\\numberwithin", within);
-        parser.mouth().bind("\\counterwithin", within);
-        parser.mouth().bind("\\@addtoreset", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\numberwithin", within);
+        parser.mouth.bind("\\counterwithin", within);
+        parser.mouth.bind("\\@addtoreset", [this](syntax::Mouth& mouth) {
             const std::string name = syntax::Argument::text(mouth);
             const std::string parent = syntax::Argument::text(mouth);
             define(mouth, name, parent, "");
         });
-        parser.mouth().bind("\\counterwithout", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\counterwithout", [this](syntax::Mouth& mouth) {
             const std::string name = syntax::Argument::text(mouth);
             static_cast<void>(syntax::Argument::text(mouth));
             define(mouth, name, {});
@@ -255,13 +255,13 @@ namespace render::primitives {
         }};
 
         for (const auto& [name, form] : forms) {
-            parser.mouth().bind(name, [this, form](syntax::Mouth& mouth) {
+            parser.mouth.bind(name, [this, form](syntax::Mouth& mouth) {
                 const memory::Location origin = mouth.lookahead().location;
                 const std::string key = syntax::Argument::text(mouth);
 
                 const auto found = counters.find(key);
                 if (found == counters.end()) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              "No counter '" + key + "' defined");
                     mouth.ingest("??");
                     return;
@@ -289,19 +289,19 @@ namespace render::primitives {
                         break;
                     }
                 }
-                if (!text.empty()) mouth.ingest(mouth.arena().copy(text));
+                if (!text.empty()) mouth.ingest(mouth.arena.copy(text));
             });
         }
 
         // LaTeX's own counters, which the other modules step: equations,
         // floats and footnotes, each printed in Arabic numerals.
         for (const std::string_view name : {"equation", "figure", "table", "algorithm", "footnote"}) {
-            define(parser.mouth(), name);
+            define(parser.mouth, name);
         }
         // How deep the headings are numbered and listed, three levels as the
         // article class has it: a section, a subsection, a subsubsection.
         for (const std::string_view name : {"secnumdepth", "tocdepth"}) {
-            define(parser.mouth(), name);
+            define(parser.mouth, name);
             set(name, 3);
         }
 
@@ -309,8 +309,8 @@ namespace render::primitives {
         // as the letter alone: a reference puts the float's number before
         // it, and the caption parentheses round it.
         for (const auto& [name, parent] : {std::pair{"subfigure", "figure"}, std::pair{"subtable", "table"}}) {
-            define(parser.mouth(), name, parent, "\\alph");
-            spell(parser.mouth(), name, {}, "\\alph");
+            define(parser.mouth, name, parent, "\\alph");
+            spell(parser.mouth, name, {}, "\\alph");
         }
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound counter primitives");

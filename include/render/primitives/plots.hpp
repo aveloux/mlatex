@@ -67,7 +67,7 @@ namespace render::primitives {
         [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x);
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One plot, as `\\addplot` gave it.
@@ -86,7 +86,7 @@ namespace render::primitives {
         };
 
         mutable std::vector<Axis> axes{};                        ///< The axes open, innermost last.
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
     };
 
 }

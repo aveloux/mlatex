@@ -51,9 +51,9 @@ namespace render {
             char digits[32];
             char* cursor = digits + sizeof(digits);
             if (fraction != 0) {
-                int places = 3;
-                for (; fraction % 10 == 0; fraction /= 10) --places;
-                for (; places > 0; --places, fraction /= 10) {
+                int decimals = 3;
+                for (; fraction % 10 == 0; fraction /= 10) --decimals;
+                for (; decimals > 0; --decimals, fraction /= 10) {
                     *--cursor = static_cast<char>('0' + fraction % 10);
                 }
                 *--cursor = '.';
@@ -117,7 +117,7 @@ namespace render {
         const typography::Shaper& shaper,
         layout::Typesetter& typesetter
     ) noexcept
-        : typesetter(typesetter), shaper(shaper), document_(arena, scratch, shaper, typesetter) {
+        : typesetter(typesetter), document(arena, scratch, shaper, typesetter), shaper(shaper) {
         content.reserve(64 * 1024);
     }
 
@@ -129,25 +129,25 @@ namespace render {
     ) {
         content.clear();
         transcript.clear();
-        links_.emplace_back();
+        links.emplace_back();
 
         // The page is flipped once, here, so every coordinate below runs down
         // from the top left the way the layout engine measures.
         content += "1 0 0 -1 0 ";
-        number(content, document_.configuration().height);
+        number(content, document.configuration.height);
         content += " cm\n0 0 0 rg\n";
-        fill_ = {};
-        stroke_ = {};
-        opacity_ = 1.0f;
+        filling = {};
+        stroking = {};
+        opacity = 1.0f;
 
         // A page colored with \pagecolor: painted over, edge to edge, before
         // anything is drawn on it.
-        if (const layout::Node::Color& paint = document_.furniture().background;
+        if (const layout::Node::Color& paint = document.furniture.background;
             paint != layout::Node::Color{1.0f, 1.0f, 1.0f}) {
             layout::Node sheet(layout::Node::Type::Rule);
-            sheet.rule({.width = document_.configuration().width, .height = document_.configuration().height,
+            sheet.rule({.width = document.configuration.width, .height = document.configuration.height,
                         .color = paint});
-            rule(&sheet, 0.0f, document_.configuration().height);
+            rule(&sheet, 0.0f, document.configuration.height);
         }
 
         // A page arrives as the children of a column, so it is walked the way
@@ -166,7 +166,7 @@ namespace render {
         // \\footnoterule -- two fifths of the column, three points above
         // the first -- and the notes under it, each a column of its own.
         if (!notes.empty()) {
-            const layout::Document::Configuration& page = document_.configuration();
+            const layout::Document::Configuration& page = document.configuration;
             float below = 0.0f;
             for (const layout::Node* note : notes) below += layout::Line::extent(note) + 2.0f;
             float place = page.height - page.bottom - below;
@@ -195,7 +195,7 @@ namespace render {
         // The page's own instructions, in the order they were written.
         Directive::Style own = style;
         for (const layout::Node* item : nodes) {
-            if (!item || item->type() != layout::Node::Type::Directive) continue;
+            if (!item || item->type != layout::Node::Type::Directive) continue;
             const Directive& order = item->directive();
             if (order.command != Directive::Command::Page) continue;
 
@@ -213,8 +213,8 @@ namespace render {
 
         // LaTeX's article class: the head's baseline 25pt above the column,
         // the foot's 30pt below it.
-        const layout::Document::Configuration& page = document_.configuration();
-        const layout::Document::Furniture& furniture = document_.furniture();
+        const layout::Document::Configuration& page = document.configuration;
+        const layout::Document::Furniture& furniture = document.furniture;
         const float edge = page.left;
         const float span = page.width - page.left - page.right;
         const float head = page.top - 25.0f;
@@ -266,20 +266,20 @@ namespace render {
 
         // A link still open runs on over the page's end: what it covered here
         // is this page's, and it carries on on the next.
-        for (Link& link : open_) {
+        for (Link& link : opened) {
             if (link.areas.empty()) continue;
-            links_.back().push_back(link);
+            links.back().push_back(link);
             link.areas.clear();
         }
 
         flush();
-        texts_.push_back(transcript);
+        texts.push_back(transcript);
         return content;
     }
 
     void Composer::cover(const float left, const float top, const float right, const float bottom) {
-        if (open_.empty()) return;
-        std::vector<std::array<float, 4>>& areas = open_.back().areas;
+        if (opened.empty()) return;
+        std::vector<std::array<float, 4>>& areas = opened.back().areas;
         // On the line of the last area when the two overlap from top to
         // bottom; the start of another line's otherwise.
         if (!areas.empty() && top < areas.back()[3] && bottom > areas.back()[1]) {
@@ -320,7 +320,7 @@ namespace render {
         // can be placed before anything is drawn.
         float width = 0.0f;
         for (const layout::Node* item : nodes) {
-            if (item && item->type() == layout::Node::Type::Directive &&
+            if (item && item->type == layout::Node::Type::Directive &&
                 item->directive().command == layout::Node::Directive::Command::Number) {
                 const typography::Font* fonts[] = {item->directive().font};
                 if (fonts[0]) {
@@ -336,7 +336,7 @@ namespace render {
         float position = left + (place == 1 ? (span - width) * 0.5f : place == 2 ? span - width : 0.0f);
         for (const layout::Node* item : nodes) {
             if (!item) continue;
-            if (item->type() == layout::Node::Type::Directive &&
+            if (item->type == layout::Node::Type::Directive &&
                 item->directive().command == layout::Node::Directive::Command::Number) {
                 position += numeral(item->directive().font, position, baseline);
                 continue;
@@ -348,7 +348,7 @@ namespace render {
 
     float Composer::height(const layout::Node* item) noexcept {
         if (!item) return 0.0f;
-        switch (item->type()) {
+        switch (item->type) {
             case layout::Node::Type::Box:    return item->box().height;
             case layout::Node::Type::Glyph:  return item->glyph().height;
             case layout::Node::Type::Rule:   return item->rule().height;
@@ -362,7 +362,7 @@ namespace render {
     void Composer::node(const layout::Node* item, const float position, const float baseline) {
         if (!item) return;
 
-        switch (item->type()) {
+        switch (item->type) {
             case layout::Node::Type::Box:
                 // The box's own displacement is applied here, once, so that
                 // inside() only ever deals with its contents. An anchored
@@ -377,9 +377,9 @@ namespace render {
                     // a color, an opacity -- is undone with it, and the colors
                     // this side remembers are the ones in force again.
                     flush();
-                    const layout::Node::Color fill = fill_;
-                    const layout::Node::Color stroke = stroke_;
-                    const float opacity = opacity_;
+                    const layout::Node::Color fill = filling;
+                    const layout::Node::Color stroke = stroking;
+                    const float faded = opacity;
                     content += "q ";
                     for (const float value : {map->a, map->b, map->c, map->d}) {
                         number(content, value == 0.0f ? 0.0f : value);   // no "-0" for a cosine of a right angle
@@ -392,9 +392,9 @@ namespace render {
                     inside(item, 0.0f, 0.0f);
                     flush();
                     content += "Q\n";
-                    fill_ = fill;
-                    stroke_ = stroke;
-                    opacity_ = opacity;
+                    filling = fill;
+                    stroking = stroke;
+                    opacity = faded;
                 } else {
                     inside(item, position + item->box().offset, baseline + item->box().shift);
                 }
@@ -414,8 +414,8 @@ namespace render {
                     const typography::Face* face = mark.font ? mark.font->face() : nullptr;
                     if (!face || face->data().empty()) return;
                     slot = 0;
-                    while (slot < used.size() && !(used[slot].font && used[slot].font->face() == face)) ++slot;
-                    if (slot == used.size()) used.push_back(Entry{.font = mark.font});
+                    while (slot < faces.size() && !(faces[slot].font && faces[slot].font->face() == face)) ++slot;
+                    if (slot == faces.size()) faces.push_back(Entry{.font = mark.font});
                 }
 
                 const float left = position + mark.x;
@@ -424,7 +424,7 @@ namespace render {
                 // A run holds one face at one size on one baseline in one color.
                 // Anything else needs a run of its own, because those four are what a
                 // run states up front and never restates.
-                if (!running || mark.font != running || height != line || mark.color != fill_) {
+                if (!running || mark.font != running || height != line || mark.color != filling) {
                     flush();
                     fill(mark.color);
 
@@ -470,7 +470,7 @@ namespace render {
                 // own numbering has to start, since zero is its missing-glyph slot. A
                 // page of text draws a few dozen distinct glyphs from a face, so the
                 // lists start with room for that rather than growing into it.
-                Entry& entry = used[slot];
+                Entry& entry = faces[slot];
                 if (entry.numbers.empty()) {
                     entry.numbers.assign(entry.font->face()->count() + 1, 0);
                     entry.glyphs.reserve(128);
@@ -496,7 +496,7 @@ namespace render {
                     digits[(code >> 4) & 0xF], digits[code & 0xF]
                 };
                 content.append(written, sizeof(written));
-                if (!open_.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
+                if (!opened.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
 
                 // What the glyph stands for, onto the page's transcript: a
                 // ligature's letters, or its own character in UTF-8.
@@ -553,8 +553,8 @@ namespace render {
 
                 // The stroke color, when it differs from the one already set.
                 translucent(segment.color.alpha);
-                if (segment.color != stroke_) {
-                    stroke_ = segment.color;
+                if (segment.color != stroking) {
+                    stroking = segment.color;
                     number(content, segment.color.r);
                     content += ' ';
                     number(content, segment.color.g);
@@ -582,29 +582,29 @@ namespace render {
                 // An image is painted straight onto the page too, like a rule.
                 flush();
 
-                const layout::Node::Bitmap& picture_ = item->bitmap();
-                if (picture_.width <= 0.0f || picture_.height <= 0.0f) return;
+                const layout::Node::Bitmap& bitmap = item->bitmap();
+                if (bitmap.width <= 0.0f || bitmap.height <= 0.0f) return;
 
                 // A page of another PDF: its form, clipped to the drawn box
                 // and scaled so the window onto its page fills it. The form's
                 // y runs up and the page's down, so its scale is negated and
                 // its window's bottom-left put at the box's bottom-left.
-                if (const graphics::Drawing* drawn = picture_.drawing) {
+                if (const graphics::Drawing* drawn = bitmap.drawing) {
                     std::size_t slot = 0;
-                    while (slot < drawings_.size() && drawings_[slot] != drawn) ++slot;
-                    if (slot == drawings_.size()) drawings_.push_back(drawn);
+                    while (slot < drawings.size() && drawings[slot] != drawn) ++slot;
+                    if (slot == drawings.size()) drawings.push_back(drawn);
 
-                    const std::array<float, 4>& window = picture_.window;
-                    const float across = picture_.width / std::max(window[2] - window[0], 0.001f);
-                    const float down = picture_.height / std::max(window[3] - window[1], 0.001f);
+                    const std::array<float, 4>& window = bitmap.window;
+                    const float across = bitmap.width / std::max(window[2] - window[0], 0.001f);
+                    const float down = bitmap.height / std::max(window[3] - window[1], 0.001f);
                     content += "q\n";
                     number(content, position);
                     content += ' ';
-                    number(content, baseline - picture_.height);
+                    number(content, baseline - bitmap.height);
                     content += ' ';
-                    number(content, picture_.width);
+                    number(content, bitmap.width);
                     content += ' ';
-                    number(content, picture_.height);
+                    number(content, bitmap.height);
                     content += " re W n\n";
                     number(content, across);
                     content += " 0 0 ";
@@ -618,14 +618,14 @@ namespace render {
                     content += " Do\nQ\n";
                     break;
                 }
-                if (!picture_.source) return;
+                if (!bitmap.source) return;
 
                 // The image's resource index, recorded on first sight. A document
                 // draws few enough of them that a linear search costs nothing a hash
                 // table would not spend just as much building.
                 std::size_t slot = 0;
-                while (slot < pictures_.size() && pictures_[slot] != picture_.source) ++slot;
-                if (slot == pictures_.size()) pictures_.push_back(picture_.source);
+                while (slot < pictures.size() && pictures[slot] != bitmap.source) ++slot;
+                if (slot == pictures.size()) pictures.push_back(bitmap.source);
 
                 // The image XObject's unit square runs bottom to top; the content
                 // stream around it runs top to bottom, page-flipped once already.
@@ -633,9 +633,9 @@ namespace render {
                 // one into the other without a second flip of everything drawn
                 // after it.
                 content += "q\n";
-                number(content, picture_.width);
+                number(content, bitmap.width);
                 content += " 0 0 ";
-                number(content, -picture_.height);
+                number(content, -bitmap.height);
                 content += ' ';
                 number(content, position);
                 content += ' ';
@@ -652,25 +652,25 @@ namespace render {
                     numeral(item->directive().font, position, baseline);
                 } else if (item->directive().command == layout::Node::Directive::Command::Anchor) {
                     const std::size_t slot = item->directive().index;
-                    if (slot >= anchors_.size()) anchors_.resize(slot + 1);
-                    anchors_[slot] = folio();
-                    if (slot >= places_.size()) places_.resize(slot + 1);
-                    places_[slot] = {.page = texts_.size(), .down = baseline};
+                    if (slot >= anchors.size()) anchors.resize(slot + 1);
+                    anchors[slot] = folio();
+                    if (slot >= places.size()) places.resize(slot + 1);
+                    places[slot] = {.page = texts.size(), .down = baseline};
                 } else if (item->directive().command == layout::Node::Directive::Command::Link) {
-                    open_.push_back({.target = item->directive().target, .anchor = item->directive().index,
+                    opened.push_back({.target = item->directive().target, .anchor = item->directive().index,
                                      .border = item->directive().border});
-                } else if (item->directive().command == layout::Node::Directive::Command::Unlink && !open_.empty()) {
-                    if (!open_.back().areas.empty()) links_.back().push_back(std::move(open_.back()));
-                    open_.pop_back();
+                } else if (item->directive().command == layout::Node::Directive::Command::Unlink && !opened.empty()) {
+                    if (!opened.back().areas.empty()) links.back().push_back(std::move(opened.back()));
+                    opened.pop_back();
                 } else if (const layout::Node* aside = item->directive().note;
                            aside && item->directive().command == layout::Node::Directive::Command::Aside) {
                     // A margin note: in the right margin, clear of the column
                     // by \marginparsep, its first line level with the line it
                     // was written in.
-                    const layout::Document::Configuration& page = document_.configuration();
+                    const layout::Document::Configuration& page = document.configuration;
                     const layout::Node::Box& shape = aside->box();
                     const layout::Node* first = shape.list.empty() ? nullptr : shape.list[0];
-                    const float top = first && first->type() == layout::Node::Type::Box ? first->box().height : 0.0f;
+                    const float top = first && first->type == layout::Node::Type::Box ? first->box().height : 0.0f;
                     node(aside, page.width - page.right + item->directive().width, baseline - top);
                 }
                 break;
@@ -698,7 +698,7 @@ namespace render {
                 // Glue is the only thing whose drawn width differs from its
                 // natural one, because the line it sits in was set to a width.
                 // Only glue of the order that won takes any of the difference.
-                if (child->type() == layout::Node::Type::Glue) {
+                if (child->type == layout::Node::Type::Glue) {
                     const layout::Node::Glue& glue = child->glue();
                     float span = glue.width;
                     if (shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
@@ -712,7 +712,7 @@ namespace render {
                     // so the dots of one line stand under the dots of the
                     // next -- TeX's aligned \leaders.
                     if (const layout::Node* leader = glue.leader; leader && span > 0.0f) {
-                        if (leader->type() == layout::Node::Type::Rule) {
+                        if (leader->type == layout::Node::Type::Rule) {
                             layout::Node bar(layout::Node::Type::Rule);
                             layout::Node::Rule stretched = leader->rule();
                             stretched.width = span;
@@ -747,11 +747,11 @@ namespace render {
             baseline += height(child);
             node(child, position, baseline);
             baseline += layout::Line::extent(child) - height(child);
-            if (child->type() == layout::Node::Type::Box && !transcript.empty() && transcript.back() != '\n') {
+            if (child->type == layout::Node::Type::Box && !transcript.empty() && transcript.back() != '\n') {
                 transcript += '\n';
             }
 
-            if (child->type() == layout::Node::Type::Glue) {
+            if (child->type == layout::Node::Type::Glue) {
                 const layout::Node::Glue& glue = child->glue();
                 if (shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
                     baseline += glue.stretch * shape.ratio;
@@ -795,8 +795,8 @@ namespace render {
 
     void Composer::fill(const layout::Node::Color& value) {
         translucent(value.alpha);
-        if (value == fill_) return;
-        fill_ = value;
+        if (value == filling) return;
+        filling = value;
 
         number(content, value.r);
         content += ' ';
@@ -807,13 +807,13 @@ namespace render {
     }
 
     void Composer::translucent(const float value) {
-        if (value == opacity_) return;
-        opacity_ = value;
+        if (value == opacity) return;
+        opacity = value;
 
         // Its resource index, recorded on first sight.
         std::size_t slot = 0;
-        while (slot < transparency.size() && transparency[slot] != value) ++slot;
-        if (slot == transparency.size()) transparency.push_back(value);
+        while (slot < opacities.size() && opacities[slot] != value) ++slot;
+        if (slot == opacities.size()) opacities.push_back(value);
 
         content += "/GS";
         number(content, slot);

@@ -22,7 +22,7 @@ namespace syntax::primitives {
     Symbol Blocks::title(Mouth& mouth) const {
         const std::string joined = Argument::text(mouth);
         if (joined.empty()) return none;
-        return mouth.lexicon().intern(joined);
+        return mouth.lexicon.intern(joined);
     }
 
     std::string_view Blocks::innermost() const noexcept {
@@ -70,18 +70,18 @@ namespace syntax::primitives {
         // A name as one token, and a character as one: what a definition
         // built here is written in.
         const auto word = [](Mouth& mouth, const std::string& name) {
-            const Symbol symbol = mouth.lexicon().intern(name);
-            return Token{.symbol = symbol, .category = CatCodes::Category::Escape, .text = mouth.lexicon().resolve(symbol)};
+            const Symbol symbol = mouth.lexicon.intern(name);
+            return Token{.symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)};
         };
         const auto brace = [](Mouth& mouth, const char written) {
-            const Symbol symbol = mouth.lexicon().intern(std::string_view(&written, 1));
-            return Token{.symbol = symbol, .category = CatCodes::Category::Group, .text = mouth.lexicon().resolve(symbol)};
+            const Symbol symbol = mouth.lexicon.intern(std::string_view(&written, 1));
+            return Token{.symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)};
         };
 
         const Mouth::Handler entering = [this, word](Mouth& mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
-                tracebacks_.emplace_back(Traceback::Type::Environment,
+                tracebacks.emplace_back(Traceback::Type::Environment,
                                          mouth.lookahead().location,
                                          "\\begin needs a block name");
                 return;
@@ -98,7 +98,7 @@ namespace syntax::primitives {
             // its own, and manages whatever scope it needs itself.
             if (every.entering) every.entering(mouth);
             if (slot < hooks.size() && hooks[slot].own) {
-                const Token code = word(mouth, "\\" + std::string(mouth.lexicon().resolve(name)) + ":open");
+                const Token code = word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":open");
                 mouth.stream().inject(std::span{&code, 1});
             } else if (slot < hooks.size() && hooks[slot].entering) {
                 hooks[slot].entering(mouth);
@@ -107,12 +107,12 @@ namespace syntax::primitives {
                 // \name -- a declaration, `\begin{small}`, or a command a
                 // document or a package defined -- and a name meaning nothing
                 // is reported, and set as a group.
-                const Token call = word(mouth, "\\" + std::string(mouth.lexicon().resolve(name)));
+                const Token call = word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)));
                 if (mouth.known(call.symbol) || (mouth.reader.means && mouth.reader.means(call.symbol))) {
                     mouth.stream().inject(std::span{&call, 1});
                 } else {
-                    tracebacks_.emplace_back(Traceback::Type::Warning, mouth.lookahead().location,
-                                             std::format("Environment {} undefined", mouth.lexicon().resolve(name)));
+                    tracebacks.emplace_back(Traceback::Type::Warning, mouth.lookahead().location,
+                                             std::format("Environment {} undefined", mouth.lexicon.resolve(name)));
                 }
             }
         };
@@ -120,18 +120,18 @@ namespace syntax::primitives {
         // A block closed, once whatever its end code opened has been.
         const auto close = [this](Mouth& mouth, const Symbol name) {
             if (open.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Environment,
+                tracebacks.emplace_back(Traceback::Type::Environment,
                                          mouth.lookahead().location,
-                                         std::format("Extra \\end{{{}}}", mouth.lexicon().resolve(name)));
+                                         std::format("Extra \\end{{{}}}", mouth.lexicon.resolve(name)));
                 return;
             }
 
             if (open.back() != name) {
-                tracebacks_.emplace_back(
+                tracebacks.emplace_back(
                     Traceback::Type::Environment, mouth.lookahead().location,
                     std::format("\\begin{{{}}} ended by \\end{{{}}}",
-                                mouth.lexicon().resolve(open.back()),
-                                mouth.lexicon().resolve(name)));
+                                mouth.lexicon.resolve(open.back()),
+                                mouth.lexicon.resolve(name)));
                 // Still closed: leaving the scope open would cascade every
                 // later \end into the same complaint.
             }
@@ -154,7 +154,7 @@ namespace syntax::primitives {
         const Mouth::Handler leaving = [this, word, close](Mouth& mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
-                tracebacks_.emplace_back(Traceback::Type::Environment,
+                tracebacks.emplace_back(Traceback::Type::Environment,
                                          mouth.lookahead().location,
                                          "\\end needs a block name");
                 return;
@@ -166,13 +166,13 @@ namespace syntax::primitives {
             const auto slot = static_cast<std::size_t>(name);
             if (slot < hooks.size() && hooks[slot].own) {
                 closing.push_back(name);
-                const std::array<Token, 2> code{word(mouth, "\\" + std::string(mouth.lexicon().resolve(name)) + ":close"),
+                const std::array<Token, 2> code{word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":close"),
                                                 word(mouth, "\\end:finish")};
                 mouth.stream().inject(std::span{code});
                 return;
             }
             if (!(slot < hooks.size() && (hooks[slot].entering || hooks[slot].leaving))) {
-                const Token ending = word(mouth, "\\end" + std::string(mouth.lexicon().resolve(name)));
+                const Token ending = word(mouth, "\\end" + std::string(mouth.lexicon.resolve(name)));
                 if (mouth.known(ending.symbol) || (mouth.reader.means && mouth.reader.means(ending.symbol))) {
                     closing.push_back(name);
                     const std::array<Token, 2> code{ending, word(mouth, "\\end:finish")};
@@ -205,24 +205,24 @@ namespace syntax::primitives {
             if (described) {
                 parameters = mouth.argument({}, 1);
             } else {
-                while (!mouth.lookahead().empty() && !mouth.lookahead().is(CatCodes::Category::Group, '{')) {
+                while (!mouth.lookahead().empty() && !mouth.lookahead().is(Catcodes::Category::Group, '{')) {
                     parameters.push_back(mouth.read());
                 }
             }
             const std::vector<Token> begin = mouth.argument({}, 1);
             const std::vector<Token> end = mouth.argument({}, 1);
             if (name.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Environment, origin, "\\newenvironment needs a block name");
+                tracebacks.emplace_back(Traceback::Type::Environment, origin, "\\newenvironment needs a block name");
                 return;
             }
 
-            const auto slot = static_cast<std::size_t>(mouth.lexicon().intern(name));
+            const auto slot = static_cast<std::size_t>(mouth.lexicon.intern(name));
             if (slot >= hooks.size()) hooks.resize(slot + 1);
             Hook& hook = hooks[slot];
             const bool native = !hook.own && (hook.entering || hook.leaving);
             if (providing && (hook.own || native)) return;
             if (renewing && native) {
-                tracebacks_.emplace_back(Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(Traceback::Type::Warning, origin,
                                          "renewenvironment " + name + ": the engine sets this block itself, and still does");
                 return;
             }

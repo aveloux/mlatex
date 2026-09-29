@@ -58,7 +58,7 @@ struct Column {
 /// @brief How many of a page's top-level nodes are boxes.
 static std::size_t boxes(const layout::Pager::Page& page) {
     std::size_t found = 0;
-    for (const layout::Node* node : page.nodes) found += node->type() == layout::Node::Type::Box;
+    for (const layout::Node* node : page.nodes) found += node->type == layout::Node::Type::Box;
     return found;
 }
 
@@ -106,7 +106,7 @@ int main() {
         assert((pages.size() == 1 && pages[0].nodes.size() >= 4) && "one page");
         const layout::Node* first = nullptr;
         for (const layout::Node* node : pages[0].nodes) {
-            if (node->type() == layout::Node::Type::Box) {
+            if (node->type == layout::Node::Type::Box) {
                 first = node;
                 break;
             }
@@ -122,7 +122,7 @@ int main() {
         const auto pages = column.paginate();
         const layout::Node* last = nullptr;
         for (const layout::Node* node : pages[0].nodes) {
-            if (node->type() == layout::Node::Type::Box) last = node;
+            if (node->type == layout::Node::Type::Box) last = node;
         }
         assert((pages.size() == 1 && last && height(last) == 40.0f) && "a float asked for the foot is set last");
         assert((pages[0].height == 250.0f) && "at the very foot, what the text leaves between them");
@@ -192,7 +192,7 @@ int main() {
         if (pages.size() == 1) {
             const layout::Node* region = nullptr;
             for (const layout::Node* node : pages[0].nodes) {
-                if (node->type() == layout::Node::Type::Box && node->box().list.size() == 3) region = node;
+                if (node->type == layout::Node::Type::Box && node->box().list.size() == 3) region = node;
             }
             assert((region && layout::Line::extent(region) == 60.0f) && "its four blocks two to a column, level");
             assert((pages[0].height == 140.0f) && "the page is what stands above, the region, and what follows");

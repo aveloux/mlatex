@@ -70,8 +70,8 @@ int main() {
             const layout::Node* line = element->paragraph->node()->box().list[0];
             return line->box().list[0];
         };
-        assert((opening(elements[0])->type() == layout::Node::Type::Kern) && "a paragraph opens indented");
-        assert((opening(elements[3])->type() != layout::Node::Type::Kern) &&
+        assert((opening(elements[0])->type == layout::Node::Type::Kern) && "a paragraph opens indented");
+        assert((opening(elements[3])->type != layout::Node::Type::Kern) &&
                "the text carrying straight on from a table does not");
     }
 
@@ -92,10 +92,10 @@ int main() {
         if (elements.size() == 2 && elements[1]->paragraph && elements[1]->paragraph->node()) {
             const memory::Slice<layout::Node*>& row = elements[1]->paragraph->node()->box().list[0]->box().list;
             const auto a = std::ranges::find_if(row, [](const layout::Node* node) {
-                return node && node->type() == layout::Node::Type::Glyph && node->glyph().point == 'a';
+                return node && node->type == layout::Node::Type::Glyph && node->glyph().point == 'a';
             });
             assert((a != row.end() && std::next(a) != row.end() &&
-                   (*std::next(a))->type() == layout::Node::Type::Glue) &&
+                   (*std::next(a))->type == layout::Node::Type::Glue) &&
                    "the space before a run seen before at a paragraph's head is kept");
         }
     }
@@ -103,9 +103,9 @@ int main() {
     // --- Columns ----------------------------------------------------------------------
     {
         layout::Document document(fonts.arena, fonts.scratch, fonts.shaper, typesetter);
-        document.configuration().columns = 2;
-        document.configuration().gap = 10.0f;
-        const layout::Document::Configuration& page = document.configuration();
+        document.configuration.columns = 2;
+        document.configuration.gap = 10.0f;
+        const layout::Document::Configuration& page = document.configuration;
         const float text = page.width - page.left - page.right;
         assert((std::abs(document.column() - (text - 10.0f) / 2.0f) < 0.01f) &&
                "the class's two columns share the text block");
@@ -136,7 +136,7 @@ int main() {
                "the Russian patterns read");
         const auto flagged = [](const memory::Slice<layout::Node*> nodes) {
             return std::ranges::count_if(nodes, [](const layout::Node* node) {
-                return node->type() == layout::Node::Type::Penalty && node->penalty().flag;
+                return node->type == layout::Node::Type::Penalty && node->penalty().flag;
             });
         };
         const auto order = [&fonts](const layout::Node::Directive& said) {
@@ -155,11 +155,11 @@ int main() {
                "no nearer a word's ends than the language allows");
 
         const memory::Slice<layout::Node*> opened = document.set("  два слова", font, true);
-        assert((opened[0]->type() == layout::Node::Type::Glyph &&
+        assert((opened[0]->type == layout::Node::Type::Glyph &&
                 std::ranges::count_if(opened, [](const layout::Node* node) {
-                    return node->type() == layout::Node::Type::Glue;
+                    return node->type == layout::Node::Type::Glue;
                 }) == 1) && "a run set on its own drops a blank at the head of what it opens, and keeps a word space");
-        assert((document.set(" слово", font, false)[0]->type() == layout::Node::Type::Glue) &&
+        assert((document.set(" слово", font, false)[0]->type == layout::Node::Type::Glue) &&
                "and keeps a blank where it opens nothing");
 
         // Right to left: the paragraph's last line is filled from its left,
@@ -169,7 +169,7 @@ int main() {
         document.layout();
         const memory::Slice<layout::Document::Element*> elements = document.elements();
         const layout::Node* line = elements[elements.size() - 1]->paragraph->node()->box().list[0];
-        assert((line->box().list[0]->type() == layout::Node::Type::Glue) &&
+        assert((line->box().list[0]->type == layout::Node::Type::Glue) &&
                "a paragraph read right to left ends at the left of its last line");
     }
 

@@ -81,8 +81,8 @@ namespace syntax::primitives {
         [[nodiscard]] bool loaded(std::string_view name) const;
 
         /// @brief Errors this module has recorded: a name found nowhere embedded.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -119,7 +119,7 @@ namespace syntax::primitives {
         /// @param key     Path below the modules directory, as `core/main.mtex`.
         /// @return The file's text, or nothing when neither has it.
         /// @complexity O(log n) in the files handed in, then O(1).
-        [[nodiscard]] static std::optional<std::string_view> find(const Context& context, std::string_view key);
+        [[nodiscard]] static std::optional<std::string_view> get(const Context& context, std::string_view key);
 
         /// @brief The names in a comma-separated list, trimmed, empty ones left out.
         /// @param list As `amsmath, amssymb`.
@@ -133,7 +133,7 @@ namespace syntax::primitives {
         mutable std::vector<std::string> folders{};
 
         mutable memory::Names packages{};   ///< Every package loaded so far.
-        mutable std::vector<Traceback> tracebacks_{};         ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};         ///< Errors this module found.
     };
 
 }

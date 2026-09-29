@@ -16,7 +16,7 @@
 
 namespace syntax {
 
-    Lexer::Lexer(const std::string_view source, CatCodes& codes, Lexicon& lexicon)
+    Lexer::Lexer(const std::string_view source, Catcodes& codes, Lexicon& lexicon)
         : sources(source), table(codes), lexicon(lexicon) {
         Logger::log(Logger::Type::Lexer, Logger::Level::Informative,
                     "Lexer bound to {} byte buffer", source.size());
@@ -65,15 +65,15 @@ namespace syntax {
                 offset = stop;
                 opening = std::string_view::npos;
                 type = Type::Middle;
-                return Token{none, CatCodes::Category::Other, position, body};
+                return Token{none, Catcodes::Category::Other, position, body};
             }
 
             const std::size_t origin = offset;
             const memory::Location position = location;
             const char symbol = text[offset];
-            const CatCodes::Category category = table.get(symbol);
+            const Catcodes::Category category = table.get(symbol);
 
-            if (category == CatCodes::Category::Space && ending(symbol)) {
+            if (category == Catcodes::Category::Space && ending(symbol)) {
                 offset++;
                 if (symbol == '\r' && offset < size && text[offset] == '\n') {
                     offset++;
@@ -86,7 +86,7 @@ namespace syntax {
                 if (previous == Type::Middle) {
                     type = Type::Newline;
                     const Symbol bound = lexicon.intern(" ");
-                    return Token{bound, CatCodes::Category::Space, position, lexicon.resolve(bound)};
+                    return Token{bound, Catcodes::Category::Space, position, lexicon.resolve(bound)};
                 }
 
                 if (previous == Type::Newline) {
@@ -94,7 +94,7 @@ namespace syntax {
                     const Symbol bound = lexicon.intern("\\par");
                     Logger::log(Logger::Type::Lexer, Logger::Level::Debug,
                                 "Lexed <Escape> [\\par] at {}:{}", position.line, position.column);
-                    return Token{bound, CatCodes::Category::Escape, position, lexicon.resolve(bound)};
+                    return Token{bound, Catcodes::Category::Escape, position, lexicon.resolve(bound)};
                 }
 
                 // Every line starts afresh, however the last one ended: a
@@ -107,23 +107,23 @@ namespace syntax {
                 continue;
             }
 
-            if (category == CatCodes::Category::Space) {
+            if (category == Catcodes::Category::Space) {
                 offset++;
                 location.column++;
                 if (type == Type::Skip || type == Type::Newline || type == Type::Blank) continue;
                 type = Type::Skip;
                 const Symbol bound = lexicon.intern(" ");
-                return Token{bound, CatCodes::Category::Space, position, lexicon.resolve(bound)};
+                return Token{bound, Catcodes::Category::Space, position, lexicon.resolve(bound)};
             }
 
-            if (category == CatCodes::Category::Ignore) {
+            if (category == Catcodes::Category::Ignore) {
                 offset++;
                 location.column++;
                 continue;
             }
 
-            if (category == CatCodes::Category::Invalid) {
-                tracebacks_.emplace_back(Traceback::Type::Token, position,
+            if (category == Catcodes::Category::Invalid) {
+                tracebacks.emplace_back(Traceback::Type::Token, position,
                                     std::format("Illegal byte 0x{:02X} in input",
                                                 static_cast<unsigned>(static_cast<unsigned char>(symbol))));
                 Logger::log(Logger::Type::Lexer, Logger::Level::Warning,
@@ -135,7 +135,7 @@ namespace syntax {
                 continue;
             }
 
-            if (category == CatCodes::Category::Comment) {
+            if (category == Catcodes::Category::Comment) {
                 while (offset < size && !ending(text[offset])) {
                     offset++;
                     location.column++;
@@ -153,15 +153,15 @@ namespace syntax {
                 continue;
             }
 
-            if (category == CatCodes::Category::Escape) {
+            if (category == Catcodes::Category::Escape) {
                 offset++;
                 location.column++;
 
                 if (offset < size) {
                     const char next = text[offset];
 
-                    if (table.get(next) == CatCodes::Category::Letter) {
-                        while (offset < size && table.get(text[offset]) == CatCodes::Category::Letter) {
+                    if (table.get(next) == Catcodes::Category::Letter) {
+                        while (offset < size && table.get(text[offset]) == Catcodes::Category::Letter) {
                             offset++;
                             location.column++;
                         }
@@ -174,7 +174,7 @@ namespace syntax {
                         location.line++;
                         location.column = 1;
                         type = Type::Middle;
-                    } else if (table.get(next) == CatCodes::Category::Space) {
+                    } else if (table.get(next) == Catcodes::Category::Space) {
                         offset++;
                         location.column++;
                         type = Type::Skip;
@@ -213,12 +213,12 @@ namespace syntax {
                         while (at < size && text[at] != '}' && !ending(text[at])) ++at;
                         if (at < size && text[at] == '}') ++at;
                     }
-                    if (at < size && !ending(text[at]) && table.get(text[at]) != CatCodes::Category::Letter) {
+                    if (at < size && !ending(text[at]) && table.get(text[at]) != Catcodes::Category::Letter) {
                         const char close = text[at] == '{' ? '}' : text[at];
                         std::size_t last = at + 1;
                         while (last < size && text[last] != close && !ending(text[last])) ++last;
                         if (last < size && text[last] == close) {
-                            held = Token{none, CatCodes::Category::Other,
+                            held = Token{none, Catcodes::Category::Other,
                                          {location.line, location.column + static_cast<std::uint32_t>(at + 1 - offset)},
                                          std::string_view(text + at + 1, last - at - 1)};
                             location.column += static_cast<std::uint32_t>(last + 1 - offset);
@@ -263,7 +263,7 @@ namespace syntax {
                     }
                 }
 
-                return Token{bound, CatCodes::Category::Escape, position, value};
+                return Token{bound, Catcodes::Category::Escape, position, value};
             }
 
             const std::size_t span = (static_cast<unsigned char>(symbol) & 0x80) == 0

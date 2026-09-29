@@ -20,7 +20,7 @@ namespace syntax {
     /// global assignment sets the stamp to 0, and pop() discards records for
     /// bytes stamped 0 since. This is TeX's `eq_level` scheme; every operation
     /// is O(1).
-    class CatCodes {
+    class Catcodes {
     public:
         /// @brief What a character means to the lexer.
         enum class Category : std::uint8_t {
@@ -41,7 +41,7 @@ namespace syntax {
         };
 
         /// @brief Builds plain TeX's table.
-        constexpr CatCodes() noexcept {
+        constexpr Catcodes() noexcept {
             table.fill(Category::Other);
             for (std::size_t code = 0; code < 0x20; ++code) table[code] = Category::Invalid;
             for (std::size_t code = 'a'; code <= 'z'; ++code) table[code] = Category::Letter;

@@ -18,7 +18,7 @@
 
 namespace render::primitives {
 
-    using Category = syntax::CatCodes::Category;
+    using Category = syntax::Catcodes::Category;
 
     /// @brief Text without the blanks around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
@@ -126,7 +126,7 @@ namespace render::primitives {
         };
         for (const Arrow& arrow : diagram.arrows) {
             if (!present(arrow.row, arrow.column) || !present(arrow.down, arrow.across)) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          std::format("a diagram's arrow from row {}, column {} goes to no object and is not drawn",
                                                      arrow.row, arrow.column));
                 continue;
@@ -494,7 +494,7 @@ namespace render::primitives {
             [](syntax::Mouth&) {});
 
         // xy-pic: `\xymatrix@C=3em{A \ar[r]^f \ar@{-->}[d]_g & B}`.
-        parser.mouth().bind("\\xymatrix", [this, &context, objects, label](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\xymatrix", [this, &context, objects, label](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             Diagram diagram{.columns = "2pc", .rows = "2pc"};
             // Its spacing before its body: `@C=`, `@R=`, `@=` and the rest.
@@ -813,7 +813,7 @@ namespace render::primitives {
             },
             [](syntax::Mouth&) {});
 
-        parser.mouth().bind("\\Qcircuit", [&context, circuit](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\Qcircuit", [&context, circuit](syntax::Mouth& mouth) {
             std::string columns = "1em";
             std::string rows = "1em";
             while (mouth.lookahead().is('@')) {
@@ -853,7 +853,7 @@ namespace render::primitives {
                 mouth.ingest(context.arena.copy(tree(body(mouth, "forest"), false)));
             },
             [](syntax::Mouth&) {});
-        parser.mouth().bind("\\Tree", [&context, tree](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\Tree", [&context, tree](syntax::Mouth& mouth) {
             std::string text;
             int depth = 0;
             for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {

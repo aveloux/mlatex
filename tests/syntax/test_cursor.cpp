@@ -9,7 +9,7 @@
 
 /// @brief A letter token with nothing else about it.
 static syntax::Token letter(const std::string_view text, const syntax::Symbol symbol) {
-    return syntax::Token{.symbol = symbol, .category = syntax::CatCodes::Category::Letter, .text = text};
+    return syntax::Token{.symbol = symbol, .category = syntax::Catcodes::Category::Letter, .text = text};
 }
 
 int main() {

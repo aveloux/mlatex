@@ -29,8 +29,8 @@ namespace render::primitives {
         // selected put back on the way out. A brace and \bgroup close each
         // other, as they do in TeX; \begingroup closes only at \endgroup.
         const auto grouped = [&context](syntax::Parser& parser, const char closing, const syntax::Symbol stop) {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // What the group is entered with, so that whatever it selects
@@ -56,7 +56,7 @@ namespace render::primitives {
             const bool shaped = std::ranges::any_of(children, [](const syntax::Node* child) {
                 if (!child || child->type != syntax::Node::Type::Directive || !child->directive) return false;
                 const auto* node = static_cast<const layout::Node*>(child->directive);
-                return node->type() == layout::Node::Type::Directive &&
+                return node->type == layout::Node::Type::Directive &&
                        (node->directive().command == Command::Align || node->directive().command == Command::Margin);
             });
             if (!shaped) {

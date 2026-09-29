@@ -65,15 +65,15 @@ int main() {
     const auto first = read(one);
     assert((first.has_value()) && "a PDF's page is read");
     assert((first && first->width() == 200.0f && first->height() == 100.0f) && "its box inherited from the tree");
-    assert((first && first->content().starts_with("BT /F1 12 Tf")) && "its contents");
-    assert((first && first->resources().type == graphics::Drawing::Value::Type::Table) && "its resources");
-    assert((first && first->objects().size() == 1) && "every object they reach, and nothing else");
-    assert((first && first->objects()[0].value.items.size() == 8) && "a /Parent left behind");
+    assert((first && first->content.starts_with("BT /F1 12 Tf")) && "its contents");
+    assert((first && first->resources.type == graphics::Drawing::Value::Type::Table) && "its resources");
+    assert((first && first->objects.size() == 1) && "every object they reach, and nothing else");
+    assert((first && first->objects[0].value.items.size() == 8) && "a /Parent left behind");
 
     const auto second = read(one, 2);
-    assert((second && second->box()[0] == 10.0f && second->width() == 100.0f && second->height() == 50.0f) &&
+    assert((second && second->box[0] == 10.0f && second->width() == 100.0f && second->height() == 50.0f) &&
            "another page, seen through its crop box");
-    assert((second && second->content().starts_with("0 0 m")) && "with its own contents");
+    assert((second && second->content.starts_with("0 0 m")) && "with its own contents");
     assert((!read(one, 3)) && "a page the file does not have is none");
 
     // --- A cross-reference stream and an object stream ----------------------------------
@@ -116,10 +116,10 @@ int main() {
 
         const auto drawn = read(modern.bytes);
         assert((drawn && drawn->width() == 300.0f) && "a cross-reference stream, its page in an object stream");
-        assert((drawn && drawn->resources().type == graphics::Drawing::Value::Type::Reference &&
-                drawn->objects().size() == 1 && drawn->objects()[0].value.items.size() == 2) &&
+        assert((drawn && drawn->resources.type == graphics::Drawing::Value::Type::Reference &&
+                drawn->objects.size() == 1 && drawn->objects[0].value.items.size() == 2) &&
                "its resources, in the object stream too, copied and renumbered");
-        assert((drawn && drawn->content().starts_with("1 0 0 1 cm")) && "its contents");
+        assert((drawn && drawn->content.starts_with("1 0 0 1 cm")) && "its contents");
     }
 
     // --- A table that lies -------------------------------------------------------------

@@ -50,11 +50,11 @@ namespace syntax {
         [[nodiscard]] static std::string expanded(Mouth& mouth) {
             std::vector<Token> gathered = mouth.argument({}, 0);
 
-            const Symbol marker = mouth.lexicon().intern("\\argument:end");
+            const Symbol marker = mouth.lexicon.intern("\\argument:end");
             gathered.push_back(Token{
                 .symbol = marker,
-                .category = CatCodes::Category::Escape,
-                .text = mouth.lexicon().resolve(marker)
+                .category = Catcodes::Category::Escape,
+                .text = mouth.lexicon.resolve(marker)
             });
 
             const std::size_t depth = mouth.stream().size();
@@ -64,7 +64,7 @@ namespace syntax {
             bool word = false;   // the last thing written was a control word
             for (;;) {
                 const Token token = mouth.expand();
-                if (token.symbol == marker || token.empty() || mouth.error()) break;
+                if (token.symbol == marker || token.empty() || mouth.error) break;
                 if (mouth.stream().size() < depth) {
                     mouth.stream().inject(std::span{&token, 1});
                     break;
@@ -76,7 +76,7 @@ namespace syntax {
                 if (word && letter) joined += ' ';
                 joined += token.text;
 
-                word = token.category == CatCodes::Category::Escape && token.text.size() > 1 &&
+                word = token.category == Catcodes::Category::Escape && token.text.size() > 1 &&
                        ((token.text[1] >= 'a' && token.text[1] <= 'z') ||
                         (token.text[1] >= 'A' && token.text[1] <= 'Z'));
             }
@@ -92,7 +92,7 @@ namespace syntax {
         /// @complexity O(k) in the keyword's length.
         static bool keyword(Mouth& mouth, const std::string_view word) {
             std::size_t offset = 0;
-            while (mouth.lookahead(offset).category == CatCodes::Category::Space) ++offset;
+            while (mouth.lookahead(offset).category == Catcodes::Category::Space) ++offset;
             for (std::size_t index = 0; index < word.size(); ++index) {
                 const Token token = mouth.lookahead(offset + index);
                 if (token.text.size() != 1 || (token.text[0] | 0x20) != word[index]) return false;

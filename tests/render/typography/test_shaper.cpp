@@ -41,7 +41,7 @@ namespace layout = render::layout;
 /// @brief How many of a run's nodes are of one kind.
 static std::size_t kind(const memory::Slice<layout::Node*> nodes, const layout::Node::Type type) {
     std::size_t found = 0;
-    for (const layout::Node* node : nodes) found += node && node->type() == type;
+    for (const layout::Node* node : nodes) found += node && node->type == type;
     return found;
 }
 

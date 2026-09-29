@@ -25,7 +25,7 @@ namespace render::primitives {
     }
 
     void Typeface::operator()(syntax::Parser& parser, Context& context) const {
-        parser.mouth().bind("\\textfont", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\textfont", [this, &context](syntax::Mouth& mouth) {
             const std::string name = syntax::Argument::text(mouth);
             const typography::Font* font = context.registry.get({
                 .family = name,
@@ -33,7 +33,7 @@ namespace render::primitives {
             });
 
             if (!font) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument,
                                          mouth.lookahead().location,
                                          "No font family named '" + name + "'");
                 return;
@@ -44,7 +44,7 @@ namespace render::primitives {
                         "Text face is now '{}'", name);
         });
 
-        parser.mouth().bind("\\mathfont", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\mathfont", [this, &context](syntax::Mouth& mouth) {
             const std::string name = syntax::Argument::text(mouth);
             const typography::Font* font = context.registry.get({
                 .family = name,
@@ -52,7 +52,7 @@ namespace render::primitives {
             });
 
             if (!font) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument,
                                          mouth.lookahead().location,
                                          "No font family named '" + name + "'");
                 return;
@@ -66,10 +66,10 @@ namespace render::primitives {
         // `\\font\name = family at size`: builds the font and binds the name to
         // selecting it, so the two steps a document usually wants together are
         // written once and used many times.
-        parser.mouth().bind("\\font", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\font", [this, &context](syntax::Mouth& mouth) {
             const syntax::Token target = mouth.read();
-            if (target.category != syntax::CatCodes::Category::Escape) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, target.location,
+            if (target.category != syntax::Catcodes::Category::Escape) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
                                          "\\font needs a control sequence to name the face");
                 return;
             }
@@ -77,7 +77,7 @@ namespace render::primitives {
             // Blanks around the `=` are the document being readable; neither
             // the sign nor the spaces mean anything.
             const auto blanks = [&mouth] {
-                while (mouth.lookahead().category == syntax::CatCodes::Category::Space) {
+                while (mouth.lookahead().category == syntax::Catcodes::Category::Space) {
                     mouth.read();
                 }
             };
@@ -91,13 +91,13 @@ namespace render::primitives {
             // is written -- which is how a family whose name has a space in it
             // is given.
             std::string name;
-            if (mouth.lookahead().is(syntax::CatCodes::Category::Group, '{')) {
+            if (mouth.lookahead().is(syntax::Catcodes::Category::Group, '{')) {
                 name = syntax::Argument::text(mouth);
             } else {
                 while (true) {
                     const syntax::Token next = mouth.lookahead();
-                    if (next.empty() || next.category == syntax::CatCodes::Category::Space ||
-                        next.category == syntax::CatCodes::Category::Escape) {
+                    if (next.empty() || next.category == syntax::Catcodes::Category::Space ||
+                        next.category == syntax::Catcodes::Category::Escape) {
                         break;
                     }
                     name += mouth.read().text;
@@ -121,7 +121,7 @@ namespace render::primitives {
 
             const typography::Font* font = context.registry.get({.family = name, .size = size});
             if (!font) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Argument, target.location,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
                                          "No font family named '" + name + "'");
                 return;
             }
@@ -142,7 +142,7 @@ namespace render::primitives {
         // Each is found by what its name holds, lower-cased and without its
         // spaces, the longer names first; one the engine has nothing near
         // leaves the face as it was, and says so.
-        parser.mouth().bind("\\@face", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\@face", [this, &context](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string role = syntax::Argument::text(mouth);
             const std::string name = syntax::Argument::text(mouth);
@@ -187,7 +187,7 @@ namespace render::primitives {
             const float size = current ? current->size() : 10.0f;
             const typography::Font* font = file.empty() ? nullptr : context.registry.get({.family = file, .size = size});
             if (!font) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          std::format("fontspec: no face near '{}' is carried; the {} face is kept", name,
                                                      formula ? "formulas'" : "text's"));
                 return;
@@ -197,10 +197,10 @@ namespace render::primitives {
             // a sans or a mono one only when it is the face the text is in.
             if (formula) {
                 context.selection.formula(font);
-                context.document.fallback(font);
+                context.document.fallback = font;
             } else if (role == "main") {
                 context.selection.text(font);
-                context.document.furniture().face = font;
+                context.document.furniture.face = font;
             }
             Logger::log(Logger::Type::Layout, Logger::Level::Informative, "The {} face '{}' is set in '{}'", role, name,
                         file);

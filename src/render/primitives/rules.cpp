@@ -33,8 +33,8 @@ namespace render::primitives {
 
     void Rules::operator()(syntax::Parser& parser, Context& context) const {
         parser.bind("\\rule", [&context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // `\\rule[0.5ex]{...}{...}`: how far above the baseline the rule
@@ -55,7 +55,7 @@ namespace render::primitives {
             float measured[2]{0.0f, 0.0f};
             for (float& value : measured) {
                 syntax::Token open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{') && !open.empty()) {
+                if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});
                 }
 
@@ -64,7 +64,7 @@ namespace render::primitives {
                 }
 
                 syntax::Token close = mouth.read();
-                if (!close.is(syntax::CatCodes::Category::Group, '}') && !close.empty()) {
+                if (!close.is(syntax::Catcodes::Category::Group, '}') && !close.empty()) {
                     mouth.stream().inject(std::span{&close, 1});
                 }
             }
@@ -98,11 +98,11 @@ namespace render::primitives {
         };
 
         parser.bind("\\hrule", [&context, keywords](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
 
             layout::Node::Rule shape{.width = breadth(context), .height = hairline, .color = ink(context)};
-            keywords(parser.mouth(), shape);
+            keywords(parser.mouth, shape);
 
             auto* node = arena.compose<layout::Node>();
             node->rule(shape);
@@ -110,8 +110,8 @@ namespace render::primitives {
         });
 
         parser.bind("\\vrule", [&context, keywords](syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena();
-            const memory::Location origin = parser.mouth().lookahead().location;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = parser.mouth.lookahead().location;
 
             // Descent comes back negative from the font and a depth is a
             // distance, so it is negated here.
@@ -119,7 +119,7 @@ namespace render::primitives {
             const typography::Font::Metric line =
                 font ? font->metrics() : typography::Font::Metric{};
             layout::Node::Rule shape{.width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)};
-            keywords(parser.mouth(), shape);
+            keywords(parser.mouth, shape);
 
             auto* node = arena.compose<layout::Node>();
             node->rule(shape);
@@ -131,12 +131,12 @@ namespace render::primitives {
         // is built from, with a fixed drop in place of a MATH table constant
         // since a text face carries none.
         parser.bind("\\underline", [&context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             syntax::Token open = mouth.read();
-            if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 return directive(arena, nullptr, origin);
             }

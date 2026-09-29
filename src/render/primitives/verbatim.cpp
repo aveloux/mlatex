@@ -57,7 +57,7 @@ namespace render::primitives {
                 }
                 return std::string(value);
             }
-            const std::string* set = context.variables.find("lst." + std::string(key));
+            const std::string* set = context.variables.get("lst." + std::string(key));
             return set ? *set : std::string{};
         };
 
@@ -88,7 +88,7 @@ namespace render::primitives {
                 const typography::Font* fonts[] = {mono};
                 shaped = context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(spread), {});
                 for (layout::Node*& node : shaped) {
-                    if (!node || node->type() != layout::Node::Type::Glue) continue;
+                    if (!node || node->type != layout::Node::Type::Glue) continue;
                     auto* kern = arena.compose<layout::Node>(layout::Node::Type::Kern);
                     kern->kern({.width = node->glue().width});
                     node = kern;
@@ -98,22 +98,22 @@ namespace render::primitives {
         };
 
         const auto current = [&context] {
-            return context.selection.text() ? context.selection.text()->size() : context.document.configuration().size;
+            return context.selection.text() ? context.selection.text()->size() : context.document.configuration.size;
         };
 
         // Inline: the text after \verb, \lstinline or \mintinline, one box.
         for (const std::string_view name : {"\\verb", "\\lstinline", "\\mintinline"}) {
             parser.bind(name, [this, typed, current, name](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
+                syntax::Mouth& mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
                 const syntax::Token text = mouth.read();
-                if (text.symbol != syntax::none || text.category != syntax::CatCodes::Category::Other) {
+                if (text.symbol != syntax::none || text.category != syntax::Catcodes::Category::Other) {
                     if (!text.empty()) mouth.stream().inject(std::span{&text, 1});
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              std::format("{} needs its text between two of one character", name));
                     return nullptr;
                 }
-                return directive(parser.arena(), typed(parser.arena(), text.text, current(), 8), origin);
+                return directive(parser.arena, typed(parser.arena, text.text, current(), 8), origin);
             });
         }
 
@@ -136,8 +136,8 @@ namespace render::primitives {
                     const bool listing = name == "lstlisting" || name == "minted";
                     openings.push_back({listing ? "lstlisting" : name == "comment" || name == "CCSXML" ? "comment" : "verbatim",
                                         std::move(options)});
-                    const syntax::Token mark{.symbol = start, .category = syntax::CatCodes::Category::Escape,
-                                             .text = mouth.lexicon().resolve(start)};
+                    const syntax::Token mark{.symbol = start, .category = syntax::Catcodes::Category::Escape,
+                                             .text = mouth.lexicon.resolve(start)};
                     mouth.stream().inject(std::span{&mark, 1});
                 },
                 {});
@@ -154,7 +154,7 @@ namespace render::primitives {
                     static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                     const std::string file = syntax::Argument::text(mouth);
                     const syntax::Token body = mouth.read();
-                    if (body.symbol != syntax::none || body.category != syntax::CatCodes::Category::Other) {
+                    if (body.symbol != syntax::none || body.category != syntax::Catcodes::Category::Other) {
                         if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                         return;
                     }
@@ -165,7 +165,7 @@ namespace render::primitives {
 
         // \lstinputlisting[options]{file}: a listing of a file handed in.
         parser.bind("\\lstinputlisting", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
@@ -178,15 +178,15 @@ namespace render::primitives {
             }
             if (!text && context.disk) text = context.disk(name);
             if (!text) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          std::format("\\lstinputlisting: no file named '{}' was handed in", name));
                 return nullptr;
             }
             openings.push_back({"lstlisting", std::move(options)});
             const std::array<syntax::Token, 2> marked{
-                syntax::Token{.symbol = start, .category = syntax::CatCodes::Category::Escape,
-                              .text = mouth.lexicon().resolve(start)},
-                syntax::Token{.symbol = syntax::none, .category = syntax::CatCodes::Category::Other,
+                syntax::Token{.symbol = start, .category = syntax::Catcodes::Category::Escape,
+                              .text = mouth.lexicon.resolve(start)},
+                syntax::Token{.symbol = syntax::none, .category = syntax::Catcodes::Category::Other,
                               .location = origin, .text = *text},
             };
             mouth.stream().inject(std::span{marked});
@@ -194,13 +194,13 @@ namespace render::primitives {
         });
 
         parser.bind(start, [this, &context, option, typed, current](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
-            memory::Arena& arena = parser.arena();
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
             if (openings.empty()) return nullptr;
 
             syntax::Token body = mouth.read();
-            if (body.symbol != syntax::none || body.category != syntax::CatCodes::Category::Other) {
+            if (body.symbol != syntax::none || body.category != syntax::Catcodes::Category::Other) {
                 if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                 body = {};
             }
@@ -218,8 +218,8 @@ namespace render::primitives {
                 const std::string label = option(options, "label");
                 openings.back().headed = true;
                 if (!caption.empty()) {
-                    const syntax::Token mark{.symbol = start, .category = syntax::CatCodes::Category::Escape,
-                                             .text = mouth.lexicon().resolve(start)};
+                    const syntax::Token mark{.symbol = start, .category = syntax::Catcodes::Category::Escape,
+                                             .text = mouth.lexicon.resolve(start)};
                     if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                     mouth.stream().inject(std::span{&mark, 1});
                     mouth.ingest(arena.copy("\\captionof{lstlisting}{" + caption + "}" +
@@ -230,7 +230,7 @@ namespace render::primitives {
             openings.pop_back();
 
             // Its size, as its basic style says; LaTeX's own names for them.
-            const float normal = context.document.configuration().size;
+            const float normal = context.document.configuration.size;
             float size = current();
             if (listing) {
                 const std::string style = option(options, "basicstyle");

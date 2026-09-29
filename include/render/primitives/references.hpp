@@ -69,8 +69,8 @@ namespace render::primitives {
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Errors this module has recorded: a label defined twice.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
         /// @brief The two marks a link is drawn between, and the color its
@@ -145,7 +145,7 @@ namespace render::primitives {
         mutable memory::Dictionary<Mark> forwards{};   ///< Every text `\\@fulfil` gave or `\\@forward` asked for, by key.
         mutable std::vector<std::pair<std::string, memory::Location>> awaited{};   ///< Labels referred to before they were made, and where.
         mutable std::vector<std::size_t> waiting{};   ///< Anchors a label gave out, for its mark to set down.
-        mutable std::vector<syntax::Traceback> tracebacks_{};    ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};    ///< Errors this module found.
 
         syntax::Symbol place{};   ///< The mark a label leaves in the text; no document can write it.
     };

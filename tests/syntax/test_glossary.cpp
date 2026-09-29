@@ -32,7 +32,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers(), core.conditionals(), core.variables()};
+    syntax::primitives::Context context{state.registers, core.relay, core.variables};
     core(mouth, context);
     mouth.ingest(arena.copy("\\include{core/aliases}\\include{core/kernel}" + std::string(document)));
     syntax::Parser parser(mouth, arena);
@@ -57,7 +57,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.tracebacks(), mouth.tracebacks(), core.tracebacks()}) {
+    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
         for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
     }
     return {folded, errors};
@@ -83,12 +83,12 @@ static void sets(const std::string_view document, const std::string_view expecte
 int main() {
     // --- The table the compiler builds ----------------------------------------------------
     assert((syntax::Glossary::size() > 300) && "the glossary holds its commands");
-    const auto line = syntax::Glossary::find("\\contour");
+    const auto line = syntax::Glossary::get("\\contour");
     assert((line && *line == "\\contour[3][]{#3}") && "a command is found by its name, its line whole");
-    assert((!syntax::Glossary::find("\\cont")) && "a name is found whole, not by a prefix of one");
-    assert((!syntax::Glossary::find("\\nosuchcommand")) && "a name it does not hold is not found");
-    assert((!syntax::Glossary::find("% microtype: the line breaker")) && "a comment is not a command");
-    const auto helper = syntax::Glossary::find("\\@gobbleoptiontwo");
+    assert((!syntax::Glossary::get("\\cont")) && "a name is found whole, not by a prefix of one");
+    assert((!syntax::Glossary::get("\\nosuchcommand")) && "a name it does not hold is not found");
+    assert((!syntax::Glossary::get("% microtype: the line breaker")) && "a comment is not a command");
+    const auto helper = syntax::Glossary::get("\\@gobbleoptiontwo");
     assert((helper && helper->ends_with("{}") && !helper->ends_with("\r")) && "a line keeps no line ending");
 
     // --- Keeping what a command was for, or letting it go ---------------------------------

@@ -50,7 +50,7 @@ namespace syntax::primitives {
         /// Adding to a hook and running one cannot fail -- an unknown hook
         /// is an empty one -- but every module answers the same question, so
         /// Wrapper can gather them without knowing which ones can.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
         /// @brief Runs a hook: its code goes in front of whatever is read
         ///        next, and nothing happens when nothing was added to it.
@@ -69,7 +69,7 @@ namespace syntax::primitives {
         /// the module is installed as a const callable, as every module is.
         mutable memory::Dictionary<std::vector<Token>> hooks{};
 
-        std::vector<Traceback> tracebacks_{};   ///< Always empty; see tracebacks().
+        std::vector<Traceback> tracebacks{};   ///< Always empty; see traceback().
     };
 
 }

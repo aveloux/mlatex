@@ -562,10 +562,10 @@ namespace render::graphics {
         for (std::size_t index = 0; index < 4; ++index) {
             const Value* corner = resolve(&box->items[index]);
             if (!corner || corner->type != Type::Plain) return std::nullopt;
-            std::from_chars(corner->text.data(), corner->text.data() + corner->text.size(), made.box_[index]);
+            std::from_chars(corner->text.data(), corner->text.data() + corner->text.size(), made.box[index]);
         }
-        if (made.box_[0] > made.box_[2]) std::swap(made.box_[0], made.box_[2]);
-        if (made.box_[1] > made.box_[3]) std::swap(made.box_[1], made.box_[3]);
+        if (made.box[0] > made.box[2]) std::swap(made.box[0], made.box[2]);
+        if (made.box[1] > made.box[3]) std::swap(made.box[1], made.box[3]);
         if (made.width() <= 0.0f || made.height() <= 0.0f) return std::nullopt;
 
         // What it draws: each content stream unpacked, one after another.
@@ -587,8 +587,8 @@ namespace render::graphics {
             if (!held || !held->streamed) continue;
             const std::optional<std::string> unpacked = expand(held->value, held->data);
             if (!unpacked) return std::nullopt;
-            made.content_ += *unpacked;
-            made.content_ += '\n';
+            made.content += *unpacked;
+            made.content += '\n';
         }
 
         // Every object its resources and its group reach, copied in the order
@@ -616,8 +616,8 @@ namespace render::graphics {
             }
             return to;
         };
-        if (inherited.resources) made.resources_ = copy(*inherited.resources);
-        if (const Value* group = get(*leaf, "/Group")) made.group_ = copy(*group);
+        if (inherited.resources) made.resources = copy(*inherited.resources);
+        if (const Value* group = get(*leaf, "/Group")) made.group = copy(*group);
         for (std::size_t index = 0; index < pending.size(); ++index) {
             Object object;
             if (const Loaded* source = load(pending[index], 0)) {
@@ -634,7 +634,7 @@ namespace render::graphics {
                     }
                 }
             }
-            made.objects_.push_back(std::move(object));
+            made.objects.push_back(std::move(object));
         }
         return made;
     }

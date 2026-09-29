@@ -28,7 +28,7 @@ namespace memory {
     ///     {"main.mtex", {prelude, sizeof prelude - 1}},
     /// }}};
     ///
-    /// const std::optional<std::string_view> text = catalog.find("main.mtex");
+    /// const std::optional<std::string_view> text = catalog.get("main.mtex");
     /// @endcode
     ///
     /// @tparam Count How many entries it holds.
@@ -58,7 +58,7 @@ namespace memory {
         /// @param name What to look for.
         /// @return The text, or std::nullopt when nothing is listed under it.
         /// @complexity O(1) expected: one hash, then the slots up to the first empty one.
-        [[nodiscard]] constexpr std::optional<std::string_view> find(const std::string_view name) const noexcept {
+        [[nodiscard]] constexpr std::optional<std::string_view> get(const std::string_view name) const noexcept {
             for (std::size_t at = hash(name) & mask;; at = (at + 1) & mask) {
                 const std::uint16_t index = slots[at];
                 if (index == empty) return std::nullopt;

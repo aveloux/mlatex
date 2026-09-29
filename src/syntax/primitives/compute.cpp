@@ -24,7 +24,7 @@ namespace syntax::primitives {
 
     Token Compute::lookahead(Pass& pass) {
         while (!pass.cursor.empty() &&
-               pass.cursor.lookahead(0).category == CatCodes::Category::Space) {
+               pass.cursor.lookahead(0).category == Catcodes::Category::Space) {
             pass.cursor.advance();
         }
         return pass.cursor.lookahead(0);
@@ -36,7 +36,7 @@ namespace syntax::primitives {
             // useful answer, so `sound` is left alone and only the report is
             // suppressed after the first one.
             if (!pass.noted) {
-                pass.owner.tracebacks_.emplace_back(Traceback::Type::Register, memory::Location{},
+                pass.owner.tracebacks.emplace_back(Traceback::Type::Register, memory::Location{},
                                   std::format("\\evaluate overflowed ({})", value));
                 pass.noted = true;
             }
@@ -50,7 +50,7 @@ namespace syntax::primitives {
 
         if (lead.is('(')) {
             if (pass.level >= depth) {
-                pass.owner.tracebacks_.emplace_back(Traceback::Type::Syntax, lead.location,
+                pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
                                   "\\evaluate nesting limit reached");
                 pass.sound = false;
                 return 0;
@@ -64,7 +64,7 @@ namespace syntax::primitives {
             if (const Token closing = lookahead(pass); closing.is(')')) {
                 pass.cursor.advance();
             } else if (pass.sound) {
-                pass.owner.tracebacks_.emplace_back(Traceback::Type::Syntax, lead.location,
+                pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
                                   "\\evaluate is missing a ')'");
                 pass.sound = false;
             }
@@ -74,7 +74,7 @@ namespace syntax::primitives {
         const auto scanned = Number::integer(pass.cursor, pass.registers);
         if (!scanned) {
             if (pass.sound) {
-                pass.owner.tracebacks_.emplace_back(Traceback::Type::Syntax, lead.location,
+                pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
                                   lead.empty()
                                       ? std::string("\\evaluate ended where a number was expected")
                                       : std::format("\\evaluate expected a number, found '{}'", lead.text));
@@ -98,7 +98,7 @@ namespace syntax::primitives {
 
         if (exponent < 0) {
             if (pass.sound) {
-                pass.owner.tracebacks_.emplace_back(Traceback::Type::Syntax, memory::Location{},
+                pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, memory::Location{},
                                   "\\evaluate exponent must not be negative");
                 pass.sound = false;
             }
@@ -133,7 +133,7 @@ namespace syntax::primitives {
 
             if (right == 0) {
                 if (pass.sound) {
-                    pass.owner.tracebacks_.emplace_back(Traceback::Type::Syntax, next.location,
+                    pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, next.location,
                                       remainder ? "\\evaluate takes a remainder by zero"
                                                 : "\\evaluate divides by zero");
                     pass.sound = false;
@@ -174,14 +174,14 @@ namespace syntax::primitives {
             // expression arrives as a plain token run and a Cursor over it
             // behaves like any stream.
             const std::string expanded = Argument::expanded(mouth);
-            mouth.ingest(mouth.arena().copy("{" + expanded + "}"));
+            mouth.ingest(mouth.arena.copy("{" + expanded + "}"));
             Cursor stream(mouth.argument({}, 0));
 
             Pass pass{stream, context.registers, integer, *this, modulo};
             const std::int64_t value = expression(pass);
 
             if (pass.sound && !lookahead(pass).empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Syntax, lookahead(pass).location,
+                tracebacks.emplace_back(Traceback::Type::Syntax, lookahead(pass).location,
                               std::format("\\evaluate has trailing '{}'", lookahead(pass).text));
             }
 
@@ -192,9 +192,9 @@ namespace syntax::primitives {
             std::vector<Token> produced;
             produced.reserve(digits.size());
             for (const char symbol : digits) {
-                const Symbol bound = mouth.lexicon().intern(std::string_view(&symbol, 1));
-                produced.push_back(Token{bound, CatCodes::Category::Other, memory::Location{},
-                                         mouth.lexicon().resolve(bound)});
+                const Symbol bound = mouth.lexicon.intern(std::string_view(&symbol, 1));
+                produced.push_back(Token{bound, Catcodes::Category::Other, memory::Location{},
+                                         mouth.lexicon.resolve(bound)});
             }
             mouth.stream().inject(produced);
         });

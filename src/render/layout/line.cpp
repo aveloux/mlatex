@@ -18,7 +18,7 @@ namespace render::layout {
 
     float Line::advance(const Node* node) noexcept {
         if (!node) return 0.0f;
-        switch (node->type()) {
+        switch (node->type) {
             case Node::Type::Box:    return node->box().width;
             case Node::Type::Glyph:  return node->glyph().width;
             case Node::Type::Rule:   return node->rule().width;
@@ -35,7 +35,7 @@ namespace render::layout {
 
     float Line::extent(const Node* node) noexcept {
         if (!node) return 0.0f;
-        switch (node->type()) {
+        switch (node->type) {
             case Node::Type::Box:    return node->box().height + node->box().depth;
             case Node::Type::Glyph:  return node->glyph().height + node->glyph().depth;
             case Node::Type::Rule:   return node->rule().height + node->rule().depth;
@@ -70,7 +70,7 @@ namespace render::layout {
 
             natural += advance(node);
 
-            switch (node->type()) {
+            switch (node->type) {
                 case Node::Type::Box: {
                     // A shifted box carries its ink with it: pushed down the
                     // page, it needs less room above the line and more below.
@@ -183,7 +183,7 @@ namespace render::layout {
         if (anchor == Anchor::Middle) {
             for (std::size_t index = 0; index < filled; ++index) {
                 Node* child = column[index];
-                if (!child || child->type() != Node::Type::Box) continue;
+                if (!child || child->type != Node::Type::Box) continue;
 
                 Node::Box shape = child->box();
                 shape.offset = (width - shape.width) * 0.5f;
@@ -228,8 +228,8 @@ namespace render::layout {
         // a formula, a word in another face -- the same over what it holds.
         const auto run = [&sense](this const auto& self, const Node* node) -> int {
             if (!node) return 0;
-            if (node->type() == Node::Type::Glyph) return sense(node->glyph().point);
-            if (node->type() != Node::Type::Box) return 0;
+            if (node->type == Node::Type::Glyph) return sense(node->glyph().point);
+            if (node->type != Node::Type::Box) return 0;
             int found = 0;
             for (const Node* child : node->box().list) {
                 const int way = self(child);
@@ -241,7 +241,7 @@ namespace render::layout {
 
         // Only a line with something right to left in it, or in a paragraph
         // that reads so, has anything to put in another order.
-        if (!line || line->type() != Node::Type::Box || line->box().alignment != Node::Alignment::Horizontal) return;
+        if (!line || line->type != Node::Type::Box || line->box().alignment != Node::Alignment::Horizontal) return;
         const memory::Slice<Node*> list = line->box().list;
         bool mixed = reversed;
         for (std::size_t index = 0; !mixed && index < list.count; ++index) mixed = run(list[index]) == 2;
@@ -255,7 +255,7 @@ namespace render::layout {
         for (std::size_t at = 0; at < list.count;) {
             std::size_t end = at + 1;
             const auto inside = [&](const Node* node) {
-                return node && (node->type() == Node::Type::Glyph || node->type() == Node::Type::Penalty);
+                return node && (node->type == Node::Type::Glyph || node->type == Node::Type::Penalty);
             };
             if (inside(list[at])) {
                 while (end < list.count && inside(list[end])) ++end;

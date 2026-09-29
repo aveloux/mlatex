@@ -34,18 +34,18 @@ namespace syntax::primitives {
     /// @par Use
     /// @code
     /// syntax::primitives::Wrapper core(lexicon);
-    /// syntax::primitives::Context context{registers, core.conditionals(), core.variables()};
+    /// syntax::primitives::Context context{registers, core.relay, core.variables};
     /// core(mouth, context);
     ///
     /// // ... run the document, then collect what the core reported ...
-    /// for (const auto& fault : core.tracebacks()) {
+    /// for (const auto& fault : core.traceback()) {
     ///     std::cerr << fault.format() << '\n';
     /// }
     /// @endcode
     ///
     /// Context needs a Relay and a Variables reference and Wrapper owns both,
-    /// so build the Wrapper first and hand conditionals() and variables() to
-    /// the Context.
+    /// so build the Wrapper first and hand its #relay and #variables to the
+    /// Context.
     class Wrapper {
     public:
         /// @brief Constructs every module against one interning table.
@@ -57,10 +57,6 @@ namespace syntax::primitives {
         /// @param context Engine services, passed through to each module.
         void operator()(Mouth& mouth, Context& context) const;
 
-        /// @brief The conditional module, for building a Context.
-        [[nodiscard]] Relay& conditionals() noexcept { return relay; }
-        [[nodiscard]] const Relay& conditionals() const noexcept { return relay; }   ///< @copydoc Wrapper::conditionals()
-
         /// @brief Every error the core reported, gathered from each module.
         ///
         /// Modules keep their own lists, so nothing has to be constructed and
@@ -69,26 +65,19 @@ namespace syntax::primitives {
         ///
         /// @return A fresh vector holding every module's tracebacks.
         /// @complexity O(n) in the number of errors reported.
-        [[nodiscard]] std::vector<Traceback> tracebacks() const;
+        [[nodiscard]] std::vector<Traceback> traceback() const;
 
-        /// @brief The block module, whose depth() reports unclosed blocks.
-        [[nodiscard]] const Blocks& structure() const noexcept { return blocks; }
-
-        /// @brief The named values a document reads, for building a Context
-        ///        and for a caller handing values in before a run.
-        [[nodiscard]] const Variables& variables() const noexcept { return variables_; }
-
-    private:
-        // Declared first because Context is built from conditionals() and the
+        // Declared first because Context is built from the relay and the
         // other modules are handed that same Context.
         Relay relay;       ///< Conditionals; Context holds a reference to this.
-        Blocks blocks;     ///< `\\enter` and `\\leave`.
+        Blocks blocks;     ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
         Macros macros;     ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
         Values values;     ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
         Compute compute;   ///< `\\evaluate`.
         Loops loops;       ///< `\\repeat`, `\\group`, `\\ungroup`.
         Include include;   ///< `\\include`, `\\input` and the package primitives.
-        Variables variables_;   ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`.
+        Variables variables;    ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`: what a
+                                ///< Context reads and a caller hands values in through before a run.
         Decimals decimals;      ///< `\\calculate`, `\\amount`, `\\separators`.
         Hooks hooks;            ///< `\\addtohook`, `\\usehook`.
     };

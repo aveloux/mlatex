@@ -165,7 +165,7 @@ namespace syntax::expression {
         [[nodiscard]] Node* compose(Node::Type type, const Token& token) const;
         [[nodiscard]] Token pending() const noexcept;
 
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         [[nodiscard]] Token lookahead() const noexcept;
@@ -227,7 +227,7 @@ namespace syntax::expression {
         mutable Token current{};    ///< filled on demand, returned to the mouth on destruction
         mutable bool primed = false;
 
-        std::vector<Traceback> tracebacks_{};   ///< Errors found in this formula.
+        std::vector<Traceback> tracebacks{};   ///< Errors found in this formula.
 
         Hook hook{};              ///< Told about the outermost grid's rows; may be empty.
         std::size_t grids = 0;    ///< How many grids are open around the token being read.

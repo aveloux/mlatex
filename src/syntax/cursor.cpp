@@ -41,7 +41,7 @@ namespace syntax {
 
         const Token token = this->tokens.data()[--this->depth];
         this->served++;
-        if (this->depth < this->source_) this->source_ = this->depth;
+        if (this->depth < this->unread) this->unread = this->depth;
         Logger::log(Logger::Type::Mouth, Logger::Level::Traceback,
                     "Cursor -> [pending={}, text='{}']", this->depth, token.text);
         return token;
@@ -77,7 +77,7 @@ namespace syntax {
             this->tokens = std::move(incoming);
             std::ranges::reverse(this->tokens);
             this->depth = this->tokens.size();
-            this->source_ = this->depth;
+            this->unread = this->depth;
             Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
                         "Cursor adopted {} token(s)", this->depth);
             return;
@@ -87,17 +87,17 @@ namespace syntax {
     }
 
     std::vector<Token> Cursor::source() const {
-        return {this->tokens.rend() - static_cast<std::ptrdiff_t>(this->source_), this->tokens.rend()};
+        return {this->tokens.rend() - static_cast<std::ptrdiff_t>(this->unread), this->tokens.rend()};
     }
 
     void Cursor::source(const std::vector<Token>& replacement) {
         // Beneath what was injected over it, and held reversed as the rest is.
         std::vector<Token> rebuilt(replacement.rbegin(), replacement.rend());
-        rebuilt.insert(rebuilt.end(), this->tokens.begin() + static_cast<std::ptrdiff_t>(this->source_),
+        rebuilt.insert(rebuilt.end(), this->tokens.begin() + static_cast<std::ptrdiff_t>(this->unread),
                        this->tokens.begin() + static_cast<std::ptrdiff_t>(this->depth));
         this->tokens = std::move(rebuilt);
         this->depth = this->tokens.size();
-        this->source_ = replacement.size();
+        this->unread = replacement.size();
     }
 
     bool Cursor::empty() const noexcept {
@@ -115,7 +115,7 @@ namespace syntax {
     void Cursor::dispose() noexcept {
         this->tokens.clear();
         this->depth = 0;
-        this->source_ = 0;
+        this->unread = 0;
     }
 
 }

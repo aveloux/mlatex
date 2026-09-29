@@ -80,7 +80,7 @@ public:
     /// @brief Copies every report to a file, appending to it.
     static void file(const std::string& path);
     /// @brief Closes the file reports are copied to, if there is one.
-    static void close();
+    static void dispose();
 
     /// @brief Would a report of this subsystem, at this level, be written?
     ///

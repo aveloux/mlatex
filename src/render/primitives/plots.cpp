@@ -160,7 +160,7 @@ namespace render::primitives {
     }
 
     void Plots::operator()(syntax::Parser& parser, Context& context) const {
-        using Category = syntax::CatCodes::Category;
+        using Category = syntax::Catcodes::Category;
         using Pairs = std::vector<std::pair<std::string_view, std::string_view>>;
 
         // Text without the blanks around it, or the braces around the whole.
@@ -491,10 +491,10 @@ namespace render::primitives {
                             }
                         }
                         if (!plot.cycled && mark.empty() && !line) mark = "*";
-                        const bool bars_here = barred;
-                        if (!forgotten) samples.push_back({color, mark, line && !bars_here, bars_here});
+                        const bool histogram = barred;
+                        if (!forgotten) samples.push_back({color, mark, line && !histogram, histogram});
 
-                        if (bars_here) {
+                        if (histogram) {
                             const double shift = (static_cast<double>(index) - (static_cast<double>(bars) - 1.0) / 2.0) *
                                                  (bar + 2.0);
                             const double base = std::clamp(ylog ? 0.0 : py(0.0), 0.0, tall);
@@ -654,7 +654,7 @@ namespace render::primitives {
         // \addplot[options] and what it plots, to its semicolon: its
         // coordinates, a table inline or in a file, or a function of x --
         // or two, as a parametric curve.
-        parser.mouth().bind("\\addplot", [this, &context, trim, split, read, find, number, spelled](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\addplot", [this, &context, trim, split, read, find, number, spelled](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
             bool cycled = true;
             if (mouth.lookahead().is('+')) {
@@ -673,7 +673,7 @@ namespace render::primitives {
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
             if (axes.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Environment, origin, "\\addplot outside an axis");
+                tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin, "\\addplot outside an axis");
                 return;
             }
             Axis& axis = axes.back();
@@ -734,7 +734,7 @@ namespace render::primitives {
                 if (named) {
                     const std::string* file = context.disk ? context.disk(inside) : nullptr;
                     if (!file) {
-                        tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                        tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                                  std::format("\\addplot: no table file named '{}'", inside));
                     }
                     data = file ? *file : std::string{};
@@ -745,12 +745,12 @@ namespace render::primitives {
                 std::vector<std::vector<std::string>> rows;
                 std::vector<std::string> cells;
                 std::string cell;
-                const auto end_cell = [&] {
+                const auto stash = [&] {
                     if (!cell.empty()) cells.push_back(std::move(cell));
                     cell.clear();
                 };
-                const auto end_row = [&] {
-                    end_cell();
+                const auto commit = [&] {
+                    stash();
                     if (!cells.empty() && !cells.front().starts_with('#') && !cells.front().starts_with('%')) {
                         rows.push_back(std::move(cells));
                     }
@@ -760,14 +760,14 @@ namespace render::primitives {
                     const char letter = data[at];
                     if (letter == '\n' || (letter == '\\' && at + 1 < data.size() && data[at + 1] == '\\')) {
                         if (letter == '\\') ++at;
-                        end_row();
+                        commit();
                     } else if (letter == ' ' || letter == '\t' || letter == '\r' || (commas && letter == ',')) {
-                        end_cell();
+                        stash();
                     } else {
                         cell += letter;
                     }
                 }
-                end_row();
+                commit();
                 // A whole table on one line -- written inline, its line ends
                 // read as blanks -- is its names, as many as stand before
                 // the first number, then rows as wide as they are, or of two
@@ -807,7 +807,7 @@ namespace render::primitives {
                     if (x && y) plot.points.emplace_back(*x, *y);
                 }
             } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with("file")) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          "\\addplot: a plot from gnuplot, a shell or a file of points is not drawn here");
             } else {
                 // A function of x, sampled across its domain; or two, for a
@@ -841,7 +841,7 @@ namespace render::primitives {
                     any = any || (t && y);
                 }
                 if (!any) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              std::format("\\addplot: '{}' is not a function this can work out", along));
                 }
             }
@@ -849,12 +849,12 @@ namespace render::primitives {
         });
 
         // A plot's entry in the legend, and every entry at once.
-        parser.mouth().bind("\\addlegendentry", [this, spelled](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\addlegendentry", [this, spelled](syntax::Mouth& mouth) {
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             const std::string entry = spelled(mouth.argument({}, 0));
             if (!axes.empty()) axes.back().legends.push_back(entry);
         });
-        parser.mouth().bind("\\legend", [this, trim, split, spelled](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\legend", [this, trim, split, spelled](syntax::Mouth& mouth) {
             const std::string entries = spelled(mouth.argument({}, 0));
             if (axes.empty()) return;
             axes.back().legends.clear();

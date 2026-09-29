@@ -69,10 +69,10 @@ namespace render::primitives {
         /// @param name Its name, as a document writes it.
         /// @return The language, or null for one not known.
         /// @complexity O(n) in the languages known, which is a few dozen.
-        [[nodiscard]] static const Language* find(std::string_view name) noexcept;
+        [[nodiscard]] static const Language* get(std::string_view name) noexcept;
 
         /// @brief What was reported while the document was read.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// Every language's patterns read so far, each kept for the whole
@@ -83,7 +83,7 @@ namespace render::primitives {
         mutable std::string current{"english"};                ///< The language chosen.
         mutable std::vector<std::string> kept{};               ///< What each open language block will go back to.
         mutable std::vector<std::string_view> watched{};       ///< The languages polyglossia's commands made a block for.
-        mutable std::vector<syntax::Traceback> tracebacks_{};  ///< What was reported.
+        mutable std::vector<syntax::Traceback> tracebacks{};  ///< What was reported.
     };
 
 }

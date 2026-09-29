@@ -26,12 +26,12 @@ namespace syntax {
         /// @param codes  Category table, consulted per character and live to
         ///               `\\catcode` changes made while lexing.
         /// @param lexicon  Interning table for the tokens produced.
-        Lexer(std::string_view source, CatCodes& codes, Lexicon& lexicon);
+        Lexer(std::string_view source, Catcodes& codes, Lexicon& lexicon);
 
         Token advance();
         [[nodiscard]] bool empty() const noexcept;
 
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         [[nodiscard]] static constexpr std::size_t length(const char lead) noexcept {
@@ -48,7 +48,7 @@ namespace syntax {
         }
 
         std::string_view sources{};
-        CatCodes& table;
+        Catcodes& table;
         Lexicon& lexicon;
         std::size_t offset = 0;
         memory::Location location{1, 1};
@@ -63,7 +63,7 @@ namespace syntax {
         std::size_t opening = std::string_view::npos;
         std::size_t stop = 0;
         /// @}
-        std::vector<Traceback> tracebacks_{};   ///< Illegal bytes, drained by Mouth::ingest.
+        std::vector<Traceback> tracebacks{};   ///< Illegal bytes, drained by Mouth::ingest.
     };
 
 }

@@ -61,10 +61,10 @@ namespace syntax::primitives {
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
-        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
+        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief Reads past a branch that was not taken, to `\\else` or `\\fi`.
@@ -75,7 +75,7 @@ namespace syntax::primitives {
         /// @param mouth Expander to read from.
         void drop(Mouth& mouth) const;
 
-        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
 
         Symbol finish{};        ///< `\\fi`, the close of every conditional.
         Symbol alternative{};   ///< `\\else`, the branch taken when a test fails.

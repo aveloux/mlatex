@@ -76,7 +76,7 @@ namespace syntax::primitives {
         }
     }
 
-    const std::string* Variables::find(const std::string_view name) const noexcept {
+    const std::string* Variables::get(const std::string_view name) const noexcept {
         const auto found = values.find(name);
         return found == values.end() ? nullptr : &found->second;
     }
@@ -86,13 +86,13 @@ namespace syntax::primitives {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = Argument::text(mouth);
 
-            const std::string* value = find(name);
+            const std::string* value = get(name);
             if (!value) {
-                tracebacks_.emplace_back(Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(Traceback::Type::Primitive, origin,
                                          std::format("\\variable: nothing is set under '{}'", name));
                 return;
             }
-            if (!value->empty()) mouth.ingest(mouth.arena().copy(*value));
+            if (!value->empty()) mouth.ingest(mouth.arena.copy(*value));
         });
 
         // The value is expanded before it is kept, so a running total is a
@@ -128,7 +128,7 @@ namespace syntax::primitives {
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const std::vector<Token>& chosen = find(name) ? present : absent;
+            const std::vector<Token>& chosen = get(name) ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 

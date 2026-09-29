@@ -197,7 +197,7 @@ namespace render::primitives {
         const auto select = [&context](const Cut cut, const Size size) -> const typography::Font* {
             const typography::Font* current = context.selection.text();
             if (!current) return nullptr;
-            const float points = cut == Cut::Current ? measure(context.document.configuration().size, size)
+            const float points = cut == Cut::Current ? measure(context.document.configuration.size, size)
                                                      : current->size();
             return resolve(context, cut, points);
         };
@@ -210,8 +210,8 @@ namespace render::primitives {
             parser.bind(running, [this, &context, select, cut, size](syntax::Parser& parser) -> syntax::Node* {
                 const typography::Font* font = select(cut, size);
                 if (!font) {
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Primitive,
-                                             parser.mouth().lookahead().location,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive,
+                                             parser.mouth.lookahead().location,
                                              "A style needs a text face to change");
                     return nullptr;
                 }
@@ -221,14 +221,14 @@ namespace render::primitives {
 
             // The bounded form: the same selection, around one argument.
             parser.bind(bounded, [this, &context, select, cut, size](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 syntax::Token open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+                if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                     if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
-                    tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Group, origin,
                                              "A style needs a brace group to set");
                     return directive(arena, nullptr, origin);
                 }
@@ -268,7 +268,7 @@ namespace render::primitives {
             for (const syntax::Token& token : mouth.argument({}, 0)) text += token.text;
             return text;
         };
-        parser.mouth().bind("\\fontsize", [this, &context, read](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\fontsize", [this, &context, read](syntax::Mouth& mouth) {
             const std::string size = read(mouth);
             static_cast<void>(read(mouth));   // the baseline, which the class's leading keeps
             float points = 0.0f;
@@ -278,21 +278,21 @@ namespace render::primitives {
                 pending.size = primitives::measure(size, mouth, context);
             }
         });
-        parser.mouth().bind("\\fontfamily", [this, read](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\fontfamily", [this, read](syntax::Mouth& mouth) {
             const std::string family = read(mouth);
             pending.family = family.contains("ss") || family == "phv" || family == "sans" ? Cut::Sans
                              : family.contains("tt") || family == "pcr"                   ? Cut::Mono
                                                                                            : Cut::Roman;
         });
-        parser.mouth().bind("\\fontseries", [this, read](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\fontseries", [this, read](syntax::Mouth& mouth) {
             pending.series = read(mouth).starts_with('b') ? Cut::Bold : Cut::Medium;
         });
-        parser.mouth().bind("\\fontshape", [this, read](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\fontshape", [this, read](syntax::Mouth& mouth) {
             const std::string shape = read(mouth);
             pending.shape = shape == "it" ? Cut::Italic : shape == "sl" ? Cut::Slanted : shape == "sc" ? Cut::Caps
                                                                                                   : Cut::Upright;
         });
-        parser.mouth().bind("\\fontencoding", [read](syntax::Mouth& mouth) { static_cast<void>(read(mouth)); });
+        parser.mouth.bind("\\fontencoding", [read](syntax::Mouth& mouth) { static_cast<void>(read(mouth)); });
         parser.bind("\\selectfont", [this, &context](syntax::Parser&) -> syntax::Node* {
             const typography::Font* current = context.selection.text();
             if (!current) return nullptr;
@@ -305,7 +305,7 @@ namespace render::primitives {
             pending = {};
             return nullptr;
         });
-        parser.mouth().bind("\\usefont", [this, read](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\usefont", [this, read](syntax::Mouth& mouth) {
             static_cast<void>(read(mouth));   // the encoding
             const std::array<std::string, 3> parts{read(mouth), read(mouth), read(mouth)};
             const std::string& family = parts[0];
@@ -325,7 +325,7 @@ namespace render::primitives {
             [&context](syntax::Mouth& mouth) {
                 std::string written = "\\familydefault";
                 for (int depth = 0; depth < 3 && written.starts_with('\\'); ++depth) {
-                    const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon().intern(written));
+                    const syntax::Mouth::Macro* macro = mouth.macro(mouth.lexicon.intern(written));
                     if (!macro) break;
                     written.clear();
                     for (const syntax::Token& token : macro->body) written += token.text;
@@ -335,7 +335,7 @@ namespace render::primitives {
                 if (!context.sans || !current) return;
                 if (const typography::Font* font = resolve(context, Cut::Normal, current->size())) {
                     context.selection.text(font);
-                    context.document.furniture().face = font;
+                    context.document.furniture.face = font;
                 }
             },
             {});

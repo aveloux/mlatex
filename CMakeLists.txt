@@ -42,12 +42,19 @@ endif()
 # Warnings are errors waiting to be read. Third-party headers and the
 # generated lookup table are marked external, so their own noise -- none of
 # which this project can act on -- does not bury the engine's.
+#
+# Clang still calls #embed an extension of its own under C++26, which it is
+# not: that one warning is turned off here rather than around each file that
+# embeds, so no source carries a block of compiler-specific pragmas.
 if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # clang-cl: MSVC's spellings, and Clang's own shadowing check beside them.
-    add_compile_options(/W4 /permissive- /external:W0 "/external:I${binary}/include" -Wshadow)
+    add_compile_options(/W4 /permissive- /external:W0 "/external:I${binary}/include" -Wshadow
+            -Wno-c23-extensions)
 elseif(MSVC)
     add_compile_options(/W4 /permissive- /external:W0 /external:anglebrackets
             "/external:I${binary}/include")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wshadow -Wno-c23-extensions)
 else()
     add_compile_options(-Wall -Wextra -Wshadow)
 endif()
@@ -182,7 +189,7 @@ set(output "${binary}/include/lookup.hpp")
 
 add_custom_command(
         OUTPUT ${output}
-        COMMAND ${GPERF_EXECUTABLE} -t -C -N query -Z Lookup -L C++ ${input} --output-file=${output}
+        COMMAND ${GPERF_EXECUTABLE} -t -C -N get -Z Lookup -L C++ ${input} --output-file=${output}
         DEPENDS ${input}
         VERBATIM
 )

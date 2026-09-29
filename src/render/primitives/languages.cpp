@@ -109,7 +109,7 @@ namespace render::primitives {
         lexicon.intern("\\@languagecommands");
     }
 
-    const Languages::Language* Languages::find(const std::string_view name) noexcept {
+    const Languages::Language* Languages::get(const std::string_view name) noexcept {
         const auto found = std::ranges::find(languages, name, &Language::name);
         return found == languages.end() ? nullptr : &*found;
     }
@@ -139,10 +139,10 @@ namespace render::primitives {
         // chosen by then.
         const auto order = [&context](syntax::Parser& parser, const layout::Node::Directive& said) -> syntax::Node* {
             if (said.command == Command::Language) context.document.hyphenate(said.hyphenator, said.before, said.after);
-            memory::Arena& arena = parser.arena();
+            memory::Arena& arena = parser.arena;
             auto* mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
             mark->directive(said);
-            return directive(arena, mark, parser.mouth().lookahead().location);
+            return directive(arena, mark, parser.mouth.lookahead().location);
         };
 
         // The language a list of names means: babel's options in the order
@@ -164,14 +164,14 @@ namespace render::primitives {
                 while (!item.empty() && (item.back() == ' ' || item.back() == '\n')) item.remove_suffix(1);
 
                 if (item.starts_with("main=")) {
-                    chosen = find(item.substr(5));
-                } else if (const Language* language = find(item)) {
+                    chosen = get(item.substr(5));
+                } else if (const Language* language = get(item)) {
                     found = language;
                 }
             }
             if (chosen) return chosen;
             if (!found && !list.empty()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Warning, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
                                          std::format("No language known as '{}'; its words break as before", list));
             }
             return found;
@@ -182,7 +182,7 @@ namespace render::primitives {
         // read the first time. The instruction goes first, then what the
         // rest comes to is read after it.
         parser.bind("\\@language", [this, patterns, order, named](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth();
+            syntax::Mouth& mouth = parser.mouth;
             const Language* language = named(mouth);
             if (!language) return nullptr;
             current = language->name;
@@ -196,14 +196,14 @@ namespace render::primitives {
                 }
                 said += std::format("\\csname captions{0}\\endcsname\\csname date{0}\\endcsname", language->captions);
             }
-            mouth.ingest(mouth.arena().copy(said));
+            mouth.ingest(mouth.arena.copy(said));
             return order(parser, {.command = Command::Language, .hyphenator = patterns(*language),
                                   .before = language->left, .after = language->right});
         });
 
         // Its words alone: a phrase in it inside the text of another.
         parser.bind("\\@hyphenation", [patterns, order, named](syntax::Parser& parser) -> syntax::Node* {
-            const Language* language = named(parser.mouth());
+            const Language* language = named(parser.mouth);
             if (!language) return nullptr;
             return order(parser, {.command = Command::Language, .hyphenator = patterns(*language),
                                   .before = language->left, .after = language->right});
@@ -212,7 +212,7 @@ namespace render::primitives {
         // Which way the paragraphs from here on read: `RTL`, right to left,
         // or anything else, left to right.
         parser.bind("\\@direction", [order, &context](syntax::Parser& parser) -> syntax::Node* {
-            const std::string way = syntax::Argument::expanded(parser.mouth());
+            const std::string way = syntax::Argument::expanded(parser.mouth);
             context.reversed = way == "RTL";
             return order(parser, {.command = Command::Direction, .reversed = context.reversed});
         });
@@ -227,8 +227,8 @@ namespace render::primitives {
                 [this, whole, fixed = std::string(fixed)](syntax::Mouth& mouth) {
                     const std::string language = fixed.empty() ? syntax::Argument::expanded(mouth) : fixed;
                     kept.push_back(current);
-                    const Language* known = find(language);
-                    mouth.ingest(mouth.arena().copy(
+                    const Language* known = get(language);
+                    mouth.ingest(mouth.arena.copy(
                         whole ? std::format("\\par\\@language{{{}}}", language)
                               : std::format("\\par\\@hyphenation{{{}}}\\@direction{{{}}}", language,
                                             known && known->reversed ? "RTL" : "LTR")));
@@ -236,8 +236,8 @@ namespace render::primitives {
                 [this, whole](syntax::Mouth& mouth) {
                     const std::string before = kept.empty() ? current : kept.back();
                     if (!kept.empty()) kept.pop_back();
-                    const Language* known = find(before);
-                    mouth.ingest(mouth.arena().copy(
+                    const Language* known = get(before);
+                    mouth.ingest(mouth.arena.copy(
                         whole ? std::format("\\par\\@language{{{}}}", before)
                               : std::format("\\par\\@hyphenation{{{}}}\\@direction{{{}}}", before,
                                             known && known->reversed ? "RTL" : "LTR")));
@@ -250,7 +250,7 @@ namespace render::primitives {
         // polyglossia's commands for a language it is told the document
         // quotes: \textrussian{...}, and a block named for it -- `Arabic`
         // for Arabic, since \arabic is a counter's numbering already.
-        parser.mouth().bind("\\@languagecommands", [this, block](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\@languagecommands", [this, block](syntax::Mouth& mouth) {
             const std::string list = syntax::Argument::expanded(mouth);
             std::string said;
             for (std::size_t start = 0; start <= list.size();) {
@@ -261,14 +261,14 @@ namespace render::primitives {
                 while (!item.empty() && item.front() == ' ') item.remove_prefix(1);
                 while (!item.empty() && item.back() == ' ') item.remove_suffix(1);
 
-                const Language* language = find(item);
+                const Language* language = get(item);
                 if (!language) continue;
                 said += std::format("\\@define\\text{0}{{\\foreignlanguage{{{0}}}}}", language->name);
                 if (std::ranges::contains(watched, language->name)) continue;
                 watched.push_back(language->name);
                 block(language->name == "arabic" ? "Arabic" : language->name, true, language->name);
             }
-            if (!said.empty()) mouth.ingest(mouth.arena().copy(said));
+            if (!said.empty()) mouth.ingest(mouth.arena.copy(said));
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound the language primitives");

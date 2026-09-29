@@ -27,7 +27,7 @@ namespace syntax::primitives {
     }
 
     void Values::skip(Mouth& mouth, const std::string_view text) {
-        while (mouth.lookahead().category == CatCodes::Category::Space) {
+        while (mouth.lookahead().category == Catcodes::Category::Space) {
             mouth.read();
         }
         for (std::size_t index = 0; index < text.size(); ++index) {
@@ -40,8 +40,8 @@ namespace syntax::primitives {
 
     std::optional<semantics::Registers::Target> Values::slot(Mouth& mouth, Context& context) const {
         const Token lead = mouth.read();
-        if (lead.category != CatCodes::Category::Escape) {
-            tracebacks_.emplace_back(Traceback::Type::Register, lead.location,
+        if (lead.category != Catcodes::Category::Escape) {
+            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
                          "expected a register reference");
             return std::nullopt;
         }
@@ -53,14 +53,14 @@ namespace syntax::primitives {
 
         const auto kind = context.registers.bank(lead.symbol);
         if (!kind) {
-            tracebacks_.emplace_back(Traceback::Type::Register, lead.location,
+            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
                          std::format("{} is not a register", lead.text));
             return std::nullopt;
         }
 
         const auto index = Number::integer(mouth, context.registers);
         if (!index || *index < 0 || *index >= static_cast<std::int32_t>(semantics::Registers::slots)) {
-            tracebacks_.emplace_back(Traceback::Type::Register, lead.location,
+            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
                          std::format("{} needs a slot number between 0 and {}",
                                      lead.text, semantics::Registers::slots - 1));
             return std::nullopt;
@@ -140,17 +140,17 @@ namespace syntax::primitives {
             if (kind == Type::Glue) {
                 for (std::size_t part = 0; part < 2; ++part) {
                     const std::string_view keyword = part == 0 ? "plus" : "minus";
-                    while (mouth.lookahead().category == CatCodes::Category::Space) mouth.read();
+                    while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
                     std::size_t matched = 0;
                     while (matched < keyword.size() && mouth.lookahead(matched).is(keyword[matched])) ++matched;
                     if (matched != keyword.size()) continue;
                     for (std::size_t index = 0; index < matched; ++index) mouth.read();
-                    while (mouth.lookahead().category == CatCodes::Category::Space) mouth.read();
+                    while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
 
                     std::vector<Token> read;
                     std::string amount;
                     for (Token next = mouth.lookahead(); next.text.size() == 1 &&
-                                                         (next.category == CatCodes::Category::Letter ||
+                                                         (next.category == Catcodes::Category::Letter ||
                                                           (next.text[0] >= '0' && next.text[0] <= '9') ||
                                                           next.is('.') || next.is(',') || next.is('-'));
                          next = mouth.lookahead()) {
@@ -198,7 +198,7 @@ namespace syntax::primitives {
                 const Token token = mouth.read();
                 if (token.empty()) break;
                 // `plus` and `minus` end a length's expression: they are glue's.
-                if (dimensional && token.category == CatCodes::Category::Letter && (token.is('p') || token.is('m'))) {
+                if (dimensional && token.category == Catcodes::Category::Letter && (token.is('p') || token.is('m'))) {
                     const std::string_view rest = token.is('p') ? "lus" : "inus";
                     bool keyword = true;
                     for (std::size_t index = 0; index < rest.size(); ++index) {
@@ -212,8 +212,8 @@ namespace syntax::primitives {
                 // A command that is neither a register nor anything a number
                 // is made of ends the expression, and is read again after it.
                 const bool counted = context.registers.bank(token.symbol) || context.registers.target(token.symbol);
-                if ((token.category == CatCodes::Category::Escape && !counted) ||
-                    token.category == CatCodes::Category::Group) {
+                if ((token.category == Catcodes::Category::Escape && !counted) ||
+                    token.category == Catcodes::Category::Group) {
                     mouth.stream().inject(std::span{&token, 1});
                     break;
                 }
@@ -223,7 +223,7 @@ namespace syntax::primitives {
             Cursor stream(std::move(written));
             bool sound = true;
             const auto blanks = [&stream] {
-                while (!stream.empty() && stream.lookahead().category == CatCodes::Category::Space) stream.advance();
+                while (!stream.empty() && stream.lookahead().category == Catcodes::Category::Space) stream.advance();
             };
             // A sum of terms, a term a product of factors, a factor a signed
             // quantity or a bracketed sum. A length times or over a number
@@ -281,7 +281,7 @@ namespace syntax::primitives {
             const std::int64_t value = sum(dimensional, false);
             blanks();
             if (!sound || !stream.empty()) {
-                tracebacks_.emplace_back(Traceback::Type::Syntax, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Syntax, mouth.lookahead().location,
                               dimensional ? "\\dimexpr could not read its expression"
                                           : "\\numexpr could not read its expression");
             }
@@ -291,11 +291,11 @@ namespace syntax::primitives {
         for (const bool dimensional : {false, true}) {
             mouth.bind(dimensional ? "\\dimexpr" : "\\numexpr", [calculate, dimensional](Mouth& mouth) {
                 const std::int32_t value = calculate(mouth, dimensional).value_or(0);
-                mouth.ingest(mouth.arena().copy(dimensional ? std::format("{}sp ", value) : std::format("{} ", value)));
+                mouth.ingest(mouth.arena.copy(dimensional ? std::format("{}sp ", value) : std::format("{} ", value)));
             });
         }
         mouth.bind("\\glueexpr", [calculate](Mouth& mouth) {
-            mouth.ingest(mouth.arena().copy(std::format("{}sp ", calculate(mouth, true).value_or(0))));
+            mouth.ingest(mouth.arena.copy(std::format("{}sp ", calculate(mouth, true).value_or(0))));
         });
 
         // The document's own registers, given out one at a time: plain TeX's
@@ -305,13 +305,13 @@ namespace syntax::primitives {
         // own from 240. The name is written bare or, as LaTeX writes it, braced.
         const auto named = [this](Mouth& mouth, const std::string_view primitive) -> Token {
             Token name = mouth.read();
-            while (name.category == CatCodes::Category::Space) name = mouth.read();
-            if (name.is(CatCodes::Category::Group, '{')) {
+            while (name.category == Catcodes::Category::Space) name = mouth.read();
+            if (name.is(Catcodes::Category::Group, '{')) {
                 name = mouth.read();
-                if (!mouth.read().is(CatCodes::Category::Group, '}')) name = {};
+                if (!mouth.read().is(Catcodes::Category::Group, '}')) name = {};
             }
-            if (name.category != CatCodes::Category::Escape) {
-                tracebacks_.emplace_back(Traceback::Type::Register, name.location,
+            if (name.category != Catcodes::Category::Escape) {
+                tracebacks.emplace_back(Traceback::Type::Register, name.location,
                               std::format("{} needs a control sequence to name", primitive));
                 return {};
             }
@@ -320,7 +320,7 @@ namespace syntax::primitives {
         const auto allocate = [this, &context](const Token& name, const Type type) -> std::optional<std::size_t> {
             std::size_t& next = following[static_cast<std::size_t>(type)];
             if (next >= semantics::Registers::reserved) {
-                tracebacks_.emplace_back(Traceback::Type::Register, name.location,
+                tracebacks.emplace_back(Traceback::Type::Register, name.location,
                               std::format("No {} register is left for {}", type == Type::Count ? "integer" : "length",
                                           name.text));
                 return std::nullopt;
@@ -360,7 +360,7 @@ namespace syntax::primitives {
                 skip(mouth, "=");
                 const auto index = Number::integer(mouth, context.registers);
                 if (!index || *index < 0 || *index >= static_cast<std::int32_t>(semantics::Registers::slots)) {
-                    tracebacks_.emplace_back(Traceback::Type::Register, name.location,
+                    tracebacks.emplace_back(Traceback::Type::Register, name.location,
                                   std::format("{} needs a register number between 0 and 255", primitive));
                     return;
                 }
@@ -384,7 +384,7 @@ namespace syntax::primitives {
         // itself the assignment, as it is in TeX.
         const auto store = [this](Mouth& mouth, const std::size_t slot) {
             skip(mouth, "=");
-            while (mouth.lookahead().category == CatCodes::Category::Space) mouth.read();
+            while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
             lists[slot] = mouth.argument({}, 1);
         };
         const auto list = [this, store](Mouth& mouth, const Token& name, const std::size_t slot) {
@@ -416,7 +416,7 @@ namespace syntax::primitives {
         // TeX's \number: a number as its digits -- a register, a \chardef,
         // an expression -- where \evaluate works one out from a group.
         mouth.bind("\\number", [&context](Mouth& mouth) {
-            mouth.ingest(mouth.arena().copy(std::format("{}", Number::integer(mouth, context.registers).value_or(0))));
+            mouth.ingest(mouth.arena.copy(std::format("{}", Number::integer(mouth, context.registers).value_or(0))));
         });
 
         // TeX's \char: the character a number names, set as itself --
@@ -453,7 +453,7 @@ namespace syntax::primitives {
                         written += static_cast<char>(0x80 | (point & 0x3F));
                     }
             }
-            if (point != 0) mouth.ingest(mouth.arena().copy(written));
+            if (point != 0) mouth.ingest(mouth.arena.copy(written));
         });
 
         // \romannumeral: a number in lower-case Roman numerals, and nothing
@@ -469,7 +469,7 @@ namespace syntax::primitives {
             for (const auto& [amount, letters] : numerals) {
                 for (; value >= amount; value -= amount) written += letters;
             }
-            if (!written.empty()) mouth.ingest(mouth.arena().copy(written));
+            if (!written.empty()) mouth.ingest(mouth.arena.copy(written));
         });
 
         // \catcode: what a character means to the lexer from here on --
@@ -481,23 +481,23 @@ namespace syntax::primitives {
             skip(mouth, "=");
             const auto category = Number::integer(mouth, context.registers);
             if (!code || !category || *code < 0 || *code > 255 || *category < 0 || *category > 15) {
-                tracebacks_.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                               "\\catcode needs a character and a category between 0 and 15");
                 return;
             }
             // TeX's numbering, onto the lexer's categories: 9 is ignored, 14 a
             // comment, 15 invalid.
-            static constexpr std::array<CatCodes::Category, 16> categories{
-                CatCodes::Category::Escape, CatCodes::Category::Group, CatCodes::Category::Group,
-                CatCodes::Category::Shift, CatCodes::Category::Align, CatCodes::Category::Space,
-                CatCodes::Category::Parameter, CatCodes::Category::Mark, CatCodes::Category::Index,
-                CatCodes::Category::Ignore, CatCodes::Category::Space, CatCodes::Category::Letter,
-                CatCodes::Category::Other, CatCodes::Category::Active, CatCodes::Category::Comment,
-                CatCodes::Category::Invalid,
+            static constexpr std::array<Catcodes::Category, 16> categories{
+                Catcodes::Category::Escape, Catcodes::Category::Group, Catcodes::Category::Group,
+                Catcodes::Category::Shift, Catcodes::Category::Align, Catcodes::Category::Space,
+                Catcodes::Category::Parameter, Catcodes::Category::Mark, Catcodes::Category::Index,
+                Catcodes::Category::Ignore, Catcodes::Category::Space, Catcodes::Category::Letter,
+                Catcodes::Category::Other, Catcodes::Category::Active, Catcodes::Category::Comment,
+                Catcodes::Category::Invalid,
             };
             const bool global = std::exchange(context.global, false);
-            const CatCodes::Category chosen = categories[static_cast<std::size_t>(*category)];
-            mouth.state().catcodes().set(static_cast<char>(*code), chosen, global);
+            const Catcodes::Category chosen = categories[static_cast<std::size_t>(*category)];
+            mouth.state.catcodes.set(static_cast<char>(*code), chosen, global);
             // What the document has not yet been read of is read the new way.
             mouth.recategorize(static_cast<char>(*code), chosen, global);
         });
@@ -580,7 +580,7 @@ namespace syntax::primitives {
                     print(side, units[static_cast<std::size_t>((orders >> (part * 2)) & 3)]);
                 }
             }
-            mouth.ingest(mouth.arena().copy(text));
+            mouth.ingest(mouth.arena.copy(text));
         });
 
         mouth.bind("\\set", [this, &context, value, &mouth](Mouth&) {
@@ -590,7 +590,7 @@ namespace syntax::primitives {
             skip(mouth, "=");
             const auto scanned = value(mouth, target->type);
             if (!scanned) {
-                tracebacks_.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                               "\\set needs a value");
                 return;
             }
@@ -623,7 +623,7 @@ namespace syntax::primitives {
             const auto scanned = operation == '+' ? value(mouth, target->type)
                                                   : Number::integer(mouth, context.registers);
             if (!scanned) {
-                tracebacks_.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                               "expected an amount");
                 return;
             }
@@ -638,7 +638,7 @@ namespace syntax::primitives {
                 case '*': result = current * amount; break;
                 case '/':
                     if (amount == 0) {
-                        tracebacks_.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
+                        tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                                       "\\reduce by zero");
                         return;
                     }
@@ -649,7 +649,7 @@ namespace syntax::primitives {
 
             constexpr std::int64_t ceiling = 2147483647;
             if (result > ceiling || result < -ceiling) {
-                tracebacks_.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                               std::format("register arithmetic overflowed ({})", result));
                 result = result > 0 ? ceiling : -ceiling;
             }
@@ -696,8 +696,8 @@ namespace syntax::primitives {
 
         mouth.bind("\\name", [this, &context, &mouth](Mouth&) {
             const Token alias = mouth.read();
-            if (alias.category != CatCodes::Category::Escape) {
-                tracebacks_.emplace_back(Traceback::Type::Register, alias.location,
+            if (alias.category != Catcodes::Category::Escape) {
+                tracebacks.emplace_back(Traceback::Type::Register, alias.location,
                               "\\name needs a control sequence");
                 return;
             }

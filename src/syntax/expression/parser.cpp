@@ -77,7 +77,7 @@ namespace syntax::expression {
         }
         std::string_view name = token.text;
         if (name.starts_with('\\')) name.remove_prefix(1);
-        const auto symbol = unicodes.query(name);
+        const auto symbol = unicodes.get(name);
         return symbol ? symbol->codepoint : 0;
     }
 
@@ -97,7 +97,7 @@ namespace syntax::expression {
             // that survived this far would be set as a glyph and ruin both.
             do {
                 current = mouth.expand();
-            } while (current.category == CatCodes::Category::Space);
+            } while (current.category == Catcodes::Category::Space);
             primed = true;
         }
         return current;
@@ -138,7 +138,7 @@ namespace syntax::expression {
         std::string_view name = token.text;
         if (name.starts_with('\\')) name.remove_prefix(1);
 
-        if (const auto symbol = unicodes.query(name)) {
+        if (const auto symbol = unicodes.get(name)) {
             node->codepoint = symbol->codepoint;
             node->category = symbol->category;
         } else if (name.size() == 1) {
@@ -207,7 +207,7 @@ namespace syntax::expression {
         if (matched) *matched = none;
 
         if (depth >= limit) {
-            tracebacks_.emplace_back(Traceback::Type::Recursion, lookahead().location, "Expression nesting limit reached");
+            tracebacks.emplace_back(Traceback::Type::Recursion, lookahead().location, "Expression nesting limit reached");
             return nullptr;
         }
 
@@ -258,7 +258,7 @@ namespace syntax::expression {
 
             if (next.empty()) {
                 if (bounded) {
-                    tracebacks_.emplace_back(Traceback::Type::End, next.location,
+                    tracebacks.emplace_back(Traceback::Type::End, next.location,
                           closing != 0
                               ? std::format("Unexpected end of input; expected '{}'", closing)
                               : std::string("Unexpected end of input inside a formula"));
@@ -281,15 +281,15 @@ namespace syntax::expression {
             // Only a brace closes anything uninvited; a parenthesis or a
             // bracket is an atom, and ends a run only when it is the
             // character that run was opened to wait for.
-            if (next.is(CatCodes::Category::Group, '}')) {
+            if (next.is(Catcodes::Category::Group, '}')) {
                 if (closing != 0) {
-                    tracebacks_.emplace_back(Traceback::Type::Delimiter, next.location,
+                    tracebacks.emplace_back(Traceback::Type::Delimiter, next.location,
                           std::format("Mismatched delimiter '{}'; expected '{}'", next.text, closing));
                     break;
                 }
 
                 advance();
-                tracebacks_.emplace_back(Traceback::Type::Group, next.location,
+                tracebacks.emplace_back(Traceback::Type::Group, next.location,
                       std::format("Unmatched '{}' in formula", next.text));
                 continue;
             }
@@ -316,8 +316,8 @@ namespace syntax::expression {
 
     Node* Parser::matrix(const Grammar::Bracket& bracket) {
         const Token brace = lookahead();
-        if (!brace.is(CatCodes::Category::Group, '{')) {
-            tracebacks_.emplace_back(Traceback::Type::Group, brace.location,
+        if (!brace.is(Catcodes::Category::Group, '{')) {
+            tracebacks.emplace_back(Traceback::Type::Group, brace.location,
                                      "A matrix needs a brace group for its cells");
             return nullptr;
         }
@@ -406,7 +406,7 @@ namespace syntax::expression {
         const Token next = lookahead();
         if (next.empty()) return nullptr;
 
-        if (next.is(CatCodes::Category::Group, '{')) {
+        if (next.is(Catcodes::Category::Group, '{')) {
             advance();
             // An empty group is still an argument -- `\\frac{}{2}`,
             // `\\underset{}{=}` -- and sets as nothing, as an empty base does.
@@ -426,7 +426,7 @@ namespace syntax::expression {
                 index < grammar.rules.size() && grammar.rules[index].type == Node::Type::Unary && grammar.rules[index].weight == 0) {
 
                 if (depth >= limit) {
-                    tracebacks_.emplace_back(Traceback::Type::Recursion, next.location, "Expression nesting limit reached");
+                    tracebacks.emplace_back(Traceback::Type::Recursion, next.location, "Expression nesting limit reached");
                     return nullptr;
                 }
                 struct Guard {
@@ -445,8 +445,8 @@ namespace syntax::expression {
         // A script with nothing written before it -- `{}^{14}C`, `^{th}` --
         // stands on an empty base, as it does in TeX, rather than printing
         // its own mark.
-        if (const Token next = lookahead(); next.category == CatCodes::Category::Mark || next.is('^') ||
-                                            next.category == CatCodes::Category::Index || next.is('_')) {
+        if (const Token next = lookahead(); next.category == Catcodes::Category::Mark || next.is('^') ||
+                                            next.category == Catcodes::Category::Index || next.is('_')) {
             Node* empty = compose(Node::Type::Sequence);
             return scripted ? script(empty) : empty;
         }
@@ -459,7 +459,7 @@ namespace syntax::expression {
         if (name.starts_with('\\')) name.remove_prefix(1);
 
         Node* node = nullptr;
-        if (token.is(CatCodes::Category::Group, '{')) {
+        if (token.is(Catcodes::Category::Group, '{')) {
             // A brace group only groups.
             node = compose(Node::Type::Group);
             node->left = sequence('}');
@@ -486,15 +486,15 @@ namespace syntax::expression {
             // and a paragraph column's width are LaTeX's business in a table,
             // not in a formula, and a `p` column is set flush left.
             std::string preamble;
-            if (lookahead().is(CatCodes::Category::Group, '{')) {
+            if (lookahead().is(Catcodes::Category::Group, '{')) {
                 advance();
                 int nesting = 0;
                 for (Token next = advance(); !next.empty(); next = advance()) {
-                    if (next.is(CatCodes::Category::Group, '{')) {
+                    if (next.is(Catcodes::Category::Group, '{')) {
                         ++nesting;
                         continue;
                     }
-                    if (next.is(CatCodes::Category::Group, '}')) {
+                    if (next.is(Catcodes::Category::Group, '}')) {
                         if (nesting == 0) break;
                         --nesting;
                         continue;
@@ -519,27 +519,27 @@ namespace syntax::expression {
             // defined elsewhere reads here.
             node = compose(Node::Type::Sequence);
             node->value = token.text;
-            if (lookahead().is(CatCodes::Category::Group, '{')) {
+            if (lookahead().is(Catcodes::Category::Group, '{')) {
                 advance();
                 std::string words;
                 int nesting = 0;
                 for (Token next = mouth.expand(); !next.empty(); next = mouth.expand()) {
-                    if (next.is(CatCodes::Category::Group, '{')) {
+                    if (next.is(Catcodes::Category::Group, '{')) {
                         ++nesting;
                         continue;
                     }
-                    if (next.is(CatCodes::Category::Group, '}')) {
+                    if (next.is(Catcodes::Category::Group, '}')) {
                         if (nesting == 0) break;
                         --nesting;
                         continue;
                     }
-                    if (next.category == CatCodes::Category::Space) {
+                    if (next.category == Catcodes::Category::Space) {
                         words += ' ';
                         continue;
                     }
                     // A formula inside the words would be set as maths; here
                     // its dollars are dropped and its letters kept, upright.
-                    if (next.category == CatCodes::Category::Shift) continue;
+                    if (next.category == Catcodes::Category::Shift) continue;
 
                     if (next.text.starts_with('\\') && next.text.size() > 1) {
                         const std::string_view written = next.text.substr(1);
@@ -550,7 +550,7 @@ namespace syntax::expression {
                             words += ' ';
                         } else if (written.size() == 1) {
                             words += written;
-                        } else if (const auto symbol = unicodes.query(written)) {
+                        } else if (const auto symbol = unicodes.get(written)) {
                             // The symbol's character, in the UTF-8 the words are.
                             const std::uint32_t point = symbol->codepoint;
                             if (point < 0x80) {
@@ -635,13 +635,13 @@ namespace syntax::expression {
             node->value = token.text.substr(1);
             node->codepoint = static_cast<unsigned char>(token.text[1]);
             node->category = Unicodes::Category::Ordinary;
-        } else if (const auto symbol = unicodes.query(name)) {
+        } else if (const auto symbol = unicodes.get(name)) {
             node = compose(Node::Type::Variable);
             node->value = token.text;
             node->codepoint = symbol->codepoint;
             node->category = symbol->category;
-        } else if (token.category == CatCodes::Category::Escape || token.text.starts_with('\\') ||
-                   (token.category == CatCodes::Category::Active && token.text == "~")) {
+        } else if (token.category == Catcodes::Category::Escape || token.text.starts_with('\\') ||
+                   (token.category == Catcodes::Category::Active && token.text == "~")) {
             // A command over its arguments -- or a tie, which is a word space
             // in a formula too, as `\\ ` is: `1~m` is a number and its unit,
             // not a tilde between them.
@@ -663,7 +663,7 @@ namespace syntax::expression {
             }
 
             int wanted = found.arity;
-            if (wanted < 0) wanted = lookahead().is(CatCodes::Category::Group, '{') ? 1 : 0;
+            if (wanted < 0) wanted = lookahead().is(Catcodes::Category::Group, '{') ? 1 : 0;
 
             // Gathered locally first, then allocated at exactly the size that
             // was filled: a command may run out of arguments partway through.
@@ -673,7 +673,7 @@ namespace syntax::expression {
             for (int index = 0; index < capacity; ++index) {
                 Node* item = argument();
                 if (!item) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, token.location,
+                    tracebacks.emplace_back(Traceback::Type::Argument, token.location,
                                              std::format("{} expects {} argument(s)", token.text, wanted));
                     break;
                 }
@@ -703,19 +703,19 @@ namespace syntax::expression {
         while (true) {
             const Token next = lookahead();
 
-            if (next.category == CatCodes::Category::Index || next.is('_')) {
+            if (next.category == Catcodes::Category::Index || next.is('_')) {
                 advance();
                 Node* item = atom(false);
                 if (subscript) {
-                    tracebacks_.emplace_back(Traceback::Type::Syntax, next.location, "Double subscript");
+                    tracebacks.emplace_back(Traceback::Type::Syntax, next.location, "Double subscript");
                 } else {
                     subscript = item;
                 }
-            } else if (next.category == CatCodes::Category::Mark || next.is('^')) {
+            } else if (next.category == Catcodes::Category::Mark || next.is('^')) {
                 advance();
                 Node* item = atom(false);
                 if (superscript) {
-                    tracebacks_.emplace_back(Traceback::Type::Syntax, next.location, "Double superscript");
+                    tracebacks.emplace_back(Traceback::Type::Syntax, next.location, "Double superscript");
                 } else {
                     superscript = item;
                 }
@@ -755,7 +755,7 @@ namespace syntax::expression {
         while (true) {
             const Token next = lookahead();
             if (next.empty()) break;
-            if (next.is(CatCodes::Category::Group, '}')) break;
+            if (next.is(Catcodes::Category::Group, '}')) break;
 
             const Grammar::Rule found = grammar.rule(next.symbol);
 

@@ -45,8 +45,8 @@ namespace render::primitives {
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Errors this module has recorded: a `\\footnote` with no text face.
-        [[nodiscard]] const std::vector<syntax::Traceback>& tracebacks() const noexcept {
-            return tracebacks_;
+        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+            return tracebacks;
         }
 
     private:
@@ -76,7 +76,7 @@ namespace render::primitives {
         [[nodiscard]] static syntax::Node* call(memory::Arena& arena, layout::Node* raised, layout::Node* set,
                                                 memory::Location origin);
 
-        mutable std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
         mutable int thanked{0};                                 ///< How many `\\thanks` marks are given out.
 
         /// How far a mark is raised above the baseline, as a fraction of the

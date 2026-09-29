@@ -315,10 +315,7 @@ namespace render::layout {
                                                      ///< on takes, or 0 to count on.
         };
 
-        explicit Node(const Type type = Type::Box) noexcept : type_(type) {}
-
-        [[nodiscard]] Type type() const noexcept { return type_; }
-        void type(const Type value) noexcept { type_ = value; }
+        explicit Node(const Type type = Type::Box) noexcept : type(type) {}
 
         [[nodiscard]] const Box& box() const noexcept { return data.box; }
         [[nodiscard]] const Glue& glue() const noexcept { return data.glue; }
@@ -331,19 +328,20 @@ namespace render::layout {
         [[nodiscard]] const Pause& pause() const noexcept { return data.pause; }
         [[nodiscard]] const Directive& directive() const noexcept { return data.directive; }
 
-        void box(const Box& value) noexcept { type_ = Type::Box; data.box = value; }
-        void glue(const Glue& value) noexcept { type_ = Type::Glue; data.glue = value; }
-        void kern(const Kern& value) noexcept { type_ = Type::Kern; data.kern = value; }
-        void penalty(const Penalty& value) noexcept { type_ = Type::Penalty; data.penalty = value; }
-        void rule(const Rule& value) noexcept { type_ = Type::Rule; data.rule = value; }
-        void glyph(const Glyph& value) noexcept { type_ = Type::Glyph; data.glyph = value; }
-        void path(const Path& value) noexcept { type_ = Type::Path; data.path = value; }
-        void bitmap(const Bitmap& value) noexcept { type_ = Type::Bitmap; data.bitmap = value; }
-        void pause(const Pause& value) noexcept { type_ = Type::Pause; data.pause = value; }
-        void directive(const Directive& value) noexcept { type_ = Type::Directive; data.directive = value; }
+        void box(const Box& value) noexcept { type = Type::Box; data.box = value; }
+        void glue(const Glue& value) noexcept { type = Type::Glue; data.glue = value; }
+        void kern(const Kern& value) noexcept { type = Type::Kern; data.kern = value; }
+        void penalty(const Penalty& value) noexcept { type = Type::Penalty; data.penalty = value; }
+        void rule(const Rule& value) noexcept { type = Type::Rule; data.rule = value; }
+        void glyph(const Glyph& value) noexcept { type = Type::Glyph; data.glyph = value; }
+        void path(const Path& value) noexcept { type = Type::Path; data.path = value; }
+        void bitmap(const Bitmap& value) noexcept { type = Type::Bitmap; data.bitmap = value; }
+        void pause(const Pause& value) noexcept { type = Type::Pause; data.pause = value; }
+        void directive(const Directive& value) noexcept { type = Type::Directive; data.directive = value; }
+
+        Type type{Type::Box};   ///< What the node is, and so which of its data it holds.
 
     private:
-        Type type_{Type::Box};
 
         union Data {
             Box box;

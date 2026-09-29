@@ -196,7 +196,7 @@ namespace syntax::primitives {
             while (pass.cursor < pass.text.size() && naming(pass.text[pass.cursor], false)) ++pass.cursor;
             const std::string_view name = pass.text.substr(opening, pass.cursor - opening);
 
-            const std::string* value = pass.variables.find(name);
+            const std::string* value = pass.variables.get(name);
             if (!value) {
                 pass.error = std::format("nothing is set under '{}'", name);
                 return std::nullopt;
@@ -289,10 +289,10 @@ namespace syntax::primitives {
             std::string error;
             const std::optional<std::int64_t> value = evaluate(text, context.variables, error);
             if (!value) {
-                tracebacks_.emplace_back(Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(Traceback::Type::Primitive, origin,
                                          std::format("\\calculate: {}", error));
             }
-            mouth.ingest(mouth.arena().copy(write(value.value_or(0))));
+            mouth.ingest(mouth.arena.copy(write(value.value_or(0))));
         });
 
         mouth.bind("\\amount", [this, &context](Mouth& mouth) {
@@ -308,7 +308,7 @@ namespace syntax::primitives {
                 std::string error;
                 const std::optional<std::int64_t> read = evaluate(digits, context.variables, error);
                 if (!read || *read < 0 || *read % scale != 0 || *read / scale > precision) {
-                    tracebacks_.emplace_back(Traceback::Type::Argument, origin,
+                    tracebacks.emplace_back(Traceback::Type::Argument, origin,
                                              std::format("\\amount: places must be a whole number from 0 to {}",
                                                          precision));
                 } else {
@@ -320,7 +320,7 @@ namespace syntax::primitives {
             std::string error;
             const std::optional<std::int64_t> value = evaluate(text, context.variables, error);
             if (!value) {
-                tracebacks_.emplace_back(Traceback::Type::Primitive, origin, std::format("\\amount: {}", error));
+                tracebacks.emplace_back(Traceback::Type::Primitive, origin, std::format("\\amount: {}", error));
             }
             // Written out: rounded half away from zero to the places shown,
             // on the magnitude, so -2.675 goes to -2.68 as 2.675 goes to
@@ -346,7 +346,7 @@ namespace syntax::primitives {
                 figures += point;
                 figures += digits;
             }
-            mouth.ingest(mouth.arena().copy(figures));
+            mouth.ingest(mouth.arena.copy(figures));
         });
 
         // Read as written: a separator is text, not something to evaluate.

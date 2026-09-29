@@ -34,7 +34,7 @@ namespace render::primitives {
                                   const float size) {
         // LaTeX's \@makefnmark: upright and medium whatever the text around
         // it, at the script size of the text it sits in, raised.
-        const float body = context.document.configuration().size;
+        const float body = context.document.configuration.size;
         const float small = Styles::measure(body, Styles::Size::Script) * size / body;
         const typography::Font* font = Styles::resolve(context, Styles::Cut::Normal, small);
         if (!font) return nullptr;
@@ -50,21 +50,21 @@ namespace render::primitives {
     }
 
     layout::Node* Footnotes::note(syntax::Parser& parser, Context& context, const std::string& label) const {
-        syntax::Mouth& mouth = parser.mouth();
-        memory::Arena& arena = parser.arena();
+        syntax::Mouth& mouth = parser.mouth;
+        memory::Arena& arena = parser.arena;
         const memory::Location origin = mouth.lookahead().location;
 
         syntax::Token open = mouth.read();
-        while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-        if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+        while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+        if (!open.is(syntax::Catcodes::Category::Group, '{')) {
             if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
-            tracebacks_.emplace_back(syntax::Traceback::Type::Group, origin, "A footnote needs a brace group");
+            tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "A footnote needs a brace group");
             return nullptr;
         }
 
         // Read in the foot's own face -- \footnotesize, upright -- so a style
         // inside the note changes from that, as it does in LaTeX.
-        const layout::Document::Configuration& page = context.document.configuration();
+        const layout::Document::Configuration& page = context.document.configuration;
         const float size = Styles::measure(page.size, Styles::Size::Footnote);
         const typography::Font* restore = context.selection.text();
         const typography::Font* font = Styles::resolve(context, Styles::Cut::Normal, size);
@@ -129,35 +129,35 @@ namespace render::primitives {
         };
 
         const auto current = [&context]() {
-            return context.selection.text() ? context.selection.text()->size() : context.document.configuration().size;
+            return context.selection.text() ? context.selection.text()->size() : context.document.configuration.size;
         };
 
         parser.bind("\\footnote", [this, &context, number, current](syntax::Parser& parser) -> syntax::Node* {
-            const memory::Location origin = parser.mouth().lookahead().location;
+            const memory::Location origin = parser.mouth.lookahead().location;
             if (!context.selection.text()) {
-                tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\footnote needs a text face to be set in");
                 return nullptr;
             }
-            const std::string label = number(parser.mouth());
-            layout::Node* raised = mark(context, parser.arena(), label, current());
-            return call(parser.arena(), raised, note(parser, context, label), origin);
+            const std::string label = number(parser.mouth);
+            layout::Node* raised = mark(context, parser.arena, label, current());
+            return call(parser.arena, raised, note(parser, context, label), origin);
         });
 
         parser.bind("\\footnotemark", [&context, number, current](syntax::Parser& parser) -> syntax::Node* {
-            const memory::Location origin = parser.mouth().lookahead().location;
-            const std::string label = number(parser.mouth());
-            return call(parser.arena(), mark(context, parser.arena(), label, current()), nullptr, origin);
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const std::string label = number(parser.mouth);
+            return call(parser.arena, mark(context, parser.arena, label, current()), nullptr, origin);
         });
 
         parser.bind("\\footnotetext", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            const memory::Location origin = parser.mouth().lookahead().location;
+            const memory::Location origin = parser.mouth.lookahead().location;
             std::string label;
             const std::vector<syntax::Token> given =
-                parser.mouth().argument(syntax::Mouth::Parameter{.optional = true}, 0);
+                parser.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
             for (const syntax::Token& token : given) label += token.text;
-            if (label.empty() && context.counters) label = Counters::print(parser.mouth(), "footnote");
-            return call(parser.arena(), nullptr, note(parser, context, label), origin);
+            if (label.empty() && context.counters) label = Counters::print(parser.mouth, "footnote");
+            return call(parser.arena, nullptr, note(parser, context, label), origin);
         });
 
         // A title's notes: marked with LaTeX's footnote symbols in turn,
@@ -166,10 +166,10 @@ namespace render::primitives {
             static constexpr std::array<std::string_view, 9> symbols{
                 "*", "†", "‡", "§", "¶", "‖", "**", "††", "‡‡",
             };
-            const memory::Location origin = parser.mouth().lookahead().location;
+            const memory::Location origin = parser.mouth.lookahead().location;
             const std::string label(symbols[static_cast<std::size_t>(thanked++) % symbols.size()]);
-            layout::Node* raised = mark(context, parser.arena(), label, current());
-            return call(parser.arena(), raised, note(parser, context, label), origin);
+            layout::Node* raised = mark(context, parser.arena, label, current());
+            return call(parser.arena, raised, note(parser, context, label), origin);
         });
 
         // \marginpar{...}: a note in the right margin, \marginparwidth wide,
@@ -178,14 +178,14 @@ namespace render::primitives {
         // go. marginnote's \marginnote is the same note.
         for (const std::string_view name : {"\\marginpar", "\\marginnote"}) {
             parser.bind(name, [&context](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth();
-                memory::Arena& arena = parser.arena();
+                syntax::Mouth& mouth = parser.mouth;
+                memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
                 static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
 
                 syntax::Token open = mouth.read();
-                while (open.category == syntax::CatCodes::Category::Space) open = mouth.read();
-                if (!open.is(syntax::CatCodes::Category::Group, '{')) {
+                while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+                if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                     if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                     return nullptr;
                 }
@@ -202,9 +202,9 @@ namespace render::primitives {
                 std::ranges::copy(content, pieces.begin());
 
                 // As wide as \marginparwidth, or as the margin has room for.
-                const layout::Document::Configuration& page = context.document.configuration();
+                const layout::Document::Configuration& page = context.document.configuration;
                 const auto length = [&context, &mouth](const std::string_view called, const float fallback) {
-                    const auto slot = context.registers.target(mouth.lexicon().intern(called));
+                    const auto slot = context.registers.target(mouth.lexicon.intern(called));
                     return slot ? static_cast<float>(context.registers.get(slot->type, slot->slot)) / 65536.0f : fallback;
                 };
                 const float separation = length("\\marginparsep", 11.0f);

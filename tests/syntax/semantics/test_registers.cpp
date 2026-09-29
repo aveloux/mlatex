@@ -53,8 +53,8 @@ int main() {
     assert((target && target->type == Type::Count && target->slot == 3) && "a named register addresses its slot");
     assert((!registers.target(501)) && "an unbound name addresses nothing");
 
-    registers.quad(12 * 65536);
-    assert((registers.quad() == 12 * 65536) && "an em is what the body face says it is");
+    registers.quad = 12 * 65536;
+    assert((registers.quad == 12 * 65536) && "an em is what the body face says it is");
 
     return 0;
 }

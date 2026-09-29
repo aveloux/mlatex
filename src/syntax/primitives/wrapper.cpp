@@ -16,13 +16,13 @@ namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon& lexicon) noexcept
         : relay(lexicon), blocks(lexicon), macros(lexicon), values(lexicon),
           compute(lexicon), loops(lexicon), include(lexicon),
-          variables_(lexicon), decimals(lexicon), hooks(lexicon) {}
+          variables(lexicon), decimals(lexicon), hooks(lexicon) {}
 
     void Wrapper::operator()(Mouth& mouth, Context& context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
         bind(mouth, context, relay, blocks, macros, values, compute, loops, include,
-             variables_, decimals, hooks);
+             variables, decimals, hooks);
 
         // Every word of the engine's own that is not LaTeX's, a second time
         // under an `@` name -- the way LaTeX's own internals are named, out of
@@ -41,8 +41,8 @@ namespace syntax::primitives {
             "iffile",
         };
         for (const std::string_view word : vocabulary) {
-            const Symbol plain = mouth.lexicon().intern("\\" + std::string(word));
-            mouth.lend(mouth.lexicon().intern("\\@" + std::string(word)), plain);
+            const Symbol plain = mouth.lexicon.intern("\\" + std::string(word));
+            mouth.lend(mouth.lexicon.intern("\\@" + std::string(word)), plain);
         }
 
         // LaTeX's two document hooks: what \\AtBeginDocument gathered runs as
@@ -58,15 +58,15 @@ namespace syntax::primitives {
                     "Core primitives installed");
     }
 
-    std::vector<Traceback> Wrapper::tracebacks() const {
+    std::vector<Traceback> Wrapper::traceback() const {
         // Every module, conditionals included: relay keeps its own list like
         // the rest, so leaving it out here lost runaway and unclosed-\if
         // reports even though the module had recorded them.
         const std::vector<Traceback>* lists[] = {
-            &relay.tracebacks(), &blocks.tracebacks(), &macros.tracebacks(),
-            &values.tracebacks(), &compute.tracebacks(), &loops.tracebacks(),
-            &include.tracebacks(), &variables_.tracebacks(), &decimals.tracebacks(),
-            &hooks.tracebacks(),
+            &relay.traceback(), &blocks.traceback(), &macros.traceback(),
+            &values.traceback(), &compute.traceback(), &loops.traceback(),
+            &include.traceback(), &variables.traceback(), &decimals.traceback(),
+            &hooks.traceback(),
         };
 
         std::size_t total = 0uz;

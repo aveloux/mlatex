@@ -18,29 +18,29 @@ int main() {
     for (layout::Node*& glyph : glyphs) glyph = arena.compose<layout::Node>(layout::Node::Type::Glyph);
 
     const layout::Ledger::Key key{.font = nullptr, .text = "word", .size = 10.0f};
-    assert((ledger.find(key).empty()) && "a run never shaped is not found");
-    ledger.insert(key, glyphs);
-    assert((ledger.find(key).data == glyphs.data) && "a run shaped is found, the same glyphs handed out");
+    assert((ledger.get(key).empty()) && "a run never shaped is not found");
+    ledger.set(key, glyphs);
+    assert((ledger.get(key).data == glyphs.data) && "a run shaped is found, the same glyphs handed out");
 
-    assert((ledger.find({.font = nullptr, .text = "word", .size = 12.0f}).empty()) && "another size is another run");
-    assert((ledger.find({.font = nullptr, .text = "ward", .size = 10.0f}).empty()) && "and other text another");
+    assert((ledger.get({.font = nullptr, .text = "word", .size = 12.0f}).empty()) && "another size is another run");
+    assert((ledger.get({.font = nullptr, .text = "ward", .size = 10.0f}).empty()) && "and other text another");
 
     // The key's text is compared, not where it lives.
     const std::string copy = "word";
-    assert((!ledger.find({.font = nullptr, .text = copy, .size = 10.0f}).empty()) &&
+    assert((!ledger.get({.font = nullptr, .text = copy, .size = 10.0f}).empty()) &&
            "the same text from elsewhere is found");
 
     ledger.dispose();
-    assert((ledger.find(key).empty()) && "a ledger disposed of has forgotten every run");
+    assert((ledger.get(key).empty()) && "a ledger disposed of has forgotten every run");
 
     // Three quarters full, it takes no more.
     std::string names[16];
     for (int index = 0; index < 16; ++index) {
         names[index] = "run" + std::to_string(index);
-        ledger.insert({.text = names[index], .size = 10.0f}, glyphs);
+        ledger.set({.text = names[index], .size = 10.0f}, glyphs);
     }
     std::size_t kept = 0;
-    for (const std::string& name : names) kept += !ledger.find({.text = name, .size = 10.0f}).empty();
+    for (const std::string& name : names) kept += !ledger.get({.text = name, .size = 10.0f}).empty();
     assert((kept == 12) && "a table of sixteen keeps twelve runs and stops");
 
     return 0;
