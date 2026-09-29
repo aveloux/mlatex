@@ -198,6 +198,10 @@ namespace render::primitives {
         mutable std::vector<graphics::Canvas::Room> rooms{};
         mutable std::vector<layout::Node::Point> anchors{};
         mutable std::vector<float> scales{};
+        // And the height each stands on the baseline at: TikZ's `baseline`
+        // option as written -- a length, or a node and its anchor, `([yshift=-.5ex]cd.center)`
+        // -- or nothing for its bottom.
+        mutable std::vector<std::string> baselines{};
 
         mutable graphics::Color color{graphics::black};             ///< Current stroke color.
         mutable float weight = 1.0f;                                ///< Current stroke width, in points.

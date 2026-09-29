@@ -16,6 +16,7 @@
 #include "render/primitives/requests.hpp"
 #include "render/primitives/penalties.hpp"
 #include "render/primitives/plots.hpp"
+#include "render/primitives/diagrams.hpp"
 #include "render/primitives/illustrations.hpp"
 #include "render/primitives/languages.hpp"
 #include "render/primitives/references.hpp"
@@ -117,6 +118,7 @@ namespace render::primitives {
         Requests requests;      ///< `\\httpget`, `\\httppost`.
         Verbatim verbatim;      ///< `\\verb`, `verbatim`, `lstlisting` and `\\lstinline`.
         Plots plots;            ///< pgfplots' axes and what `\\addplot` draws in them.
+        Diagrams diagrams;      ///< tikz-cd's, xy-pic's and amscd's diagrams, circuits and trees, as TikZ.
         Languages languages;    ///< A language's patterns, direction and captions, and `otherlanguage`.
     };
 

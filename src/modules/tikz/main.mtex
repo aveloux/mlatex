@@ -22,8 +22,13 @@
 % every node's, and \foreach are read; `let`, `plot` and the libraries'
 % shapes are not drawn, and said so.
 
-% A picture in one line: \tikz{\draw (0,0) -- (1,0);}
-\@define\tikz[1]{\begin{tikzpicture}#1\end{tikzpicture}}
+% A picture in one line, with its options or not: \tikz{\draw (0,0) -- (1,0);},
+% \tikz[baseline=-0.5ex]{...}, or a single path to its semicolon,
+% \tikz \draw (0,0) circle (1ex);
+\@define\tikz{\@ifnextchar[{\@tikz}{\@tikz[]}}
+\def\@tikz[#1]{\@ifnextchar\bgroup{\@tikzgroup{#1}}{\@tikzpath{#1}}}
+\def\@tikzgroup#1#2{\begin{tikzpicture}[#1]#2\end{tikzpicture}}
+\def\@tikzpath#1#2;{\begin{tikzpicture}[#1]#2;\end{tikzpicture}}
 
 % pgffor's loop, which TikZ loads.
 \@alias\foreach\@foreach

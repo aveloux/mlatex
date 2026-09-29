@@ -1,0 +1,9 @@
+% quantikz: quantum circuits. A quantikz block is drawn by the engine as the
+% TikZ picture it is: a wire a row, its gates boxed on it, its controls
+% joined to their targets, its meters and its labels. Its kets are braket's.
+%
+%   \begin{quantikz} \lstick{$\ket{0}$} & \gate{H} & \ctrl{1} & \meter{} \\
+%                    \lstick{$\ket{0}$} & \qw & \targ{} & \qw \end{quantikz}
+
+\@requirepackage{tikz}
+\@requirepackage{braket}

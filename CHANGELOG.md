@@ -135,6 +135,10 @@ sees, newest work last within each group.
 - `\ifvoid`, `\ifhbox` and `\ifvbox` ask after a box register.
 - `\count255` and the rest of the 256 registers are there.
 - `\@ifnextchar\bgroup` asks after a brace group.
+- `@` is an ordinary character in a document, as LaTeX has it: a name
+  nothing defines that runs on past an `@` -- `\xymatrix@C=1em`,
+  `\ar@{-->}` -- is the name before it and then its characters. The engine's
+  own modules, and a document's `\makeatletter` names, keep theirs whole.
 
 ### Packages
 
@@ -169,6 +173,9 @@ sees, newest work last within each group.
   normal face after it, in sans serif.
 - fontawesome5's icons, the letter class, beamer and the index were
   warnings, errors or empty pages before.
+- `quantikz`, `forest`, `tikz-qtree`, `qtree`, `xy` (`xypic`), `amscd` and
+  `qcircuit` load, drawn as above; tikz-cd, quantikz and forest load TikZ, as
+  they do in LaTeX, and quantikz braket's kets.
 
 ### Languages
 
@@ -339,6 +346,42 @@ sees, newest work last within each group.
   `only marks`, `mark=`, dashes and widths; `ybar` with `symbolic x coords`
   and `xtick=data`; `enlargelimits`; a width or height alone scaling the
   other; `\legend` and `\addlegendentry`, in the corner `legend pos` names.
+- **Commutative diagrams are drawn**, each as the TikZ picture it is: a
+  matrix of its objects and an arrow for each, its labels on the side the
+  package puts them. tikz-cd's `\arrow` -- `"f"`, `"f"'` swapped,
+  `description`, `hook`, `tail`, `two heads`, `mapsto`, `dashed`,
+  `Rightarrow` and `equal` as double lines, `bend left`, `shift left`,
+  `phantom`, `from=`, spacing by tikz-cd's names; xy-pic's `\xymatrix`, with
+  `^`, `_` and `|` labels, `@{-->}` shapes, `@<1ex>` shifts, `@/^/` curves
+  and `@C=`/`@R=`; amscd's `CD`, its `@>>>`, `@VVV`, `@<<<`, `@AAA` and `@=`.
+  A display holding one alone is set as the picture, its number level with
+  its middle, as tikz-cd sets a diagram on the formula's axis; one in a
+  formula of other things is the grid of its objects.
+- **Circuits**: quantikz's block and Qcircuit's `\Qcircuit` -- a wire a row,
+  gates boxed on it, `\ctrl` joined to its `\targ`, open controls, swaps,
+  meters, classical wires doubled, `\lstick` and `\rstick`.
+- **Trees**: forest's `[S [NP] [VP]]`, and qtree's and tikz-qtree's
+  `\Tree [.S the cat ]` with bare words as leaves, each parent centred over
+  its children.
+- **TikZ's `\matrix`**: `matrix of nodes` and `matrix of math nodes`, or a
+  `\node` a cell; cells named `m-1-2`, each column as wide as its widest and
+  each row as high as its highest, `row sep`, `column sep`, `\\[4pt]`,
+  `|[draw]|`, `nodes=`, `ampersand replacement`, `draw` and `anchor`.
+- **A label stands where TikZ puts it**: one written on a line, `(a) --
+  node {x} (b)`, halfway along it -- it stood at the line's start --
+  `pos=`, `near start`, `at end` and the rest, along a curve too; `auto` on
+  the line's left and `swap` its right.
+- **TikZ's `edge`**: each from where the path stands with its own options --
+  tips, bends, a `loop above` back to its node -- the path going on from
+  where it was, as automata are drawn. `out=`, `in=` and a bend leave and
+  meet a node's outline at their angles; a bend given the path is every
+  `to`'s. `double` lines, tikz-cd's `shift left`, and tips `|`, hooks,
+  `>>` and tails.
+- **A picture stands on the baseline**, as TikZ's and LaTeX's do: its bottom
+  there, or the height `baseline=` names -- a length, or a node's centre,
+  top or bottom, `([yshift=-.5ex]a.center)`. It used to hang below the line.
+  `\tikz[options]{...}` and `\tikz \draw ...;` both read.
+- Lengths in picas, `dd` and `cc`, in a picture's options.
 
 ### The file
 
@@ -374,10 +417,11 @@ Release build, clang-cl, one run each, median of thirty:
 
 | Document | Pages | Time |
 | --- | --- | --- |
-| a one-line article | 1 | 3.1 ms |
+| a one-line article | 1 | 3.2 ms |
 | a Russian article with babel, its contents and a bibliography, two passes | 1 | 4.6 ms |
+| two tikz-cd diagrams, an xy-pic and an amscd one, a matrix, an automaton, a circuit and two trees | 1 | 4.7 ms |
 | an Arabic article with polyglossia, right to left | 1 | 5.8 ms |
-| the paper in `build/main.mtex` | 8 | 11.7 ms |
+| the paper in `build/main.mtex` | 8 | 11.9 ms |
 
 Rewriting a category change into the tokens ahead costs nothing until a
 document makes one; links, bookmarks and the index are made only for a
@@ -420,12 +464,16 @@ font folders are listed only for a script the engine carries no face for.
   size in black.
 - A tcolorbox module's definitions hid the native `\newtcolorbox`, and a
   title with a formula or a command in it was set as plain words.
+- A TikZ label written on a line stood at the line's start, and `midway`
+  on a curve stood by its end.
+- A picture in a line hung below the baseline; `\tikz[baseline]{...}` read
+  its bracket as the picture; a length in picas was none.
 
 ### Tests
 
 - Every test is one standalone `tests/<path>/test_<file>.cpp` for a real
   `src/<path>/<file>.cpp`, with its own small harness and plain `assert`; the
-  shared helper headers are gone. 82 tests pass in Debug and Release.
+  shared helper headers are gone. 83 tests pass in Debug and Release.
 - New: `test_glossary`, `test_drawing`, `test_languages`, and cases for
   classes, fontspec, filecontents, tabbing, `list`, `.bbl` bibliographies,
   kept picture places, JPEG and PNG resolution, aliases, a primitive that grows
@@ -443,6 +491,9 @@ font folders are listed only for a script the engine carries no face for.
   undefined`; a coloured rule; a TikZ `plot`, pictures side by side;
   biblatex's `ieee` and `title=`, a report's `Bibliography`, a citation's
   link; `teaserfigure`, `CCSXML`; PDF/A.
+- Then: `test_diagrams` -- tikz-cd, xy-pic and amscd diagrams, a numbered
+  one's number at its middle, circuits, trees; and a picture on the
+  baseline, `\matrix`, a label halfway along its line, edges and loops.
 
 ### Documentation
 
@@ -461,9 +512,10 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn; tikz-cd arrows, xy-pic and the tree
-packages are not drawn; TikZ's `let` is a warning; pgfplots' 3D plots, error
-bars and `fill between` are not drawn. beamer's overlays are one slide and
+EPS and SVG are placeholders, not drawn; TikZ's `let` is a warning;
+pgfplots' 3D plots, error bars and `fill between` are not drawn; a tree's
+labels are measured by their letters, not set first; xy-pic's objects
+written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. A `\chardef`'d character is a number, not a
 glyph. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.

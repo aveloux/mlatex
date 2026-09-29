@@ -1,0 +1,8 @@
+% forest: trees written as brackets, [S [NP] [VP]]. A forest block is drawn by
+% the engine as the TikZ picture it is, each parent centred over its
+% children; the options that tune forest's own placement are read and let go.
+
+\@requirepackage{tikz}
+
+\@define\forestset[1]{}
+\@define\useforestlibrary[1]{}

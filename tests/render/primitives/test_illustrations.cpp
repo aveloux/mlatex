@@ -224,6 +224,55 @@ int main() {
         assert((result.clean && across.size() >= 2 && std::ranges::max(across) - std::ranges::min(across) > 150.0f) &&
                "two pictures side by side in the line, \\hfill between them");
     }
+    {
+        // A picture in the line stands on the baseline, as TikZ's does: a
+        // line up from its origin starts where the text around it sits.
+        const Result result = article("\\usepackage{tikz}", "x\\tikz\\draw (0,0) -- (0,1);y "
+                                                            "\\tikz[baseline=-0.5ex]{\\draw (0,0) circle (1ex);}");
+        const std::size_t move = result.pdf.find(" m\n");
+        const std::size_t start = result.pdf.rfind(' ', move - 1) + 1;
+        float y = 0.0f;
+        std::from_chars(result.pdf.data() + start, result.pdf.data() + move, y);
+        const std::size_t text = result.pdf.find(" Tm");
+        const std::size_t first = result.pdf.rfind(' ', text - 1) + 1;
+        float baseline = 0.0f;
+        std::from_chars(result.pdf.data() + first, result.pdf.data() + text, baseline);
+        assert((result.clean && std::abs(y - baseline) < 0.01f) && "its bottom on the baseline, and \\tikz's two forms");
+    }
+    {
+        // A matrix: its cells as nodes named by row and column, arrows
+        // between them stopping at their edges, and a label halfway along
+        // the line it is written on.
+        const Result result = article("\\usepackage{tikz}",
+                                      "\\begin{tikzpicture}\\matrix (m) [matrix of math nodes, row sep=2em, column sep=3em]"
+                                      "{ a & b \\\\ c & d \\\\ };\\draw[->] (m-1-1) -- node[above] {$x$} (m-1-2);"
+                                      "\\draw[->] (m-1-1) -- (m-2-1);\\end{tikzpicture}");
+        assert((result.clean && result.errors.empty()) && "a matrix of math nodes, and arrows between its cells");
+        for (const std::string_view part : {"a", "b", "c", "d", "x"}) assert(holds(result.text, part) && "every cell set");
+        std::vector<float> across;
+        for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
+            const std::size_t y = result.pdf.rfind(' ', at - 1);
+            const std::size_t x = result.pdf.rfind(' ', y - 1) + 1;
+            float value = 0.0f;
+            std::from_chars(result.pdf.data() + x, result.pdf.data() + y, value);
+            across.push_back(value);
+        }
+        assert((across.size() >= 5 && across[4] > across[0] && across[4] < across[1]) &&
+               "the label between the two cells its line joins");
+    }
+    {
+        // Edges: each from where the path stands, with its own tips and bend,
+        // a loop back to its node, and the path going on from where it was.
+        const Result result = article("\\usepackage{tikz}",
+                                      "\\begin{tikzpicture}\\node[circle,draw] (a) at (0,0) {a};"
+                                      "\\node[circle,draw] (b) at (2,0) {b};\\node (c) at (0,2) {c};"
+                                      "\\path[->] (a) edge node[above] {1} (b) edge[bend left] (c) (b) edge[loop above] ();"
+                                      "\\draw (a) to[out=90,in=180] (c);\\draw[double] (a) -- (c);"
+                                      "\\draw[->, shift left=2pt] (a) -- (b);\\draw[|->>] (a) -- (c);"
+                                      "\\draw[hook->] (b) -- (c);\\end{tikzpicture}");
+        assert((result.clean && result.errors.empty()) && "edges, loops, double lines, shifts and every tip");
+        assert((holds(result.text, "1") && count(result.pdf, " l S") > 150) && "drawn, the label set");
+    }
 
     return 0;
 }

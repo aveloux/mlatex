@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <format>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -346,6 +347,49 @@ namespace render::primitives {
         memory::Arena& arena = parser.arena();
         const memory::Location origin = mouth.lookahead().location;
 
+        // A display that holds a picture -- a tikz-cd, amscd or xy-pic
+        // diagram, a circuit, a tree, a TikZ picture -- as papers write
+        // one: read as the text it is, the picture centred on a line of its
+        // own with its number beside it, as LaTeX sets the box it makes.
+        if (display) {
+            std::size_t ahead = 0;
+            while (mouth.lookahead(ahead).category == syntax::CatCodes::Category::Space) ++ahead;
+            const syntax::Token first = mouth.lookahead(ahead);
+            std::string name;
+            if (first.text == "\\begin" && mouth.lookahead(ahead + 1).is('{')) {
+                for (std::size_t index = ahead + 2; index < ahead + 16; ++index) {
+                    const syntax::Token letter = mouth.lookahead(index);
+                    if (letter.empty() || letter.is('}')) break;
+                    name += letter.text;
+                }
+            }
+            static constexpr std::array<std::string_view, 5> pictures{"tikzcd", "CD", "quantikz", "tikzpicture", "forest"};
+            // xy-pic's spacing may run on from its name: `\xymatrix@C=1em`.
+            if (std::ranges::contains(pictures, name) || first.text.starts_with("\\xymatrix") ||
+                first.text.starts_with("\\Qcircuit")) {
+                setting = Layout::Single;
+                const syntax::Symbol closer = delimiter == '$' ? mouth.lexicon().intern("$") : stop;
+                syntax::Symbol matched = syntax::none;
+                mouth.push(syntax::semantics::Scope::Type::Group);
+                const memory::Slice<syntax::Node*> read = parser.parse(0, std::span{&closer, 1}, matched);
+                stamp(read, context);
+                mouth.pop(syntax::semantics::Scope::Type::Group);
+                if (delimiter == '$' && mouth.lookahead().text == "$") static_cast<void>(mouth.read());
+
+                std::vector<layout::Node*> set;
+                for (const syntax::Node* child : read) gather(set, child, context);
+                const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(set.size());
+                std::ranges::copy(set, row.begin());
+                layout::Node* body = layout::Line::horizontal(arena, row, 0.0f);
+                const std::string text = !tagged.empty() ? std::exchange(tagged, std::string{})
+                                         : !numbered.empty() ? "(" + std::exchange(numbered, std::string{}) + ")"
+                                                         : std::string{};
+                layout::Node* mark = text.empty() ? nullptr : label(context, arena, text);
+                return displayed(context, arena, line(arena, body, mark, mark ? mark->box().width : 0.0f, breadth(context)),
+                                 origin);
+            }
+        }
+
         mouth.push(syntax::semantics::Scope::Type::Equations);
 
         syntax::expression::Node* tree = nullptr;
@@ -650,24 +694,6 @@ namespace render::primitives {
                 [](syntax::Mouth& mouth) { mouth.ingest("}"); },
                 /*transparent=*/true);
         }
-
-        // tikz-cd's diagram: the grid of its objects, set as a matrix is --
-        // in the formula it stands in, or displayed on a line of its own
-        // when it stands in the text. Its arrows are tikz-cd's to let go.
-        context.blocks.watch(
-            "tikzcd",
-            [this](syntax::Mouth& mouth) {
-                static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                const bool inside = mouth.formula();
-                diagrams.push_back(inside);
-                mouth.ingest(inside ? "\\matrix{" : "\\[\\matrix{");
-            },
-            [this](syntax::Mouth& mouth) {
-                const bool inside = !diagrams.empty() && diagrams.back();
-                if (!diagrams.empty()) diagrams.pop_back();
-                mouth.ingest(inside ? "}" : "}\\]");
-            },
-            /*transparent=*/true);
 
         // `array` takes its preamble first, as `tabular` does, and reads it
         // the same way: only which columns are left, centred and right

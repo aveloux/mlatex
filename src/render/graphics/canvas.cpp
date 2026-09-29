@@ -37,7 +37,7 @@ namespace render::graphics {
         regions.push_back(Region{.corners = std::vector<Point2>(corners.begin(), corners.end()), .color = color});
     }
 
-    layout::Node* Canvas::compose(memory::Arena& arena, const Room room) const {
+    layout::Node* Canvas::compose(memory::Arena& arena, const Room room, const std::optional<float> baseline) const {
         // The area the box takes, in the canvas's own coordinates, y up: the
         // declared one, or none at all when the drawing is to be its own size.
         float left = 0.0f;
@@ -132,6 +132,13 @@ namespace render::graphics {
             .list = strokes,
             .absolute = true,
         });
+        // Raised to stand on the baseline where the text sets it: its bottom
+        // there, or the height asked for. An overlay is pinned instead.
+        if (room != Room::Declared) {
+            layout::Node::Box shape = canvas->box();
+            shape.shift = -(top - baseline.value_or(bottom));
+            canvas->box(shape);
+        }
         return canvas;
     }
 

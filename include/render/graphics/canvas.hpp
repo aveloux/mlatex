@@ -7,6 +7,7 @@
 #include "render/layout/node.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -102,11 +103,18 @@ namespace render::graphics {
         /// say -- makes its box that much larger and is moved in by as much,
         /// so it pushes the text around it away instead of drawing over it.
         ///
-        /// @param arena Allocator for the box and every stroke inside it.
-        /// @param room  How much room the box takes.
+        /// A picture set in the text stands on the baseline as a TikZ or a
+        /// LaTeX picture does: its bottom on it, or the height a `baseline`
+        /// option names.
+        ///
+        /// @param arena    Allocator for the box and every stroke inside it.
+        /// @param room     How much room the box takes.
+        /// @param baseline The height in the canvas's own coordinates that
+        ///                 stands on the baseline; its bottom when none.
         /// @return The box; never null even when nothing was drawn.
         /// @complexity O(n) in the lines drawn.
-        [[nodiscard]] layout::Node* compose(memory::Arena& arena, Room room) const;
+        [[nodiscard]] layout::Node* compose(memory::Arena& arena, Room room,
+                                            std::optional<float> baseline = std::nullopt) const;
 
     private:
         /// @brief One line, already in the canvas's own 2D space.

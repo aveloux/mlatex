@@ -20,10 +20,12 @@
 #include "logger.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <format>
 #include <memory>
 #include <span>
 #include <utility>
+#include <vector>
 
 namespace syntax {
 
@@ -172,6 +174,29 @@ namespace syntax {
             // begins with looked at again.
             if (!defined) {
                 if (token.category == CatCodes::Category::Escape && this->glossary.define(*this, token)) continue;
+
+                // `@` is a letter to the engine's own modules and an ordinary
+                // character to a document, as LaTeX has it: a name nothing
+                // means that runs on past an `@` -- `\xymatrix@C=1em`,
+                // `\ar@{-->}` -- is the name before it, then its characters.
+                if (token.category == CatCodes::Category::Escape && !this->known(token.symbol)) {
+                    if (const std::size_t at = token.text.find('@', 2); at != std::string_view::npos) {
+                        const Symbol name = this->lexicon_.intern(token.text.substr(0, at));
+                        if (this->known(name)) {
+                            std::vector<Token> split{Token{name, CatCodes::Category::Escape, token.location,
+                                                           this->lexicon_.resolve(name)}};
+                            for (std::size_t index = at; index < token.text.size(); ++index) {
+                                const Symbol letter = this->lexicon_.intern(token.text.substr(index, 1));
+                                const bool alphabetic = std::isalpha(static_cast<unsigned char>(token.text[index])) != 0;
+                                split.push_back(Token{letter, alphabetic ? CatCodes::Category::Letter : CatCodes::Category::Other,
+                                                      token.location, this->lexicon_.resolve(letter)});
+                            }
+                            this->cursor.advance();
+                            this->cursor.inject(split);
+                            continue;
+                        }
+                    }
+                }
                 return this->cursor.advance();
             }
             this->step();

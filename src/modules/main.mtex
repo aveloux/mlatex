@@ -107,9 +107,11 @@
 %   calc        sums in \setlength, read by the engine itself
 %
 %   Pictures and references
-%   tikz        tikzpicture, \draw and \node: paths, boxes, grids, circles, arcs, labels
-%   tikz-cd     the tikzcd block, its objects in their grid, its arrows let go
-%   pgfplots    each axis left empty, and said so once
+%   tikz        tikzpicture, \draw, \node, \matrix and edges; \tikz in a line
+%   tikz-cd     the tikzcd block: its objects in their grid, its arrows drawn
+%   pgfplots    axes, plots of data and functions, legends
+%   quantikz    circuits: wires, gates, controls and meters
+%   forest      trees written as brackets
 %   natbib      \citep, \citet and the rest, by author and year from a natbib style
 %   biblatex    \addbibresource, \printbibliography, \parencite, \textcite
 %

@@ -149,7 +149,6 @@ namespace render::primitives {
         mutable bool counting{false};            ///< True when that display numbers them.
         mutable std::vector<Row> lines{};        ///< The rows of the display being read.
         mutable std::string tagged{};            ///< A `\\tag` for the display being read, or empty.
-        mutable std::vector<bool> diagrams{};    ///< For each tikzcd block open, whether it opened in a formula.
     };
 
 }

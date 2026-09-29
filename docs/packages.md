@@ -132,6 +132,16 @@ for it (New Computer Modern) where the engine carries one, and by one of the
 system's faces where it does not -- Arabic, Chinese. Nothing in a package
 chooses that; `\newfontfamily\arabicfont{...}` is read and let go.
 
+## Diagrams
+
+tikz-cd's `tikzcd`, xy-pic's `\xymatrix`, amscd's `CD`, quantikz's and
+Qcircuit's circuits and forest's and qtree's trees are native: each is read
+whole and written out as the TikZ it draws -- a `\matrix` of its objects, a
+`\draw` for each arrow or wire -- which the TikZ primitives then draw. Their
+packages only load TikZ, or are marked loaded. A package that draws in the
+same way can do the same: write TikZ, with `\matrix` for a grid of objects
+named by row and column, and `(a) -- node {label} (b)` for a labelled line.
+
 ## A first package
 
 ```
@@ -255,8 +265,8 @@ them reads as written.
 ### Characters
 
 `\catcode` works as TeX's does: a change reaches every character the
-document has not been read up to yet -- `\catcode`\!=13` makes each `!` to
-come active, `\catcode`\|=0` makes `|textbf` a command -- and a change made
+document has not been read up to yet -- ``\catcode`\!=13`` makes each `!` to
+come active, ``\catcode`\|=0`` makes `|textbf` a command -- and a change made
 in a group ends with it. Text a macro has already made keeps its categories.
 
 ### Links and text given later

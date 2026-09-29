@@ -16,7 +16,7 @@ namespace render::primitives {
           boxes(lexicon), spacing(lexicon),
           rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
           lists(lexicon), expressions(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
-          counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon), colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), languages(lexicon) {}
+          counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon), colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {}
 
     void Wrapper::operator()(syntax::Parser& parser, Context& context) const {
         // The counters first, because the modules that number things define
@@ -28,7 +28,7 @@ namespace render::primitives {
         bind(parser, context, page, typeface, styles, symbols, groups, boxes, spacing, rules,
              penalties, tables, sections, paragraphs, lists, expressions, references, citations,
              footnotes, counters, theorems, floats, algorithms, illustrations, colors, requests, verbatim,
-             plots, languages);
+             plots, diagrams, languages);
 
         Logger::log(Logger::Type::Layout, Logger::Level::Informative,
                     "Render primitives installed");
@@ -40,7 +40,7 @@ namespace render::primitives {
         // break of no size, which is what was written and not an error.
         // Colors reports only a color it was asked to define and could not;
         // one it is asked to use and cannot read is just black.
-        const std::array<const std::vector<syntax::Traceback>*, 22> lists_{
+        const std::array<const std::vector<syntax::Traceback>*, 23> lists_{
             &page.tracebacks(), &typeface.tracebacks(), &styles.tracebacks(),
             &boxes.tracebacks(), &tables.tracebacks(), &sections.tracebacks(),
             &paragraphs.tracebacks(), &lists.tracebacks(), &expressions.tracebacks(),
@@ -48,7 +48,7 @@ namespace render::primitives {
             &counters.tracebacks(), &theorems.tracebacks(), &floats.tracebacks(), &algorithms.tracebacks(),
             &illustrations.tracebacks(),
             &requests.tracebacks(),
-            &colors.tracebacks(), &verbatim.tracebacks(), &plots.tracebacks(), &languages.tracebacks(),
+            &colors.tracebacks(), &verbatim.tracebacks(), &plots.tracebacks(), &diagrams.tracebacks(), &languages.tracebacks(),
         };
 
         std::size_t total = 0;

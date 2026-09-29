@@ -90,6 +90,10 @@
 \@providepackage{bibentry,chapterbib,multibib,chemfig,nicematrix,tabularray,unitsdef,SIunits,sistyle}
 \@providepackage{hepnames,hepparticles,duckuments,tikzducks,bxcoloremoji}
 
+% Packages whose drawings the engine makes itself, as TikZ pictures: xy-pic's
+% \xymatrix, amscd's CD, Qcircuit's circuits and qtree's trees.
+\@providepackage{xy,amscd,qcircuit,qtree}
+
 % Packages that are another under a newer or an older name, read as that one.
 \@setvariable{alias.xurl}{url}
 \@setvariable{alias.breakurl}{url}
@@ -109,6 +113,8 @@
 \@setvariable{alias.circuitikz}{tikz}
 \@setvariable{alias.pgfplotstable}{pgfplots}
 \@setvariable{alias.fontawesome}{fontawesome5}
+\@setvariable{alias.xypic}{xy}
+\@setvariable{alias.tikz-qtree}{tikz}
 
 % \bibliographystyle names the style \bibliography sets a .bib file's entries
 % in -- plain, unsrt, abbrv, alpha, ieeetr, plainnat, unsrtnat, abbrvnat; a
