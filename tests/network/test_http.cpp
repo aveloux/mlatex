@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <string>
 #include <vector>
 
 // What a document reads by name: a file on disk, found against a base when it

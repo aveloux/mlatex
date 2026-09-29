@@ -3,7 +3,6 @@
 #include "render/primitives/algorithms.hpp"
 #include "render/primitives/numeral.hpp"
 #include "render/primitives/styles.hpp"
-#include "syntax/argument.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
 

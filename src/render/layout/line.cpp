@@ -7,12 +7,10 @@
 #include "layout/line.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <utility>
 #include <vector>
-
-#include <algorithm>
-#include <array>
 
 namespace render::layout {
 

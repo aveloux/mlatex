@@ -65,14 +65,6 @@ namespace syntax {
         /// @complexity O(1).
         [[nodiscard]] std::size_t size() const noexcept;
 
-        /// @brief How many tokens have been consumed in total.
-        ///
-        /// Monotonic across injections, unlike a positional index, which stops
-        /// meaning anything once expansion starts pushing tokens back.
-        ///
-        /// @complexity O(1).
-        [[nodiscard]] std::size_t consumed() const noexcept;
-
         /// @brief Discards everything pending.
         /// @complexity O(n).
         void dispose() noexcept;
@@ -105,7 +97,6 @@ namespace syntax {
         /// them anyway.
         std::vector<Token> tokens{};
         std::size_t depth = 0;    ///< How many of #tokens are still to be read.
-        std::size_t served = 0;   ///< How many tokens have been read in total.
         std::size_t unread = 0;  ///< How many of #tokens, from the first, are the document's unread.
     };
 

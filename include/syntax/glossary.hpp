@@ -55,9 +55,6 @@ namespace syntax {
         /// @complexity O(1) expected.
         [[nodiscard]] static std::optional<std::string_view> get(std::string_view name) noexcept;
 
-        /// @brief How many commands it holds.
-        [[nodiscard]] static std::size_t size() noexcept;
-
     private:
         std::vector<bool> tried{};   ///< Names asked about already, by symbol.
     };

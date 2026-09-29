@@ -534,9 +534,24 @@ font folders are listed only for a script the engine carries no face for.
 - `#embed` needs no pragmas: Clang's claim that it is an extension under
   C++26 is turned off once in CMakeLists.txt, and the
   `#if defined(__clang__)` blocks around the three files that embed are gone.
+- `CMakePresets.json` has `debug` and `release` presets on clang-cl, the
+  debug one exporting compile commands, so an IDE -- CLion with its Visual
+  Studio toolchain -- reads the code as C++26 rather than through cl, which
+  cannot configure the project and leaves every file unresolved.
 
 ### Removed
 
+- **Code nothing runs**, found by relinking the engine and the C library
+  with every function a section of its own and asking the linker what it
+  threw away, then by clang-tidy and a build with Clang's unreachable-code,
+  unused-macro and unused-member checks on: `ligate()`, which nothing called;
+  `Cursor::consumed()` and the count of tokens it read, kept up on every
+  token for a test alone; `Glossary::size()`; 23 `#include`s nothing in
+  their file used, and one included twice. `Glossary::define` looks its line
+  up through `Glossary::get`, as a reader of the class expects.
+- The engine never uses the sandbox (`memory/sandbox`: `VM`, `Allocator`,
+  `Policy`), which only its own tests run; it is kept, and says so here,
+  rather than deleted without asking.
 - The old `render/primitives/structure`, `configuration` and `expression`
   folders, replaced by one flat module per concern; fontconfig lookup, in
   favour of the font library over `assets/fonts`; margin protrusion; the

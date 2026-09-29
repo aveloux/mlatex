@@ -17,7 +17,7 @@ int main() {
     assert((!cursor.empty() && cursor.size() == 3) && "a cursor holds what it was made with");
     assert((cursor.lookahead(0).text == "a" && cursor.lookahead(2).text == "c") && "lookahead reads without taking");
     assert((cursor.advance().text == "a") && "advance takes the first");
-    assert((cursor.size() == 2 && cursor.consumed() == 1) && "one taken, two left");
+    assert((cursor.size() == 2 && cursor.lookahead(0).text == "b") && "one taken, two left");
 
     // Injected tokens are read before what was already pending.
     const std::vector<syntax::Token> batch{letter("x", 4), letter("y", 5)};

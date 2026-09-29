@@ -10,7 +10,6 @@
 /// box safe to write anything in.
 #include "render/primitives/boxes.hpp"
 #include "render/primitives/colors.hpp"
-#include "render/primitives/styles.hpp"
 #include "layout/line.hpp"
 #include "layout/paragraph.hpp"
 #include "logger.hpp"
@@ -18,7 +17,6 @@
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"
 #include "syntax/semantics/scope.hpp"
-#include "syntax/semantics/union.hpp"
 
 #include <algorithm>
 #include <charconv>

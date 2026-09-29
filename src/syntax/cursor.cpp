@@ -40,7 +40,6 @@ namespace syntax {
         if (this->depth == 0) return {};
 
         const Token token = this->tokens.data()[--this->depth];
-        this->served++;
         if (this->depth < this->unread) this->unread = this->depth;
         Logger::log(Logger::Type::Mouth, Logger::Level::Traceback,
                     "Cursor -> [pending={}, text='{}']", this->depth, token.text);
@@ -106,10 +105,6 @@ namespace syntax {
 
     std::size_t Cursor::size() const noexcept {
         return this->depth;
-    }
-
-    std::size_t Cursor::consumed() const noexcept {
-        return this->served;
     }
 
     void Cursor::dispose() noexcept {

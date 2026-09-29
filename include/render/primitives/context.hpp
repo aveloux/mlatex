@@ -335,49 +335,6 @@ namespace render::primitives {
         return scanned ? static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale) : 0.0f;
     }
 
-    /// @brief Text as it is to be set: TeX's keyboard spellings of the marks a
-    ///        keyboard has no key for, turned into the marks themselves.
-    ///
-    /// Three hyphens are an em dash and two an en dash; a backtick opens a
-    /// quotation and an apostrophe closes one, doubled for a double one.
-    /// Running text is spelled this way as the document appends it; text a
-    /// primitive shapes itself -- a heading, a caption, a table's cell --
-    /// comes through here first, so `Navier--Stokes` reads the same in a
-    /// heading as in the paragraph under it.
-    ///
-    /// @param text  The text as written.
-    /// @param arena Where a changed copy is kept.
-    /// @return The text itself when nothing in it changes, or the changed copy.
-    /// @complexity O(n) in the text's length.
-    inline std::string_view ligate(const std::string_view text, memory::Arena& arena) {
-        if (text.find_first_of("-`'") == std::string_view::npos) return text;
-
-        std::string result;
-        result.reserve(text.size() + 8);
-        for (std::size_t at = 0; at < text.size();) {
-            const char mark = text[at];
-            if (mark != '-' && mark != '`' && mark != '\'') {
-                result += mark;
-                ++at;
-                continue;
-            }
-
-            std::size_t run = 0;
-            while (at < text.size() && text[at] == mark) {
-                ++at;
-                ++run;
-            }
-            if (mark == '-') {
-                result += run >= 3 ? "—" : run == 2 ? "–" : "-";
-            } else if (mark == '`') {
-                result += run >= 2 ? "“" : "‘";
-            } else {
-                result += run >= 2 ? "”" : "’";
-            }
-        }
-        return arena.copy(result);
-    }
-
     /// @brief Turns one parsed child into the boxes it stands for.
     ///
     /// Boxes, tables and list items all parse a group and then need its

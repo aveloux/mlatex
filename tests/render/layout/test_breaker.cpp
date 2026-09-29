@@ -1,5 +1,4 @@
 #include "layout/breaker.hpp"
-#include "layout/line.hpp"
 #include "memory/arena.hpp"
 
 #include <cassert>

@@ -15,11 +15,9 @@
 
 #include "syntax/expression/node.hpp"
 #include "syntax/semantics/scope.hpp"
-#include "syntax/semantics/union.hpp"
 
 #include <algorithm>
 #include <array>
-#include <format>
 #include <ranges>
 #include <span>
 #include <string>

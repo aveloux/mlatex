@@ -4,7 +4,6 @@
 #include "render/primitives/illustrations.hpp"
 #include "render/primitives/colors.hpp"
 #include "render/primitives/plots.hpp"
-#include "render/primitives/styles.hpp"
 #include "network/http.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"

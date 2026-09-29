@@ -8,7 +8,6 @@
 #include "syntax/number.hpp"
 #include "syntax/semantics/scope.hpp"
 
-#include <ranges>
 #include <span>
 #include <utility>
 #include <vector>

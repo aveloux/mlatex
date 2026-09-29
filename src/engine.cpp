@@ -12,7 +12,6 @@
 /// - render::primitives::Context holds a reference to the block module, which
 ///   the syntax Wrapper also owns, so the syntax layer is installed first.
 #include "engine.hpp"
-#include "logger.hpp"
 #include "layout/document.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"

@@ -4,12 +4,39 @@
     {
       "name": "windows-clang",
       "displayName": "Windows (clang-cl)",
-      "description": "The clang-cl Visual Studio installs beside cl, under VC/Tools/Llvm: it compiles C++26 and #embed, which cl does not yet. Run from a Developer shell so the Windows SDK and the MSVC library are found.",
+      "description": "The clang-cl Visual Studio installs beside cl, under VC/Tools/Llvm: it compiles C++26 and #embed, which cl does not yet. Run from a Developer shell -- or, in CLion, with the Visual Studio toolchain -- so the Windows SDK, the MSVC library and clang-cl itself are found.",
       "generator": "Ninja",
       "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl"
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (clang-cl)",
+      "description": "A checked build with clang-cl: asserts on, no optimisation. The profile an IDE should read the code with, since cl cannot configure the project at all.",
+      "inherits": "windows-clang",
+      "binaryDir": "${sourceDir}/cmake-build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (clang-cl)",
+      "description": "The build that ships: optimised across the whole engine, stripped, asserts off.",
+      "inherits": "windows-clang",
+      "binaryDir": "${sourceDir}/cmake-build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -27,6 +54,14 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
     {
       "name": "wasm",
       "configurePreset": "wasm",

@@ -7,13 +7,11 @@
 #include "render/primitives/tables.hpp"
 #include "render/primitives/colors.hpp"
 #include "syntax/argument.hpp"
-#include "syntax/number.hpp"
 #include "layout/line.hpp"
 #include "layout/paragraph.hpp"
 #include "logger.hpp"
 
 #include "syntax/semantics/scope.hpp"
-#include "syntax/semantics/union.hpp"
 
 #include <algorithm>
 #include <array>

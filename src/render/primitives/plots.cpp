@@ -2,7 +2,6 @@
 /// @brief pgfplots: an axis and its plots, worked out as the axis closes and
 ///        drawn with TikZ's own `\\draw` and `\\node` in the picture around it.
 #include "render/primitives/plots.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
 
 #include <algorithm>

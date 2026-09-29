@@ -3,7 +3,6 @@
 #include "memory/arena.hpp"
 
 #include <cassert>
-#include <initializer_list>
 #include <vector>
 
 // The pager: a column of blocks cut into pages -- a block that does not fit

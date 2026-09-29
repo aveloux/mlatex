@@ -1,5 +1,4 @@
 #include "engine.hpp"
-#include "render/primitives/diagrams.hpp"
 
 #include <algorithm>
 #include <cassert>

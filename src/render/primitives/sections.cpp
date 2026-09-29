@@ -15,7 +15,6 @@
 #include "logger.hpp"
 
 #include "syntax/semantics/scope.hpp"
-#include "syntax/semantics/union.hpp"
 
 #include <algorithm>
 #include <array>

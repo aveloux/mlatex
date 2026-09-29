@@ -1,7 +1,6 @@
 /// @file
 /// @brief Color primitives: `\\textcolor`, `\\definecolor` and `\\colorlet`.
 #include "render/primitives/colors.hpp"
-#include "layout/line.hpp"
 #include "logger.hpp"
 
 #include "syntax/argument.hpp"

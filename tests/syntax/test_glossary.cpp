@@ -82,7 +82,6 @@ static void sets(const std::string_view document, const std::string_view expecte
 
 int main() {
     // --- The table the compiler builds ----------------------------------------------------
-    assert((syntax::Glossary::size() > 300) && "the glossary holds its commands");
     const auto line = syntax::Glossary::get("\\contour");
     assert((line && *line == "\\contour[3][]{#3}") && "a command is found by its name, its line whole");
     assert((!syntax::Glossary::get("\\cont")) && "a name is found whole, not by a prefix of one");

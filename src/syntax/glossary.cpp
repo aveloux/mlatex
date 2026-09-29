@@ -67,7 +67,7 @@ namespace syntax {
 
         // A name the parser reads itself means something already.
         if (mouth.known(token.symbol)) return false;
-        const auto line = catalog.get(token.text);
+        const auto line = get(token.text);
         if (!line) return false;
 
         // The stream is a stack: the line goes in front of the name, and
@@ -82,10 +82,6 @@ namespace syntax {
 
     std::optional<std::string_view> Glossary::get(const std::string_view name) noexcept {
         return catalog.get(name);
-    }
-
-    std::size_t Glossary::size() noexcept {
-        return count;
     }
 
 }

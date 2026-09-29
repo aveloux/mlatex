@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <string>
 #include <string_view>
 
 // The arena hands out memory by moving a pointer, grows by whole blocks, and

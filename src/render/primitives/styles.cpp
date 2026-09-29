@@ -9,7 +9,6 @@
 #include "logger.hpp"
 
 #include "syntax/semantics/scope.hpp"
-#include "syntax/semantics/union.hpp"
 
 #include <array>
 #include <charconv>
@@ -20,7 +19,6 @@
 #include <format>
 #include <span>
 #include <string>
-#include <utility>
 
 namespace render::primitives {
 

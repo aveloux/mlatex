@@ -8,7 +8,6 @@
 #include "typography/hyphenator.hpp"
 #include "logger.hpp"
 
-#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <string>
