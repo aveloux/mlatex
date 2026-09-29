@@ -1,0 +1,10 @@
+% minted: source code, which minted colors through Pygments. The minted block
+% and \mintinline are the engine's own and set the code as a listing is,
+% in the typewriter face; the language is read and let go.
+
+\@requirepackage{listings}
+\@define\inputminted[3][]{\lstinputlisting{#3}}
+\@define\setminted[2][]{}
+\@define\setmintedinline[2][]{}
+\@define\usemintedstyle[2][]{}
+\@define\newminted[3][]{}

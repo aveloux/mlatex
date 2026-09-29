@@ -1,0 +1,2 @@
+% marginnote: a note in the margin that never floats. \marginnote is the
+% engine's own, set as \marginpar is.

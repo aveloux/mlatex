@@ -1,0 +1,147 @@
+% beamer: slides. Each frame is a page of its own, 128 by 96 millimetres,
+% its title in the structure's blue at its head and what it holds in the
+% middle of the rest, set in eleven-point sans serif, ragged right, with
+% the class's blue triangles for bullets:
+%
+%   \begin{frame}{Motivation}
+%   \begin{itemize}
+%   \item<1-> First point
+%   \end{itemize}
+%   \end{frame}
+%
+% The frame, its columns and its blocks are the engine's own. A frame's
+% overlays -- \pause, \only<2>, \item<2-> -- are one page here, the last of
+% its slides, as beamer's handouts set it; its themes are read and let go.
+
+\@requirepackage{amsmath}
+\@requirepackage{amssymb}
+\@requirepackage{amsthm}
+\@requirepackage{hyperref}
+
+\pagewidth=128mm \pageheight=96mm
+\@leftmargin=1cm \@rightmargin=1cm \@topmargin=0.35cm \@bottommargin=0.6cm
+\setlength{\parindent}{0pt}
+\renewcommand{\familydefault}{\sfdefault}
+\@define\@bodyshape{\raggedright}
+\raggedright
+\pagestyle{empty}
+
+% The default theme's colors: the structure's blue, an alert's red, and an
+% example's green.
+\definecolor{structure}{rgb}{0.2,0.2,0.7}
+\definecolor{alerted}{rgb}{1,0,0}
+\definecolor{example}{rgb}{0,0.5,0}
+
+% The title, subtitle, authors, institute and date, each with the short form
+% a theme's foot would carry, read and let go.
+\@define\@subtitle{}
+\@define\@institute{}
+\@define\title[2][]{\@define\thetitle{#2}}
+\@define\subtitle[2][]{\@define\@subtitle{\par\vskip .3em{\normalsize #2\par}}}
+\@define\author[2][]{\@define\theauthor{#2}}
+\@define\date[2][]{\@define\thedate{#2}}
+\@define\institute[2][]{\@define\@institute{#2}}
+\@define\titlegraphic[1]{}
+\@define\logo[1]{}
+\@define\inserttitle{\thetitle}
+\@define\insertauthor{\theauthor}
+\@define\insertdate{\thedate}
+\@define\insertinstitute{\@institute}
+\@define\insertframenumber{\thepage}
+
+\@define\titlepage{%
+\begin{center}%
+{\color{structure}{\Large\thetitle\par}\@subtitle}%
+\vskip 1.5em%
+{\small\theauthor\par}%
+\vskip .5em%
+{\scriptsize\@institute\par}%
+\vskip .5em%
+{\small\thedate\par}%
+\end{center}}
+\@define\maketitle{\titlepage}
+
+% A frame by its command, `\frame{\titlepage}`, and a frame's title and
+% subtitle wherever they are written.
+\@define\frame{\@ifnextchar<{\@frameoverlay}{\@framed}}
+\@define\@frameoverlay<#1>{\@framed}
+\@define\@framed[2][]{\begin{frame}[#1]#2\end{frame}}
+\@define\frametitle{\@ifnextchar<{\@titleoverlay}{\@frametitle}}
+\@define\@titleoverlay<#1>{\@frametitle}
+\@define\@frametitle[2][]{{\Large\color{structure}#2\par}\vskip .2em}
+\@define\framesubtitle[2][]{{\small\color{structure}#2\par}\vskip .2em}
+
+% Sections make no heading: each is a line of the contents, and whatever
+% \AtBeginSection asked for -- an outline frame, as a rule.
+\@define\@sectionhook{}
+\@define\@subsectionhook{}
+\@define\AtBeginSection[2][]{\@define\@sectionhook{#2}}
+\@define\AtBeginSubsection[2][]{\@define\@subsectionhook{#2}}
+\@define\section{\@ifstar{\@gobble}{\@beamersection}}
+\@define\@beamersection[2][]{\refstepcounter{section}\addcontentsline{toc}{section}{#2}\@sectionhook}
+\@define\subsection{\@ifstar{\@gobble}{\@beamersubsection}}
+\@define\@beamersubsection[2][]{\refstepcounter{subsection}\addcontentsline{toc}{subsection}{#2}\@subsectionhook}
+
+% The contents are an outline: no heading, no pages, and a section's
+% options -- `[currentsection]` -- read and let go.
+\@setvariable{contents.bare}{true}
+\let\@contents\tableofcontents
+\@define\tableofcontents[1][]{\@contents}
+
+% Bullets are the structure's triangles, smaller a level down.
+\@define\labelitemi{\textcolor{structure}{\scriptsize$\blacktriangleright$}}
+\@define\labelitemii{\textcolor{structure}{\tiny$\blacktriangleright$}}
+\@define\labelitemiii{\textcolor{structure}{\tiny$\blacktriangleright$}}
+
+% The theorems beamer declares, unnumbered, as its default theme sets them.
+\theoremstyle{plain}
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{corollary}{Corollary}
+\newtheorem*{fact}{Fact}
+\newtheorem*{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
+\newtheorem*{definitions}{Definitions}
+\newtheorem*{example}{Example}
+\newtheorem*{examples}{Examples}
+\theoremstyle{plain}
+
+% Emphasis in the alert's red, and in the structure's blue.
+\@define\alert{\@ifnextchar<{\@alertoverlay}{\@alerted}}
+\@define\@alertoverlay<#1>{\@alerted}
+\@define\@alerted[1]{\textcolor{alerted}{#1}}
+\@define\structure[1]{\textcolor{structure}{#1}}
+
+% Overlays: every slide of a frame is the one page, so what any slide shows
+% is shown, and \alt's first choice.
+\@define\@overlay<#1>{}
+\@define\pause{\@ifnextchar[{\@gobbleoption}{}}
+\@define\onslide{\@ifnextchar<{\@overlay}{}}
+\@define\only{\@ifnextchar<{\@overlay}{}}
+\@define\uncover{\@ifnextchar<{\@overlay}{}}
+\@define\visible{\@ifnextchar<{\@overlay}{}}
+\@define\invisible{\@ifnextchar<{\@overlay}{}}
+\@define\alt{\@ifnextchar<{\@alternative}{\@alternative<>}}
+\@define\@alternative<#1>#2#3{#2}
+\@define\mode<#1>{}
+\@define\note[2][]{}
+\@define\beamerdefaultoverlayspecification[1]{}
+
+% Themes, colors, fonts and templates: the default theme's, whatever the
+% document asks for.
+\@define\usetheme[2][]{}
+\@define\usecolortheme[2][]{}
+\@define\usefonttheme[2][]{}
+\@define\useinnertheme[2][]{}
+\@define\useoutertheme[2][]{}
+\@define\setbeamercolor{\@ifstar{\@gobbletwo}{\@gobbletwo}}
+\@define\setbeamerfont{\@ifstar{\@gobbletwo}{\@gobbletwo}}
+\@define\setbeamersize[1]{}
+\@define\setbeamercovered[1]{}
+\@define\setbeamertemplate[1]{\@templateoptions}
+\@define\@templateoptions{\@ifnextchar[{\@templateoption}{\@ifnextchar\bgroup{\@gobble}{}}}
+\@define\@templateoption[#1]{\@templateoptions}
+\@define\usebeamercolor[2][]{}
+\@define\usebeamerfont{\@ifstar{\@gobble}{\@gobble}}
+\@define\usebeamertemplate{\@ifstar{\@gobble}{\@gobble}}
+\@define\beamertemplatenavigationsymbolsempty{}

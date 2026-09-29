@@ -1,0 +1,5 @@
+% blindtext: text to fill a page with, the printer's Lorem ipsum.
+
+\@requirepackage{lipsum}
+\@define\blindtext{\lipsum[1]}
+\@define\Blindtext{\lipsum[1-5]}

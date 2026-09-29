@@ -1,0 +1,13 @@
+% ulem: underlined, doubly underlined, wavy and struck-out text. \emph stays
+% italic, as with the normalem option.
+
+\newsavebox\@ulem
+\@define\uline[1]{\underline{#1}}
+\@define\uuline[1]{\underline{\underline{#1}}}
+\@define\uwave[1]{\underline{#1}}
+\@define\dashuline[1]{\underline{#1}}
+\@define\dotuline[1]{\underline{#1}}
+\@define\sout[1]{\sbox\@ulem{#1}\rlap{\usebox\@ulem}\rule[0.55ex]{\wd\@ulem}{0.4pt}}
+\@define\xout[1]{\sout{#1}}
+\@define\normalem{}
+\@define\ULforem{}

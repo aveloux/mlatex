@@ -1,0 +1,9 @@
+% longtable: a table that may run over pages. The block is the engine's own
+% table, which a page may already end between rows; the marks that repeat a
+% head and a foot on each page are read and let go, the head set once.
+
+\@define\endfirsthead{}
+\@define\endhead{}
+\@define\endfoot{}
+\@define\endlastfoot{}
+\@define\LTcapwidth{\linewidth}

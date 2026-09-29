@@ -1,0 +1,17 @@
+% Romanian: babel's captions for it, and its date: 28 septembrie 2026.
+
+\@define\captionsromanian{%
+\@define\abstractname{Rezumat}%
+\@define\proofname{Demonstrație}%
+\@define\figurename{Figura}%
+\@define\tablename{Tabela}%
+\@define\refname{Bibliografie}%
+\@define\bibname{Bibliografie}%
+\@define\contentsname{Cuprins}%
+\@define\listfigurename{Listă de figuri}%
+\@define\listtablename{Listă de tabele}%
+\@define\appendixname{Anexa}%
+\@define\partname{Partea}%
+\@define\chaptername{Capitolul}%
+\@define\indexname{Glosar}}
+\@define\dateromanian{\@define\today{\@evaluate{\day}~\ifcase\month\or ianuarie \or februarie \or martie \or aprilie \or mai \or iunie \or iulie \or august \or septembrie \or octombrie \or noiembrie \or decembrie \fi\@evaluate{\year}}}

@@ -1,0 +1,15 @@
+% ctable: a table and its float in one command, with booktabs' rules --
+%   \ctable[caption = Results, label = tab:results]{lr}{\tnote{Rounded.}}{\FL a & b \ML 1 & 2 \LL}
+% -- set here as a centred table, where it stands, its notes under it.
+% The float's keys are read and let go.
+
+\@requirepackage{booktabs}
+
+\@define\ctable[4][]{\par\begin{center}\begin{tabular}{#2}#4\end{tabular}\par{\footnotesize #3}\end{center}\par}
+\@define\tnote[2][a]{\textsuperscript{#1}\,#2}
+\@define\tmark[1][a]{\textsuperscript{#1}}
+\@define\FL{\toprule}
+\@define\ML{\\\midrule}
+\@define\LL{\\\bottomrule}
+\@define\NN{\\}
+\@define\setupctable[1]{}

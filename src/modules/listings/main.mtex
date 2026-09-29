@@ -1,0 +1,20 @@
+% listings: source code as it was typed. The lstlisting block, \lstinline and
+% \lstinputlisting are the engine's own, reading the text before any of it can
+% mean anything; what a listing's options leave out, \lstset gives every
+% listing: \lstset{basicstyle=\small, numbers=left, frame=single}.
+%
+% A listing is set in the typewriter face at its basic style's size, its
+% lines numbered in the margin when numbers=left, ruled above and below for
+% any frame, and captioned "Listing 1" above when it has a caption.
+
+\newcounter{lstlisting}
+\@define\lstlistingname{Listing}
+\@define\lstlistlistingname{Listings}
+\@define\lstset[1]{\@setkeys{lst}{#1}}
+
+% Styles and languages a document names for later: a listing's highlighting
+% is its typewriter face alone here, so there is nothing for these to keep.
+\@define\lstdefinestyle[2]{}
+\@define\lstdefinelanguage[2]{}
+\@define\lstloadlanguages[1]{}
+\@define\lstlistoflistings{}

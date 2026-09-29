@@ -1,0 +1,10 @@
+% array: more of what a table's preamble may say. >{...} and <{...}, m{} and
+% b{} columns, w{}{} and W{}{}, @{} and !{} are read by the tabular itself, and
+% a column type a document declares with \newcolumntype is the engine's own:
+%   \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\@define\arraybackslash{}
+
+% Height added to every row, which a document sets to open a table up:
+% `\setlength{\extrarowheight}{2pt}`.
+\newdimen\extrarowheight

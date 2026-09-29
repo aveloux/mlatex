@@ -1,0 +1,17 @@
+% Bulgarian: babel's captions for it, and its date: 28 септември 2026 г.
+
+\@define\captionsbulgarian{%
+\@define\abstractname{Резюме}%
+\@define\proofname{Доказателство}%
+\@define\figurename{Фигура}%
+\@define\tablename{Таблица}%
+\@define\refname{Литература}%
+\@define\bibname{Библиография}%
+\@define\contentsname{Съдържание}%
+\@define\listfigurename{Списък на фигурите}%
+\@define\listtablename{Списък на таблиците}%
+\@define\appendixname{Приложение}%
+\@define\partname{Част}%
+\@define\chaptername{Глава}%
+\@define\indexname{Азбучен указател}}
+\@define\datebulgarian{\@define\today{\@evaluate{\day}~\ifcase\month\or януари \or февруари \or март \or април \or май \or юни \or юли \or август \or септември \or октомври \or ноември \or декември \fi\@evaluate{\year}~г.}}

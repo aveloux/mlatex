@@ -1,0 +1,131 @@
+% Packages whose whole job the engine already does, marked loaded so a LaTeX
+% preamble that asks for them reads as it was written. None has a folder of
+% its own, because none would have anything in it:
+%
+%   inputenc, fontenc   every document is UTF-8, shaped straight into
+%                       OpenType faces; there is no encoding to choose
+%   lmodern             Latin Modern is the face the body is set in already
+%   microtype           the line breaker weighs every paragraph as a whole
+%   textcomp            the text symbols are primitives
+%   cite                \cite is a primitive
+%   amsfonts, mathrsfs  \mathbb, \mathfrak and \mathscr are alphabets of the
+%                       maths face
+%   bm                  \bm is the bold maths italic, a primitive
+%   graphicx, graphics  \includegraphics is a primitive, and reads the keys
+%   xcolor, color       \textcolor, \definecolor and \colorlet are primitives
+%   times, mathptmx,    a family of other faces, which a document set here is
+%   palatino, helvet,   set in Latin Modern instead
+%   newtxtext, newtxmath
+%   xparse              \NewDocumentCommand and its tests are the kernel's,
+%                       as they have been in LaTeX's own since 2020
+%   etex, fixltx2e,     what they added to TeX or fixed in LaTeX is how
+%   latexsym, ifxetex,  things are here already
+%   ifpdf, fix-cm
+%   wrapfig, rotating,  wrapfigure, sidewaysfigure, SCfigure and their tables
+%   sidecap             are floats of the engine's own
+%   lscape, pdflscape   the landscape block, set as the page around it is
+%   paralist,           compactitem, asparaenum and the rest, and a label
+%   enumerate           given as [(a)], are the engine's own lists
+%   indentfirst,        read; a section's first paragraph and the
+%   footmisc            footnotes are set as the class sets them
+%   bookmark, hyperxmp  a PDF's outline and metadata, which hyperref reads
+%   multicol            the multicols block, the engine's own
+
+\@providepackage{inputenc,fontenc,lmodern,microtype,textcomp,cite}
+\@providepackage{amsfonts,mathrsfs,bm,graphicx,graphics,xcolor,color}
+\@providepackage{times,mathptmx,palatino,helvet,newtxtext,newtxmath}
+\@providepackage{xparse,etex,fixltx2e,latexsym,ifxetex,ifpdf,fix-cm}
+\@providepackage{wrapfig,rotating,sidecap,lscape,pdflscape,paralist,enumerate}
+\@providepackage{indentfirst,footmisc,bookmark,hyperxmp,multicol}
+
+% ---------------------------------------------------------------------------
+% The rest of CTAN a document commonly asks for, with nothing to read here,
+% each for one of these reasons. Their commands, where a document writes
+% them, are the glossary's (assets/glossary.mtex), read when first used.
+%
+% Faces: a document set here is set in the faces the engine carries -- Latin
+% Modern, New Computer Modern, STIX Two -- whichever family it names.
+\@providepackage{mathpazo,newpxtext,newpxmath,libertine,libertinus,libertinust1math,fourier,kpfonts}
+\@providepackage{charter,XCharter,sourcesanspro,sourcecodepro,sourceserifpro,inconsolata,beramono,courier}
+\@providepackage{avant,bookman,tgtermes,tgpagella,tgheros,tgbonum,tgschola,tgcursor,cm-super,ae,aecompl}
+\@providepackage{eulervm,euler,stix,stix2,calrsfs,bbold,txfonts,pxfonts,mathabx,MnSymbol,fdsymbol,fontaxes}
+\@providepackage{anyfontsize,mathspec,xltxtra,xunicode,calligra,aurical,cmbright,mlmodern,opensans,roboto}
+\@providepackage{lato,merriweather,FiraSans,FiraMono,noto,dejavu,arev,gfsartemisia,gfsdidot,marvosym}
+\@providepackage{wasysym,bbding,textgreek,academicons,tikzsymbols}
+%
+% What TeX's engines differ in, what a driver or LaTeX's own internals need,
+% and what the kernel does already: nothing a document sees.
+\@providepackage{epstopdf,iftex,ifluatex,shellesc,catchfile,letltxmacro,silence,xpatch,regexpatch}
+\@providepackage{kvoptions,keyval,xkeyval,pgfkeys,trimspaces,environ,atbegshi,atveryend,everyshi}
+\@providepackage{pdfsync,synctex,pdfcol,ltxcmds,kvsetkeys,gettitlestring,intcalc,bitset,bigintcalc}
+\@providepackage{uniquecounter,auxhook,pdftexcmds,infwarerr,rerunfilecheck,hycolor,accsupp,hypcap}
+\@providepackage{expl3,l3keys2e,currfile,docmute,standalone,import,subfiles,amsbsy,amsopn,amstext}
+\@providepackage{trig,fixmath,filecontents,morefloats,chngcntr,perpage,tex4ht,pdfx}
+%
+% What the page builder and the line breaker do themselves: floats kept in
+% their places and balanced columns, widows and empty pages, where a
+% section starts and how its heading and its contents entry look.
+\@providepackage{balance,flushend,cuted,stfloats,dblfloatfix,nowidow,emptypage,nextpage,changepage}
+\@providepackage{fncychap,sectsty,quotchap,titleps,titletoc,minitoc,etoc,tocbibind,typearea}
+\@providepackage{scrlayer-scrpage,scrextend,floatrow,ccaption,caption3,rotfloat,newfloat,hvfloat}
+\@providepackage{footnote,footnotehyper,manyfoot,bigfoot,endnotes,enotez,xr,xr-hyper,pagecolor}
+\@providepackage{eso-pic,background,draftwatermark,everypage,textpos,transparent,contour}
+%
+% What a PDF reader does with the file, rather than what is on its pages.
+\@providepackage{pdfcomment,animate,media9,attachfile,embedfile}
+%
+% References, numbers and dates, whose commands the glossary gives in the
+% forms the engine writes.
+\@providepackage{nameref,zref,varioref,prettyref,refcount,totcount,fancyref,doi,xstring,xifthen}
+\@providepackage{isodate,fmtcount,nth,numprint,index,fixme,changes,mdwlist,overcite,hyphenat}
+%
+% Tables, lists, text and science, set with what the engine has: dashed
+% rules as rules, striped rows plain, the physicists' and chemists'
+% notations by their commands.
+\@providepackage{arydshln,boldline,tablefootnote,threeparttablex,supertabular,xtab,tabto,adjustbox}
+\@providepackage{stackengine,tabstackengine,scalerel,relsize,moresize,underscore,lettrine}
+\@providepackage{isomath,derivative,diffcoef,esdiff,commath,mleftright,delimset,interval,slashed}
+\@providepackage{hepunits,chemformula,chemmacros,mathdots,amsxtra,accents,yhmath,qrcode,dirtree}
+\@providepackage{CJK,CJKutf8,xeCJK,ctex,luacode,svg,overpic,tikzpagenodes,tikzscale}
+\@providepackage{bibentry,chapterbib,multibib,chemfig,nicematrix,tabularray,unitsdef,SIunits,sistyle}
+\@providepackage{hepnames,hepparticles,duckuments,tikzducks,bxcoloremoji}
+
+% Packages that are another under a newer or an older name, read as that one.
+\@setvariable{alias.xurl}{url}
+\@setvariable{alias.breakurl}{url}
+\@setvariable{alias.soulutf8}{soul}
+\@setvariable{alias.physics2}{physics}
+\@setvariable{alias.wrapfig2}{wrapfig}
+\@setvariable{alias.subfigure}{subfig}
+\@setvariable{alias.epsfig}{graphicx}
+\@setvariable{alias.IEEEtrantools}{amsmath}
+\@setvariable{alias.algorithmicx}{algpseudocode}
+\@setvariable{alias.algpascal}{algpseudocode}
+\@setvariable{alias.algc}{algpseudocode}
+\@setvariable{alias.mwe}{blindtext}
+\@setvariable{alias.pdfpages}{graphicx}
+\@setvariable{alias.fvextra}{fancyvrb}
+\@setvariable{alias.slashbox}{diagbox}
+\@setvariable{alias.circuitikz}{tikz}
+\@setvariable{alias.pgfplotstable}{pgfplots}
+\@setvariable{alias.fontawesome}{fontawesome5}
+
+% \bibliographystyle names the style \bibliography sets a .bib file's entries
+% in -- plain, unsrt, abbrv, alpha, ieeetr, plainnat, unsrtnat, abbrvnat; a
+% thebibliography list written into the document is formatted already.
+\@define\bibliographystyle[1]{\@setvariable{bibliography.style}{#1}}
+
+% What the references are set in, natbib's name for it: the body's face
+% here, and a class's own where it has one.
+\@define\bibfont{}
+
+% What they are headed with: an article's unnumbered section titled
+% \refname, and a report's or a book's chapter titled \bibname, as those
+% classes set them.
+\@define\@bibkind{section}
+\@define\@bibtitle{\refname}
+\@define\@bibheading{\csname\@bibkind\endcsname*{\@bibtitle}}
+
+% What \bibliography's entries are set with: a pause between the blocks of
+% an entry, as LaTeX's own \newblock leaves one.
+\@define\newblock{\hskip .11em plus .33em minus .07em\relax}

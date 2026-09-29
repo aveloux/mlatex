@@ -1,0 +1,5 @@
+% needspace: a page break unless so much room is left. The pages here are
+% broken where the room runs out, so the request is read and let go.
+
+\@define\needspace[1]{}
+\@define\Needspace{\@ifstar{\@gobble}{\@gobble}}

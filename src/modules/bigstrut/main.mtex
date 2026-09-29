@@ -1,0 +1,3 @@
+% bigstrut: a strut taller than a line, for a cell a rule runs close to.
+
+\@define\bigstrut[1][]{\strut}

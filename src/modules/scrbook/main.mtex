@@ -1,0 +1,3 @@
+% scrbook: KOMA-Script's book, whose commands are scrartcl's.
+
+\@requirepackage{scrartcl}

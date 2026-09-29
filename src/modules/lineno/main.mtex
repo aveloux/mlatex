@@ -1,0 +1,6 @@
+% lineno: numbered lines for a draft. The lines are set unnumbered.
+
+\@define\linenumbers{}
+\@define\nolinenumbers{}
+\@define\modulolinenumbers[1][]{}
+\@define\resetlinenumber[1][]{}

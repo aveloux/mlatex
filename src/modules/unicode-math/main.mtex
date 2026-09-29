@@ -1,0 +1,24 @@
+% unicode-math: formulas in an OpenType maths face, which is how the engine
+% sets every formula already. \setmathfont is fontspec's here, naming the
+% maths face as the system names it; the \sym alphabets are the \math ones
+% under their other names.
+%
+%   \setmathfont{STIX Two Math}   $\symbf{v} = \symcal{A}\symbfit{x}$
+
+\@requirepackage{fontspec}
+
+\@define\unimathsetup[1]{}
+\@define\symup[1]{\mathrm{#1}}
+\@define\symrm[1]{\mathrm{#1}}
+\@define\symit[1]{\mathit{#1}}
+\@define\symbf[1]{\mathbf{#1}}
+\@define\symbfup[1]{\mathbf{#1}}
+\@define\symbfit[1]{\bm{#1}}
+\@define\symsf[1]{\mathsf{#1}}
+\@define\symsfup[1]{\mathsf{#1}}
+\@define\symtt[1]{\mathtt{#1}}
+\@define\symcal[1]{\mathcal{#1}}
+\@define\symscr[1]{\mathscr{#1}}
+\@define\symbb[1]{\mathbb{#1}}
+\@define\symfrak[1]{\mathfrak{#1}}
+\@define\symnormal[1]{#1}

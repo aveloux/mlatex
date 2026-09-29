@@ -1,0 +1,24 @@
+% physics: the notations a physicist writes every other line, each a fenced
+% group or a fraction over primitives the engine already has.
+
+% A fenced group for the marks that wrap a whole expression rather than sit
+% beside it. \ip is written with a comma, <a, b>, where physics itself sets
+% a bar.
+\@define\abs[1]{\left| #1 \right|}
+\@define\norm[1]{\left\| #1 \right\|}
+\@define\ip[2]{\left\langle #1, #2 \right\rangle}
+
+% \dv{f}{x} is df/dx; \pdv is the same with a curly d, for a partial. \pd is
+% the name this engine gave the partial first, kept so a document written
+% against it still reads.
+\@define\dv[2]{\frac{d #1}{d #2}}
+\@define\pdv[2]{\frac{\partial #1}{\partial #2}}
+\@alias\pd\pdv
+
+% The real and imaginary part operators, each its named function set
+% upright the way \det and \dim already are -- physics' replacement for
+% LaTeX's own fraktur \Re and \Im. \Arg, a complex number's argument, is
+% not physics' own and sits beside the two it is used with.
+\@define\Re{\mathrm{Re}}
+\@define\Im{\mathrm{Im}}
+\@define\Arg{\mathrm{Arg}}

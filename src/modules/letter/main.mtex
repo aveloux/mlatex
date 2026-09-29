@@ -1,0 +1,46 @@
+% letter: LaTeX's letter class. Each letter block is a page of its own to
+% the recipient it names; \opening sets the sender's address and the date at
+% the right, the recipient's at the left, and the salutation, and \closing
+% the valediction and the signature under it, halfway across:
+%
+%   \address{Street \\ Town}   \signature{A. Writer}
+%   \begin{letter}{Recipient \\ Their street}
+%   \opening{Dear Sir,} ... \closing{Yours faithfully,}
+%   \ps{P.S. ...}  \encl{A copy}  \cc{Another}
+%   \end{letter}
+
+\@leftmargin=125pt \@rightmargin=122pt \@topmargin=142pt \@bottommargin=145pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.7em}
+
+\@define\@address{}
+\@define\@signature{}
+\@define\toname{}
+\@define\address[1]{\@define\@address{#1}}
+\@define\signature[1]{\@define\@signature{#1}}
+\@define\name[1]{\@define\@signature{#1}}
+\@define\location[1]{}
+\@define\telephone[1]{}
+\@define\makelabels{}
+\@define\startbreaks{}
+\@define\stopbreaks{}
+\@define\enclname{encl}
+\@define\ccname{cc}
+
+% What the letter block reads first and last: its recipient, on a page
+% numbered from one; and the page ended.
+\@define\@letter[1]{\clearpage\setcounter{page}{1}\@define\toname{#1}\thispagestyle{empty}}
+\@define\@endletter{\par\clearpage}
+
+\@define\opening[1]{%
+{\raggedleft\begin{tabular}{l@{}}\@address\\[1.4em]\thedate\end{tabular}\par}%
+\vspace{1.4em}%
+{\raggedright\toname\par}%
+\vspace{1.4em}%
+#1\par}
+\@define\closing[1]{%
+\par\vspace{0.7em}%
+\noindent\hspace*{0.5\textwidth}\parbox{0.5\textwidth}{\raggedright #1\\[36pt]\@signature}\par}
+\@define\ps{\par}
+\@define\encl[1]{\par\noindent\enclname: #1\par}
+\@define\cc[1]{\par\noindent\ccname: #1\par}

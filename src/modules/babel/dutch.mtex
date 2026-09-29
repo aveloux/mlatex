@@ -1,0 +1,17 @@
+% Dutch: babel's captions for it, and its date: 28 september 2026.
+
+\@define\captionsdutch{%
+\@define\abstractname{Samenvatting}%
+\@define\proofname{Bewijs}%
+\@define\figurename{Figuur}%
+\@define\tablename{Tabel}%
+\@define\refname{Referenties}%
+\@define\bibname{Bibliografie}%
+\@define\contentsname{Inhoudsopgave}%
+\@define\listfigurename{Lijst van figuren}%
+\@define\listtablename{Lijst van tabellen}%
+\@define\appendixname{Bijlage}%
+\@define\partname{Deel}%
+\@define\chaptername{Hoofdstuk}%
+\@define\indexname{Index}}
+\@define\datedutch{\@define\today{\@evaluate{\day}~\ifcase\month\or januari \or februari \or maart \or april \or mei \or juni \or juli \or augustus \or september \or oktober \or november \or december \fi\@evaluate{\year}}}

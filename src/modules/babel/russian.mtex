@@ -1,0 +1,17 @@
+% Russian: babel's captions for it, and its date: 28 сентября 2026 г.
+
+\@define\captionsrussian{%
+\@define\abstractname{Аннотация}%
+\@define\proofname{Доказательство}%
+\@define\figurename{Рис.}%
+\@define\tablename{Таблица}%
+\@define\refname{Список литературы}%
+\@define\bibname{Литература}%
+\@define\contentsname{Содержание}%
+\@define\listfigurename{Список иллюстраций}%
+\@define\listtablename{Список таблиц}%
+\@define\appendixname{Приложение}%
+\@define\partname{Часть}%
+\@define\chaptername{Глава}%
+\@define\indexname{Предметный указатель}}
+\@define\daterussian{\@define\today{\@evaluate{\day}~\ifcase\month\or января \or февраля \or марта \or апреля \or мая \or июня \or июля \or августа \or сентября \or октября \or ноября \or декабря \fi\@evaluate{\year}~г.}}

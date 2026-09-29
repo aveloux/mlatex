@@ -3,6 +3,7 @@
 #include "memory/sandbox/vm.hpp"
 #include "logger.hpp"
 
+#include <algorithm>
 #include <format>
 #include <fstream>
 #include <string>
@@ -11,7 +12,7 @@ namespace sandbox {
 
     VM::VM(const Policy& rules, const std::size_t limit)
         : policy(rules),
-          memory(limit),
+          allocator(limit),
           arena(limit),
           state{},
           lexicon(arena),
@@ -19,13 +20,13 @@ namespace sandbox {
           // Context holds references, so both targets must already exist. The
           // register bank comes from `state`: Union owns the one the scoping
           // machinery unwinds, and a second bank would silently not be scoped.
-          context{policy, state.registers(), wrapper.conditionals()},
+          context{state.registers(), wrapper.conditionals(), wrapper.variables()},
           mouth(syntax::Cursor{}, state, lexicon, arena) {
         wrapper(mouth, context);
     }
 
-    bool VM::eval(const std::string_view code) {
-        faults.clear();
+    bool VM::evaluate(const std::string_view code) {
+        tracebacks_.clear();
         mouth.ingest(code);
 
         // Drive the expander to exhaustion. Everything the document produces
@@ -34,7 +35,7 @@ namespace sandbox {
         while (true) {
             const syntax::Token token = mouth.expand();
 
-            if (mouth.failed()) {
+            if (mouth.error()) {
                 break;
             }
             if (token.empty()) {
@@ -42,25 +43,27 @@ namespace sandbox {
             }
 
             if (++served > policy.tokens) {
-                faults.emplace_back(syntax::Traceback::Type::Memory, token.location,
-                                    std::format("run consumed more than {} tokens", policy.tokens));
+                tracebacks_.emplace_back(
+                    syntax::Traceback::Type::Memory, token.location,
+                    std::format("run consumed more than {} tokens", policy.tokens));
                 break;
             }
 
-            if (state.scope().depth() > policy.depth) {
-                faults.emplace_back(syntax::Traceback::Type::Scope, token.location,
-                                    std::format("scope nested deeper than {}", policy.depth));
+            if (mouth.nesting() > policy.depth) {
+                tracebacks_.emplace_back(
+                    syntax::Traceback::Type::Scope, token.location,
+                    std::format("scope nested deeper than {}", policy.depth));
                 break;
             }
         }
 
-        return !failed();
+        return !error();
     }
 
     bool VM::run(const std::string_view path) {
         if (!policy.read) {
-            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
-                                "policy denies reading files");
+            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                     "policy denies reading files");
             Logger::log(Logger::Type::Semantics, Logger::Level::Error,
                         "policy denies reading files");
             return false;
@@ -68,8 +71,8 @@ namespace sandbox {
 
         std::ifstream file{std::string(path), std::ios::binary | std::ios::ate};
         if (!file) {
-            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
-                                std::format("cannot open {}", path));
+            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                     std::format("cannot open {}", path));
             return false;
         }
 
@@ -78,26 +81,30 @@ namespace sandbox {
 
         std::string content(static_cast<std::size_t>(size), '\0');
         if (size > 0 && !file.read(content.data(), size)) {
-            faults.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
-                                std::format("cannot read {}", path));
+            tracebacks_.emplace_back(syntax::Traceback::Type::Primitive, memory::Location{},
+                                     std::format("cannot read {}", path));
             return false;
         }
 
-        return eval(content);
+        return evaluate(content);
     }
 
     std::vector<syntax::Traceback> VM::tracebacks() const {
         std::vector<syntax::Traceback> gathered = wrapper.tracebacks();
 
-        const auto& expansion = mouth.history();
+        const auto& expansion = mouth.tracebacks();
         gathered.insert(gathered.end(), expansion.begin(), expansion.end());
-        gathered.insert(gathered.end(), faults.begin(), faults.end());
+        gathered.insert(gathered.end(), tracebacks_.begin(), tracebacks_.end());
 
         return gathered;
     }
 
-    bool VM::failed() const noexcept {
-        return wrapper.failed() || mouth.failed() || !mouth.history().empty() || !faults.empty();
+    bool VM::error() const noexcept {
+        // A warning is heard, not failed on.
+        const auto fatal = [](const std::vector<syntax::Traceback>& faults) {
+            return std::ranges::any_of(faults, [](const syntax::Traceback& fault) { return fault.fatal(); });
+        };
+        return mouth.error() || fatal(wrapper.tracebacks()) || fatal(mouth.tracebacks()) || fatal(tracebacks_);
     }
 
 }

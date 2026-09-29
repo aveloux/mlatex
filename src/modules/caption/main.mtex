@@ -1,0 +1,16 @@
+% caption: how captions are set.
+%
+%   \usepackage[font=small, labelfont=bf, labelsep=period]{caption}
+%   \captionsetup{font=small}
+%   \captionof{figure}{A caption outside a float}
+%
+% The caption itself, and \captionof, are the engine's own; they read the
+% package's options -- font, labelfont and labelsep -- as its variables,
+% caption.font and the rest, which the options given to \usepackage already
+% are and \captionsetup sets again.
+
+\@define\captionsetup[2][]{\@setkeys{caption}{#2}}
+\@define\DeclareCaptionFormat[2]{}
+\@define\DeclareCaptionLabelFormat[2]{}
+\@define\DeclareCaptionLabelSeparator[2]{}
+\@define\DeclareCaptionFont[2]{}

@@ -84,6 +84,7 @@ Bbbx, 0x1D569, Unicodes::Category::Ordinary
 Bbby, 0x1D56A, Unicodes::Category::Ordinary
 Bbbz, 0x1D56B, Unicodes::Category::Ordinary
 Bbbzero, 0x1D7D8, Unicodes::Category::Ordinary
+Box, 0x025A1, Unicodes::Category::Ordinary
 Bumpeq, 0x0224E, Unicodes::Category::Relation
 Cap, 0x022D2, Unicodes::Category::Binary
 Colon, 0x02237, Unicodes::Category::Relation
@@ -94,6 +95,8 @@ DashV, 0x02AE5, Unicodes::Category::Relation
 DashVDash, 0x027DA, Unicodes::Category::Relation
 Dashv, 0x02AE4, Unicodes::Category::Relation
 Ddownarrow, 0x0290B, Unicodes::Category::Relation
+Delta, 0x00394, Unicodes::Category::Ordinary
+Diamond, 0x025C7, Unicodes::Category::Ordinary
 Doteq, 0x02251, Unicodes::Category::Relation
 Downarrow, 0x021D3, Unicodes::Category::Relation
 Equiv, 0x02263, Unicodes::Category::Relation
@@ -101,11 +104,13 @@ Eulerconst, 0x02107, Unicodes::Category::Ordinary
 Exclam, 0x0203C, Unicodes::Category::Ordinary
 Finv, 0x02132, Unicodes::Category::Ordinary
 Game, 0x02141, Unicodes::Category::Ordinary
+Gamma, 0x00393, Unicodes::Category::Ordinary
 Gt, 0x02AA2, Unicodes::Category::Relation
 Hermaphrodite, 0x026A5, Unicodes::Category::Ordinary
 Im, 0x02111, Unicodes::Category::Ordinary
 Join, 0x02A1D, Unicodes::Category::Operator
 LLeftarrow, 0x02B45, Unicodes::Category::Relation
+Lambda, 0x0039B, Unicodes::Category::Ordinary
 Lbrbrak, 0x027EC, Unicodes::Category::Opening
 Ldsh, 0x021B2, Unicodes::Category::Relation
 Leftarrow, 0x021D0, Unicodes::Category::Relation
@@ -125,10 +130,14 @@ Mapsto, 0x02907, Unicodes::Category::Relation
 Nearrow, 0x021D7, Unicodes::Category::Relation
 Not, 0x02AEC, Unicodes::Category::Relation
 Nwarrow, 0x021D6, Unicodes::Category::Relation
+Omega, 0x003A9, Unicodes::Category::Ordinary
 Otimes, 0x02A37, Unicodes::Category::Binary
+Phi, 0x003A6, Unicodes::Category::Ordinary
+Pi, 0x003A0, Unicodes::Category::Ordinary
 Planckconst, 0x0210E, Unicodes::Category::Ordinary
 Prec, 0x02ABB, Unicodes::Category::Relation
 PropertyLine, 0x0214A, Unicodes::Category::Ordinary
+Psi, 0x003A8, Unicodes::Category::Ordinary
 QED, 0x0220E, Unicodes::Category::Ordinary
 Question, 0x02047, Unicodes::Category::Ordinary
 RRightarrow, 0x02B46, Unicodes::Category::Relation
@@ -141,15 +150,18 @@ Rrightarrow, 0x021DB, Unicodes::Category::Relation
 Rsh, 0x021B1, Unicodes::Category::Relation
 Rvzigzag, 0x029DB, Unicodes::Category::Closing
 Searrow, 0x021D8, Unicodes::Category::Relation
+Sigma, 0x003A3, Unicodes::Category::Ordinary
 Sqcap, 0x02A4E, Unicodes::Category::Binary
 Sqcup, 0x02A4F, Unicodes::Category::Binary
 Subset, 0x022D0, Unicodes::Category::Relation
 Succ, 0x02ABC, Unicodes::Category::Relation
 Supset, 0x022D1, Unicodes::Category::Relation
 Swarrow, 0x021D9, Unicodes::Category::Relation
+Theta, 0x00398, Unicodes::Category::Ordinary
 UUparrow, 0x027F0, Unicodes::Category::Relation
 Uparrow, 0x021D1, Unicodes::Category::Relation
 Updownarrow, 0x021D5, Unicodes::Category::Relation
+Upsilon, 0x003A5, Unicodes::Category::Ordinary
 Uuparrow, 0x0290A, Unicodes::Category::Relation
 VDash, 0x022AB, Unicodes::Category::Relation
 Vbar, 0x02AEB, Unicodes::Category::Relation
@@ -159,6 +171,7 @@ Vert, 0x02016, Unicodes::Category::Ordinary
 Vvdash, 0x022AA, Unicodes::Category::Relation
 Vvert, 0x02980, Unicodes::Category::Ordinary
 Wedge, 0x02A53, Unicodes::Category::Binary
+Xi, 0x0039E, Unicodes::Category::Ordinary
 Yup, 0x02144, Unicodes::Category::Ordinary
 Zbar, 0x001B5, Unicodes::Category::Ordinary
 accurrent, 0x023E6, Unicodes::Category::Ordinary
@@ -172,6 +185,7 @@ acwoverarcarrow, 0x0293A, Unicodes::Category::Relation
 acwunderarcarrow, 0x0293B, Unicodes::Category::Relation
 adots, 0x022F0, Unicodes::Category::Relation
 aleph, 0x02135, Unicodes::Category::Ordinary
+alpha, 0x003B1, Unicodes::Category::Ordinary
 amalg, 0x02A3F, Unicodes::Category::Binary
 angdnr, 0x0299F, Unicodes::Category::Ordinary
 angle, 0x02220, Unicodes::Category::Ordinary
@@ -224,6 +238,7 @@ bbrktbrk, 0x023B6, Unicodes::Category::Ordinary
 bdtriplevdash, 0x02506, Unicodes::Category::Ordinary
 because, 0x02235, Unicodes::Category::Ordinary
 benzenr, 0x023E3, Unicodes::Category::Ordinary
+beta, 0x003B2, Unicodes::Category::Ordinary
 beth, 0x02136, Unicodes::Category::Ordinary
 between, 0x0226C, Unicodes::Category::Relation
 bigblacktriangledown, 0x025BC, Unicodes::Category::Ordinary
@@ -264,6 +279,7 @@ blackpointerleft, 0x025C4, Unicodes::Category::Ordinary
 blackpointerright, 0x025BA, Unicodes::Category::Ordinary
 blackrighthalfcircle, 0x025D7, Unicodes::Category::Ordinary
 blacksmiley, 0x0263B, Unicodes::Category::Ordinary
+blacksquare, 0x025A0, Unicodes::Category::Ordinary
 blacktriangle, 0x025B4, Unicodes::Category::Ordinary
 blacktriangledown, 0x025BE, Unicodes::Category::Ordinary
 blacktriangleleft, 0x025C0, Unicodes::Category::Ordinary
@@ -298,6 +314,7 @@ bsimilarleftarrow, 0x02B41, Unicodes::Category::Relation
 bsimilarrightarrow, 0x02B47, Unicodes::Category::Relation
 bsolhsub, 0x027C8, Unicodes::Category::Relation
 btimes, 0x02A32, Unicodes::Category::Binary
+bullet, 0x02219, Unicodes::Category::Binary
 bullseye, 0x025CE, Unicodes::Category::Ordinary
 bumpeq, 0x0224F, Unicodes::Category::Relation
 bumpeqq, 0x02AAE, Unicodes::Category::Relation
@@ -312,10 +329,13 @@ carriagereturn, 0x021B5, Unicodes::Category::Ordinary
 ccwundercurvearrow, 0x0293F, Unicodes::Category::Relation
 cdot, 0x022C5, Unicodes::Category::Binary
 cdotp, 0x000B7, Unicodes::Category::Binary
+cdots, 0x022EF, Unicodes::Category::Ordinary
 check, 0x0030C, Unicodes::Category::Accent
 checkmark, 0x02713, Unicodes::Category::Ordinary
+chi, 0x003C7, Unicodes::Category::Ordinary
 cirE, 0x029C3, Unicodes::Category::Ordinary
 cirbot, 0x027DF, Unicodes::Category::Relation
+circ, 0x02218, Unicodes::Category::Binary
 circeq, 0x02257, Unicodes::Category::Relation
 circlebottomhalfblack, 0x025D2, Unicodes::Category::Ordinary
 circledast, 0x0229B, Unicodes::Category::Binary
@@ -350,6 +370,7 @@ closedvarcup, 0x02A4C, Unicodes::Category::Binary
 closedvarcupsmashprod, 0x02A50, Unicodes::Category::Binary
 closure, 0x02050, Unicodes::Category::Relation
 clubsuit, 0x02663, Unicodes::Category::Ordinary
+colon, 0x0003A, Unicodes::Category::Punctuation
 coloneq, 0x02254, Unicodes::Category::Relation
 commaminus, 0x02A29, Unicodes::Category::Binary
 complement, 0x02201, Unicodes::Category::Ordinary
@@ -401,6 +422,7 @@ dddot, 0x020DB, Unicodes::Category::Accent
 ddot, 0x00308, Unicodes::Category::Accent
 ddots, 0x022F1, Unicodes::Category::Relation
 ddotseq, 0x02A77, Unicodes::Category::Relation
+delta, 0x003B4, Unicodes::Category::Ordinary
 diagdown, 0x027CD, Unicodes::Category::Ordinary
 diagup, 0x027CB, Unicodes::Category::Ordinary
 diameter, 0x02300, Unicodes::Category::Ordinary
@@ -429,8 +451,14 @@ doteq, 0x02250, Unicodes::Category::Relation
 dotequiv, 0x02A67, Unicodes::Category::Relation
 dotminus, 0x02238, Unicodes::Category::Binary
 dotplus, 0x02214, Unicodes::Category::Binary
+dots, 0x02026, Unicodes::Category::Ordinary
+dotsb, 0x022EF, Unicodes::Category::Ordinary
+dotsc, 0x02026, Unicodes::Category::Ordinary
+dotsi, 0x022EF, Unicodes::Category::Ordinary
 dotsim, 0x02A6A, Unicodes::Category::Relation
+dotsm, 0x022EF, Unicodes::Category::Ordinary
 dotsminusdots, 0x0223A, Unicodes::Category::Relation
+dotso, 0x02026, Unicodes::Category::Ordinary
 dottedcircle, 0x025CC, Unicodes::Category::Ordinary
 dottedsquare, 0x02B1A, Unicodes::Category::Ordinary
 dottimes, 0x02A30, Unicodes::Category::Binary
@@ -467,6 +495,7 @@ eighthnote, 0x0266A, Unicodes::Category::Ordinary
 elinters, 0x023E7, Unicodes::Category::Ordinary
 ell, 0x02113, Unicodes::Category::Ordinary
 elsdot, 0x02A97, Unicodes::Category::Relation
+emptyset, 0x02205, Unicodes::Category::Ordinary
 emptysetoarr, 0x029B3, Unicodes::Category::Ordinary
 emptysetoarrl, 0x029B4, Unicodes::Category::Ordinary
 emptysetobar, 0x029B1, Unicodes::Category::Ordinary
@@ -477,6 +506,7 @@ enclosesquare, 0x020DE, Unicodes::Category::Ordinary
 enclosetriangle, 0x020E4, Unicodes::Category::Ordinary
 enleadertwodots, 0x02025, Unicodes::Category::Ordinary
 eparsl, 0x029E3, Unicodes::Category::Relation
+epsilon, 0x003F5, Unicodes::Category::Ordinary
 eqcirc, 0x02256, Unicodes::Category::Relation
 eqcolon, 0x02255, Unicodes::Category::Relation
 eqdef, 0x0225D, Unicodes::Category::Relation
@@ -509,6 +539,7 @@ errbarblacksquare, 0x029EF, Unicodes::Category::Ordinary
 errbarcircle, 0x029F2, Unicodes::Category::Ordinary
 errbardiamond, 0x029F0, Unicodes::Category::Ordinary
 errbarsquare, 0x029EE, Unicodes::Category::Ordinary
+eta, 0x003B7, Unicodes::Category::Ordinary
 euro, 0x020AC, Unicodes::Category::Ordinary
 exists, 0x02203, Unicodes::Category::Ordinary
 fallingdotseq, 0x02252, Unicodes::Category::Relation
@@ -530,6 +561,8 @@ fourvdots, 0x02999, Unicodes::Category::Ordinary
 fracslash, 0x02044, Unicodes::Category::Binary
 frown, 0x02322, Unicodes::Category::Relation
 fullouterjoin, 0x027D7, Unicodes::Category::Operator
+gamma, 0x003B3, Unicodes::Category::Ordinary
+ge, 0x02265, Unicodes::Category::Relation
 geq, 0x02265, Unicodes::Category::Relation
 geqq, 0x02267, Unicodes::Category::Relation
 geqqslant, 0x02AFA, Unicodes::Category::Relation
@@ -539,6 +572,7 @@ gesdot, 0x02A80, Unicodes::Category::Relation
 gesdoto, 0x02A82, Unicodes::Category::Relation
 gesdotol, 0x02A84, Unicodes::Category::Relation
 gesles, 0x02A94, Unicodes::Category::Relation
+gets, 0x02190, Unicodes::Category::Relation
 gg, 0x0226B, Unicodes::Category::Relation
 ggg, 0x022D9, Unicodes::Category::Relation
 gggnest, 0x02AF8, Unicodes::Category::Relation
@@ -569,6 +603,7 @@ gtrsim, 0x02273, Unicodes::Category::Relation
 harrowextender, 0x023AF, Unicodes::Category::Ordinary
 hat, 0x00302, Unicodes::Category::Accent
 hatapprox, 0x02A6F, Unicodes::Category::Relation
+hbar, 0x0210F, Unicodes::Category::Ordinary
 heartsuit, 0x02661, Unicodes::Category::Ordinary
 hermitmatrix, 0x022B9, Unicodes::Category::Ordinary
 hexagon, 0x02394, Unicodes::Category::Ordinary
@@ -587,6 +622,7 @@ hrectangleblack, 0x025AC, Unicodes::Category::Ordinary
 hslash, 0x0210F, Unicodes::Category::Ordinary
 hyphenbullet, 0x02043, Unicodes::Category::Ordinary
 hzigzag, 0x03030, Unicodes::Category::Ordinary
+iff, 0x021D4, Unicodes::Category::Relation
 iiiint, 0x02A0C, Unicodes::Category::Operator
 iiint, 0x0222D, Unicodes::Category::Operator
 iinfin, 0x029DC, Unicodes::Category::Ordinary
@@ -617,17 +653,22 @@ invlazys, 0x0223E, Unicodes::Category::Binary
 invnot, 0x02310, Unicodes::Category::Ordinary
 invwhitelowerhalfcircle, 0x025DB, Unicodes::Category::Ordinary
 invwhiteupperhalfcircle, 0x025DA, Unicodes::Category::Ordinary
+iota, 0x003B9, Unicodes::Category::Ordinary
 isinE, 0x022F9, Unicodes::Category::Relation
 isindot, 0x022F5, Unicodes::Category::Relation
 isinobar, 0x022F7, Unicodes::Category::Relation
 isins, 0x022F4, Unicodes::Category::Relation
 isinvb, 0x022F8, Unicodes::Category::Relation
 jmath, 0x1D6A5, Unicodes::Category::Ordinary
+kappa, 0x003BA, Unicodes::Category::Ordinary
 kernelcontraction, 0x0223B, Unicodes::Category::Relation
 lAngle, 0x027EA, Unicodes::Category::Opening
 lBrace, 0x02983, Unicodes::Category::Opening
 lBrack, 0x027E6, Unicodes::Category::Opening
 lParen, 0x02985, Unicodes::Category::Opening
+lVert, 0x02016, Unicodes::Category::Opening
+lambda, 0x003BB, Unicodes::Category::Ordinary
+land, 0x02227, Unicodes::Category::Binary
 langle, 0x027E8, Unicodes::Category::Opening
 langledot, 0x02991, Unicodes::Category::Opening
 laplac, 0x029E0, Unicodes::Category::Ordinary
@@ -649,6 +690,8 @@ lbrackultick, 0x0298D, Unicodes::Category::Opening
 lbrbrak, 0x02772, Unicodes::Category::Opening
 lceil, 0x02308, Unicodes::Category::Opening
 lcurvyangle, 0x029FC, Unicodes::Category::Opening
+ldots, 0x02026, Unicodes::Category::Ordinary
+le, 0x02264, Unicodes::Category::Relation
 leftarrow, 0x02190, Unicodes::Category::Relation
 leftarrowapprox, 0x02B4A, Unicodes::Category::Relation
 leftarrowbackapprox, 0x02B42, Unicodes::Category::Relation
@@ -737,6 +780,7 @@ lmoustache, 0x023B0, Unicodes::Category::Opening
 lnapprox, 0x02A89, Unicodes::Category::Relation
 lneq, 0x02A87, Unicodes::Category::Relation
 lneqq, 0x02268, Unicodes::Category::Relation
+lnot, 0x000AC, Unicodes::Category::Ordinary
 lnsim, 0x022E6, Unicodes::Category::Relation
 longdashv, 0x027DE, Unicodes::Category::Relation
 longdivision, 0x027CC, Unicodes::Category::Opening
@@ -749,7 +793,9 @@ longrightarrow, 0x027F6, Unicodes::Category::Relation
 longrightsquigarrow, 0x027FF, Unicodes::Category::Relation
 looparrowleft, 0x021AB, Unicodes::Category::Relation
 looparrowright, 0x021AC, Unicodes::Category::Relation
+lor, 0x02228, Unicodes::Category::Binary
 lowint, 0x02A1C, Unicodes::Category::Operator
+lozenge, 0x025CA, Unicodes::Category::Ordinary
 lozengeminus, 0x027E0, Unicodes::Category::Binary
 lparen, 0x00028, Unicodes::Category::Opening
 lparenextender, 0x0239C, Unicodes::Category::Ordinary
@@ -771,6 +817,7 @@ ltlarr, 0x02976, Unicodes::Category::Relation
 ltquest, 0x02A7B, Unicodes::Category::Relation
 ltrivb, 0x029CF, Unicodes::Category::Relation
 lvboxline, 0x023B8, Unicodes::Category::Ordinary
+lvert, 0x0007C, Unicodes::Category::Opening
 lvzigzag, 0x029D8, Unicodes::Category::Opening
 male, 0x02642, Unicodes::Category::Ordinary
 maltese, 0x02720, Unicodes::Category::Ordinary
@@ -1805,6 +1852,7 @@ mttx, 0x1D6A1, Unicodes::Category::Ordinary
 mtty, 0x1D6A2, Unicodes::Category::Ordinary
 mttz, 0x1D6A3, Unicodes::Category::Ordinary
 mttzero, 0x1D7F6, Unicodes::Category::Ordinary
+mu, 0x003BC, Unicodes::Category::Ordinary
 multimap, 0x022B8, Unicodes::Category::Relation
 multimapinv, 0x027DC, Unicodes::Category::Relation
 mupAlpha, 0x00391, Unicodes::Category::Ordinary
@@ -1889,6 +1937,7 @@ nearrow, 0x02197, Unicodes::Category::Relation
 neg, 0x000AC, Unicodes::Category::Ordinary
 neovnwarrow, 0x02931, Unicodes::Category::Ordinary
 neovsearrow, 0x0292E, Unicodes::Category::Ordinary
+neq, 0x02260, Unicodes::Category::Relation
 nequiv, 0x02262, Unicodes::Category::Relation
 neswarrow, 0x02922, Unicodes::Category::Relation
 neuter, 0x026B2, Unicodes::Category::Ordinary
@@ -1931,6 +1980,7 @@ nsupset, 0x02285, Unicodes::Category::Relation
 nsupseteq, 0x02289, Unicodes::Category::Relation
 ntrianglelefteq, 0x022EC, Unicodes::Category::Relation
 ntrianglerighteq, 0x022ED, Unicodes::Category::Relation
+nu, 0x003BD, Unicodes::Category::Ordinary
 nvDash, 0x022AD, Unicodes::Category::Relation
 nvLeftarrow, 0x02902, Unicodes::Category::Relation
 nvLeftrightarrow, 0x02904, Unicodes::Category::Relation
@@ -1967,6 +2017,8 @@ oint, 0x0222E, Unicodes::Category::Operator
 ointctrclockwise, 0x02233, Unicodes::Category::Operator
 olcross, 0x029BB, Unicodes::Category::Ordinary
 olessthan, 0x029C0, Unicodes::Category::Binary
+omega, 0x003C9, Unicodes::Category::Ordinary
+omicron, 0x003BF, Unicodes::Category::Ordinary
 ominus, 0x02296, Unicodes::Category::Binary
 operp, 0x029B9, Unicodes::Category::Binary
 oplus, 0x02295, Unicodes::Category::Binary
@@ -1989,6 +2041,7 @@ overparen, 0x023DC, Unicodes::Category::Accent
 overrightarrow, 0x020D7, Unicodes::Category::Ordinary
 overrightharpoon, 0x020D1, Unicodes::Category::Ordinary
 ovhook, 0x00309, Unicodes::Category::Accent
+owns, 0x0220B, Unicodes::Category::Relation
 parallel, 0x02225, Unicodes::Category::Relation
 parallelogram, 0x025B1, Unicodes::Category::Ordinary
 parallelogramblack, 0x025B0, Unicodes::Category::Ordinary
@@ -1999,6 +2052,8 @@ pentagon, 0x02B20, Unicodes::Category::Ordinary
 pentagonblack, 0x02B1F, Unicodes::Category::Ordinary
 perp, 0x027C2, Unicodes::Category::Relation
 perps, 0x02AE1, Unicodes::Category::Ordinary
+phi, 0x003D5, Unicodes::Category::Ordinary
+pi, 0x003C0, Unicodes::Category::Ordinary
 pitchfork, 0x022D4, Unicodes::Category::Relation
 plusdot, 0x02A25, Unicodes::Category::Binary
 pluseqq, 0x02A72, Unicodes::Category::Binary
@@ -2025,8 +2080,10 @@ profline, 0x02312, Unicodes::Category::Ordinary
 profsurf, 0x02313, Unicodes::Category::Ordinary
 propto, 0x0221D, Unicodes::Category::Relation
 prurel, 0x022B0, Unicodes::Category::Relation
+psi, 0x003C8, Unicodes::Category::Ordinary
 pullback, 0x027D3, Unicodes::Category::Relation
 pushout, 0x027D4, Unicodes::Category::Relation
+qedsymbol, 0x025A1, Unicodes::Category::Ordinary
 qprime, 0x02057, Unicodes::Category::Ordinary
 quarternote, 0x02669, Unicodes::Category::Ordinary
 questeq, 0x0225F, Unicodes::Category::Relation
@@ -2034,6 +2091,7 @@ rAngle, 0x027EB, Unicodes::Category::Closing
 rBrace, 0x02984, Unicodes::Category::Closing
 rBrack, 0x027E7, Unicodes::Category::Closing
 rParen, 0x02986, Unicodes::Category::Closing
+rVert, 0x02016, Unicodes::Category::Closing
 rangle, 0x027E9, Unicodes::Category::Closing
 rangledot, 0x02992, Unicodes::Category::Closing
 rangledownzigzagarrow, 0x0237C, Unicodes::Category::Ordinary
@@ -2055,6 +2113,7 @@ rceil, 0x02309, Unicodes::Category::Closing
 rcurvyangle, 0x029FD, Unicodes::Category::Closing
 rdiagovfdiag, 0x0292B, Unicodes::Category::Ordinary
 rdiagovsearrow, 0x02930, Unicodes::Category::Ordinary
+restriction, 0x021BE, Unicodes::Category::Relation
 revangle, 0x029A3, Unicodes::Category::Ordinary
 revangleubar, 0x029A5, Unicodes::Category::Ordinary
 revemptyset, 0x029B0, Unicodes::Category::Ordinary
@@ -2064,6 +2123,7 @@ rfbowtie, 0x029D2, Unicodes::Category::Relation
 rfloor, 0x0230B, Unicodes::Category::Closing
 rftimes, 0x029D5, Unicodes::Category::Relation
 rgroup, 0x027EF, Unicodes::Category::Closing
+rho, 0x003C1, Unicodes::Category::Ordinary
 rightangle, 0x0221F, Unicodes::Category::Ordinary
 rightanglemdot, 0x0299D, Unicodes::Category::Ordinary
 rightanglesqr, 0x0299C, Unicodes::Category::Ordinary
@@ -2130,6 +2190,7 @@ rtimes, 0x022CA, Unicodes::Category::Binary
 rtriltri, 0x029CE, Unicodes::Category::Relation
 ruledelayed, 0x029F4, Unicodes::Category::Relation
 rvboxline, 0x023B9, Unicodes::Category::Ordinary
+rvert, 0x0007C, Unicodes::Category::Closing
 rvzigzag, 0x029D9, Unicodes::Category::Closing
 sansLmirrored, 0x02143, Unicodes::Category::Ordinary
 sansLturned, 0x02142, Unicodes::Category::Ordinary
@@ -2144,6 +2205,7 @@ shortlefttack, 0x02ADE, Unicodes::Category::Relation
 shortrightarrowleftarrow, 0x02944, Unicodes::Category::Relation
 shortuptack, 0x02AE0, Unicodes::Category::Relation
 shuffle, 0x029E2, Unicodes::Category::Binary
+sigma, 0x003C3, Unicodes::Category::Ordinary
 sim, 0x0223C, Unicodes::Category::Relation
 sime, 0x02243, Unicodes::Category::Relation
 simeq, 0x02243, Unicodes::Category::Relation
@@ -2193,6 +2255,7 @@ sqsubsetneq, 0x022E4, Unicodes::Category::Relation
 sqsupset, 0x02290, Unicodes::Category::Relation
 sqsupseteq, 0x02292, Unicodes::Category::Relation
 sqsupsetneq, 0x022E5, Unicodes::Category::Relation
+square, 0x025A1, Unicodes::Category::Ordinary
 squarebotblack, 0x02B13, Unicodes::Category::Ordinary
 squarecrossfill, 0x025A9, Unicodes::Category::Ordinary
 squarehfill, 0x025A4, Unicodes::Category::Ordinary
@@ -2267,8 +2330,10 @@ supsup, 0x02AD6, Unicodes::Category::Relation
 surd, 0x0221A, Unicodes::Category::Ordinary
 swarrow, 0x02199, Unicodes::Category::Relation
 talloblong, 0x02AFE, Unicodes::Category::Binary
+tau, 0x003C4, Unicodes::Category::Ordinary
 therefore, 0x02234, Unicodes::Category::Ordinary
 thermod, 0x029E7, Unicodes::Category::Ordinary
+theta, 0x003B8, Unicodes::Category::Ordinary
 threedangle, 0x027C0, Unicodes::Category::Ordinary
 threedotcolon, 0x02AF6, Unicodes::Category::Binary
 threeunderdot, 0x020E8, Unicodes::Category::Ordinary
@@ -2278,6 +2343,7 @@ tilde, 0x00303, Unicodes::Category::Accent
 times, 0x000D7, Unicodes::Category::Binary
 timesbar, 0x02A31, Unicodes::Category::Binary
 tminus, 0x029FF, Unicodes::Category::Binary
+to, 0x02192, Unicodes::Category::Relation
 toea, 0x02928, Unicodes::Category::Relation
 tona, 0x02927, Unicodes::Category::Relation
 top, 0x022A4, Unicodes::Category::Ordinary
@@ -2289,6 +2355,7 @@ tosa, 0x02929, Unicodes::Category::Relation
 towa, 0x0292A, Unicodes::Category::Relation
 tplus, 0x029FE, Unicodes::Category::Binary
 trapezium, 0x023E2, Unicodes::Category::Ordinary
+triangle, 0x025B3, Unicodes::Category::Ordinary
 trianglecdot, 0x025EC, Unicodes::Category::Ordinary
 triangledown, 0x025BF, Unicodes::Category::Ordinary
 triangleleft, 0x025C1, Unicodes::Category::Binary
@@ -2368,6 +2435,7 @@ upin, 0x027D2, Unicodes::Category::Relation
 upint, 0x02A1B, Unicodes::Category::Operator
 uplus, 0x0228E, Unicodes::Category::Binary
 uprightcurvearrow, 0x02934, Unicodes::Category::Ordinary
+upsilon, 0x003C5, Unicodes::Category::Ordinary
 upuparrows, 0x021C8, Unicodes::Category::Relation
 upwhitearrow, 0x021E7, Unicodes::Category::Ordinary
 urarc, 0x025DD, Unicodes::Category::Ordinary
@@ -2384,19 +2452,26 @@ varcarriagereturn, 0x023CE, Unicodes::Category::Ordinary
 varclubsuit, 0x02667, Unicodes::Category::Ordinary
 vardiamondsuit, 0x02666, Unicodes::Category::Ordinary
 vardoublebarwedge, 0x02306, Unicodes::Category::Binary
+varepsilon, 0x003B5, Unicodes::Category::Ordinary
 varheartsuit, 0x02665, Unicodes::Category::Ordinary
 varhexagon, 0x02B21, Unicodes::Category::Ordinary
 varhexagonblack, 0x02B22, Unicodes::Category::Ordinary
 varhexagonlrbonds, 0x0232C, Unicodes::Category::Ordinary
 varisinobar, 0x022F6, Unicodes::Category::Relation
 varisins, 0x022F3, Unicodes::Category::Relation
+varkappa, 0x003F0, Unicodes::Category::Ordinary
 varlrtriangle, 0x022BF, Unicodes::Category::Ordinary
 varniobar, 0x022FD, Unicodes::Category::Relation
 varnis, 0x022FB, Unicodes::Category::Relation
 varnothing, 0x02205, Unicodes::Category::Ordinary
 varointclockwise, 0x02232, Unicodes::Category::Operator
+varphi, 0x003C6, Unicodes::Category::Ordinary
+varpi, 0x003D6, Unicodes::Category::Ordinary
+varrho, 0x003F1, Unicodes::Category::Ordinary
+varsigma, 0x003C2, Unicodes::Category::Ordinary
 varspadesuit, 0x02664, Unicodes::Category::Ordinary
 varstar, 0x02736, Unicodes::Category::Ordinary
+vartheta, 0x003D1, Unicodes::Category::Ordinary
 vartriangle, 0x025B5, Unicodes::Category::Relation
 vartriangleleft, 0x022B2, Unicodes::Category::Relation
 vartriangleright, 0x022B3, Unicodes::Category::Relation
@@ -2455,8 +2530,9 @@ wideutilde, 0x00330, Unicodes::Category::Ordinary
 wp, 0x02118, Unicodes::Category::Ordinary
 wr, 0x02240, Unicodes::Category::Binary
 xbsol, 0x029F9, Unicodes::Category::Operator
+xi, 0x003BE, Unicodes::Category::Ordinary
 xsol, 0x029F8, Unicodes::Category::Operator
 zcmp, 0x02A1F, Unicodes::Category::Operator
+zeta, 0x003B6, Unicodes::Category::Ordinary
 zpipe, 0x02A20, Unicodes::Category::Operator
 zproject, 0x02A21, Unicodes::Category::Operator
-%%

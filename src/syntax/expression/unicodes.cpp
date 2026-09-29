@@ -1,8 +1,8 @@
 /// @file
 /// @brief Unicodes implementation: math symbol name to code point.
 ///
-/// Overrides are consulted first, then the gperf-generated table. The table is
-/// queried through a stack buffer, so a lookup allocates nothing.
+/// One gperf-generated table, queried through a stack buffer, so a lookup
+/// allocates nothing.
 #include "syntax/expression/unicodes.hpp"
 #include "lookup.hpp"
 
@@ -11,38 +11,22 @@
 
 namespace syntax::expression {
 
-    namespace {
-
-        /// Longest name the stack buffer can hold, NUL included.
-        ///
-        /// This is a buffer size, not a claim about the table: the heap path
-        /// below keeps a longer name correct, it just does not keep it fast.
-        /// Every math symbol name is far shorter than this, so that path is
-        /// unreachable in practice. gperf's generated matcher finishes with
-        /// strcmp unless the table was built with --compare-lengths, so the
-        /// candidate has to be NUL-terminated either way.
-        constexpr std::size_t longest = 63;
-
-    }
+    /// Longest name the stack buffer can hold, NUL included.
+    ///
+    /// This is a buffer size, not a claim about the table: the heap path
+    /// below keeps a longer name correct, it just does not keep it fast.
+    /// Every math symbol name is far shorter than this, so that path is
+    /// unreachable in practice. gperf's generated matcher finishes with
+    /// strcmp unless the table was built with --compare-lengths, so the
+    /// candidate has to be NUL-terminated either way.
+    static constexpr std::size_t longest = 63;
 
     const std::uint32_t Unicodes::invalid = 0xFFFD;
 
     Unicodes::Unicodes() = default;
 
-    void Unicodes::compose(const std::string_view name, const std::uint32_t codepoint, const Category category) {
-        overrides.insert_or_assign(std::string(name), Symbol{codepoint, category});
-    }
-
-    void Unicodes::dispose(const std::string_view name) {
-        overrides.erase(std::string(name));
-    }
-
     std::optional<Unicodes::Symbol> Unicodes::query(const std::string_view name) const noexcept {
         if (name.empty()) return std::nullopt;
-
-        if (const auto iterator = overrides.find(name); iterator != overrides.end()) {
-            return iterator->second;
-        }
 
         if (name.size() <= longest) {
             char text[longest + 1];

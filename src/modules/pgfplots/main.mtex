@@ -1,0 +1,16 @@
+% pgfplots: plots drawn from data and from functions, inside a TikZ picture.
+% The axis blocks -- axis, semilogxaxis, semilogyaxis, loglogaxis -- and
+% \addplot, \addlegendentry and \legend are the engine's own, drawn with
+% TikZ's commands as each axis closes. What sets styles for every plot at
+% once, and the tables and group plots pgfplots builds beside them, are
+% read and let go.
+
+\@requirepackage{tikz}
+
+\@define\pgfplotsset[1]{}
+\@define\usepgfplotslibrary[1]{}
+\@define\nextgroupplot{\@gobbleoption}
+\@define\pgfplotstableread[2]{}
+\@define\pgfplotstabletypeset[2][]{}
+\@define\pgfplotscreateplotcyclelist[2]{}
+\@define\pgfplotsforeachungrouped#1\in#2#3{}

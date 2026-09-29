@@ -1,0 +1,19 @@
+% tikz-cd: commutative diagrams. A tikzcd block is set as the grid of its
+% objects, in a formula as a matrix is; its arrows are not drawn, and the
+% document hears so once, when the package is loaded.
+%
+%   \begin{tikzcd} A \arrow[r, "f"] & B \arrow[d] \\ & C \end{tikzcd}
+
+\warning{tikz-cd: a diagram's objects are set in their grid; its arrows are not drawn}
+
+\@define\tikzcdset[1]{}
+\@define\arrow{\@ifnextchar[{\@gobbleoption}{\@gobbletwo}}
+\@alias\ar\arrow
+\@define\rar[1][]{}
+\@define\lar[1][]{}
+\@define\dar[1][]{}
+\@define\uar[1][]{}
+\@define\drar[1][]{}
+\@define\urar[1][]{}
+\@define\dlar[1][]{}
+\@define\ular[1][]{}

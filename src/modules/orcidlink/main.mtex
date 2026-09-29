@@ -1,0 +1,4 @@
+% orcidlink: an author's ORCID, which the page, carrying no links, leaves
+% out.
+
+\@define\orcidlink[1]{}

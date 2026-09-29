@@ -1,0 +1,75 @@
+% acmart: the ACM's papers. Proceedings -- sigconf, sigplan -- are two
+% columns on letter paper; the journal formats and the manuscript one. An
+% author's affiliation, given field by field after \author, is set in the
+% title block under the authors; everything that only the ACM's own
+% production reads -- the conference, the DOI, the rights, the CCS concepts --
+% is read and let go. The keywords are set under the title block.
+%
+%   \documentclass[sigconf]{acmart}
+%   \author{Ada Lovelace}
+%   \affiliation{\institution{Analytical Engines}\city{London}\country{UK}}
+
+\@ifvariable{acmart.sigconf}{\@leftmargin=0.75in \@rightmargin=0.75in \@topmargin=1in \@bottommargin=1in
+\setlength{\columnsep}{2pc}}{}
+\@ifvariable{acmart.sigplan}{\@leftmargin=0.75in \@rightmargin=0.75in \@topmargin=1in \@bottommargin=1in
+\setlength{\columnsep}{2pc}}{}
+
+% The affiliations, one line each under the authors, and the fields that
+% make one up, set one after another.
+\@define\@affiliations{}
+\@define\affiliation[2][]{\g@addto@macro\@affiliations{\\\small #2}}
+\@define\additionalaffiliation[1]{\affiliation{#1}}
+\@define\institution[1]{#1}
+\@define\department[2][]{#2, }
+\@define\streetaddress[1]{}
+\@define\city[1]{, #1}
+\@define\state[1]{, #1}
+\@define\postcode[1]{}
+\@define\country[1]{, #1}
+\@define\email[1]{}
+\@define\orcid[1]{}
+\@define\authornote[1]{}
+\@define\authornotemark[1][]{}
+\@define\shortauthors{\theauthor}
+
+% Its headings: sections bold in capitals, subsections bold.
+\@heading{\section}{hang}{\bfseries\large}{\thesection}{1em}{\MakeUppercase}
+\@heading{\subsection}{hang}{\bfseries\normalsize}{\thesubsection}{1em}{}
+\@heading{\subsubsection}{hang}{\itshape\normalsize}{\thesubsubsection}{1em}{}
+
+\@define\maketitle{%
+\par\@columns1 \vskip 2em%
+\begin{center}%
+{\LARGE\bfseries\thetitle\par}%
+\vskip 1.5em%
+{\large\theauthor\@affiliations\par}%
+\end{center}%
+\@ifvariable{acmart.keywords}{\noindent\textbf{Keywords:} \@variable{acmart.keywords}\par}{}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}
+
+\@define\acmConference[4][]{}
+\@define\acmBooktitle[1]{}
+\@define\acmYear[1]{}
+\@define\acmDOI[1]{}
+\@define\acmISBN[1]{}
+\@define\acmPrice[1]{}
+\@define\acmSubmissionID[1]{}
+\@define\acmJournal[1]{}
+\@define\acmVolume[1]{}
+\@define\acmNumber[1]{}
+\@define\acmArticle[1]{}
+\@define\acmArticleSeq[1]{}
+\@define\acmMonth[1]{}
+\@define\acmBadge[2][]{}
+\@define\copyrightyear[1]{}
+\@define\setcopyright[1]{}
+\@define\settopmatter[1]{}
+\@define\ccsdesc[2][100]{}
+\@define\received[2][]{}
+\@define\citestyle[1]{}
+\@define\Description[2][]{}
+\@define\keywords[1]{\@setvariable{acmart.keywords}{#1}}
+\@define\ACM{ACM}

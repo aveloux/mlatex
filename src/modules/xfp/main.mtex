@@ -1,0 +1,5 @@
+% xfp: arithmetic in the document. \fpeval{2*(3+4)/5} is 2.8, worked out in
+% exact decimals rather than binary floating point, so a sum of prices comes
+% to the cent it should. A variable may be named in it by its name.
+
+\@alias\fpeval\@calculate

@@ -1,0 +1,136 @@
+% The registers a document is most likely to want a name for. Naming a slot is
+% what lets it be read inside any later number, so `\tolerance` scans as an
+% integer wherever one is expected, and what lets a document assign it the way
+% TeX does -- `\parskip=6pt`, `\setlength{\tabcolsep}{2pt}` -- whether or not
+% anything here reads it back yet. Each starts at the value LaTeX's article
+% class gives it at ten points.
+
+\@set\integer0 = 0
+\@name\pagenumber\integer0
+
+\@set\integer1 = 200
+\@name\tolerance\integer1
+
+\@set\length1 = 0pt
+\@name\parskip\length1
+
+% ---------------------------------------------------------------------------
+% The line breaker's and the page builder's numbers.
+
+\newcount\pretolerance     \@set\pretolerance = 100
+\newcount\hbadness         \@set\hbadness = 1000
+\newcount\vbadness         \@set\vbadness = 1000
+\newcount\looseness
+\newcount\linepenalty      \@set\linepenalty = 10
+\newcount\hyphenpenalty    \@set\hyphenpenalty = 50
+\newcount\exhyphenpenalty  \@set\exhyphenpenalty = 50
+\newcount\binoppenalty     \@set\binoppenalty = 700
+\newcount\relpenalty       \@set\relpenalty = 500
+\newcount\clubpenalty      \@set\clubpenalty = 150
+\newcount\widowpenalty     \@set\widowpenalty = 150
+\newcount\displaywidowpenalty \@set\displaywidowpenalty = 50
+\newcount\brokenpenalty    \@set\brokenpenalty = 100
+\newcount\predisplaypenalty \@set\predisplaypenalty = 10000
+\newcount\postdisplaypenalty
+\newcount\interlinepenalty
+\newcount\adjdemerits      \@set\adjdemerits = 10000
+\newcount\doublehyphendemerits \@set\doublehyphendemerits = 10000
+\newcount\finalhyphendemerits \@set\finalhyphendemerits = 5000
+\newcount\hangafter        \@set\hangafter = 1
+\newcount\escapechar       \@set\escapechar = 92
+\newcount\endlinechar      \@set\endlinechar = 13
+\newcount\newlinechar      \@set\newlinechar = -1
+\newcount\mag              \@set\mag = 1000
+\newcount\errorcontextlines \@set\errorcontextlines = 5
+\newcount\tracingonline
+\newcount\showboxdepth     \@set\showboxdepth = 3
+\newcount\showboxbreadth   \@set\showboxbreadth = 5
+
+\newdimen\hangindent
+\newdimen\emergencystretch
+\newdimen\hfuzz            \@set\hfuzz = 0.1pt
+\newdimen\vfuzz            \@set\vfuzz = 0.1pt
+\newdimen\lineskiplimit
+\newdimen\lineskip         \@set\lineskip = 1pt
+\newdimen\topskip          \@set\topskip = 10pt
+\newdimen\maxdepth         \@set\maxdepth = 5pt
+\newdimen\hoffset
+\newdimen\voffset
+\newdimen\mathsurround
+\newdimen\overfullrule
+\newdimen\vsize            \@set\vsize = 592pt
+\newdimen\delimitershortfall \@set\delimitershortfall = 5pt
+\newdimen\nulldelimiterspace \@set\nulldelimiterspace = 1.2pt
+\newdimen\scriptspace      \@set\scriptspace = 0.5pt
+\newskip\parfillskip       \@set\parfillskip = 0pt plus 1fil
+\newskip\spaceskip
+\newskip\xspaceskip
+\newmuskip\thinmuskip
+\newmuskip\medmuskip
+\newmuskip\thickmuskip
+
+% ---------------------------------------------------------------------------
+% LaTeX's layout of the page, its lists, its tables and its displays.
+
+% The page's own margins as LaTeX names them: \setlength moves the text
+% block by them, and an assignment made straight to one is kept here.
+\newdimen\topmargin
+\newdimen\oddsidemargin
+\newdimen\evensidemargin
+\newdimen\headheight       \@set\headheight = 12pt
+\newdimen\headsep          \@set\headsep = 25pt
+\newdimen\footskip         \@set\footskip = 30pt
+\newdimen\marginparwidth   \@set\marginparwidth = 57pt
+\newdimen\marginparsep     \@set\marginparsep = 11pt
+\newdimen\marginparpush    \@set\marginparpush = 5pt
+\newdimen\footnotesep      \@set\footnotesep = 6.65pt
+\newdimen\columnsep        \@set\columnsep = 10pt
+\newdimen\columnseprule
+\newskip\multicolsep        \@set\multicolsep = 12pt plus 4pt minus 3pt
+\newdimen\tabcolsep        \@set\tabcolsep = 6pt
+\newdimen\arraycolsep      \@set\arraycolsep = 5pt
+\newdimen\arrayrulewidth   \@set\arrayrulewidth = 0.4pt
+\newdimen\doublerulesep    \@set\doublerulesep = 2pt
+\newdimen\labelsep         \@set\labelsep = 5pt
+\newdimen\labelwidth       \@set\labelwidth = 20pt
+\newdimen\itemindent
+\newdimen\leftmargin       \@set\leftmargin = 25pt
+\newdimen\rightmargin
+\newdimen\leftmargini      \@set\leftmargini = 25pt
+\newdimen\leftmarginii     \@set\leftmarginii = 22pt
+\newdimen\leftmarginiii    \@set\leftmarginiii = 18.7pt
+\newdimen\leftmarginiv     \@set\leftmarginiv = 17pt
+\newdimen\listparindent
+\newdimen\unitlength       \@set\unitlength = 1pt
+\newdimen\jot              \@set\jot = 3pt
+\newdimen\mathindent       \@set\mathindent = 25pt
+
+\newskip\topsep            \@set\topsep = 8pt plus 2pt minus 4pt
+\newskip\partopsep         \@set\partopsep = 2pt plus 1pt minus 1pt
+\newskip\itemsep           \@set\itemsep = 4pt plus 2pt minus 1pt
+\newskip\parsep            \@set\parsep = 4pt plus 2pt minus 1pt
+\newskip\floatsep          \@set\floatsep = 12pt plus 2pt minus 2pt
+\newskip\textfloatsep      \@set\textfloatsep = 20pt plus 2pt minus 4pt
+\newskip\intextsep         \@set\intextsep = 12pt plus 2pt minus 2pt
+\newskip\dblfloatsep       \@set\dblfloatsep = 12pt plus 2pt minus 2pt
+\newskip\dbltextfloatsep   \@set\dbltextfloatsep = 20pt plus 2pt minus 4pt
+\newskip\abovecaptionskip  \@set\abovecaptionskip = 10pt
+\newskip\belowcaptionskip
+\newskip\abovedisplayskip  \@set\abovedisplayskip = 10pt plus 2pt minus 5pt
+\newskip\belowdisplayskip  \@set\belowdisplayskip = 10pt plus 2pt minus 5pt
+\newskip\abovedisplayshortskip \@set\abovedisplayshortskip = 0pt plus 3pt
+\newskip\belowdisplayshortskip \@set\belowdisplayshortskip = 6pt plus 3pt minus 3pt
+\newskip\smallskipamount   \@set\smallskipamount = 3pt plus 1pt minus 1pt
+\newskip\medskipamount     \@set\medskipamount = 6pt plus 2pt minus 2pt
+\newskip\bigskipamount     \@set\bigskipamount = 12pt plus 4pt minus 4pt
+
+% The float placement's fractions and a table's row spacing, which LaTeX keeps
+% as macros rather than registers.
+\@define\arraystretch{1}
+\@define\baselinestretch{1}
+\@define\topfraction{.7}
+\@define\bottomfraction{.3}
+\@define\textfraction{.2}
+\@define\floatpagefraction{.5}
+\@define\dbltopfraction{.7}
+\@define\dblfloatpagefraction{.5}

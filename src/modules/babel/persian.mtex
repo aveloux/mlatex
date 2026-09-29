@@ -1,0 +1,17 @@
+% Persian: babel's captions for it, and its date: 28 سپتامبر 2026.
+
+\@define\captionspersian{%
+\@define\abstractname{چکیده}%
+\@define\proofname{اثبات}%
+\@define\figurename{شکل}%
+\@define\tablename{جدول}%
+\@define\refname{مراجع}%
+\@define\bibname{کتاب‌نامه}%
+\@define\contentsname{فهرست مطالب}%
+\@define\listfigurename{فهرست تصاویر}%
+\@define\listtablename{فهرست جداول}%
+\@define\appendixname{پیوست}%
+\@define\partname{بخش}%
+\@define\chaptername{فصل}%
+\@define\indexname{نمایه}}
+\@define\datepersian{\@define\today{\@evaluate{\day}~\ifcase\month\or ژانویه \or فوریه \or مارس \or آوریل \or مه \or ژوئن \or ژوئیه \or اوت \or سپتامبر \or اکتبر \or نوامبر \or دسامبر \fi\@evaluate{\year}}}

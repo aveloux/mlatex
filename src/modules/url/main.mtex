@@ -1,0 +1,7 @@
+% url: an address set in the typewriter face.
+%
+% Read as an ordinary argument, not character by character as LaTeX's \url
+% reads one, so an address holding a % or a # has to escape it: \% and \#.
+% Every other character an address uses sets as itself.
+
+\@define\url[1]{\texttt{#1}}

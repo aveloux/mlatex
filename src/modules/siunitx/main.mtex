@@ -1,0 +1,213 @@
+% siunitx: numbers and quantities set the way siunitx sets them, with its
+% defaults, so a document written for it reads the same here.
+%
+%   \num{123456.7891}                        % 123 456.789 1
+%   \num{3.21e-3}                            % 3.21 × 10⁻³
+%   \si{\kilo\gram\metre\per\second\squared} % kg m s⁻²
+%   \qty{9.81}{\metre\per\second\squared}    % 9.81 m s⁻², \SI the older name
+%   \numlist{1;2;3}                          % 1, 2 and 3
+%   \numrange{10}{20}                        % 10 to 20
+%   \qtyrange{1}{5}{\kilo\metre}             % 1 km to 5 km
+%   \ang{45}                                 % 45°
+%   \sisetup{per-mode=symbol}                % m/s rather than m s⁻¹
+%
+% A number is set as maths, in or out of a formula: its exponent written out
+% as a power of ten, and its digits grouped in threes by a thin space either
+% side of the decimal point once there are five or more of them. A unit is
+% set upright, its parts a thin space apart, a unit after \per raised to a
+% negative power and a thin space between a number and its unit.
+%
+% The unit macros -- \metre, \second, \kilo, \per and the rest -- are
+% defined only inside a unit, as siunitx defines them, so \bar, \H, \pm and
+% \day keep their own meanings everywhere else.
+%
+% The grouping counts digits in two registers, \integer240 and \integer241.
+
+\@name\sidigits\integer240
+\@name\siplace\integer241
+
+% The markers a delimited argument is read up to; never set.
+\@define\sistop{}
+\@define\simark{sentinel-siunitx}
+\@define\siempty{}
+\@define\sinegative{-}
+
+\@ifvariable{siunitx.per-mode}{}{\@setvariable{siunitx.per-mode}{power}}
+\@define\sisetup[1]{\@setkeys{siunitx}{#1}}
+
+% ---------------------------------------------------------------------------
+% Numbers.
+
+% A number with its exponent split off at the e, if it has one: the mantissa
+% before it and the power after. Two markers follow whatever is written, so
+% the third argument is empty exactly when there was no e.
+\@define\sivalue[1]{\@ifempty{#1}\else\sinumber#1e\simark e\sistop\fi}
+\@define\sinumber#1e#2e#3\sistop{%
+\@ifempty{#3}\simantissa{#1}%
+\else\@ifempty{#1}\else\simantissa{#1}\times\fi 10^{\simantissa{#2}}\fi}
+
+% The sign, and the digits either side of the point.
+\@define\simantissa[1]{\@ifempty{#1}\else\sisign#1\sistop\fi}
+\@define\sisign#1#2\sistop{%
+\ifx-#1-\@define\sinext{\siplaces#2.\simark.\sistop}%
+\else\ifx+#1+\@define\sinext{\siplaces#2.\simark.\sistop}%
+\else\@define\sinext{\siplaces#1#2.\simark.\sistop}\fi\fi\sinext}
+\@define\siplaces#1.#2.#3\sistop{\siwhole{#1}\@ifempty{#3}\else.\sifraction{#2}\fi}
+
+% The whole part, counted first and then set with a thin space before every
+% group of three that still has digits after it.
+\@define\siwhole[1]{%
+\@set\sidigits=0 \sicount#1\sistop
+\ifnum\sidigits>4 \@set\siplace=\sidigits \sispread#1\sistop\else#1\fi}
+\@define\sicount#1{%
+\ifx\sistop#1\@define\sinext{}\else\@increase\sidigits by 1 \@define\sinext{\sicount}\fi\sinext}
+\@define\sispread#1{%
+\ifx\sistop#1\@define\sinext{}%
+\else#1\@increase\siplace by -1 %
+\ifnum\siplace>0 \ifnum\@evaluate{\siplace \mod 3}=0 \,\fi\fi
+\@define\sinext{\sispread}\fi\sinext}
+
+% The fraction, grouped from the point: a thin space after every third
+% digit that is not the last.
+\@define\sifraction[1]{%
+\@set\sidigits=0 \sicount#1\sistop
+\ifnum\sidigits>4 \@set\siplace=0 \sitrail#1\sistop\else#1\fi}
+\@define\sitrail#1{%
+\ifx\sistop#1\@define\sinext{}%
+\else#1\@increase\siplace by 1 %
+\ifnum\siplace<\sidigits \ifnum\@evaluate{\siplace \mod 3}=0 \,\fi\fi
+\@define\sinext{\sitrail}\fi\sinext}
+
+\@define{\num}[2][]{\ensuremath{\sivalue{#2}}}
+\@alias\tablenum\num
+
+% ---------------------------------------------------------------------------
+% Units.
+
+% What is waiting for the next unit: its prefix, whether \per came before
+% it, the power \square or \cubic set before it, and what separates it from
+% the unit before.
+\@define\sireset{\@define\siprefixed{}\@define\siinverse{}\@define\siraised{}}
+\@define\siprefix[1]{\@define\siprefixed{#1}}
+\@define\siper{%
+\@ifstrequal{\@variable{siunitx.per-mode}}{symbol}{\@define\siseparator{/}}{\@define\siinverse{-}}}
+\@define\siraise[1]{\@define\siraised{#1}}
+
+% A unit: its prefix and symbol upright, then a power, which may be written
+% after it -- \squared, \cubed, \tothe{4} -- and so is looked for there.
+\@define\sisymbol[1]{\siseparator\mathrm{\siprefixed#1}\sipeek}
+\@define\sipeek{%
+\@ifnextchar{\squared}{\siafter{2}}{%
+\@ifnextchar{\cubed}{\siafter{3}}{%
+\@ifnextchar{\tothe}{\sitothe}{\siclose{}}}}}
+\@define\siafter#1#2{\siclose{#1}}
+\@define\sitothe#1#2{\siclose{#2}}
+
+% The power, negative after \per, and nothing at all for a plain unit.
+\@define\siclose[1]{%
+\@ifempty{#1}\else\@define\siraised{#1}\fi
+\ifx\siinverse\sinegative ^{-\siamount}\else\ifx\siraised\siempty\else^{\siraised}\fi\fi
+\sireset\@define\siseparator{\,}}
+\@define\siamount{\ifx\siraised\siempty 1\else\siraised\fi}
+
+% Every unit, prefix and power siunitx names, defined for the length of one
+% unit only.
+\@define\siunits{%
+\@alias\per\siper
+\@define\square{\siraise{2}}\@define\cubic{\siraise{3}}\@define\raiseto[1]{\siraise{##1}}%
+\@define\squared{^{2}}\@define\cubed{^{3}}\@define\tothe[1]{^{##1}}%
+\@define\quecto{\siprefix{q}}\@define\ronto{\siprefix{r}}\@define\yocto{\siprefix{y}}%
+\@define\zepto{\siprefix{z}}\@define\atto{\siprefix{a}}\@define\femto{\siprefix{f}}%
+\@define\pico{\siprefix{p}}\@define\nano{\siprefix{n}}\@define\micro{\siprefix{µ}}%
+\@define\milli{\siprefix{m}}\@define\centi{\siprefix{c}}\@define\deci{\siprefix{d}}%
+\@define\deca{\siprefix{da}}\@define\deka{\siprefix{da}}\@define\hecto{\siprefix{h}}%
+\@define\kilo{\siprefix{k}}\@define\mega{\siprefix{M}}\@define\giga{\siprefix{G}}%
+\@define\tera{\siprefix{T}}\@define\peta{\siprefix{P}}\@define\exa{\siprefix{E}}%
+\@define\zetta{\siprefix{Z}}\@define\yotta{\siprefix{Y}}\@define\ronna{\siprefix{R}}%
+\@define\quetta{\siprefix{Q}}\@define\kibi{\siprefix{Ki}}\@define\mebi{\siprefix{Mi}}%
+\@define\gibi{\siprefix{Gi}}\@define\tebi{\siprefix{Ti}}%
+\@define\ampere{\sisymbol{A}}\@define\candela{\sisymbol{cd}}\@define\kelvin{\sisymbol{K}}%
+\@define\kilogram{\sisymbol{kg}}\@define\gram{\sisymbol{g}}\@define\metre{\sisymbol{m}}%
+\@define\meter{\sisymbol{m}}\@define\mole{\sisymbol{mol}}\@define\second{\sisymbol{s}}%
+\@define\becquerel{\sisymbol{Bq}}\@define\degreeCelsius{\sisymbol{°C}}\@define\coulomb{\sisymbol{C}}%
+\@define\farad{\sisymbol{F}}\@define\gray{\sisymbol{Gy}}\@define\hertz{\sisymbol{Hz}}%
+\@define\henry{\sisymbol{H}}\@define\joule{\sisymbol{J}}\@define\katal{\sisymbol{kat}}%
+\@define\lumen{\sisymbol{lm}}\@define\lux{\sisymbol{lx}}\@define\newton{\sisymbol{N}}%
+\@define\ohm{\sisymbol{Ω}}\@define\pascal{\sisymbol{Pa}}\@define\radian{\sisymbol{rad}}%
+\@define\siemens{\sisymbol{S}}\@define\sievert{\sisymbol{Sv}}\@define\steradian{\sisymbol{sr}}%
+\@define\tesla{\sisymbol{T}}\@define\volt{\sisymbol{V}}\@define\watt{\sisymbol{W}}%
+\@define\weber{\sisymbol{Wb}}%
+\@define\astronomicalunit{\sisymbol{au}}\@define\bel{\sisymbol{B}}\@define\dalton{\sisymbol{Da}}%
+\@define\day{\sisymbol{d}}\@define\decibel{\sisymbol{dB}}\@define\degree{\sisymbol{°}}%
+\@define\electronvolt{\sisymbol{eV}}\@define\hectare{\sisymbol{ha}}\@define\hour{\sisymbol{h}}%
+\@define\litre{\sisymbol{L}}\@define\liter{\sisymbol{L}}\@define\arcminute{\sisymbol{′}}%
+\@define\arcsecond{\sisymbol{″}}\@define\minute{\sisymbol{min}}\@define\neper{\sisymbol{Np}}%
+\@define\tonne{\sisymbol{t}}\@define\percent{\sisymbol{\%}}\@define\angstrom{\sisymbol{Å}}%
+\@define\bar{\sisymbol{bar}}\@define\barn{\sisymbol{b}}\@define\bit{\sisymbol{bit}}%
+\@define\byte{\sisymbol{B}}\@define\knot{\sisymbol{kn}}\@define\mmHg{\sisymbol{mmHg}}%
+\@define\nauticalmile{\sisymbol{M}}\@define\atomicmassunit{\sisymbol{u}}%
+\@define\fg{\sisymbol{fg}}\@define\pg{\sisymbol{pg}}\@define\ng{\sisymbol{ng}}%
+\@define\ug{\sisymbol{µg}}\@define\mg{\sisymbol{mg}}\@define\g{\sisymbol{g}}\@define\kg{\sisymbol{kg}}%
+\@define\pm{\sisymbol{pm}}\@define\nm{\sisymbol{nm}}\@define\um{\sisymbol{µm}}%
+\@define\mm{\sisymbol{mm}}\@define\cm{\sisymbol{cm}}\@define\dm{\sisymbol{dm}}%
+\@define\m{\sisymbol{m}}\@define\km{\sisymbol{km}}%
+\@define\as{\sisymbol{as}}\@define\fs{\sisymbol{fs}}\@define\ps{\sisymbol{ps}}%
+\@define\ns{\sisymbol{ns}}\@define\us{\sisymbol{µs}}\@define\ms{\sisymbol{ms}}\@define\s{\sisymbol{s}}%
+\@define\fmol{\sisymbol{fmol}}\@define\pmol{\sisymbol{pmol}}\@define\nmol{\sisymbol{nmol}}%
+\@define\umol{\sisymbol{µmol}}\@define\mmol{\sisymbol{mmol}}\@define\mol{\sisymbol{mol}}%
+\@define\kmol{\sisymbol{kmol}}%
+\@define\pA{\sisymbol{pA}}\@define\nA{\sisymbol{nA}}\@define\uA{\sisymbol{µA}}%
+\@define\mA{\sisymbol{mA}}\@define\A{\sisymbol{A}}\@define\kA{\sisymbol{kA}}%
+\@define\uL{\sisymbol{µL}}\@define\mL{\sisymbol{mL}}\@define\L{\sisymbol{L}}\@define\hL{\sisymbol{hL}}%
+\@define\mHz{\sisymbol{mHz}}\@define\Hz{\sisymbol{Hz}}\@define\kHz{\sisymbol{kHz}}%
+\@define\MHz{\sisymbol{MHz}}\@define\GHz{\sisymbol{GHz}}\@define\THz{\sisymbol{THz}}%
+\@define\mN{\sisymbol{mN}}\@define\N{\sisymbol{N}}\@define\kN{\sisymbol{kN}}\@define\MN{\sisymbol{MN}}%
+\@define\Pa{\sisymbol{Pa}}\@define\kPa{\sisymbol{kPa}}\@define\MPa{\sisymbol{MPa}}%
+\@define\GPa{\sisymbol{GPa}}%
+\@define\mohm{\sisymbol{mΩ}}\@define\kohm{\sisymbol{kΩ}}\@define\Mohm{\sisymbol{MΩ}}%
+\@define\pV{\sisymbol{pV}}\@define\nV{\sisymbol{nV}}\@define\uV{\sisymbol{µV}}%
+\@define\mV{\sisymbol{mV}}\@define\V{\sisymbol{V}}\@define\kV{\sisymbol{kV}}%
+\@define\W{\sisymbol{W}}\@define\uW{\sisymbol{µW}}\@define\mW{\sisymbol{mW}}%
+\@define\kW{\sisymbol{kW}}\@define\MW{\sisymbol{MW}}\@define\GW{\sisymbol{GW}}%
+\@define\J{\sisymbol{J}}\@define\uJ{\sisymbol{µJ}}\@define\mJ{\sisymbol{mJ}}\@define\kJ{\sisymbol{kJ}}%
+\@define\eV{\sisymbol{eV}}\@define\meV{\sisymbol{meV}}\@define\keV{\sisymbol{keV}}%
+\@define\MeV{\sisymbol{MeV}}\@define\GeV{\sisymbol{GeV}}\@define\TeV{\sisymbol{TeV}}%
+\@define\kWh{\sisymbol{kWh}}%
+\@define\F{\sisymbol{F}}\@define\fF{\sisymbol{fF}}\@define\pF{\sisymbol{pF}}%
+\@define\nF{\sisymbol{nF}}\@define\uF{\sisymbol{µF}}%
+\@define\H{\sisymbol{H}}\@define\mH{\sisymbol{mH}}\@define\uH{\sisymbol{µH}}%
+\@define\C{\sisymbol{C}}\@define\nC{\sisymbol{nC}}\@define\mC{\sisymbol{mC}}\@define\uC{\sisymbol{µC}}%
+\@define\K{\sisymbol{K}}\@define\dB{\sisymbol{dB}}%
+\@define\kibibyte{\sisymbol{KiB}}\@define\mebibyte{\sisymbol{MiB}}\@define\gibibyte{\sisymbol{GiB}}%
+}
+
+% A unit of a document's own, usable inside any unit.
+\@define{\DeclareSIUnit}[3][]{\@define#2{\sisymbol{#3}}}
+\@define{\DeclareSIPrefix}[4][]{\@define#2{\siprefix{#3}}}
+\@define{\DeclareSIPower}[4][]{\@define#2{\siraise{#4}}\@define#3{^{#4}}}
+
+% The unit itself, and the unit's own body, which a quantity shares.
+\@define\siunit[1]{\@group\sireset\@define\siseparator{}\siunits#1\@ungroup}
+\@define{\si}[2][]{\ensuremath{\siunit{#2}}}
+\@alias\unit\si
+
+% ---------------------------------------------------------------------------
+% Quantities, lists and ranges.
+
+\@define{\qty}[3][]{\ensuremath{\sivalue{#2}\,\siunit{#3}}}
+\@alias\SI\qty
+
+% 1, 2 and 3: a comma between each pair and "and" before the last.
+\@define\silist#1;#2;{%
+\sivalue{#1}%
+\@ifstrequal{#2}{\simark}{\@define\sinext{}}{\@define\sinext{\sirest#2;}}\sinext}
+\@define\sirest#1;#2;{%
+\@ifstrequal{#2}{\simark}{\@define\sinext{\text{ and }\sivalue{#1}}}%
+{\@define\sinext{\text{, }\sivalue{#1}\sirest#2;}}\sinext}
+\@define{\numlist}[2][]{\ensuremath{\silist#2;\simark;}}
+
+\@define{\numrange}[3][]{\num{#2} to \num{#3}}
+\@define{\qtyrange}[4][]{\qty{#2}{#4} to \qty{#3}{#4}}
+\@alias\SIrange\qtyrange
+
+\@define{\ang}[2][]{\ensuremath{\sivalue{#2}°}}

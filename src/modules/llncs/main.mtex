@@ -1,0 +1,70 @@
+% llncs: Springer's Lecture Notes in Computer Science -- one column, a text
+% block 12.2 by 19.3 centimetres centred on the sheet, the authors numbered
+% to their institutes, which are set under them with their e-mail
+% addresses, and the keywords after the abstract.
+%
+%   \author{Ada Lovelace\inst{1} \and Charles Babbage\inst{2}}
+%   \institute{Analytical Engines, London \email{ada@engines.org} \and Cambridge}
+
+\@leftmargin=\dimexpr(\paperwidth-12.2cm)/2\relax
+\@rightmargin=\dimexpr(\paperwidth-12.2cm)/2\relax
+\@topmargin=\dimexpr(\paperheight-19.3cm)/2\relax
+\@bottommargin=\dimexpr(\paperheight-19.3cm)/2\relax
+
+\@define\@institutes{}
+\@define\institute[1]{\@define\@institutes{#1}}
+\@define\inst[1]{\textsuperscript{#1}}
+\@define\email[1]{\\\texttt{#1}}
+\@define\orcidID[1]{}
+
+% Its headings: bold, a section large, those beneath at the body's size.
+\@heading{\section}{hang}{\bfseries\large}{\thesection}{1em}{}
+\@heading{\subsection}{hang}{\bfseries\normalsize}{\thesubsection}{1em}{}
+\@heading{\subsubsection}{hang}{\bfseries\normalsize}{\thesubsubsection}{1em}{}
+\@define\authorrunning[1]{}
+\@define\titlerunning[1]{}
+\@define\subtitle[1]{}
+\@define\keywords[1]{\par\noindent{\bfseries Keywords:} #1\par}
+
+% The theorems the class declares, each counted by itself: a claim's in
+% italic under a bold head, a definition's upright, a remark's head italic.
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{property}{Property}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}{Exercise}
+\newtheorem{problem}{Problem}
+\newtheorem{solution}{Solution}
+\newtheorem{question}{Question}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{note}{Note}
+\newtheorem{claim}{Claim}
+\newtheorem*{case}{Case}
+\theoremstyle{plain}
+
+% What the class gives the end of a paper: an address, a DOI as a link, and
+% the headings of its acknowledgements and its disclosure of interests.
+\@requirepackage{url}
+\@define\doi[1]{\url{https://doi.org/#1}}
+\@define\ackname{Acknowledgements}
+\@define\discintname{Disclosure of Interests}
+
+\@define\maketitle{%
+\par\vskip 2em%
+\begin{center}%
+{\Large\bfseries\thetitle\par}%
+\vskip 1.5em%
+{\theauthor\par}%
+\vskip 1em%
+{\small\@institutes\par}%
+\end{center}%
+\par\vskip 1.5em%
+\thispagestyle{plain}%
+}

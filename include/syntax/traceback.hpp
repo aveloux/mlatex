@@ -8,59 +8,61 @@
 
 namespace syntax {
 
-    /// @brief One recorded error, with the source position that caused it.
+    /// @brief One recorded error and the position that caused it.
     ///
-    /// Collected rather than thrown: TeX reports and carries on, so a single
-    /// mistake costs one command rather than the rest of the document.
+    /// Errors are collected rather than thrown: as in TeX, a mistake costs the
+    /// command that made it and processing carries on.
     class Traceback {
     public:
-        /// @brief What kind of mistake this is.
+        /// @brief The kind of error.
         enum class Type : std::uint8_t {
-            Group,       ///< Mismatched or unclosed curly brace scope group
-            Equation,    ///< Invalid or unclosed text formula boundary
-            Environment, ///< Unmatched \\begin and \\end environment block
-            Delimiter,   ///< Unbalanced \\left and \\right delimiter pair
-            Argument,    ///< Missing or malformed macro argument
-            Token,       ///< Unexpected or invalid token encountered
-            End,         ///< Premature end of file reached
-            Macro,       ///< Undefined or invalid macro command
-            Recursion,   ///< Infinite macro expansion recursion detected
-            Memory,      ///< Memory arena capacity limit exceeded
-            Catcode,     ///< Invalid character category code assignment
-            Scope,       ///< Unmatched scope exit operation
-            Primitive,   ///< Failure executing underlying compiler primitive
-            Dimension,   ///< Invalid or unparseable unit dimension specification
-            Register,    ///< Out-of-bounds register index access
-            Syntax       ///< General parsing syntax rule violation
+            Group,         ///< Unbalanced or unclosed brace group.
+            Equation,      ///< Malformed formula.
+            Environment,   ///< Mismatched `\begin` and `\end`.
+            Delimiter,     ///< Unbalanced delimiter or runaway delimited argument.
+            Argument,      ///< Missing or malformed argument.
+            Token,         ///< Illegal input byte.
+            End,           ///< Input ended too early.
+            Macro,         ///< Undefined or misused control sequence.
+            Recursion,     ///< Runaway expansion.
+            Memory,        ///< A size limit was exceeded.
+            Scope,         ///< Unbalanced group exit.
+            Primitive,     ///< A primitive could not do what it was asked.
+            Dimension,     ///< Missing or malformed dimension.
+            Register,      ///< Bad register reference or arithmetic.
+            Syntax,        ///< Any other malformed input.
+            Warning        ///< Not a mistake: something set in a way of the engine's own, or left out,
+                           ///< that a document should hear about -- a package it only knows by name.
         };
 
-        /// @brief An empty traceback, of kind Syntax.
-        Traceback() = default;
-
         /// @brief Records an error.
-        /// @param type     What kind of mistake it is.
-        /// @param location Where it happened; a zero location means "no position".
-        /// @param message  Human-readable explanation; copied.
+        /// @param type     Kind of error.
+        /// @param location Where it happened; zero means unknown.
+        /// @param message  Explanation; copied.
         Traceback(const Type type, const memory::Location location, const std::string_view message)
             : type_(type), location_(location), message_(message) {}
 
-        [[nodiscard]] constexpr Type type() const noexcept { return type_; }
-        [[nodiscard]] constexpr const memory::Location& location() const noexcept { return location_; }
+        /// @brief Kind of error.
+        [[nodiscard]] Type type() const noexcept { return type_; }
+
+        /// @brief Where it happened.
+        [[nodiscard]] const memory::Location& location() const noexcept { return location_; }
+
+        /// @brief Explanation.
         [[nodiscard]] const std::string& message() const noexcept { return message_; }
-        /// @brief Renders as `line:column: error (kind): message`.
-        /// @return The rendered string; the position is omitted when it is zero.
+
+        /// @brief Whether it stops the document being clean: every kind but a warning does.
+        [[nodiscard]] bool fatal() const noexcept { return type_ != Type::Warning; }
+
+        /// @brief Renders as `line:column: error (kind): message`, or
+        ///        `line:column: warning: message`.
+        /// @return The rendered text; the position is omitted when unknown.
         [[nodiscard]] std::string format() const;
 
-        /// @brief Names an error kind.
-        /// @param type Kind to name.
-        /// @return A short lowercase word, never empty.
-        /// @complexity O(1).
-        [[nodiscard]] static std::string_view name(Type type) noexcept;
-
     private:
-        Type type_ = Type::Syntax;
-        memory::Location location_{};
-        std::string message_{};
+        Type type_;                  ///< Kind of error.
+        memory::Location location_;  ///< Where it happened.
+        std::string message_;        ///< Explanation.
     };
 
 }

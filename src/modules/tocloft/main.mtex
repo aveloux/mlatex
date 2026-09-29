@@ -1,0 +1,50 @@
+% tocloft: how the lists of contents, figures and tables look. Their entries
+% are set as the class sets them, dot leaders and all; the lengths a
+% document sets for them are kept as the registers it names, and the fonts
+% and leaders it gives are read and let go.
+%
+%   \setlength{\cftbeforesecskip}{2pt}   \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\newskip\cftbeforetoctitleskip   \newskip\cftaftertoctitleskip
+\newskip\cftbeforeloftitleskip   \newskip\cftafterloftitleskip
+\newskip\cftbeforelottitleskip   \newskip\cftafterlottitleskip
+\newskip\cftbeforepartskip       \newskip\cftbeforechapskip
+\newskip\cftbeforesecskip        \newskip\cftbeforesubsecskip
+\newskip\cftbeforesubsubsecskip  \newskip\cftbeforefigskip
+\newskip\cftbeforetabskip        \newdimen\cftparskip
+\newdimen\cftsecindent           \newdimen\cftsecnumwidth
+\newdimen\cftsubsecindent        \newdimen\cftsubsecnumwidth
+\newdimen\cftsubsubsecindent     \newdimen\cftsubsubsecnumwidth
+\newdimen\cftchapindent          \newdimen\cftchapnumwidth
+\newdimen\cftfigindent           \newdimen\cftfignumwidth
+\newdimen\cfttabindent           \newdimen\cfttabnumwidth
+
+\@define\cftdot{.}
+\@define\cftdotsep{4.5}
+\@define\cftnodots{5000}
+\@define\cftdotfill[1]{\dotfill}
+\@define\cftsecleader{\dotfill}
+\@define\cftsubsecleader{\dotfill}
+\@define\cftsubsubsecleader{\dotfill}
+\@define\cftchapleader{\dotfill}
+\@define\cftfigleader{\dotfill}
+\@define\cfttableader{\dotfill}
+\@define\cftsecfont{}          \@define\cftsecpagefont{}
+\@define\cftsubsecfont{}       \@define\cftsubsecpagefont{}
+\@define\cftsubsubsecfont{}    \@define\cftsubsubsecpagefont{}
+\@define\cftchapfont{}         \@define\cftchappagefont{}
+\@define\cftfigfont{}          \@define\cftfigpagefont{}
+\@define\cfttabfont{}          \@define\cfttabpagefont{}
+\@define\cfttoctitlefont{}     \@define\cftloftitlefont{}     \@define\cftlottitlefont{}
+\@define\cftaftertoctitle{}    \@define\cftafterloftitle{}    \@define\cftafterlottitle{}
+\@define\cftsecaftersnum{}     \@define\cftsubsecaftersnum{}  \@define\cftchapaftersnum{}
+\@define\cftsecpresnum{}       \@define\cftsubsecpresnum{}    \@define\cftchappresnum{}
+\@define\cftmarktoc{}          \@define\cftmarklof{}          \@define\cftmarklot{}
+\@define\cftsetindents[3]{}
+\@define\cftpagenumbersoff[1]{}
+\@define\cftpagenumberson[1]{}
+\@define\cftaddtitleline[4]{}
+\@define\cftaddnumtitleline[5]{}
+\@define\tocloftpagestyle[1]{}
+\@define\newlistof[4][]{}
+\@define\newlistentry[4][]{}

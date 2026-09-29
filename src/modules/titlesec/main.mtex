@@ -1,0 +1,31 @@
+% titlesec: headings of a document's own design. \titleformat gives a level
+% its face and size, its color, its alignment, how its number is written and
+% how far from its title, whether its title is in capitals, and a rule under
+% it when the code after the title draws one; \titlespacing the space above
+% and below it. What a format does beyond those -- frames, other code run
+% after the title -- is read and let go.
+%
+%   \titleformat{\section}{\large\bfseries\color{blue}}{\thesection.}{1em}{\MakeUppercase}[\titlerule]
+%   \titleformat*{\subsection}{\itshape}
+%   \titlespacing*{\section}{0pt}{12pt plus 2pt}{6pt}
+
+\@define\titleformat{\@ifstar{\@titlebrief}{\@titleformat}}
+\@define\@titlebrief[2]{\@heading{#1}{hang}{#2}{*}{1em}{}}
+\@define\@titleformat#1{\@ifnextchar[{\@titleshape#1}{\@titleshape#1[hang]}}
+\@spanning\@define\@titleshape#1[#2]#3#4#5#6{\@ifnextchar[{\@titleafter{#1}{#2}{#3}{#4}{#5}{#6}}{\@heading{#1}{#2}{#3}{#4}{#5}{#6}}}
+\@spanning\@define\@titleafter#1#2#3#4#5#6[#7]{\@heading{#1}{#2}{#3#7}{#4}{#5}{#6}}
+\@define\titlespacing{\@ifstar{\@titlespacing}{\@titlespacing}}
+\@define\@titlespacing[4]{\@headingspace{#1}{#2}{#3}{#4}\@gobbleoption}
+
+% What a format may hold besides the switches read above, and titlesec's
+% other commands, which set nothing here.
+\@define\filcenter{}
+\@define\filleft{}
+\@define\filright{}
+\@define\filinner{}
+\@define\filouter{}
+\@define\titlerule{\@ifstar{\@gobbleoptionone}{\@gobbleoption}}
+\@define\titlelabel[1]{}
+\@define\titleclass[2]{\@gobbleoption}
+\@define\thetitle{}
+\@define\chaptertitlename{\chaptername}

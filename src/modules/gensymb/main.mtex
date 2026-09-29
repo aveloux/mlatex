@@ -1,0 +1,8 @@
+% gensymb: the units' signs, the same in text and in formulas -- a text
+% face's own sign in the text, the maths face's in a formula.
+
+\@define\degree{\ifmmode{}^\circ\else\textdegree\fi}
+\@define\celsius{\ifmmode{}^\circ\mathrm{C}\else\textcelsius\fi}
+\@define\perthousand{\textperthousand}
+\@define\micro{\ifmmode\mu\else\textmu\fi}
+\@define\ohm{\ensuremath{\Omega}}

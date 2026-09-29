@@ -21,7 +21,7 @@ namespace sandbox {
     /// @brief One self-contained run of the language.
     ///
     /// Owns every piece of engine state, installs the wrapper primitives, and
-    /// exposes two ways in: eval() for a string, run() for a file.
+    /// exposes two ways in: evaluate() for a string, run() for a file.
     ///
     /// @par Order
     /// The member order below is load-bearing and must not be rearranged.
@@ -33,7 +33,7 @@ namespace sandbox {
     /// @par Use
     /// @code
     /// sandbox::VM machine;
-    /// if (!machine.eval("\\set\\integer0 = \\evaluate{6*7}")) {
+    /// if (!machine.evaluate("\\set\\integer0 = \\evaluate{6*7}")) {
     ///     for (const auto& fault : machine.tracebacks()) {
     ///         std::cerr << fault.format() << '\n';
     ///     }
@@ -41,23 +41,23 @@ namespace sandbox {
     /// @endcode
     class VM {
     public:
-        static constexpr std::size_t MEMORY = 64 * 1024 * 1024;   ///< Default byte budget.
+        static constexpr std::size_t ceiling = 64 * 1024 * 1024;   ///< Default byte budget.
 
         /// @brief Builds a machine and installs the wrapper primitives.
         /// @param rules How much the document is allowed to do.
         /// @param limit Byte budget for the allocator.
-        explicit VM(const Policy& rules = {}, std::size_t limit = MEMORY);
+        explicit VM(const Policy& rules = {}, std::size_t limit = ceiling);
         ~VM() = default;
 
-        VM(const VM&) = delete;
-        VM& operator=(const VM&) = delete;
-        VM(VM&&) noexcept = delete;
-        VM& operator=(VM&&) noexcept = delete;
+        VM(const VM&) = delete("a machine owns its expander, its parser and the arena both allocate from");
+        VM& operator=(const VM&) = delete("a machine owns its expander, its parser and the arena both allocate from");
+        VM(VM&&) noexcept = delete("a machine owns its expander, its parser and the arena both allocate from");
+        VM& operator=(VM&&) noexcept = delete("a machine owns its expander, its parser and the arena both allocate from");
 
         /// @brief Runs a document held in memory.
         /// @param code Source text.
         /// @return True when the run produced no errors.
-        [[nodiscard]] bool eval(std::string_view code);
+        [[nodiscard]] bool evaluate(std::string_view code);
 
         /// @brief Runs a document from a file.
         /// @param path File to read.
@@ -73,7 +73,7 @@ namespace sandbox {
         [[nodiscard]] std::vector<syntax::Traceback> tracebacks() const;
 
         /// @brief Did the last run report anything?
-        [[nodiscard]] bool failed() const noexcept;
+        [[nodiscard]] bool error() const noexcept;
 
         /// @brief Tokens consumed so far, against Policy::tokens.
         [[nodiscard]] std::uint64_t consumed() const noexcept { return served; }
@@ -83,7 +83,7 @@ namespace sandbox {
 
     private:
         Policy policy;
-        Allocator memory;
+        Allocator allocator;
         memory::Arena arena;
         syntax::semantics::Union state;
         syntax::Lexicon lexicon;
@@ -91,7 +91,7 @@ namespace sandbox {
         syntax::primitives::Context context;
         syntax::Mouth mouth;
         std::uint64_t served{0};
-        std::vector<syntax::Traceback> faults{};
+        std::vector<syntax::Traceback> tracebacks_{};   ///< Errors this machine found.
     };
 
 }

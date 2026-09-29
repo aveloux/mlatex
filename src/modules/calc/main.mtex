@@ -1,0 +1,2 @@
+% calc: lengths written as sums -- \setlength{\x}{\textwidth-2cm} -- which
+% the engine reads itself, and \widthof and the rest, which are its own.

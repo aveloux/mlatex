@@ -1,0 +1,156 @@
+% The prelude's one entry point.
+%
+% Read before the document, because the cursor is a stack and whatever is
+% ingested last is read first. Nothing here is built into the engine: every
+% line below is written in the same language a document is, which is the
+% point. What the engine provides is the small set of primitives underneath;
+% the packages are the vocabulary built on top of them.
+%
+% This is the only file the driver ingests. Every package is a folder beside
+% it whose own main.mtex is its wrapper, and a document asks for one by the
+% folder's name -- \usepackage{amsthm} -- exactly as LaTeX has it, options
+% and all. A package is read once however many times it is asked for, so one
+% package may ask for another it builds on with \requirepackage and never
+% load it twice. The folders are named after LaTeX's own packages, so a
+% LaTeX document's preamble reads here unchanged:
+%
+%   core        every document's vocabulary; loaded here, always
+%
+%   The document
+%   fancyhdr    heads, feet and page numbers: \fancyhead, \fancyfoot, \lhead
+%   geometry    the paper and margins, from options or \geometry{...}
+%   setspace    \onehalfspacing, \doublespacing, \setstretch
+%   cleveref    \cref and \Cref, which say what a reference refers to
+%   hyperref    \href, \url, \hypersetup, \autoref; set as text, not links
+%   url         \url
+%   todonotes   \todo and \missingfigure, all gone with [disable]
+%   lipsum      placeholder paragraphs
+%   datetime    the date as \isodate, \shortdate, \longdate, \weekday
+%   datetime2   \DTMnow and \DTMtoday
+%   fullpage    an inch of margin all round; a4wide, a wider text on A4
+%   titling     the title block's hooks, read and let go
+%   lastpage    the label LastPage, on the document's last page
+%   authblk     \affil, the authors' affiliations
+%   abstract    the abstract, whose block is the engine's own
+%   epigraph    a quotation at a chapter's head
+%   appendix    \appendixpage and the appendices block
+%   blindtext   \blindtext and \Blindtext, from lipsum
+%   ragged2e    \RaggedRight, \RaggedLeft, \Centering
+%   needspace   \needspace; placeins, \FloatBarrier; afterpage, \afterpage
+%   comment     the comment block, and \includecomment and \excludecomment
+%   lineno      numbered lines, left unnumbered
+%   orcidlink   an ORCID, left out
+%   fontawesome5  its icons as the Unicode symbols nearest them; fontawesome, the same
+%   glossaries  \newglossaryentry, \newacronym, \gls, \acrshort, \acrlong
+%   nomencl     \nomenclature, read; makeidx and imakeidx, \index, read
+%
+%   Logic, for a document built from a program's values
+%   etoolbox    toggles, \ifstrequal, \ifnumcomp, \ifdef, \ifblank
+%   ifthen      \ifthenelse with \equal, \boolean, \isodd
+%   xfp         \fpeval, in exact decimals
+%
+%   Words and quantities
+%   acronym     \ac, spelled out the first time and short after
+%   siunitx     \SI, \qty, \si, \num and the units and prefixes
+%   csquotes    \enquote
+%   soul        \hl, \ul, \st, \so, \caps
+%   ulem        \uline, \uuline, \uwave, \sout, \xout
+%   gensymb     \degree, \celsius, \ohm, \micro, \perthousand
+%   eurosym     \euro and \EUR
+%   units       \unit and \unitfrac
+%   nicefrac    \nicefrac; xfrac, \sfrac
+%   mhchem      \ce, the engine's own
+%
+%   Mathematics
+%   amsmath     \DeclareMathOperator, \implies; the displays are primitives
+%   amssymb     the symbols, which the maths face has; \R, \N, \Z, \Q, \C
+%   amsthm      \theorem, \lemma, \corollary, \definition, \example, \proof
+%   mathtools   amsmath, \DeclarePairedDelimiter, \ceil, \floor
+%   physics     \abs, \norm, \ip, \dv, \pdv, \Re, \Im
+%   braket      \bra, \ket, \braket, \Set
+%   cancel      \cancel, \bcancel, \xcancel, \cancelto, the parser's own
+%   bbm         \mathbbm; dsfont, \mathds; both blackboard bold
+%   upgreek     \upalpha and the rest, upright
+%   stmaryrd    \llbracket and \rrbracket
+%   esint       the surface and volume integrals, the maths face's own
+%
+%   Tables, floats and pseudocode
+%   booktabs    \toprule, \midrule, \bottomrule, \cmidrule, \addlinespace
+%   array       >{...}, m{} and b{} columns, \newcolumntype
+%   tabularx    a table stretched to a width by its X columns
+%   multirow    a cell over several rows
+%   caption     \captionsetup, \captionof, and the caption's font and label
+%   float       [H], and the float package's commands
+%   algorithm   the ruled float pseudocode stands in
+%   algpseudocode  \State, \If, \For, \While, \Require, \Comment
+%   algorithmic the older pseudocode commands, in capitals
+%   algorithm2e \KwIn, \For, \While, \If, \eIf, \tcp
+%   longtable   a table over pages, its head marks read
+%   tabulary    L, C, R and J columns; dcolumn, D{.}{.}{n}
+%   colortbl    \rowcolor, \cellcolor, \columncolor, read
+%   hhline      \hhline, drawn as one rule
+%   makecell    \makecell, \thead, \Xhline
+%   threeparttable  \tnote, and the tablenotes list
+%   bigstrut    \bigstrut; diagbox, \diagbox
+%   subfig      \subfloat, from subcaption
+%   fancyvrb    Verbatim and \VerbatimInput
+%   minted      the minted block, \mintinline and \inputminted
+%
+%   Lists and the page
+%   enumitem    label=(\roman*), short labels, start=, noitemsep, nosep
+%   parskip     paragraphs apart by space rather than by indentation
+%   titlesec    \titleformat and \titlespacing: a heading's face, size, place and label
+%   xspace      a space after a command, unless punctuation follows
+%   marginnote  \marginnote, set as \marginpar
+%   framed      framed, shaded and leftbar blocks; mdframed and tcolorbox, theirs
+%   fancybox    \shadowbox, \doublebox, \ovalbox, as frames
+%   calc        sums in \setlength, read by the engine itself
+%
+%   Pictures and references
+%   tikz        tikzpicture, \draw and \node: paths, boxes, grids, circles, arcs, labels
+%   tikz-cd     the tikzcd block, its objects in their grid, its arrows let go
+%   pgfplots    each axis left empty, and said so once
+%   natbib      \citep, \citet and the rest, by author and year from a natbib style
+%   biblatex    \addbibresource, \printbibliography, \parencite, \textcite
+%
+%   Languages
+%   babel       a language's hyphenation, captions, date and direction, by option
+%   polyglossia the same by command, with \textrussian and a block for each
+%   bidi        \setRTL and \setLTR: which way the paragraphs from here on read
+%
+%   Faces and symbols
+%   fontspec    \setmainfont and \setmathfont, set in the nearest face carried
+%   unicode-math  \setmathfont, and the \sym alphabets
+%   pifont      \ding, Zapf Dingbats by number as Unicode's characters
+%
+%   Contents and tables by other packages
+%   tocloft     the contents lists' lengths as registers, their fonts let go
+%   ctable      \ctable, a centred table with booktabs' rules
+%
+%   Classes, read by \documentclass as a package is
+%   IEEEtran    two columns, Roman section numbers, \IEEEauthorblockN and the rest
+%   acmart      sigconf in two columns, \affiliation's fields, the keywords
+%   llncs       the 12.2 by 19.3 cm block, \institute and \inst
+%   elsarticle  \address under the authors, the notes let go
+%   revtex4-2   \affiliation under the authors; revtex4-1 and revtex4, the same
+%   amsart      \address, \email, \subjclass, \keywords, \dedicatory
+%   svjour3     \institute and \at, \keywords, \subclass
+%   scrartcl    KOMA-Script's \subject, \subtitle, \publishers; scrreprt and scrbook, the same
+%   beamer      frames on 128 by 96 mm in sans serif, \titlepage, overlays read as one slide
+%   letter      \address and \signature, \opening and \closing, \ps, \encl and \cc
+%
+% inputenc, fontenc, lmodern, microtype, textcomp, cite, amsfonts,
+% mathrsfs, bm, graphicx, graphics, xcolor, color and the font packages ask
+% for what the engine already does; the core package marks them loaded, and
+% they have no folder. So are a few hundred more that core/compatibility
+% lists by why, and a package under another's name -- xurl, soulutf8 --
+% loads that one. Any other package is a warning, and its commands are read
+% from the glossary (assets/glossary.mtex) when a document uses them.
+%
+% A character the lexer reads as an instruction cannot be defined in any of
+% these files, because a macro's body is lexed the same way the document is --
+% a body holding a `%` would be eaten as a comment before it was ever stored.
+% Those live in the Symbols primitive instead, where the lexer cannot reach
+% them.
+
+\usepackage{core}

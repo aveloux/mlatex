@@ -1,0 +1,2 @@
+% cancel: a term struck through in a formula. \cancel, \bcancel, \xcancel
+% and \cancelto are the formula parser's own.

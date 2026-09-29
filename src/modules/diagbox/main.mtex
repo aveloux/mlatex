@@ -1,0 +1,4 @@
+% diagbox: a cell split by a diagonal, its two labels set either side of a
+% slash.
+
+\@define\diagbox[3][]{#2\,/\,#3}

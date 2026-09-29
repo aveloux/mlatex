@@ -1,0 +1,7 @@
+% colortbl: tables in color. \rowcolor, \cellcolor and \columncolor -- the
+% last written in a column's >{...} -- are the engine's own, painted behind
+% the row, the cell or every cell of the column. The rules are drawn in
+% black; what color they would take is read and let go.
+
+\@define\arrayrulecolor[2][]{}
+\@define\doublerulesepcolor[2][]{}

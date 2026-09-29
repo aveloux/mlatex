@@ -1,0 +1,9 @@
+% float: [H], a float set where it is written, is how every float is set
+% here. The package's ways of making floats of new kinds and styles are read
+% and set nothing.
+
+\@define\floatstyle[1]{}
+\@define\restylefloat{\@ifstar{\floatrestyled}{\floatrestyled}}
+\@define\floatrestyled[1]{}
+\@define\newfloat[4][]{}
+\@define\floatplacement[2]{}

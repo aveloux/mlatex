@@ -1,0 +1,20 @@
+% LaTeX's two headings below \subsubsection, set as its classes set them:
+% run in, the title in bold at the start of its own paragraph and the text
+% carrying on after it on the same line. Unnumbered, as the article class
+% leaves them. \@runin{style} is any such heading, its star and short title
+% read and let go -- what \@startsection makes of a heading that runs in.
+
+\@define\@runin[1]{\@ifstar{\@runinshort{#1}}{\@runinshort{#1}}}
+\@define\@runinshort[1]{\@ifnextchar[{\@runintitle{#1}}{\@runintitle{#1}[]}}
+\@spanning\@define\@runintitle#1[#2]#3{\par\medskip\noindent{#1#3}\quad}
+
+\@define\paragraph{\@runin{\bfseries}}
+\@define\subparagraph{\@runin{\bfseries}}
+
+% A book's three parts: the front matter's pages numbered in roman and its
+% chapters unnumbered, though listed in the contents; the main matter's
+% pages in arabic from 1 and its chapters numbered; the back matter's
+% chapters unnumbered again.
+\@define\frontmatter{\cleardoublepage\pagenumbering{roman}\setcounter{secnumdepth}{-1}}
+\@define\mainmatter{\cleardoublepage\pagenumbering{arabic}\setcounter{secnumdepth}{2}}
+\@define\backmatter{\cleardoublepage\setcounter{secnumdepth}{-1}}

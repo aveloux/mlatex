@@ -1,0 +1,45 @@
+% etoolbox: the tests and switches a package, or a document built from a
+% program's values, decides what to set with.
+%
+%   \newtoggle{draft}
+%   \toggletrue{draft}
+%   \iftoggle{draft}{\textcolor{red}{DRAFT}}{}
+%
+%   \ifstrequal{\variable{plan}}{gold}{Welcome back.}{Upgrade today.}
+%   \ifnumcomp{\variable{items}}{>}{10}{bulk}{single}
+%   \ifdef{\thetitle}{titled}{untitled}
+%   \ifblank{\variable{note}}{}{Note: \variable{note}}
+%
+% \ifstrequal is the engine's own, and expands both sides before it
+% compares them. A toggle is a variable, toggle.name, so a calling program
+% can set one before the document runs, as it sets any other value.
+% \AtBeginDocument and \AtEndDocument are in the core package, as they are
+% in LaTeX's own kernel.
+
+% Toggles, and etoolbox's booleans, which are the same thing.
+\@define\newtoggle[1]{\@setvariable{toggle.#1}{false}}
+\@define\toggletrue[1]{\@setvariable{toggle.#1}{true}}
+\@define\togglefalse[1]{\@setvariable{toggle.#1}{false}}
+\@define\settoggle[2]{\@setvariable{toggle.#1}{#2}}
+\@define\iftoggle[3]{\@ifstrequal{\@variable{toggle.#1}}{true}{#2}{#3}}
+\@define\nottoggle[3]{\iftoggle{#1}{#3}{#2}}
+\@alias\newbool\newtoggle
+\@alias\booltrue\toggletrue
+\@alias\boolfalse\togglefalse
+\@alias\setbool\settoggle
+\@alias\ifbool\iftoggle
+\@alias\notbool\nottoggle
+
+% Numbers and lengths compared with any of <, = and >.
+\@define\ifnumcomp[5]{\ifnum#1#2#3 #4\else #5\fi}
+\@define\ifnumequal[4]{\ifnumcomp{#1}{=}{#2}{#3}{#4}}
+\@define\ifnumless[4]{\ifnumcomp{#1}{<}{#2}{#3}{#4}}
+\@define\ifnumgreater[4]{\ifnumcomp{#1}{>}{#2}{#3}{#4}}
+\@define\ifnumodd[3]{\ifodd#1 #2\else #3\fi}
+\@define\ifdimcomp[5]{\ifdim#1#2#3 #4\else #5\fi}
+
+% Whether a command is defined, and whether text is there at all.
+\@define\ifdef[3]{\ifdefined#1 #2\else #3\fi}
+\@define\ifundef[3]{\ifdefined#1 #3\else #2\fi}
+\@define\ifblank[3]{\@ifempty{#1}#2\else #3\fi}
+\@define\notblank[3]{\@ifempty{#1}#3\else #2\fi}

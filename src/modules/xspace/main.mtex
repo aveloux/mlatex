@@ -1,0 +1,4 @@
+% xspace: a space after a command, unless what follows is punctuation --
+% so \define\eg{e.g.\xspace} reads right before a word and before a comma.
+
+\@define\xspace{\@ifnextchar{.}{}{\@ifnextchar{,}{}{\@ifnextchar{;}{}{\@ifnextchar{:}{}{\@ifnextchar{)}{}{\@ifnextchar{!}{}{\@ifnextchar{?}{}{\ }}}}}}}}

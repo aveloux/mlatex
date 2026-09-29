@@ -1,0 +1,4 @@
+% threeparttable: a table, its caption and its notes kept together. The
+% tablenotes block is the engine's own list; a note's mark is raised.
+
+\@define\tnote[1]{\textsuperscript{#1}}

@@ -1,0 +1,35 @@
+% acronym: an abbreviation spelled out the first time it is used, and
+% written short every time after.
+%
+%   \newacronym{pdf}{PDF}{Portable Document Format}
+%   \acrodef{api}{application programming interface}   % the short form is the key
+%   \begin{acronym}                                     % listed, as a description
+%     \acro{GUI}{graphical user interface}
+%   \end{acronym}
+%
+%   \ac{pdf}     % first: Portable Document Format (PDF); after: PDF
+%   \acs{pdf}    % always short
+%   \acl{pdf}    % always long
+%   \acf{pdf}    % always both
+%   \acp{pdf}    % plural: PDFs, after the first time
+%   \acreset{pdf}   % the next \ac spells it out again
+%
+% Each acronym is kept as variables -- acronym.key.short, acronym.key.long,
+% and acronym.key.used once it has been -- so a calling program can define
+% a document's acronyms before it runs. One used before it is defined -- a
+% list at the document's end, as LaTeX's second run reads it -- is written
+% in when it is, and one never defined reads ??.
+
+\@define\newacronym[3]{\@setvariable{acronym.#1.short}{#2}\@setvariable{acronym.#1.long}{#3}%
+\@fulfil{acronym.#1.short}{#2}\@fulfil{acronym.#1.long}{#3}\@fulfil{acronym.#1.full}{#3 (#2)}}
+\@define\acrodef[1]{\@ifnextchar[{\@acrodef{#1}}{\@acrodef{#1}[#1]}}
+\@define\@acrodef#1[#2]#3{\newacronym{#1}{#2}{#3}}
+\@define\acro[1]{\@ifnextchar[{\@acro{#1}}{\@acro{#1}[#1]}}
+\@define\@acro#1[#2]#3{\newacronym{#1}{#2}{#3}\item[#2] #3}
+
+\@define\acs[1]{\@setvariable{acronym.#1.used}{true}\@ifvariable{acronym.#1.short}{\@variable{acronym.#1.short}}{\@forward{acronym.#1.short}}}
+\@define\acl[1]{\@setvariable{acronym.#1.used}{true}\@ifvariable{acronym.#1.long}{\@variable{acronym.#1.long}}{\@forward{acronym.#1.long}}}
+\@define\acf[1]{\@setvariable{acronym.#1.used}{true}\@ifvariable{acronym.#1.long}{\@variable{acronym.#1.long} (\@variable{acronym.#1.short})}{\@forward{acronym.#1.full}}}
+\@define\ac[1]{\@ifvariable{acronym.#1.used}{\acs{#1}}{\acf{#1}}}
+\@define\acp[1]{\@ifvariable{acronym.#1.used}{\acs{#1}s}{\acl{#1}s (\acs{#1}s)}}
+\@define\acreset[1]{\@unsetvariable{acronym.#1.used}}

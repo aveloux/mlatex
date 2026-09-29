@@ -1,0 +1,17 @@
+% English: babel's captions for it, and its date: September 28, 2026.
+
+\@define\captionsenglish{%
+\@define\abstractname{Abstract}%
+\@define\proofname{Proof}%
+\@define\figurename{Figure}%
+\@define\tablename{Table}%
+\@define\refname{References}%
+\@define\bibname{Bibliography}%
+\@define\contentsname{Contents}%
+\@define\listfigurename{List of Figures}%
+\@define\listtablename{List of Tables}%
+\@define\appendixname{Appendix}%
+\@define\partname{Part}%
+\@define\chaptername{Chapter}%
+\@define\indexname{Index}}
+\@define\dateenglish{\@define\today{\monthname{\month} \@evaluate{\day}, \@evaluate{\year}}}

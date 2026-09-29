@@ -1,0 +1,5 @@
+% units: a value and its unit, apart by a thin space, and a unit as a
+% fraction.
+
+\@define\unit[2][]{#1\,#2}
+\@define\unitfrac[3][]{#1\,#2/#3}

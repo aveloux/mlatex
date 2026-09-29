@@ -1,0 +1,7 @@
+% datetime2: today's date and the time, in the document's own style.
+
+\@requirepackage{datetime}
+\@define\DTMnow{\today}
+\@define\DTMtoday{\today}
+\@define\DTMsetstyle[1]{}
+\@define\DTMsavedate[2]{}

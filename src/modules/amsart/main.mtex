@@ -1,0 +1,36 @@
+% amsart: the American Mathematical Society's articles. An author's
+% address, e-mail and web page are set under the authors; the subject
+% classification, the keywords and the dedication in the title block's foot.
+%
+%   \author{Ada Lovelace}
+%   \address{Analytical Engines, London}
+%   \subjclass[2020]{Primary 68Q05}
+
+\@define\@addresses{}
+\@define\address[2][]{\g@addto@macro\@addresses{\\\small\scshape #2}}
+\@define\curraddr[2][]{\g@addto@macro\@addresses{\\\small\itshape Current address: #2}}
+\@define\email[2][]{\g@addto@macro\@addresses{\\\small\itshape E-mail address: \texttt{#2}}}
+\@define\urladdr[2][]{\g@addto@macro\@addresses{\\\small\itshape URL: \texttt{#2}}}
+\@define\@notes{}
+\@define\subjclass[2][2020]{\g@addto@macro\@notes{\par\noindent{\small\itshape #1 Mathematics Subject Classification.} {\small #2}}}
+\@define\keywords[1]{\g@addto@macro\@notes{\par\noindent{\small\itshape Key words and phrases.} {\small #1}}}
+\@define\dedicatory[1]{\g@addto@macro\@notes{\par\centerline{\small\itshape #1}}}
+\@define\translator[1]{}
+
+% Its headings: a section centred in small capitals, `1. Introduction`; a
+% subsection bold.
+\@heading{\section}{hang}{\centering\scshape\normalsize}{\thesection.}{0.5em}{}
+\@heading{\subsection}{hang}{\bfseries\normalsize}{\thesubsection.}{0.5em}{}
+\@heading{\subsubsection}{hang}{\itshape\normalsize}{\thesubsubsection.}{0.5em}{}
+
+\@define\maketitle{%
+\par\vskip 2em%
+\begin{center}%
+{\large\scshape\thetitle\par}%
+\vskip 1.5em%
+{\scshape\theauthor\par}%
+{\@addresses\par}%
+\end{center}%
+\@notes\par\vskip 1.5em%
+\thispagestyle{plain}%
+}

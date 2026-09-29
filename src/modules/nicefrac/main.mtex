@@ -1,0 +1,4 @@
+% nicefrac: a fraction written small, its numerator raised and denominator
+% lowered either side of a slash.
+
+\@define\nicefrac[3][]{\ensuremath{{}^{#2}\!/\!{}_{#3}}}

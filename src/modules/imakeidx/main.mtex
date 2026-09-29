@@ -1,0 +1,6 @@
+% imakeidx: an index, made within the run. \index and \printindex are the
+% engine's own, one index whatever it is named; what sets up an index of a
+% name of its own is read and let go.
+
+\@define\makeindex[1][]{}
+\@define\indexsetup[1]{}

@@ -1,0 +1,12 @@
+% Common abbreviations, each followed by a tie rather than an ordinary space
+% so a line never breaks between the abbreviation and the word after it.
+
+\@define\eg{e.g.~}
+\@define\ie{i.e.~}
+\@define\etc{etc.}
+\@define\vs{vs.~}
+\@define\etal{et~al.}
+\@define\cf{cf.~}
+\@define\viz{viz.~}
+\@define\wrt{w.r.t.~}
+\@define\resp{resp.~}

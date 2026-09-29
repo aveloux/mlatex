@@ -1,44 +1,35 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <string_view>
-#include <vector>
 
 namespace syntax::semantics {
 
+    /// @brief What kind of open group a scope is, for diagnostics.
+    ///
+    /// Scope used to be a stack of its own, opened and closed alongside
+    /// Mouth's undo log -- which kept an identical stack, since it is Mouth
+    /// that has to know a group's kind to catch `\\begin{a} ... }` as a
+    /// mismatch. Two stacks that must always agree are one stack too many, so
+    /// only Mouth's remains; this is what is left of Scope, a tag for the kind
+    /// a caller hands to Mouth::push() and Mouth::pop().
     class Scope {
     public:
-        // Syntax types are static AST nodes; Scope types are runtime stack frames.
-        // They isolate local macro, register, and catcode changes inside boundaries.
-        // Exiting unwinds the undo log to automatically restore engine state.
+        /// @brief Which kind of group is open.
         enum class Type : std::uint8_t {
-            Group,       ///< Scope group block ({...} or \\begingroup...\\endgroup)
-            Environment, ///< Formal environment structure (\\begin...\\end)
-            Equations,   ///< Mathematical inline/display formulas ($...$, $$...$$, \\(...\\), \\[...\\])
-            Box,         ///< Layout framing box container (\\hbox, \\vbox, \\vtop)
-            Conditional, ///< Conditional branch stack (\\if, \\ifx, \\else, \\fi)
-            Alignment    ///< Grid/Table cell alignment scope (\\halign, \\valign, tabular)
+            Group,       ///< A brace group or `\\begingroup ... \\endgroup`.
+            Environment, ///< `\\begin{name} ... \\end{name}`.
+            Equations,   ///< A formula: `$...$`, `$$...$$`, `\\(...\\)`, `\\[...\\]`.
+            Box,         ///< `\\hbox`, `\\vbox`, `\\vtop`.
+            Conditional, ///< `\\if`, `\\ifx`, `\\else`, `\\fi`.
+            Alignment    ///< `\\halign`, `\\valign`, a table.
         };
 
-        struct Layer {
-            Type type = Type::Group;
-            std::size_t level = 0;
-        };
-
-        void push(Type type = Type::Group);
-        void pop();
-        [[nodiscard]] std::size_t depth() const noexcept;
-        [[nodiscard]] Type type() const noexcept;
-        void reset() noexcept;
-
-        [[nodiscard]] std::optional<Layer> top() const noexcept;
-
+        /// @brief One name per Type, for a traceback message.
+        /// @param type Kind to name.
+        /// @return Its name, lower case, as it reads in a message.
+        /// @complexity O(1).
         [[nodiscard]] static std::string_view name(Type type) noexcept;
-
-    private:
-        std::vector<Layer> stack;
     };
 
 }

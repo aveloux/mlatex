@@ -1,0 +1,15 @@
+% amssymb: every symbol it names -- \mathbb, \therefore, \varnothing and the
+% rest -- is already in the maths face's own table, so there is nothing to
+% load for them. Asking for it loads amsfonts, as LaTeX's does.
+
+\@requirepackage{amsfonts}
+
+% The number sets, which LaTeX leaves every document to define for itself
+% and nearly every document does. Defined here, beside \mathbb, so a
+% document has them the moment it asks for the blackboard letters; one
+% that defines its own with \newcommand only replaces them.
+\@define\R{\mathbb{R}}
+\@define\N{\mathbb{N}}
+\@define\Z{\mathbb{Z}}
+\@define\Q{\mathbb{Q}}
+\@define\C{\mathbb{C}}

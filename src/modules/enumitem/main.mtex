@@ -1,0 +1,15 @@
+% enumitem: control over lists' labels and spacing.
+%
+%   \begin{enumerate}[label=(\roman*)]    % (i), (ii), (iii)
+%   \begin{enumerate}[(a)]                % short labels, as the shortlabels option reads them
+%   \begin{itemize}[noitemsep]            % no space between the items
+%   \begin{enumerate}[start=3, nosep]     % counting from three, no space around
+%
+% A list's options are read by the list itself, so every one above is the
+% engine's own, as is \setlist, which sets them for every list of a kind:
+% `\setlist[itemize]{noitemsep}`. What is left are the commands that make
+% lists of new names, which set nothing a document here would see.
+
+\@define\newlist[3]{}
+\@define\setlistdepth[1]{}
+\@define\SetLabelAlign[2]{}

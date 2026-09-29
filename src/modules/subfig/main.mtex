@@ -1,0 +1,5 @@
+% subfig: \subfloat[caption]{content}, a lettered part of a figure, set as
+% subcaption's own box.
+
+\@requirepackage{subcaption}
+\@define\subfloat[2][]{\subcaptionbox{#1}{#2}}

@@ -1,0 +1,3 @@
+% scrreprt: KOMA-Script's report, whose commands are scrartcl's.
+
+\@requirepackage{scrartcl}

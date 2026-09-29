@@ -1,0 +1,17 @@
+% Brazilian Portuguese: babel's captions for it, and its date: 28 de setembro de 2026.
+
+\@define\captionsbrazilian{%
+\@define\abstractname{Resumo}%
+\@define\proofname{Demonstração}%
+\@define\figurename{Figura}%
+\@define\tablename{Tabela}%
+\@define\refname{Referências}%
+\@define\bibname{Referências Bibliográficas}%
+\@define\contentsname{Sumário}%
+\@define\listfigurename{Lista de Figuras}%
+\@define\listtablename{Lista de Tabelas}%
+\@define\appendixname{Apêndice}%
+\@define\partname{Parte}%
+\@define\chaptername{Capítulo}%
+\@define\indexname{Índice Remissivo}}
+\@define\datebrazilian{\@define\today{\@evaluate{\day} de \ifcase\month\or janeiro de \or fevereiro de \or março de \or abril de \or maio de \or junho de \or julho de \or agosto de \or setembro de \or outubro de \or novembro de \or dezembro de \fi\@evaluate{\year}}}

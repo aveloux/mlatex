@@ -1,0 +1,7 @@
+% fancyvrb: verbatim text with more to say about how. Its Verbatim block is
+% the engine's own; a file is read as a listing.
+
+\@define\VerbatimInput[2][]{\lstinputlisting{#2}}
+\@define\fvset[1]{}
+\@define\DefineVerbatimEnvironment[3]{}
+\@define\RecustomVerbatimEnvironment[3]{}

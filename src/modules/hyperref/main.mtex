@@ -1,0 +1,25 @@
+% hyperref: a document's links. A reference, an entry of the contents, an
+% address and a heading's bookmark go where they say when the file is read:
+% framed as hyperref frames them, in its colors with `colorlinks`, or plain
+% with `hidelinks`; \href's text goes to its address, \url prints one, and
+% \autoref names what it refers to as cleveref does. The title, author,
+% subject and keywords \hypersetup gives are the file's own.
+
+\@requirepackage{url}
+\@setvariable{links}{true}
+
+\@define\href[2]{\@link{#1}{#2}}
+\@define\url[1]{\@link{#1}{\texttt{#1}}}
+\@define\hyperlink[2]{\@linkto{#1}{#2}}
+\@define\hypertarget[2]{\label{#1}#2}
+\@define\hyperref[2][]{\@linkto{#1}{#2}}
+\@define\nolinkurl[1]{\texttt{#1}}
+\@define\phantomsection{}
+\@define\texorpdfstring[2]{#1}
+\@define\pdfbookmark[3][]{}
+\@define\currentpdfbookmark[2]{}
+\@define\belowpdfbookmark[2]{}
+
+\@define\hypersetup[1]{\@setkeys{hyperref}{#1}}
+
+\@define\autoref{\Cref}

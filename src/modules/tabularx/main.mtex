@@ -1,0 +1,8 @@
+% tabularx: a table stretched to a width, its X columns sharing what the
+% others leave. The block is the engine's own:
+%
+%   \begin{tabularx}{\textwidth}{lX}
+%     Term & A description long enough to wrap within its column. \\
+%   \end{tabularx}
+
+\@requirepackage{array}

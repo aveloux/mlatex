@@ -1,0 +1,6 @@
+% mdframed: a framed block that may run over pages, the engine's own, in the
+% colors its options name. Declaring a new kind of one is read and let go.
+
+\@define\mdfsetup[1]{}
+\@define\newmdenv[2][]{}
+\@define\mdfdefinestyle[2]{}

@@ -1,0 +1,4 @@
+% hhline: rules between rows, drawn column by column. Each is drawn here as
+% one rule across the table.
+
+\@define\hhline[1]{\hline}

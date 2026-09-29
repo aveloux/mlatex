@@ -1,0 +1,46 @@
+% cleveref: a reference that says what it refers to.
+%
+%   see \cref{sec:method}           % see section 2
+%   \Cref{eq:energy} gives ...     % Equation (3) gives ...
+%   as \cref{fig:plot} shows        % as fig. 1 shows
+%
+% \cref and \Cref are the engine's own: every label remembers what kind of
+% thing it numbers -- a section, an equation, a figure, an item -- and each
+% kind is named by the variable cref.kind, or Cref.kind for the capitalised
+% form, falling back on the kind itself. This package sets those names to
+% cleveref's own, and gives a document cleveref's way of changing them.
+
+% \crefname{kind}{singular}{plural}; references here are one at a time, so
+% the plural is accepted and not used.
+\@define\crefname[3]{\@setvariable{cref.#1}{#2}}
+\@define\Crefname[3]{\@setvariable{Cref.#1}{#2}}
+
+\crefname{equation}{eq.}{eqs.}
+\Crefname{equation}{Equation}{Equations}
+\crefname{figure}{fig.}{figs.}
+\Crefname{figure}{Figure}{Figures}
+\crefname{item}{item}{items}
+\Crefname{item}{Item}{Items}
+\crefname{part}{part}{parts}
+\Crefname{part}{Part}{Parts}
+\crefname{chapter}{chapter}{chapters}
+\Crefname{chapter}{Chapter}{Chapters}
+\crefname{appendix}{appendix}{appendices}
+\Crefname{appendix}{Appendix}{Appendices}
+
+% A part of a figure or a table is named for the whole, and a listing as a
+% listing whichever package set it.
+\crefname{subfigure}{fig.}{figs.}
+\Crefname{subfigure}{Figure}{Figures}
+\crefname{subtable}{table}{tables}
+\Crefname{subtable}{Table}{Tables}
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
+
+% Every level of section is a section, as cleveref names them.
+\crefname{section}{section}{sections}
+\Crefname{section}{Section}{Sections}
+\crefname{subsection}{section}{sections}
+\Crefname{subsection}{Section}{Sections}
+\crefname{subsubsection}{section}{sections}
+\Crefname{subsubsection}{Section}{Sections}

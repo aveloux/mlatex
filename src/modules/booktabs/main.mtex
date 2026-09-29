@@ -1,0 +1,16 @@
+% booktabs: rules for tables worth reading.
+%
+%   \begin{tabular}{lr}
+%     \toprule   Name & Value \\
+%     \midrule   Mass & 2.3   \\
+%     \cmidrule(lr){1-2}
+%     \addlinespace
+%     \bottomrule
+%   \end{tabular}
+%
+% \toprule, \midrule, \bottomrule, \cmidrule and \addlinespace are the
+% engine's own, read by the tabular itself with the weights and the air
+% around them booktabs gives: heavy at the top and foot, light between. A
+% special rule of a weight of its own is set as a middle one.
+
+\@define\specialrule[3]{\midrule}

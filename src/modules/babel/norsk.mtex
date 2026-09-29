@@ -1,0 +1,17 @@
+% Norwegian: babel's captions for it, and its date: 28. september 2026.
+
+\@define\captionsnorsk{%
+\@define\abstractname{Sammendrag}%
+\@define\proofname{Bevis}%
+\@define\figurename{Figur}%
+\@define\tablename{Tabell}%
+\@define\refname{Referanser}%
+\@define\bibname{Bibliografi}%
+\@define\contentsname{Innhold}%
+\@define\listfigurename{Figurer}%
+\@define\listtablename{Tabeller}%
+\@define\appendixname{Tillegg}%
+\@define\partname{Del}%
+\@define\chaptername{Kapittel}%
+\@define\indexname{Register}}
+\@define\datenorsk{\@define\today{\@evaluate{\day}.~\ifcase\month\or januar \or februar \or mars \or april \or mai \or juni \or juli \or august \or september \or oktober \or november \or desember \fi\@evaluate{\year}}}

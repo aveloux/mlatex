@@ -1,0 +1,31 @@
+% fontspec: faces named as the system names them, for XeLaTeX and LuaLaTeX.
+% The engine carries its faces with it, so a face named is set in the one it
+% carries that stands nearest -- STIX Two for Times and its kind, New
+% Computer Modern for Computer Modern, Latin Modern for itself, the TeX Gyre
+% maths for their text faces -- and a face with nothing near it leaves the
+% text as it was, with a warning. Every feature is read and let go: the
+% faces carried are set with their own.
+%
+%   \setmainfont{TeX Gyre Termes}[Ligatures=TeX]
+%   \setmathfont{STIX Two Math}
+
+\@define\setmainfont[2][]{\@face{main}{#2}\@gobbleoption}
+\@define\setromanfont[2][]{\@face{main}{#2}\@gobbleoption}
+\@define\setsansfont[2][]{\@face{sans}{#2}\@gobbleoption}
+\@define\setmonofont[2][]{\@face{mono}{#2}\@gobbleoption}
+\@define\setmathfont[2][]{\@face{math}{#2}\@gobbleoption}
+
+% A face of its own under a name, which here is the text's face: a command
+% that sets nothing, its name and its features read.
+\@define\newfontfamily[1]{\@define#1{}\@fontspecface}
+\@define\newfontface[1]{\@define#1{}\@fontspecface}
+\@define\renewfontfamily[1]{\@define#1{}\@fontspecface}
+\@define\setfontfamily[1]{\@define#1{}\@fontspecface}
+\@define\@fontspecface[2][]{\@gobbleoption}
+\@define\fontspec[2][]{\@gobbleoption}
+\@define\defaultfontfeatures[2][]{}
+\@define\addfontfeatures[1]{}
+\@define\addfontfeature[1]{}
+\@define\newfontlanguage[2]{}
+\@define\newfontscript[2]{}
+\@define\IfFontExistsTF[3]{#3}

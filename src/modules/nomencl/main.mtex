@@ -1,0 +1,5 @@
+% nomencl: a list of symbols. The entries are read and the list is not set.
+
+\@define\makenomenclature{}
+\@define\printnomenclature[1][]{}
+\@define\nomenclature[3][]{}

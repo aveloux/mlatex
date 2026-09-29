@@ -1,0 +1,17 @@
+% Ukrainian: babel's captions for it, and its date: 28 вересня 2026 р.
+
+\@define\captionsukrainian{%
+\@define\abstractname{Анотація}%
+\@define\proofname{Доведення}%
+\@define\figurename{Рис.}%
+\@define\tablename{Табл.}%
+\@define\refname{Література}%
+\@define\bibname{Бібліографія}%
+\@define\contentsname{Зміст}%
+\@define\listfigurename{Перелік ілюстрацій}%
+\@define\listtablename{Перелік таблиць}%
+\@define\appendixname{Додаток}%
+\@define\partname{Частина}%
+\@define\chaptername{Розділ}%
+\@define\indexname{Покажчик}}
+\@define\dateukrainian{\@define\today{\@evaluate{\day}~\ifcase\month\or січня \or лютого \or березня \or квітня \or травня \or червня \or липня \or серпня \or вересня \or жовтня \or листопада \or грудня \fi\@evaluate{\year}~р.}}

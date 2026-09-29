@@ -1,0 +1,23 @@
+% The words LaTeX's classes print for the parts of a document, each a macro
+% so a document -- or a language package -- can say them differently:
+% \renewcommand{\figurename}{Fig.} and every caption after it follows.
+% The engine's own blocks print these by name rather than as fixed words.
+
+\@define\abstractname{Abstract}
+\@define\proofname{Proof}
+\@define\figurename{Figure}
+\@define\tablename{Table}
+\@define\refname{References}
+\@define\bibname{Bibliography}
+\@define\contentsname{Contents}
+\@define\listfigurename{List of Figures}
+\@define\listtablename{List of Tables}
+\@define\appendixname{Appendix}
+\@define\partname{Part}
+\@define\chaptername{Chapter}
+\@define\indexname{Index}
+\@define\acksname{Acknowledgments}
+\@define\keywordsname{Keywords}
+
+% amsthm's end-of-proof mark, which the proof block sets with \qed.
+\@define\qedsymbol{$\square$}

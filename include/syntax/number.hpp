@@ -1,6 +1,7 @@
 #pragma once
 
 #include "syntax/cursor.hpp"
+#include "syntax/mouth.hpp"
 #include "syntax/semantics/registers.hpp"
 #include "syntax/tokens.hpp"
 #include "logger.hpp"
@@ -8,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
 namespace syntax {
@@ -22,6 +24,14 @@ namespace syntax {
     /// Arithmetic is done in std::int64_t and clamped to TeX's real limits:
     /// #ceiling for integers, #maximum for dimensions. Nothing here can
     /// overflow a 32-bit intermediate.
+    ///
+    /// @par Two kinds of stream
+    /// Every scanner has a Cursor overload, which reads tokens exactly as
+    /// written and is what \\evaluate's own arithmetic parser scans its
+    /// operands with, and a Mouth overload, which expands the one thing at
+    /// the front first -- so `\\vskip\\evaluate{2*6}pt` sees a numeral where
+    /// the Cursor overload alone would see an unexpanded `\\evaluate`. Mouth
+    /// itself scans no number; this is the whole of how one is read from it.
     ///
     /// @par Precision
     /// A decimal constant is kept as an exact rational -- an integer part plus
@@ -49,39 +59,40 @@ namespace syntax {
         /// sequence bound to a Count slot.
         ///
         /// @param cursor    Stream to read from; consumed in place.
-        /// @param registers Used to resolve register references.
-        /// @param count     Interned `\\count`, or kInvalidSymbol to disable it.
+        /// @param registers Used to resolve register references, and asked
+        ///                  which control sequences name a bank.
         /// @return The value, or std::nullopt when the stream does not start
         ///         with a numeral or a register reference resolves to nothing.
         /// @complexity O(d) in the number of digit tokens consumed.
         [[nodiscard]] static std::optional<std::int32_t> integer(
-            Cursor& cursor, const semantics::Registers& registers, const Symbol count) {
+            Cursor& cursor, const semantics::Registers& registers) {
 
             const int sign = signs(cursor);
             if (cursor.empty()) return std::nullopt;
 
             const Token lead = cursor.lookahead(0);
 
-            if (count != kInvalidSymbol && lead.symbol == count) {
+            if (registers.bank(lead.symbol) == semantics::Registers::Type::Count) {
                 cursor.advance();
-                const auto index = integer(cursor, registers, count);
+                const auto index = integer(cursor, registers);
                 if (!index || *index < 0 || *index > 255) {
                     Logger::log(Logger::Type::Semantics, Logger::Level::Error,
                                 "Count register index out of range 0-255");
                     return std::nullopt;
                 }
                 return saturate(sign * static_cast<std::int64_t>(
-                    registers.fetch(semantics::Registers::Type::Count, static_cast<std::size_t>(*index))));
+                    registers.get(semantics::Registers::Type::Count, static_cast<std::size_t>(*index))));
             }
 
             if (lead.category == CatCodes::Category::Escape) {
-                if (!registers.bound(lead.symbol)) {
-                    Logger::fmt(Logger::Type::Semantics, Logger::Level::Error,
-                                "'{}' is not a number and is not bound to a register", lead.values);
+                const auto target = registers.target(lead.symbol);
+                if (!target) {
+                    Logger::log(Logger::Type::Semantics, Logger::Level::Error,
+                                "'{}' is not a number and is not bound to a register", lead.text);
                     return std::nullopt;
                 }
                 cursor.advance();
-                const auto value = static_cast<std::int64_t>(registers.get(lead.symbol));
+                const auto value = static_cast<std::int64_t>(registers.get(target->type, target->slot));
                 space(cursor);
                 return saturate(sign * value);
             }
@@ -99,7 +110,7 @@ namespace syntax {
                 cursor.advance();
                 if (cursor.empty()) return std::nullopt;
                 const Token target = cursor.advance();
-                std::string_view text = target.values;
+                std::string_view text = target.text;
                 if (target.category == CatCodes::Category::Escape && text.size() > 1) {
                     text.remove_prefix(1);
                 }
@@ -135,40 +146,41 @@ namespace syntax {
         /// *factor* and still needs a unit, so `\\dimen0=\\count5 pt` works.
         ///
         /// @param cursor    Stream to read from; consumed in place.
-        /// @param registers Used to resolve register references.
-        /// @param count     Interned `\\count`, or kInvalidSymbol to disable it.
-        /// @param dimension Interned `\\dimen`, or kInvalidSymbol to disable it.
+        /// @param registers Used to resolve register references, and asked
+        ///                  which control sequences name a bank.
         /// @return The value in scaled points, clamped to +/-#maximum, or
         ///         std::nullopt when no numeral is present or the unit is
         ///         font-relative.
         /// @complexity O(d) in the number of digit tokens consumed.
         [[nodiscard]] static std::optional<std::int32_t> dimension(
-            Cursor& cursor, const semantics::Registers& registers,
-            const Symbol count, const Symbol dimension) {
+            Cursor& cursor, const semantics::Registers& registers) {
 
             int sign = signs(cursor);
             if (cursor.empty()) return std::nullopt;
 
             const Token lead = cursor.lookahead(0);
+            const auto named = registers.bank(lead.symbol);
 
-            if (dimension != kInvalidSymbol && lead.symbol == dimension) {
+            // Any bank but the integers' holds a length: `\dimen3`, `\skip2`
+            // by its natural width, `\wd0` a box's width.
+            if (named && *named != semantics::Registers::Type::Count) {
                 cursor.advance();
-                const auto index = integer(cursor, registers, count);
+                const auto index = integer(cursor, registers);
                 if (!index || *index < 0 || *index > 255) {
                     Logger::log(Logger::Type::Semantics, Logger::Level::Error,
                                 "Dimension register index out of range 0-255");
                     return std::nullopt;
                 }
                 return saturate(sign * static_cast<std::int64_t>(
-                    registers.fetch(semantics::Registers::Type::Dimension, static_cast<std::size_t>(*index))));
+                    registers.get(*named, static_cast<std::size_t>(*index))));
             }
 
             std::int64_t whole = 0;
             std::size_t counted = 0;
             bool factored = false;   // an internal integer still needs a unit
 
-            if (count != kInvalidSymbol && lead.symbol == count) {
-                const auto scanned = integer(cursor, registers, count);
+            if (named == semantics::Registers::Type::Count) {
+                const auto scanned = integer(cursor, registers);
                 if (!scanned) return std::nullopt;
                 whole = *scanned;
                 counted = 1;
@@ -176,17 +188,17 @@ namespace syntax {
             } else if (lead.category == CatCodes::Category::Escape) {
                 const auto target = registers.target(lead.symbol);
                 if (!target) {
-                    Logger::fmt(Logger::Type::Semantics, Logger::Level::Error,
-                                "'{}' is not a dimension and is not bound to a register", lead.values);
+                    Logger::log(Logger::Type::Semantics, Logger::Level::Error,
+                                "'{}' is not a dimension and is not bound to a register", lead.text);
                     return std::nullopt;
                 }
                 cursor.advance();
                 if (target->type != semantics::Registers::Type::Count) {
-                    const auto value = static_cast<std::int64_t>(registers.fetch(target->type, target->slot));
+                    const auto value = static_cast<std::int64_t>(registers.get(target->type, target->slot));
                     space(cursor);
                     return saturate(sign * value);
                 }
-                whole = registers.fetch(semantics::Registers::Type::Count, target->slot);
+                whole = registers.get(semantics::Registers::Type::Count, target->slot);
                 counted = 1;
                 factored = true;
             } else {
@@ -224,7 +236,26 @@ namespace syntax {
                 return std::nullopt;
             }
 
-            const auto measure = unit(cursor);
+            // A register for a unit, as TeX has it: `0.4\textwidth` is four
+            // tenths of whatever that register holds.
+            std::optional<Measure> measure;
+            blanks(cursor);
+            if (const Token after = cursor.lookahead(0); after.category == CatCodes::Category::Escape) {
+                if (const auto held = registers.target(after.symbol);
+                    held && held->type != semantics::Registers::Type::Count) {
+                    cursor.advance();
+                    measure = Measure{registers.get(held->type, held->slot), 1};
+                } else if (const auto kind = registers.bank(after.symbol);
+                           kind && *kind != semantics::Registers::Type::Count) {
+                    // A bank and its slot: `0.5\wd0`.
+                    cursor.advance();
+                    const auto index = integer(cursor, registers);
+                    if (index && *index >= 0 && *index <= 255) {
+                        measure = Measure{registers.get(*kind, static_cast<std::size_t>(*index)), 1};
+                    }
+                }
+            }
+            if (!measure) measure = unit(cursor, registers.quad());
             if (!measure) {
                 return std::nullopt;
             }
@@ -240,7 +271,7 @@ namespace syntax {
             std::int64_t total = base + part;
 
             if (total > maximum) {
-                Logger::fmt(Logger::Type::Semantics, Logger::Level::Error,
+                Logger::log(Logger::Type::Semantics, Logger::Level::Error,
                             "Dimension too large ({} sp); clamped to 16383.99998pt", total);
                 total = maximum;
             }
@@ -249,7 +280,63 @@ namespace syntax {
             return static_cast<std::int32_t>(sign * total);
         }
 
+        /// @brief Scans an integer from a Mouth's own stream.
+        ///
+        /// A number may be written as a macro or as `\\evaluate{6*7}`, and
+        /// integer(Cursor&, ...) reads tokens as they stand, so whatever
+        /// expands at the front is expanded first here -- once is enough,
+        /// since expand() stops at the first token that does not and this
+        /// puts that one back for the Cursor overload to read.
+        ///
+        /// @param mouth     Expander to scan from.
+        /// @param registers Bank to resolve register references against, and
+        ///                  to ask which control sequences name a bank.
+        /// @return The value, or std::nullopt when the stream does not start with one.
+        /// @complexity O(d) in the number of digit tokens consumed.
+        [[nodiscard]] static std::optional<std::int32_t> integer(
+            Mouth& mouth, const semantics::Registers& registers) {
+            settle(mouth);
+            return integer(mouth.stream(), registers);
+        }
+
+        /// @brief Scans a dimension from a Mouth's own stream.
+        /// @param mouth     Expander to scan from.
+        /// @param registers Bank to resolve register references against, and
+        ///                  to ask which control sequences name a bank.
+        /// @return The value in scaled points, or std::nullopt.
+        /// @complexity O(d) in the number of digit tokens consumed.
+        [[nodiscard]] static std::optional<std::int32_t> dimension(
+            Mouth& mouth, const semantics::Registers& registers) {
+            settle(mouth);
+            return dimension(mouth.stream(), registers);
+        }
+
     private:
+        /// @brief Expands the one macro or primitive at the front, if there is one.
+        ///
+        /// A Mouth's stream may start with something that has not been
+        /// expanded yet -- `\\evaluate{...}`, or a user macro standing for a
+        /// number -- and the Cursor-based scanners below read tokens as
+        /// written, not as they would expand. This is the one step that
+        /// bridges the two: it costs nothing when the stream already starts
+        /// with a numeral.
+        ///
+        /// @param mouth Expander to settle.
+        /// @complexity O(1) amortized: at most one expansion.
+        static void settle(Mouth& mouth) noexcept {
+            Cursor& cursor = mouth.stream();
+            while (!cursor.empty() && cursor.lookahead(0).category == CatCodes::Category::Space) {
+                cursor.advance();
+            }
+            if (const Token next = cursor.lookahead(0);
+                next.category == CatCodes::Category::Escape &&
+                (mouth.macro(next.symbol) || mouth.handler(next.symbol))) {
+                if (const Token produced = mouth.expand(); !produced.empty()) {
+                    cursor.inject(std::span{&produced, 1});
+                }
+            }
+        }
+
         /// @brief One unit, as an exact rational number of scaled points.
         struct Measure {
             std::int64_t numerator;     ///< sp
@@ -301,8 +388,8 @@ namespace syntax {
         /// @return True when the token is a single valid digit for that base.
         /// @complexity O(1).
         [[nodiscard]] static bool decode(const Token& token, const int base, int& digit) noexcept {
-            if (token.values.size() != 1) return false;
-            const char symbol = token.values[0];
+            if (token.text.size() != 1) return false;
+            const char symbol = token.text[0];
 
             if (symbol >= '0' && symbol <= '9') digit = symbol - '0';
             else if (base == 16 && symbol >= 'A' && symbol <= 'F') digit = symbol - 'A' + 10;
@@ -368,12 +455,16 @@ namespace syntax {
         /// against 2 can never succeed, which is why every dimension used to
         /// keep its pt value.
         ///
+        /// The two font-relative units are measured against @p quad, the width
+        /// of an em in the face in use: `1em` is that, and `1ex` is taken as
+        /// 0.43 of it, the x-height of the Computer Modern faces.
+        ///
         /// @param cursor Stream to read from.
+        /// @param quad   Width of an em, in scaled points.
         /// @return The unit's rational factor. An unrecognised unit is reported
-        ///         and treated as pt, as TeX does; `em` and `ex` return
-        ///         std::nullopt, since this scanner has no font metrics.
+        ///         and treated as pt, as TeX does.
         /// @complexity O(1): at most six lookaheads.
-        [[nodiscard]] static std::optional<Measure> unit(Cursor& cursor) {
+        [[nodiscard]] static std::optional<Measure> unit(Cursor& cursor, const std::int32_t quad) {
             blanks(cursor);
 
             if (prefix(cursor)) {
@@ -402,12 +493,8 @@ namespace syntax {
                 case 'd' << 8 | 'd': consume(cursor); return Measure{scale * 1238LL, 1157};        // 1 dd = 1238/1157 pt
                 case 'c' << 8 | 'c': consume(cursor); return Measure{scale * 14856LL, 1157};       // 1 cc = 12 dd
 
-                case 'e' << 8 | 'm':
-                case 'e' << 8 | 'x':
-                    consume(cursor);
-                    Logger::log(Logger::Type::Semantics, Logger::Level::Error,
-                                "Font-relative units (em, ex) are not supported here");
-                    return std::nullopt;
+                case 'e' << 8 | 'm': consume(cursor); return Measure{quad, 1};                     // 1 em
+                case 'e' << 8 | 'x': consume(cursor); return Measure{quad * 43LL, 100};            // 1 ex = 0.43 em
 
                 default:
                     Logger::log(Logger::Type::Semantics, Logger::Level::Error,
@@ -433,12 +520,12 @@ namespace syntax {
         [[nodiscard]] static bool pair(const Cursor& cursor, char& first, char& second) noexcept {
             const Token one = cursor.lookahead(0);
             const Token two = cursor.lookahead(1);
-            if (one.values.size() != 1 || two.values.size() != 1) return false;
+            if (one.text.size() != 1 || two.text.size() != 1) return false;
             if (one.category != CatCodes::Category::Letter || two.category != CatCodes::Category::Letter) {
                 return false;
             }
-            first = lower(one.values[0]);
-            second = lower(two.values[0]);
+            first = lower(one.text[0]);
+            second = lower(two.text[0]);
             return true;
         }
 
@@ -455,7 +542,7 @@ namespace syntax {
 
             for (std::size_t index = 0; index < text.size(); ++index) {
                 const Token token = cursor.lookahead(index);
-                if (token.values.size() != 1 || lower(token.values[0]) != text[index]) {
+                if (token.text.size() != 1 || lower(token.text[0]) != text[index]) {
                     return false;
                 }
             }

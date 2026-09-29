@@ -1,0 +1,17 @@
+% Finnish: babel's captions for it, and its date: 28. syyskuuta 2026.
+
+\@define\captionsfinnish{%
+\@define\abstractname{Tiivistelmä}%
+\@define\proofname{Todistus}%
+\@define\figurename{Kuva}%
+\@define\tablename{Taulukko}%
+\@define\refname{Viitteet}%
+\@define\bibname{Kirjallisuutta}%
+\@define\contentsname{Sisältö}%
+\@define\listfigurename{Kuvat}%
+\@define\listtablename{Taulukot}%
+\@define\appendixname{Liite}%
+\@define\partname{Osa}%
+\@define\chaptername{Luku}%
+\@define\indexname{Hakemisto}}
+\@define\datefinnish{\@define\today{\@evaluate{\day}.~\ifcase\month\or tammikuuta \or helmikuuta \or maaliskuuta \or huhtikuuta \or toukokuuta \or kesäkuuta \or heinäkuuta \or elokuuta \or syyskuuta \or lokakuuta \or marraskuuta \or joulukuuta \fi\@evaluate{\year}}}

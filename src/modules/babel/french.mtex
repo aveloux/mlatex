@@ -1,0 +1,17 @@
+% French: babel's captions for it, and its date: 28 septembre 2026, and 1er for the first of a month.
+
+\@define\captionsfrench{%
+\@define\abstractname{Résumé}%
+\@define\proofname{Démonstration}%
+\@define\figurename{Figure}%
+\@define\tablename{Table}%
+\@define\refname{Références}%
+\@define\bibname{Bibliographie}%
+\@define\contentsname{Table des matières}%
+\@define\listfigurename{Table des figures}%
+\@define\listtablename{Liste des tableaux}%
+\@define\appendixname{Annexe}%
+\@define\partname{Partie}%
+\@define\chaptername{Chapitre}%
+\@define\indexname{Index}}
+\@define\datefrench{\@define\today{\ifnum\day=1 1\textsuperscript{er}\else\@evaluate{\day}\fi~\ifcase\month\or janvier \or février \or mars \or avril \or mai \or juin \or juillet \or août \or septembre \or octobre \or novembre \or décembre \fi\@evaluate{\year}}}

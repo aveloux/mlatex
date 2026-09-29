@@ -1,0 +1,2 @@
+% tabulary: a table as wide as it is told, its columns sharing the width by
+% their text. The block and its L, C, R and J columns are the engine's own.

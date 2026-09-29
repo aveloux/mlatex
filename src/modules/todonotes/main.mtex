@@ -1,0 +1,17 @@
+% todonotes: what is still to be done, marked where it is to be done.
+%
+%   \todo{Check these figures against the audit.}
+%   \missingfigure{Revenue by quarter.}
+%
+%   \usepackage[disable]{todonotes}    % every note gone, for the final copy
+%
+% A note is set in the text, in orange, where it was written; a missing
+% figure is a grey placeholder on a line of its own. The package's options
+% are its variables, so disable -- or a calling program setting
+% todonotes.disable -- takes every note out without touching the document.
+
+% todonotes' own options -- inline, color= and the rest -- are accepted in
+% brackets and not needed: every note here is inline already.
+\@define\todo[2][]{\@ifvariable{todonotes.disable}{}{\textcolor{orange}{[\textbf{To do:} #2]}}}
+
+\@define\missingfigure[2][]{\@ifvariable{todonotes.disable}{}{\begin{center}\textcolor{gray}{\textbf{Missing figure:} #2}\end{center}}}

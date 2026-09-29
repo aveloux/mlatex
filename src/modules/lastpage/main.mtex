@@ -1,0 +1,3 @@
+% lastpage: the document's last page, for "page 3 of \pageref{LastPage}".
+
+\AtEndDocument{\label{LastPage}}

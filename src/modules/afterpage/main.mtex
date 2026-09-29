@@ -1,0 +1,4 @@
+% afterpage: what to do once the page being set is finished -- here, where
+% it is written.
+
+\@define\afterpage[1]{#1}

@@ -1,0 +1,21 @@
+% glossaries: terms defined once and used by name. \gls sets a term's name --
+% an acronym's long form with its short one the first time, the short one
+% after -- and the glossary itself is not printed.
+
+\@define\makeglossaries{}
+\@define\printglossary[1][]{}
+\@define\printglossaries{}
+\@define\setacronymstyle[1]{}
+\@define\newglossaryentry[2]{\@setkeys{gls.#1}{#2}}
+\@define\longnewglossaryentry[3]{\@setkeys{gls.#1}{#2}}
+\@define\newacronym[4][]{\@setvariable{gls.#2.name}{#3}\@setvariable{gls.#2.long}{#4}}
+\@define\gls[1]{\@ifvariable{gls.#1.long}{\@ifvariable{gls.#1.used}{\@variable{gls.#1.name}}{\@variable{gls.#1.long} (\@variable{gls.#1.name})\@setvariable{gls.#1.used}{true}}}{\@variable{gls.#1.name}}}
+\@define\Gls[1]{\gls{#1}}
+\@define\glspl[1]{\gls{#1}s}
+\@define\Glspl[1]{\gls{#1}s}
+\@define\glsentryname[1]{\@variable{gls.#1.name}}
+\@define\glsentrydesc[1]{\@variable{gls.#1.description}}
+\@define\acrshort[1]{\@variable{gls.#1.name}}
+\@define\acrlong[1]{\@variable{gls.#1.long}}
+\@define\acrfull[1]{\@variable{gls.#1.long} (\@variable{gls.#1.name})}
+\@define\glsresetall{}

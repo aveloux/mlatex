@@ -1,0 +1,4 @@
+% makeidx: an index. \index and \printindex are the engine's own, sorted and
+% set as makeindex sets them; \makeindex has nothing left to start.
+
+\@define\makeindex{}

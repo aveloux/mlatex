@@ -1,0 +1,3 @@
+% dsfont: double-struck letters, as the maths face draws them.
+
+\@define\mathds[1]{\mathbb{#1}}

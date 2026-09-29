@@ -1,0 +1,5 @@
+% placeins: \FloatBarrier, which keeps floats from passing it. Every float
+% still waiting where it stands is set before the text after it, on pages of
+% their own, as \clearpage would set them; with none waiting it does nothing.
+
+\@define\FloatBarrier{\@floatbarrier}

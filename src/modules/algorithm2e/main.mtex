@@ -1,0 +1,30 @@
+% algorithm2e: an algorithm written as its steps. The algorithm block is the
+% float the algorithm package makes; the steps are set a line each, the
+% bodies of loops and tests indented under them.
+
+\@define\SetAlgoLined{}
+\@define\SetAlgoNoLine{}
+\@define\DontPrintSemicolon{}
+\@define\SetKwInOut[2]{}
+\@define\LinesNumbered{}
+\@define\SetKw[2]{}
+\@define\;{\par\noindent}
+\@define\KwIn[1]{\par\noindent\textbf{Input:} #1\par\noindent}
+\@define\KwOut[1]{\par\noindent\textbf{Output:} #1\par\noindent}
+\@define\KwData[1]{\par\noindent\textbf{Data:} #1\par\noindent}
+\@define\KwResult[1]{\par\noindent\textbf{Result:} #1\par\noindent}
+\@define\KwRet[1]{\textbf{return} #1}
+\@define\Return[1]{\textbf{return} #1}
+\@define\tcp[1]{\hfill\textit{// #1}}
+\@define\tcc[1]{\hfill\textit{/* #1 */}}
+\@define\@algoblock[2]{#1\par\begin{quote}\noindent #2\end{quote}\noindent}
+\@define\For[2]{\@algoblock{\textbf{for} #1 \textbf{do}}{#2}}
+\@define\ForEach[2]{\@algoblock{\textbf{foreach} #1 \textbf{do}}{#2}}
+\@define\While[2]{\@algoblock{\textbf{while} #1 \textbf{do}}{#2}}
+\@define\Repeat[2]{\@algoblock{\textbf{repeat}}{#2}\textbf{until} #1\par\noindent}
+\@define\If[2]{\@algoblock{\textbf{if} #1 \textbf{then}}{#2}}
+\@define\uIf[2]{\@algoblock{\textbf{if} #1 \textbf{then}}{#2}}
+\@define\ElseIf[2]{\@algoblock{\textbf{else if} #1 \textbf{then}}{#2}}
+\@define\uElseIf[2]{\@algoblock{\textbf{else if} #1 \textbf{then}}{#2}}
+\@define\Else[1]{\@algoblock{\textbf{else}}{#1}}
+\@define\eIf[3]{\@algoblock{\textbf{if} #1 \textbf{then}}{#2}\@algoblock{\textbf{else}}{#3}}

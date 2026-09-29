@@ -1,0 +1,31 @@
+% datetime: the date written the ways a document writes it.
+%
+%   \today          % September 25, 2026 -- LaTeX's own, in the core package
+%   \numericdate    % 9/25/2026
+%   \isodate        % 2026-09-25
+%   \shortdate      % 25 Sep 2026
+%   \longdate       % Friday, 25 September 2026
+%   \weekday        % Friday
+%
+% Each reads the run's own date from \year, \month and \day, the registers
+% the engine sets as it starts, through \evaluate -- the one primitive that
+% turns a number into the digits that print it. \monthname is in the core
+% package, since \today needs it.
+
+\@define\numericdate{\@evaluate{\month}/\@evaluate{\day}/\@evaluate{\year}}
+\@define\isodate{\@evaluate{\year}-\twodigits{\month}-\twodigits{\day}}
+\@define\shortdate{\@evaluate{\day} \shortmonthname{\month} \@evaluate{\year}}
+\@define\longdate{\weekday, \@evaluate{\day} \monthname{\month} \@evaluate{\year}}
+
+% A number of one or two digits, as two.
+\@define\twodigits[1]{\ifnum#1<10 0\fi\@evaluate{#1}}
+
+\@define\shortmonthname[1]{\ifcase#1\or Jan\or Feb\or Mar\or Apr\or May\or Jun\or Jul\or Aug\or Sep\or Oct\or Nov\or Dec\fi}
+
+% The day of the week, by Zeller's congruence: January and February count
+% as the thirteenth and fourteenth months of the year before, and what the
+% sum leaves over seven is the day, counted from Saturday.
+\@define\zellermonth{\ifnum\month<3 \@evaluate{\month+12}\else\@evaluate{\month}\fi}
+\@define\zelleryear{\ifnum\month<3 \@evaluate{\year-1}\else\@evaluate{\year}\fi}
+\@define\weekday{\ifcase\@evaluate{(\day + (13*(\zellermonth+1))/5 + \zelleryear + \zelleryear/4 - \zelleryear/100 + \zelleryear/400) \mod 7}
+Saturday\or Sunday\or Monday\or Tuesday\or Wednesday\or Thursday\or Friday\fi}

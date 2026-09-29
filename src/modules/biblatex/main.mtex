@@ -1,0 +1,21 @@
+% biblatex: a bibliography from .bib files, set as the package sets one.
+%   \usepackage[style=authoryear]{biblatex}
+%   \addbibresource{refs.bib}
+%   ... \textcite{knuth} ... \parencite{knuth} ...
+%   \printbibliography
+% \addbibresource, \printbibliography and the citations are the engine's
+% own; the style option, kept as the variable biblatex.style, decides whether
+% entries are cited by author and year -- authoryear, apa -- or by number,
+% which every other style is set as here.
+
+\@setvariable{cite.natbib}{true}
+\@ifvariable{biblatex.style}{}{\@setvariable{biblatex.style}{numeric}}
+
+% A citation in a footnote, and biblatex's other ways of writing one.
+\@define\footcite[1]{\footnote{\citealt{#1}.}}
+\@define\fullcite[1]{\citealt{#1}}
+\@define\citetitle[1]{\citealt{#1}}
+\@define\bibliographysetup[1]{}
+\@define\DeclareFieldFormat[2]{}
+\@define\defbibheading[2]{}
+\@define\AtEveryBibitem[1]{}

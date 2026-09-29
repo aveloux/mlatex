@@ -1,0 +1,6 @@
+% appendix: the appendices block, which starts them as \appendix does, and
+% the package's headings over them.
+
+\@define\appendixpage{}
+\@define\addappheadtotoc{}
+\@define\appendixname{Appendix}

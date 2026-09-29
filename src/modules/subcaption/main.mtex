@@ -1,0 +1,9 @@
+% subcaption: figures and tables made of several, each lettered. The
+% subfigure and subtable blocks are the engine's own -- minipages whose
+% caption reads "(a) ..." and whose \label a \ref prints as "1a" -- and
+% their counters with them; what is left is the caption given outright, and
+% \subcaptionbox, a subfigure as wide as what it holds.
+
+\newlength{\@subwidth}
+\@define\subcaption{\captionof{subfigure}}
+\@define\subcaptionbox[2]{\settowidth{\@subwidth}{#2}\begin{subfigure}[b]{\@subwidth}\centering#2\caption{#1}\end{subfigure}}

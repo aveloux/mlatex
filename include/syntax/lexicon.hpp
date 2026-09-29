@@ -2,103 +2,66 @@
 
 #include "memory/arena.hpp"
 
-#include <atomic>
+#include <array>
 #include <cstdint>
-#include <functional>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 namespace syntax {
 
-    /// Interned name. Comparing two Symbols is how the engine compares
-    /// control sequences; the text behind them is only for diagnostics.
+    /// @brief Interned name. Two control sequences are the same exactly when
+    ///        their symbols are equal; the text is kept only for diagnostics.
     using Symbol = std::uint32_t;
 
-    /// The symbol no name interns to. Doubles as the end-of-stream marker.
-    inline constexpr Symbol kInvalidSymbol = 0;
+    /// @brief The symbol no name interns to; it also marks the end of input.
+    inline constexpr Symbol none = 0;
 
     /// @brief Interning table for control sequence and character names.
     ///
-    /// Every distinct name is stored once, in the arena, and addressed by a
-    /// dense Symbol. Text handed out as std::string_view points into that
-    /// arena, so the arena must outlive the Lexicon and must never relocate.
+    /// Every distinct name is stored once in the arena and addressed by a
+    /// dense Symbol, so every later table in the engine can index by symbol
+    /// instead of hashing text. One-byte names, which are most of what a
+    /// document contains, are resolved through a direct table; longer names
+    /// through an open-addressed hash table.
     ///
-    /// @warning Non-copyable: it holds an arena reference, and copying it
-    ///          would silently produce a second table whose symbols do not
-    ///          agree with the first's.
+    /// @par Use
+    /// @code
+    /// syntax::Lexicon lexicon(arena);
+    /// const syntax::Symbol begin = lexicon.intern("\\begin");
+    /// assert(lexicon.intern("\\begin") == begin);
+    /// assert(lexicon.resolve(begin) == "\\begin");
+    /// @endcode
     class Lexicon {
     public:
-        struct Hash {
-            using is_transparent = void;
-            std::size_t operator()(const std::string_view sv) const noexcept {
-                return std::hash<std::string_view>{}(sv);
-            }
-        };
+        /// @brief Creates an empty table.
+        /// @param arena Allocator for name text; must outlive the table.
+        explicit Lexicon(memory::Arena& arena);
 
-        /// @brief Builds an empty table.
-        /// @param storage Allocator for name storage; must outlive this object.
-        explicit Lexicon(memory::Arena& storage) : arena(storage) {
-            names.emplace_back("");
-        }
-
-        Lexicon(const Lexicon&) = delete;
-        Lexicon& operator=(const Lexicon&) = delete;
+        Lexicon(const Lexicon&) = delete("a symbol is an index into one table, and means nothing in a copy of it");
+        Lexicon& operator=(const Lexicon&) = delete("a symbol is an index into one table, and means nothing in a copy of it");
 
         /// @brief Interns a name.
         /// @param name Text to intern.
-        /// @return Its symbol, or kInvalidSymbol for empty text. Interning the
-        ///         same text twice returns the same symbol.
-        /// @complexity O(1) average; copies the text on first sight only.
-        Symbol intern(const std::string_view name) {
-            if (name.empty()) return kInvalidSymbol;
-
-            if (const auto found = lookup.find(name); found != lookup.end()) {
-                return found->second;
-            }
-
-            const std::string_view copy = arena.copy(name);
-            const auto symbol = static_cast<Symbol>(names.size());
-            lookup.emplace(copy, symbol);
-            names.push_back(copy);
-            return symbol;
-        }
+        /// @return Its symbol, or #none for empty text.
+        /// @complexity O(1) for one byte; O(n) in the length of @p name otherwise.
+        Symbol intern(std::string_view name);
 
         /// @brief Recovers the text behind a symbol.
         /// @param symbol Symbol to resolve.
-        /// @return Its text, valid as long as the arena lives, or empty for an
-        ///         unknown symbol.
+        /// @return Its text, or empty text for an unknown symbol.
         /// @complexity O(1).
         [[nodiscard]] std::string_view resolve(const Symbol symbol) const noexcept {
-            if (symbol < names.size()) {
-                return names[symbol];
-            }
-            return {};
+            return symbol < names.size() ? names[symbol] : std::string_view{};
         }
 
-        /// @brief How many names are interned, counting kInvalidSymbol.
+        /// @brief Number of symbols issued, #none included.
         [[nodiscard]] std::size_t size() const noexcept { return names.size(); }
 
-        /// @brief Identity that stays unique for the life of the process.
-        ///
-        /// Caches keyed on a Lexicon must compare this as well as the address:
-        /// destroying one table and constructing another at the same address
-        /// is routine, and an address-only key would go on serving symbols
-        /// from the dead table and string_views into its freed arena.
-        ///
-        /// @complexity O(1).
-        [[nodiscard]] std::uint64_t id() const noexcept { return mark; }
-
     private:
-        [[nodiscard]] static std::uint64_t next() noexcept {
-            static std::atomic<std::uint64_t> counter{0};
-            return counter.fetch_add(1, std::memory_order_relaxed) + 1;
-        }
-
-        memory::Arena& arena;
-        std::unordered_map<std::string_view, Symbol, Hash, std::equal_to<>> lookup{};
-        std::vector<std::string_view> names{};
-        std::uint64_t mark = next();   ///< unique for the life of the process
+        memory::Arena& arena;                  ///< Storage for name text.
+        std::vector<std::string_view> names;   ///< Text of each symbol.
+        std::vector<Symbol> table;             ///< Open-addressed slots for longer names; #none is empty.
+        std::array<Symbol, 256> singles{};     ///< Symbol of each one-byte name.
     };
 
 }

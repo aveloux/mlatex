@@ -1,0 +1,33 @@
+% tikz: pictures drawn with TikZ's own commands.
+%
+%   \begin{tikzpicture}[scale=1.5]
+%       \draw[thick, ->] (0,0) -- (3,0);
+%       \draw[blue!60, dashed] (0,0) rectangle (2,1);
+%       \draw (0,0) -- (1,1) -- (2,0) -- cycle;
+%       \draw[red] (1,1) circle (0.5);
+%       \draw[very thin, gray] (0,0) grid (3,2);
+%   \end{tikzpicture}
+%
+% tikzpicture and \draw are the engine's own: a picture exactly as large as
+% what is drawn in it, and a path read point by point -- -- and to, |- and
+% -|, rectangle, grid, cycle, circle and arc; relative +( ) and ++( ) points
+% and polar (angle:radius) ones; a colour by any name the document can use,
+% mixtures included, TikZ's widths by name or by line width=, dashes and
+% arrow tips. A number without a unit is a centimetre, as in TikZ.
+%
+% \fill and \filldraw fill a path; \node sets text, outlined, filled, round
+% or an ellipse, named, and placed beside another as the positioning
+% library says -- right=of init -- and a later path meets a named node at its
+% outline, or at an anchor, (init.east). \tikzset's styles, a picture's own,
+% every node's, and \foreach are read; `let`, `plot` and the libraries'
+% shapes are not drawn, and said so.
+
+% A picture in one line: \tikz{\draw (0,0) -- (1,0);}
+\@define\tikz[1]{\begin{tikzpicture}#1\end{tikzpicture}}
+
+% pgffor's loop, which TikZ loads.
+\@alias\foreach\@foreach
+
+% Libraries add shapes and arrows this engine does not draw; asking for one
+% is not a mistake, so it is accepted and nothing more.
+\@define\usetikzlibrary[1]{}

@@ -1,141 +1,101 @@
+/// @file
+/// @brief Face implementation: open a font file that is already in memory.
+///
+/// Nothing here reads from disk and nothing copies. Library holds the bytes, a
+/// blob points at them, and HarfBuzz reads the table directory out of that.
 #include "typography/face.hpp"
 #include "logger.hpp"
 
-#include <harfbuzz/hb-ft.h>
-#include <fstream>
-#include <mutex>
-#include <string>
+#include <harfbuzz/hb-ot.h>
+
 #include <utility>
-#include <span>
 
 namespace render::typography {
-
-    thread_local Face::Instance Face::core{};
-
-    Face::Instance::Instance() noexcept {
-        if (FT_Init_FreeType(&library) != 0) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Error, "Error");
-        }
-    }
-
-    Face::Instance::~Instance() noexcept {
-        if (library) {
-            FT_Done_FreeType(library);
-        }
-    }
 
     Face::~Face() noexcept {
         dispose();
     }
 
-    Face::Face(Face&& input) noexcept {
-        std::lock_guard lock(input.mutex);
-        native = std::exchange(input.native, nullptr);
-        handle = std::exchange(input.handle, nullptr);
-        scale = std::exchange(input.scale, 0);
-        storage = std::move(input.storage);
-    }
+    Face::Face(Face&& input) noexcept
+        : face(std::exchange(input.face, nullptr)),
+          storage(std::exchange(input.storage, {})),
+          scale(std::exchange(input.scale, 1000.0f)),
+          measure(std::exchange(input.measure, nullptr)),
+          cache(std::exchange(input.cache, {})) {}
 
     Face& Face::operator=(Face&& input) noexcept {
         if (this != &input) {
-            std::scoped_lock lock(mutex, input.mutex);
-
-            if (handle) {
-                hb_face_destroy(handle);
-            }
-            if (native) {
-                FT_Done_Face(native);
-            }
-
-            native = std::exchange(input.native, nullptr);
-            handle = std::exchange(input.handle, nullptr);
-            scale = std::exchange(input.scale, 0);
-            storage = std::move(input.storage);
+            dispose();
+            face = std::exchange(input.face, nullptr);
+            storage = std::exchange(input.storage, {});
+            scale = std::exchange(input.scale, 1000.0f);
+            measure = std::exchange(input.measure, nullptr);
+            cache = std::exchange(input.cache, {});
         }
         return *this;
     }
 
     void Face::dispose() noexcept {
-        std::lock_guard lock(mutex);
-
-        if (handle) {
-            hb_face_destroy(handle);
-            handle = nullptr;
+        if (measure) {
+            hb_font_destroy(measure);
+            measure = nullptr;
         }
-        if (native) {
-            FT_Done_Face(native);
-            native = nullptr;
+        if (face) {
+            hb_face_destroy(face);
+            face = nullptr;
         }
-        scale = 0;
-        storage.clear();
-        storage.shrink_to_fit();
+        storage = {};   // borrowed, so dropping the view is the whole cleanup
+        cache = {};
     }
 
-    bool Face::compose(const std::string_view path) noexcept {
-        if (path.empty()) {
-            return false;
+    std::size_t Face::count() const noexcept {
+        return face ? hb_face_get_glyph_count(face) : 0;
+    }
+
+    hb_glyph_extents_t Face::extents(const std::uint32_t glyph) const noexcept {
+        if (!face) return {};
+        if (!measure) {
+            // A font at the face's own scale -- HarfBuzz's default -- so what
+            // it reports is in the file's units, the same for every size.
+            measure = hb_font_create(face);
+            hb_ot_font_set_funcs(measure);
+            cache.resize(mask + 1);
         }
 
-        const std::string name(path);
-        std::ifstream file(name, std::ios::binary | std::ios::ate);
-        if (!file.is_open()) {
-            return false;
+        Slot& slot = cache[glyph & mask];
+        if (!slot.ready || slot.glyph != glyph) {
+            hb_glyph_extents_t found{};
+            if (!hb_font_get_glyph_extents(measure, glyph, &found)) found = {};
+            slot = Slot{.glyph = glyph, .ready = true, .extents = found};
         }
-
-        const std::streamsize size = file.tellg();
-        if (size <= 0) {
-            return false;
-        }
-
-        file.seekg(0, std::ios::beg);
-        std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-        if (!file.read(reinterpret_cast<char*>(data.data()), size)) {
-            return false;
-        }
-
-        return load(std::move(data));
+        return slot.extents;
     }
 
     bool Face::compose(const std::span<const std::uint8_t> data) noexcept {
-        if (data.empty()) {
+        if (data.empty()) return false;
+
+        // Read-only and with no destructor: the bytes belong to the arena,
+        // which outlives every face built over them. HarfBuzz therefore never
+        // copies and never frees them.
+        hb_blob_t* blob = hb_blob_create(
+            reinterpret_cast<const char*>(data.data()), static_cast<unsigned int>(data.size()),
+            HB_MEMORY_MODE_READONLY, nullptr, nullptr);
+        if (!blob) return false;
+
+        hb_face_t* opened = hb_face_create(blob, 0);
+        hb_blob_destroy(blob);   // the face took its own reference
+
+        if (!opened || hb_face_get_glyph_count(opened) == 0) {
+            if (opened) hb_face_destroy(opened);
+            Logger::log(Logger::Type::Layout, Logger::Level::Error,
+                        "HarfBuzz rejected the font file");
             return false;
         }
 
-        return load(std::vector(data.begin(), data.end()));
-    }
-
-    bool Face::load(std::vector<std::uint8_t> data) noexcept {
-        if (!core.library) return false;
-
-        FT_Face face = nullptr;
-        if (FT_New_Memory_Face(
-                core.library,
-                data.data(),
-                static_cast<FT_Long>(data.size()),
-                0,
-                &face) != 0) {
-            return false;
-        }
-
-        hb_face_t* font = hb_ft_face_create_referenced(face);
-        if (!font) {
-            FT_Done_Face(face);
-            return false;
-        }
-
-        std::lock_guard lock(mutex);
-
-        if (handle) {
-            hb_face_destroy(handle);
-        }
-        if (native) {
-            FT_Done_Face(native);
-        }
-
-        storage = std::move(data);
-        native = face;
-        handle = font;
-        scale = static_cast<std::uint32_t>(face->units_per_EM);
+        dispose();
+        face = opened;
+        storage = data;
+        scale = static_cast<float>(hb_face_get_upem(opened));
         return true;
     }
 

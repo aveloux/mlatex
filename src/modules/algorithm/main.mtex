@@ -1,0 +1,17 @@
+% algorithm: the float pseudocode stands in.
+%
+%   \begin{algorithm}[htbp]
+%     \caption{Projection step}\label{alg:projection}
+%     \begin{algorithmic}[1] ... \end{algorithmic}
+%   \end{algorithm}
+%
+% The float is the engine's own, set in the package's default ruled style: a
+% heavy rule above, the caption -- "Algorithm 1", bold, and its title -- a
+% light rule under it, the pseudocode, and a light rule to close. What is
+% left are the float's name, which a document may change, and the list of
+% algorithms, which there is no table of contents here to print.
+
+\@define\algorithmname{Algorithm}
+\@define\listalgorithmname{List of Algorithms}
+\@define\listofalgorithms{}
+\@define\floatname[2]{\@ifstrequal{#1}{algorithm}{\@define\algorithmname{#2}}{}}

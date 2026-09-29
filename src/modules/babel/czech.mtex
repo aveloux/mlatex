@@ -1,0 +1,17 @@
+% Czech: babel's captions for it, and its date: 28. září 2026.
+
+\@define\captionsczech{%
+\@define\abstractname{Abstrakt}%
+\@define\proofname{Důkaz}%
+\@define\figurename{Obrázek}%
+\@define\tablename{Tabulka}%
+\@define\refname{Reference}%
+\@define\bibname{Literatura}%
+\@define\contentsname{Obsah}%
+\@define\listfigurename{Seznam obrázků}%
+\@define\listtablename{Seznam tabulek}%
+\@define\appendixname{Příloha}%
+\@define\partname{Část}%
+\@define\chaptername{Kapitola}%
+\@define\indexname{Rejstřík}}
+\@define\dateczech{\@define\today{\@evaluate{\day}.~\ifcase\month\or ledna \or února \or března \or dubna \or května \or června \or července \or srpna \or září \or října \or listopadu \or prosince \fi\@evaluate{\year}}}

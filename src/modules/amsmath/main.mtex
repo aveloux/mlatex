@@ -1,0 +1,37 @@
+% amsmath: most of it is the engine's own already. The displays -- equation,
+% align, gather, multline and their starred forms -- the grids inside a
+% formula -- aligned, split, gathered, cases and the matrices -- \text,
+% \dfrac, \tfrac, \binom, \eqref, \tag, \notag, \numberwithin, \operatorname
+% and \overset are primitives, bound whether this package is asked for or
+% not. What is left are the names amsmath builds on top of them.
+
+% \DeclareMathOperator{\tr}{tr} makes \tr the word "tr" set upright, the way
+% \sin and \det are; the starred form sets its limits above and below it, as
+% \lim does: \DeclareMathOperator*{\argmax}{arg\,max}.
+\@define\DeclareMathOperator{\@ifstar{\operatorwithlimits}{\operatorwithout}}
+\@define\operatorwithlimits[2]{\@define#1{\operatorname*{#2}}}
+\@define\operatorwithout[2]{\@define#1{\operatorname{#2}}}
+
+% The long arrows, with the thick spaces amsmath puts around them.
+\@define\implies{\;\Longrightarrow\;}
+\@define\impliedby{\;\Longleftarrow\;}
+
+% Congruences: \pmod{n} in parentheses after a gap, \bmod between two terms.
+\@define\pmod[1]{\quad(\operatorname{mod}\,#1)}
+\@define\bmod{\;\operatorname{mod}\;}
+\@define\pod[1]{\quad(#1)}
+
+% The classes TeX gives an atom, which the engine reads from the atom
+% itself; the argument is set as it is.
+\@define\mathop[1]{#1}
+\@define\mathbin[1]{#1}
+\@define\mathrel[1]{#1}
+\@define\mathord[1]{#1}
+\@define\mathopen[1]{#1}
+\@define\mathclose[1]{#1}
+\@define\mathpunct[1]{#1}
+\@define\mathinner[1]{#1}
+
+% Words between the lines of an align, set here as a line of text of their
+% own.
+\@define\intertext[1]{\text{#1}}

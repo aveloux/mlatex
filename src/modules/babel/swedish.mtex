@@ -1,0 +1,17 @@
+% Swedish: babel's captions for it, and its date: 28 september 2026.
+
+\@define\captionsswedish{%
+\@define\abstractname{Sammanfattning}%
+\@define\proofname{Bevis}%
+\@define\figurename{Figur}%
+\@define\tablename{Tabell}%
+\@define\refname{Referenser}%
+\@define\bibname{Litteraturförteckning}%
+\@define\contentsname{Innehåll}%
+\@define\listfigurename{Figurer}%
+\@define\listtablename{Tabeller}%
+\@define\appendixname{Bilaga}%
+\@define\partname{Del}%
+\@define\chaptername{Kapitel}%
+\@define\indexname{Sakregister}}
+\@define\dateswedish{\@define\today{\@evaluate{\day}~\ifcase\month\or januari \or februari \or mars \or april \or maj \or juni \or juli \or augusti \or september \or oktober \or november \or december \fi\@evaluate{\year}}}

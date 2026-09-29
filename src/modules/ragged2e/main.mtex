@@ -1,0 +1,7 @@
+% ragged2e: ragged text that still hyphenates. The Center, FlushLeft,
+% FlushRight and justify blocks are the engine's own; the switches are its
+% raggedright and the rest under the package's names.
+
+\@alias\RaggedRight\raggedright
+\@alias\RaggedLeft\raggedleft
+\@alias\Centering\centering

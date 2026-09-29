@@ -1,0 +1,7 @@
+% tcolorbox: a colored box with a title, the engine's own, and a box of a
+% name of the document's, \newtcolorbox, with the options \tcbset gives every
+% box. Its libraries, and its boxes set inline, are read and let go.
+
+\@define\tcbuselibrary[1]{}
+\@define\newtcbox[3][]{}
+\@define\tcbox[2][]{\fbox{#2}}

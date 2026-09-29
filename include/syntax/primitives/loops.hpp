@@ -32,33 +32,29 @@ namespace syntax::primitives {
     class Loops {
     public:
         /// @brief Interns the control sequences this module binds.
-        /// @param names Interning table, shared with the expander.
-        explicit Loops(Lexicon& names) noexcept;
+        /// @param lexicon Interning table, shared with the expander.
+        explicit Loops(Lexicon& lexicon) noexcept;
 
-        /// @brief Installs `\\repeat`, `\\group` and `\\ungroup`.
+        /// @brief Installs `\\repeat`, `\\group`, `\\ungroup` and `\\@foreach`,
+        ///        pgffor's loop over a list.
         /// @param mouth   Expander to bind into.
-        /// @param context Engine services; the count scans against its ledger.
+        /// @param context Engine services; the count scans against its registers.
         void operator()(Mouth& mouth, Context& context) const;
 
         static constexpr std::int32_t passes = 65536;        ///< Most repetitions one \\repeat may ask for.
         static constexpr std::size_t production = 1u << 22;  ///< Most tokens one \\repeat may produce.
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return faults; }
+        ///
+        /// Each module keeps its own list rather than sharing one, so nothing
+        /// has to be constructed and threaded through them, and
+        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// records an error by appending to the list where it finds it, which
+        /// is why there is no reporting function to go looking for.
+        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
 
     private:
-        /// @brief Records an error this module found.
-        ///
-        /// Each module keeps its own list rather than sharing one: nothing has
-        /// to be constructed and passed in, and Wrapper::tracebacks() gathers
-        /// them when a run finishes.
-        ///
-        /// @param type     What kind of mistake it is.
-        /// @param location Where it happened; a zero location means "no position".
-        /// @param message  Human-readable explanation.
-        void fault(Traceback::Type type, memory::Location location, std::string_view message) const;
-
-        mutable std::vector<Traceback> faults{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
 
         Symbol integer{};   ///< `\\integer`, so the count may be a register.
     };

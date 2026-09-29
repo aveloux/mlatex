@@ -4,10 +4,14 @@
 #include "syntax/primitives/blocks.hpp"
 #include "syntax/primitives/compute.hpp"
 #include "syntax/primitives/context.hpp"
+#include "syntax/primitives/decimals.hpp"
+#include "syntax/primitives/hooks.hpp"
+#include "syntax/primitives/include.hpp"
 #include "syntax/primitives/loops.hpp"
 #include "syntax/primitives/macros.hpp"
 #include "syntax/primitives/relay.hpp"
 #include "syntax/primitives/values.hpp"
+#include "syntax/primitives/variables.hpp"
 #include "syntax/traceback.hpp"
 
 #include <vector>
@@ -30,7 +34,7 @@ namespace syntax::primitives {
     /// @par Use
     /// @code
     /// syntax::primitives::Wrapper core(lexicon);
-    /// syntax::primitives::Context context{policy, registers, core.conditionals()};
+    /// syntax::primitives::Context context{registers, core.conditionals(), core.variables()};
     /// core(mouth, context);
     ///
     /// // ... run the document, then collect what the core reported ...
@@ -39,13 +43,14 @@ namespace syntax::primitives {
     /// }
     /// @endcode
     ///
-    /// Context needs a Relay reference and Wrapper owns one, so build the
-    /// Wrapper first and hand conditionals() to the Context.
+    /// Context needs a Relay and a Variables reference and Wrapper owns both,
+    /// so build the Wrapper first and hand conditionals() and variables() to
+    /// the Context.
     class Wrapper {
     public:
         /// @brief Constructs every module against one interning table.
-        /// @param names Interning table, shared with the expander.
-        explicit Wrapper(Lexicon& names) noexcept;
+        /// @param lexicon Interning table, shared with the expander.
+        explicit Wrapper(Lexicon& lexicon) noexcept;
 
         /// @brief Installs every module.
         /// @param mouth   Expander to bind into.
@@ -54,7 +59,7 @@ namespace syntax::primitives {
 
         /// @brief The conditional module, for building a Context.
         [[nodiscard]] Relay& conditionals() noexcept { return relay; }
-        [[nodiscard]] const Relay& conditionals() const noexcept { return relay; }   ///< @copydoc conditionals()
+        [[nodiscard]] const Relay& conditionals() const noexcept { return relay; }   ///< @copydoc Wrapper::conditionals()
 
         /// @brief Every error the core reported, gathered from each module.
         ///
@@ -66,12 +71,12 @@ namespace syntax::primitives {
         /// @complexity O(n) in the number of errors reported.
         [[nodiscard]] std::vector<Traceback> tracebacks() const;
 
-        /// @brief Did any module report an error?
-        /// @complexity O(1) per module, with no allocation.
-        [[nodiscard]] bool failed() const noexcept;
-
         /// @brief The block module, whose depth() reports unclosed blocks.
         [[nodiscard]] const Blocks& structure() const noexcept { return blocks; }
+
+        /// @brief The named values a document reads, for building a Context
+        ///        and for a caller handing values in before a run.
+        [[nodiscard]] const Variables& variables() const noexcept { return variables_; }
 
     private:
         // Declared first because Context is built from conditionals() and the
@@ -82,6 +87,10 @@ namespace syntax::primitives {
         Values values;     ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
         Compute compute;   ///< `\\evaluate`.
         Loops loops;       ///< `\\repeat`, `\\group`, `\\ungroup`.
+        Include include;   ///< `\\include`, `\\input` and the package primitives.
+        Variables variables_;   ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`.
+        Decimals decimals;      ///< `\\calculate`, `\\amount`, `\\separators`.
+        Hooks hooks;            ///< `\\addtohook`, `\\usehook`.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

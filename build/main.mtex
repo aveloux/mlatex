@@ -1,0 +1,559 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[shortlabels]{enumitem}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% What the appendix of typesetting checks exercises beyond the paper itself.
+\usepackage{array,tabularx,colortbl,makecell}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{soul}
+\usepackage[normalem]{ulem}
+\usepackage{mhchem}
+\usepackage{gensymb}
+\usepackage{glossaries}
+\usepackage{framed,tcolorbox}
+\usepackage{epigraph}
+\usepackage{subcaption}
+
+\newacronym{cfl}{CFL}{Courant--Friedrichs--Lewy}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\definecolor{shadecolor}{gray}{0.92}
+\newsavebox{\stamp}
+\newcount\tally
+\newdimen\gap
+\newtoks\note
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=teal}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Energy estimates for Navier--Stokes flows}
+\fancyhead[R]{Ellison and Renner}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\DeclareMathOperator{\curl}{curl}
+\DeclareMathOperator*{\esssup}{ess\,sup}
+
+\title{Energy Estimates and Numerical Evidence for\\
+       the Incompressible Navier--Stokes Equations}
+\author{Mara Ellison\thanks{Institute of Applied Analysis, Northfield University.}
+   \and Tobias Renner\thanks{Department of Scientific Computing, Lakeside Institute of Technology.}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We revisit the classical energy method for the incompressible Navier--Stokes
+equations on a bounded domain. For smooth solutions we derive the energy
+equality, an exponential decay estimate for the unforced problem and a
+logarithmic Gronwall bound of the kind used in blow-up criteria. The estimates
+are then tested against a pressure-correction projection scheme on the
+Taylor--Green vortex, where the observed $L^2$ error converges at second order
+in the mesh width, $\mathcal{O}(h^2)$, in agreement with the theory.
+\end{abstract}
+
+\section{Introduction}\label{sec:introduction}
+
+The motion of a viscous incompressible fluid filling a bounded domain
+$\Omega \subset \R^d$, $d \in \{2, 3\}$, over a time interval $(0, T)$ is
+governed by the Navier--Stokes equations
+\begin{equation}\label{eq:navierstokes}
+  \left\{
+  \begin{aligned}
+    \partial_t \vect{u} + (\vect{u} \cdot \nabla) \vect{u} - \nu \Delta \vect{u} + \nabla p &= \vect{f}
+      && \text{in } \Omega \times (0, T), \\
+    \nabla \cdot \vect{u} &= 0 && \text{in } \Omega \times (0, T), \\
+    \vect{u} &= 0 && \text{on } \partial\Omega \times (0, T), \\
+    \vect{u}(\cdot, 0) &= \vect{u}_0 && \text{in } \Omega,
+  \end{aligned}
+  \right.
+\end{equation}
+where $\vect{u} \colon \Omega \times (0, T) \to \R^d$ is the velocity, $p$ the
+pressure, $\nu > 0$ the kinematic viscosity and $\vect{f}$ a given body force.
+Global weak solutions were constructed by Leray~\cite{leray1934} for the whole
+space and by Hopf~\cite{hopf1951} for bounded domains; whether smooth data can
+develop a singularity in finite time is one of the Millennium Prize
+Problems~\cite{fefferman2006}.
+
+Our contributions are the following.
+\begin{itemize}[noitemsep]
+  \item A self-contained derivation of the energy equality~\eqref{eq:energy}
+        and of the bound in \cref{thm:energy}.
+  \item A logarithmic Gronwall inequality, \cref{lem:gronwall}, stated in the
+        form needed for continuation criteria such as the one of Beale, Kato
+        and Majda~\cite{bkm1984}.
+  \item Numerical evidence, in \cref{sec:numerics}, that a projection
+        method~\cite{chorin1968} reproduces the decay rate of
+        \cref{cor:decay}.
+\end{itemize}
+\Cref{sec:preliminaries} fixes notation, \cref{sec:energy} proves the
+estimates and \cref{sec:conclusion} concludes.
+
+\section{Preliminaries}\label{sec:preliminaries}
+
+\subsection{Function spaces}
+
+For $1 \le p < \infty$ we write
+\[
+  \norm{f}_{L^p(\Omega)} = \left( \int_\Omega \abs{f(x)}^p \, \dd x \right)^{1/p},
+  \qquad
+  \norm{f}_{L^\infty(\Omega)} = \esssup_{x \in \Omega} \abs{f(x)},
+\]
+and set $H = \{ \vect{v} \in L^2(\Omega)^d : \nabla \cdot \vect{v} = 0 \}$ and
+$V = H \cap H_0^1(\Omega)^d$. The trilinear form
+$b(\vect{u}, \vect{v}, \vect{w}) = \int_\Omega (\vect{u} \cdot \nabla) \vect{v} \cdot \vect{w} \, \dd x$
+is antisymmetric in its last two arguments whenever $\vect{u} \in V$.
+
+\begin{definition}[Weak solution]\label{def:weak}
+Let $\vect{u}_0 \in H$ and $\vect{f} \in L^2(0, T; L^2(\Omega)^d)$. A field
+$\vect{u} \in L^\infty(0, T; H) \cap L^2(0, T; V)$ is a \emph{weak solution}
+of~\eqref{eq:navierstokes} if
+\begin{equation*}
+  \int_0^T \!\! \int_\Omega \Bigl( -\vect{u} \cdot \partial_t \bm{\varphi}
+    + \nu \nabla \vect{u} : \nabla \bm{\varphi}
+    + (\vect{u} \cdot \nabla) \vect{u} \cdot \bm{\varphi} \Bigr) \, \dd x \, \dd t
+  = \int_\Omega \vect{u}_0 \cdot \bm{\varphi}(0) \, \dd x
+\end{equation*}
+for every $\bm{\varphi} \in C_c^\infty(\Omega \times [0, T))^d$ with
+$\nabla \cdot \bm{\varphi} = 0$.
+\end{definition}
+
+\begin{lemma}[Poincar\'e inequality]\label{lem:poincare}
+There is a constant $C_P > 0$, depending only on $\Omega$, such that
+$\norm{v}_{L^2} \le C_P \norm{\nabla v}_{L^2}$ for every $v \in H_0^1(\Omega)$.
+\end{lemma}
+
+\section{Energy estimates}\label{sec:energy}
+
+Testing the momentum equation with $\vect{u}$ itself, the pressure term
+vanishes because $\vect{u}$ is divergence free, and so does the convective
+term, since
+\[
+  \int_\Omega (\vect{u} \cdot \nabla) \vect{u} \cdot \vect{u} \, \dd x
+  = \frac{1}{2} \int_\Omega \vect{u} \cdot \nabla \abs{\vect{u}}^2 \, \dd x
+  = -\frac{1}{2} \int_\Omega (\nabla \cdot \vect{u}) \abs{\vect{u}}^2 \, \dd x
+  = 0 .
+\]
+What is left is estimated with the Cauchy--Schwarz, Poincar\'e and Young
+inequalities in turn:
+\begin{align}
+  \frac{1}{2} \frac{\dd}{\dd t} \norm{\vect{u}}_{L^2}^2 + \nu \norm{\nabla \vect{u}}_{L^2}^2
+    &= \int_\Omega \vect{f} \cdot \vect{u} \, \dd x \label{eq:energy} \\
+    &\le \norm{\vect{f}}_{L^2} \norm{\vect{u}}_{L^2} \nonumber \\
+    &\le C_P \norm{\vect{f}}_{L^2} \norm{\nabla \vect{u}}_{L^2} \nonumber \\
+    &\le \frac{C_P^2}{2\nu} \norm{\vect{f}}_{L^2}^2 + \frac{\nu}{2} \norm{\nabla \vect{u}}_{L^2}^2 .
+      \label{eq:young}
+\end{align}
+
+\begin{theorem}[Energy inequality]\label{thm:energy}
+Let $\vect{u}$ be a smooth solution of~\eqref{eq:navierstokes}. Then for every
+$t \in [0, T]$,
+\begin{equation}\label{eq:bound}
+  \norm{\vect{u}(t)}_{L^2}^2 + \nu \int_0^t \norm{\nabla \vect{u}(s)}_{L^2}^2 \, \dd s
+  \le \norm{\vect{u}_0}_{L^2}^2 + \frac{C_P^2}{\nu} \int_0^t \norm{\vect{f}(s)}_{L^2}^2 \, \dd s .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Absorb the last term of~\eqref{eq:young} into the left-hand side of
+\eqref{eq:energy}, multiply by two and integrate from $0$ to $t$.
+\end{proof}
+
+\begin{corollary}\label{cor:decay}
+If $\vect{f} \equiv 0$, then for all $t \ge 0$
+\[
+  \norm{\vect{u}(t)}_{L^2} \le e^{-\nu t / C_P^2} \norm{\vect{u}_0}_{L^2},
+\]
+and in particular $\lim_{t \to \infty} \norm{\vect{u}(t)}_{L^2} = 0$.
+\end{corollary}
+
+\begin{proof}
+By \cref{lem:poincare}, \eqref{eq:energy} gives
+$\frac{\dd}{\dd t} \norm{\vect{u}}_{L^2}^2 \le -\frac{2\nu}{C_P^2} \norm{\vect{u}}_{L^2}^2$,
+and the claim follows by integrating this differential inequality.
+\end{proof}
+
+\subsection{A logarithmic Gronwall bound}\label{sec:gronwall}
+
+Taking the curl of the momentum equation gives the vorticity
+$\bm{\omega} = \curl \vect{u}$, which satisfies
+\begin{equation}\label{eq:vorticity}
+  \partial_t \bm{\omega} + (\vect{u} \cdot \nabla) \bm{\omega}
+  = (\bm{\omega} \cdot \nabla) \vect{u} + \nu \Delta \bm{\omega} + \curl \vect{f} .
+\end{equation}
+A smooth solution can be continued past $T^*$ unless
+$\int_0^{T^*} \norm{\bm{\omega}(t)}_{L^\infty} \, \dd t = \infty$, and bounds of
+that kind rest on the following lemma.
+
+\begin{lemma}\label{lem:gronwall}
+Let $y \ge e$ be absolutely continuous on $[0, T]$ and let $a \ge 0$ be
+integrable. If $y' \le a \, y \log y$ almost everywhere, then
+\[
+  y(t) \le y(0)^{\exp\left( \int_0^t a(s) \, \dd s \right)}
+  \qquad \text{for all } t \in [0, T] .
+\]
+\end{lemma}
+
+\begin{proof}
+Set $z = \log \log y$, which is well defined because $y \ge e$. Then
+$z' = \dfrac{y'}{y \log y} \le a$, hence
+$\log \log y(t) \le \log \log y(0) + \int_0^t a(s) \, \dd s$, and taking the
+exponential twice gives the claim.
+\end{proof}
+
+\begin{remark}
+The same argument with $\ln$ in place of $\log$ changes nothing, and neither
+does a change of base: $\log_b y = \ln y / \ln b$ for every $b > 1$.
+\end{remark}
+
+For later reference we collect some classical identities:
+\begin{gather*}
+  \sum_{k=1}^{\infty} \frac{1}{k^2} = \frac{\pi^2}{6}, \qquad
+  \prod_{p \text{ prime}} \frac{1}{1 - p^{-s}} = \zeta(s), \qquad
+  \binom{n}{k} = \frac{n!}{k! \, (n-k)!}, \\
+  \int_{-\infty}^{\infty} e^{-x^2} \, \dd x = \sqrt{\pi}, \qquad
+  \lim_{n \to \infty} \left( 1 + \frac{1}{n} \right)^n = e, \qquad
+  \log_2 1024 = 10 .
+\end{gather*}
+The roots of $a x^2 + b x + c$ are
+\[
+  x_{1,2} = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a},
+\]
+and nested radicals such as $\sqrt{2 + \sqrt{2 + \sqrt{2}}} = 2 \cos \frac{\pi}{16}$
+or $\sqrt[3]{x^3 + y^3}$ are set with the index tucked into the sign.
+
+\section{Numerical experiments}\label{sec:numerics}
+
+\subsection{Discretisation}
+
+We use the incremental pressure-correction scheme of Chorin~\cite{chorin1968},
+summarised in \cref{alg:projection}. Each step solves a convection--diffusion
+problem for a provisional velocity and a Poisson problem for the pressure
+increment.
+
+\begin{algorithm}[htbp]
+\caption{Incremental pressure-correction step}\label{alg:projection}
+\begin{algorithmic}[1]
+\Require velocity $\vect{u}^0$, pressure $p^0$, time step $\Delta t$, tolerance $\varepsilon$
+\Ensure the discrete solution $(\vect{u}^n, p^n)$ for $n = 1, \dots, N$
+\For{$n = 0, 1, \dots, N - 1$}
+  \State solve $\frac{\tilde{\vect{u}} - \vect{u}^n}{\Delta t} + (\vect{u}^n \cdot \nabla) \tilde{\vect{u}} - \nu \Delta \tilde{\vect{u}} = \vect{f}^{n+1} - \nabla p^n$
+  \State solve $\Delta \phi = \frac{1}{\Delta t} \nabla \cdot \tilde{\vect{u}}$ with $\partial_n \phi = 0$
+  \State $\vect{u}^{n+1} \gets \tilde{\vect{u}} - \Delta t \, \nabla \phi$
+  \State $p^{n+1} \gets p^n + \phi$
+  \If{$\norm{\vect{u}^{n+1} - \vect{u}^n} < \varepsilon$}
+    \State \textbf{break} \Comment{steady state reached}
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The pressure Poisson problem is the Schur complement of the saddle-point
+system
+\[
+  \begin{pmatrix} A & B^{\mathsf{T}} \\ B & 0 \end{pmatrix}
+  \begin{pmatrix} \mathbf{U} \\ \mathbf{P} \end{pmatrix}
+  =
+  \begin{bmatrix} \mathbf{F} \\ 0 \end{bmatrix},
+  \qquad
+  \begin{vmatrix} 1 & 2 \\ 3 & 4 \end{vmatrix} = -2 ,
+\]
+and the boundary is marked by the indicator
+\[
+  \chi_\Omega(x) =
+  \begin{cases}
+    1 & \text{if } x \in \Omega, \\
+    0 & \text{otherwise.}
+  \end{cases}
+\]
+
+\subsection{The Taylor--Green vortex}
+
+On the periodic square $(0, 2\pi)^2$ the Taylor--Green vortex
+\begin{align*}
+  u(x, y, t) &= \cos x \sin y \, e^{-2\nu t}, \\
+  v(x, y, t) &= -\sin x \cos y \, e^{-2\nu t}, \\
+  p(x, y, t) &= -\tfrac{1}{4} \bigl( \cos 2x + \cos 2y \bigr) e^{-4\nu t}
+\end{align*}
+is an exact solution with $\vect{f} = 0$. With a velocity scale
+$U = \SI{1}{\meter\per\second}$, a length $L = \SI{0.1}{\meter}$ and the
+viscosity of water, $\nu = \SI{1.0e-6}{\square\meter\per\second}$, the Reynolds
+number is $\mathrm{Re} = U L / \nu = \num{100000}$. \Cref{tab:convergence}
+lists the errors at $t = 1$ and \cref{fig:convergence} plots them.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Errors for the Taylor--Green vortex at $t = 1$ with $\nu = 10^{-2}$.}
+  \label{tab:convergence}
+  \begin{tabular}{rccr}
+    \toprule
+    $N$ & $\norm{\vect{u} - \vect{u}_h}_{L^2}$ & Rate & Time (s) \\
+    \midrule
+    16  & \num{3.21e-3} & ---  & 0.04 \\
+    32  & \num{8.12e-4} & 1.98 & 0.29 \\
+    64  & \num{2.04e-4} & 1.99 & 2.31 \\
+    128 & \num{5.11e-5} & 2.00 & 18.60 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[scale=1.2]
+    \draw[very thin, gray] (0,0) grid (4,3);
+    \draw[thick, ->] (0,0) -- (4.3,0) node[right] {$\log_2 N$};
+    \draw[thick, ->] (0,0) -- (0,3.3) node[above] {$-\log_{10} e$};
+    \draw[blue, thick] (0.5,0.5) -- (1.5,1.1) -- (2.5,1.7) -- (3.5,2.3);
+    \draw[red, dashed] (0.5,0.3) -- (3.5,2.1);
+    \draw[blue] (0.5,0.5) circle (0.06);
+    \draw[blue] (1.5,1.1) circle (0.06);
+    \draw[blue] (2.5,1.7) circle (0.06);
+    \draw[blue] (3.5,2.3) circle (0.06);
+    \node at (2.9,1.2) {slope $2$};
+  \end{tikzpicture}
+  \caption{Observed $L^2$ error against resolution on logarithmic axes. The
+    dashed line has slope two, the rate predicted by the theory.}
+  \label{fig:convergence}
+\end{figure}
+
+Three observations stand out.
+\begin{enumerate}[label=(\roman*)]
+  \item The error falls by a factor of four each time $N$ doubles, so the
+        observed order is $\log_2 (3.21 / 0.812) \approx 1.98$.
+  \item The cost grows like $N^3$, one factor of $N$ from the time step.
+  \item Kinetic energy decays as $E(t) = E(0) \, e^{-4\nu t}$, which is the
+        decay rate of \cref{cor:decay} with $C_P = 1/\sqrt{2}$.
+\end{enumerate}
+
+\begin{description}
+  \item[Convection] treated semi-implicitly, linearised about $\vect{u}^n$.
+  \item[Diffusion] treated implicitly, which removes the parabolic time step
+        restriction $\Delta t \lesssim h^2 / \nu$.
+\end{description}
+
+\section{Conclusion}\label{sec:conclusion}
+
+The energy method gives, in a few lines, the bound~\eqref{eq:bound} and the
+exponential decay of \cref{cor:decay}; the projection scheme of
+\cref{alg:projection} reproduces both.\footnote{The code is available at
+\url{https://example.org/navier-stokes-energy}.} Whether the vorticity bound
+of \cref{sec:gronwall} can be closed without a smallness assumption is, of
+course, the open problem~\cite{fefferman2006, temam1977}.
+
+\section*{Acknowledgements}
+
+We thank the anonymous referees for their careful reading of the manuscript.
+
+\appendix
+
+\section{Proof of the Poincar\'e inequality}\label{app:poincare}
+
+For $\Omega \subset (0, \ell) \times \R^{d-1}$ and $v \in C_c^\infty(\Omega)$,
+the fundamental theorem of calculus and the Cauchy--Schwarz inequality give
+\[
+  \abs{v(x)}^2 = \abs{\int_0^{x_1} \partial_1 v(s, x') \, \dd s}^2
+  \le \ell \int_0^\ell \abs{\partial_1 v(s, x')}^2 \, \dd s ,
+\]
+and integrating over $\Omega$ proves \cref{lem:poincare} with $C_P = \ell$.
+Density extends it to all of $H_0^1(\Omega)$.
+
+\section{Typesetting checks}\label{app:checks}
+
+\epigraph{The purpose of computing is insight, not numbers.}{Richard Hamming}
+
+This appendix sets, once each, the kinds of material a paper like this one
+may call on beyond what the body used, so that a change to the engine that
+breaks any of them shows here first.
+
+\subsection{Text}
+
+Styles: \textbf{bold}, \textit{italic}, \textsl{slanted}, \textsc{Small
+Capitals}, \textsf{sans serif}, \texttt{typewriter}, \emph{emphasis with
+\emph{emphasis} inside}, and sizes from {\tiny tiny} and {\small small} to
+{\large large} and {\Large Large}. Marked text: \hl{highlighted},
+\ul{underlined}, \st{struck through}, \uline{underlined again} and
+\sout{struck out}. Characters by name: \S, \dag, \copyright, \textregistered,
+\texteuro, \pounds, \ae, \o, \ss, \'e, \`a, \^o, \"u, \~n, \c{c}, \v{s}, and
+the logos \TeX{} and \LaTeX. A time step is limited by the \gls{cfl}
+condition, and after that simply by the \gls{cfl} condition; a temperature
+reads 20\,\celsius, and a chemical reaction \ce{2H2 + O2 -> 2H2O}.
+
+\subsection{Boxes}
+
+Inline boxes keep their text together: \fbox{framed},
+\colorbox{shadecolor}{shaded}, \framebox[3cm][r]{flush right},
+\raisebox{0.5ex}{raised}, x\rlap{/}y, and one saved and used twice,
+\sbox{\stamp}{\textbf{saved}}\usebox{\stamp}\ \usebox{\stamp}. The graphicx
+transforms turn, scale and mirror a box: \rotatebox{90}{up},
+\scalebox{1.5}{larger}, \resizebox{2cm}{!}{fitted} and \reflectbox{mirror}.
+
+\noindent\begin{minipage}[t]{0.47\textwidth}
+  A minipage on the left, set as a column of its own, its lines as wide as
+  the minipage and no wider.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\textwidth}
+  And one on the right, beside it, its first line level with the first line
+  of its neighbour.
+\end{minipage}
+
+\begin{framed}
+  A framed block, which runs across the column with a rule around it.
+\end{framed}
+
+\begin{tcolorbox}[title=A titled box]
+  A colored box with a title bar, as tcolorbox sets one.
+\end{tcolorbox}
+
+\subsection{Lists}
+
+\begin{enumerate}[label=(\roman*)]
+  \item Numbered in lower-case Roman numerals, in parentheses,
+  \item with a nested list inside,
+    \begin{itemize}
+      \item bulleted,
+      \item and a second item,
+    \end{itemize}
+  \item and a third.
+\end{enumerate}
+
+\subsection{Tables}
+
+\Cref{tab:checks} uses a paragraph column, a centred column of a fixed
+width, a cell over two columns and a colored row; beside this sentence an
+inline table \begin{tabular}[t]{c}stands\\on its first row\end{tabular} and
+another \begin{tabular}[b]{c}stands\\on its last\end{tabular}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{A table of every kind of column.}\label{tab:checks}
+  \begin{tabularx}{0.8\textwidth}{lC{2cm}X}
+    \toprule
+    Left & Centred & Wrapped \\
+    \midrule
+    one & two & a paragraph column wraps its text to whatever room the table leaves it \\
+    \rowcolor{shadecolor} three & four & \makecell{two\\lines} \\
+    \multicolumn{2}{c}{over two columns} & five \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Code}
+
+Code is set as written, \verb|a_b = c % d| inline and in blocks:
+\begin{verbatim}
+for (int i = 0; i < n; ++i) sum += a[i];   // kept as typed
+\end{verbatim}
+\begin{lstlisting}[caption={The projection step}, label=lst:projection]
+def project(u, p, dt):
+    return u - dt * grad(p)
+\end{lstlisting}
+\begin{minted}{python}
+energy = 0.5 * sum(u * u) * h**2
+\end{minted}
+\Cref{lst:projection} is the step of \cref{alg:projection} that enforces
+incompressibility.
+
+\subsection{Columns}
+
+\begin{multicols}{2}
+Two columns balanced against each other, as the multicol package sets
+them. The text runs down the first column and on into the second, and the
+two end level with each other where the block ends, however much text it
+holds. After the block, the text runs across the whole page again, as
+this paragraph shows by carrying on for long enough to fill a few lines in
+each of the two columns it is set in.
+\end{multicols}
+
+\subsection{Drawing}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[scale=1.2]
+      \draw[->] (0,0) -- (2.5,0) node[right] {$x$};
+      \draw[->] (0,0) -- (0,1.8) node[above] {$y$};
+      \draw[blue, thick] (0,0) -- (1,1.2) -- (2,0.4);
+      \draw[red] (1,1.2) circle (0.15);
+    \end{tikzpicture}
+    \caption{A path and a circle.}\label{fig:path}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw[gray, very thin] (0,0) grid (2,2);
+      \draw[thick] (2,0) arc (0:90:2);
+    \end{tikzpicture}
+    \caption{A grid and an arc.}\label{fig:arc}
+  \end{subfigure}
+  \caption{Two drawings side by side, \cref{fig:path} and \cref{fig:arc}.}
+\end{figure}
+
+\subsection{The machinery underneath}
+
+What a package is written in is here too, and works the way TeX's own
+does: a count advanced in a loop gives
+\tally=3 \loop\ifnum\tally>0 \the\tally\advance\tally by -1 \repeat,
+a length multiplied gives \gap=1.5pt \multiply\gap by 4 \the\gap, a
+token list gives \note={kept tokens}\the\note, e-TeX's expressions give
+\number\numexpr (7+5)*3/4\relax{} and \the\dimexpr 1pt*3+0.5pt\relax, and the
+year is written \romannumeral\year{} in Roman numerals. The name
+\string\relax{} prints as itself and \uppercase{shouts} in capitals.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{bkm1984} J.~T. Beale, T.~Kato and A.~Majda. Remarks on the breakdown
+  of smooth solutions for the 3-D Euler equations. \emph{Comm. Math. Phys.},
+  94:61--66, 1984.
+\bibitem{chorin1968} A.~J. Chorin. Numerical solution of the Navier--Stokes
+  equations. \emph{Math. Comp.}, 22(104):745--762, 1968.
+\bibitem{fefferman2006} C.~L. Fefferman. Existence and smoothness of the
+  Navier--Stokes equation. In \emph{The Millennium Prize Problems}, pages
+  57--67. Clay Mathematics Institute, 2006.
+\bibitem{hopf1951} E.~Hopf. \"Uber die Anfangswertaufgabe f\"ur die
+  hydrodynamischen Grundgleichungen. \emph{Math. Nachr.}, 4:213--231, 1951.
+\bibitem{leray1934} J.~Leray. Sur le mouvement d'un liquide visqueux
+  emplissant l'espace. \emph{Acta Math.}, 63:193--248, 1934.
+\bibitem{temam1977} R.~Temam. \emph{Navier--Stokes Equations: Theory and
+  Numerical Analysis}. North-Holland, 1977.
+\end{thebibliography}
+
+\end{document}

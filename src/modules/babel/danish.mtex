@@ -1,0 +1,17 @@
+% Danish: babel's captions for it, and its date: 28. september 2026.
+
+\@define\captionsdanish{%
+\@define\abstractname{Resumé}%
+\@define\proofname{Bevis}%
+\@define\figurename{Figur}%
+\@define\tablename{Tabel}%
+\@define\refname{Litteratur}%
+\@define\bibname{Litteratur}%
+\@define\contentsname{Indhold}%
+\@define\listfigurename{Figurer}%
+\@define\listtablename{Tabeller}%
+\@define\appendixname{Bilag}%
+\@define\partname{Del}%
+\@define\chaptername{Kapitel}%
+\@define\indexname{Indeks}}
+\@define\datedanish{\@define\today{\@evaluate{\day}.~\ifcase\month\or januar \or februar \or marts \or april \or maj \or juni \or juli \or august \or september \or oktober \or november \or december \fi\@evaluate{\year}}}

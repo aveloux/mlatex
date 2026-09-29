@@ -1,0 +1,17 @@
+% Hungarian: babel's captions for it, and its date: 2026. szeptember 28.
+
+\@define\captionshungarian{%
+\@define\abstractname{Kivonat}%
+\@define\proofname{Bizonyítás}%
+\@define\figurename{Ábra}%
+\@define\tablename{Táblázat}%
+\@define\refname{Hivatkozások}%
+\@define\bibname{Irodalomjegyzék}%
+\@define\contentsname{Tartalomjegyzék}%
+\@define\listfigurename{Ábrák jegyzéke}%
+\@define\listtablename{Táblázatok jegyzéke}%
+\@define\appendixname{Függelék}%
+\@define\partname{Rész}%
+\@define\chaptername{Fejezet}%
+\@define\indexname{Tárgymutató}}
+\@define\datehungarian{\@define\today{\@evaluate{\year}.~\ifcase\month\or január \or február \or március \or április \or május \or június \or július \or augusztus \or szeptember \or október \or november \or december \fi\@evaluate{\day}.}}

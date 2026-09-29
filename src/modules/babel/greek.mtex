@@ -1,0 +1,17 @@
+% Greek: babel's captions for it, and its date: 28 Σεπτεμβρίου 2026.
+
+\@define\captionsgreek{%
+\@define\abstractname{Περίληψη}%
+\@define\proofname{Απόδειξη}%
+\@define\figurename{Σχήμα}%
+\@define\tablename{Πίνακας}%
+\@define\refname{Αναφορές}%
+\@define\bibname{Βιβλιογραφία}%
+\@define\contentsname{Περιεχόμενα}%
+\@define\listfigurename{Κατάλογος σχημάτων}%
+\@define\listtablename{Κατάλογος πινάκων}%
+\@define\appendixname{Παράρτημα}%
+\@define\partname{Μέρος}%
+\@define\chaptername{Κεφάλαιο}%
+\@define\indexname{Ευρετήριο}}
+\@define\dategreek{\@define\today{\@evaluate{\day}~\ifcase\month\or Ιανουαρίου \or Φεβρουαρίου \or Μαρτίου \or Απριλίου \or Μαΐου \or Ιουνίου \or Ιουλίου \or Αυγούστου \or Σεπτεμβρίου \or Οκτωβρίου \or Νοεμβρίου \or Δεκεμβρίου \fi\@evaluate{\year}}}

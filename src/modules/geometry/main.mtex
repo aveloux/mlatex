@@ -1,0 +1,32 @@
+% geometry: the sheet and its margins, set by name.
+%
+%   \usepackage[a4paper,margin=2cm]{geometry}
+%   \geometry{left=3cm,right=2cm}
+%
+% Every key given, as an option or to \geometry, is kept as the variable
+% geometry.key, and each call applies all of them from the sheet inwards: the
+% paper, then every margin at once, then a side at a time. So a later, more
+% particular key wins over an earlier, more general one, as it does in
+% LaTeX. The keys read are the paper sizes a4paper, a5paper, letterpaper
+% and legalpaper, paperwidth and paperheight, margin, hmargin and vmargin,
+% and left, right, top and bottom.
+
+\@define\geometry[1]{%
+\@setkeys{geometry}{#1}%
+\@ifvariable{geometry.a4paper}{\pagewidth=595pt \pageheight=842pt }{}%
+\@ifvariable{geometry.a5paper}{\pagewidth=420pt \pageheight=595pt }{}%
+\@ifvariable{geometry.letterpaper}{\pagewidth=612pt \pageheight=792pt }{}%
+\@ifvariable{geometry.legalpaper}{\pagewidth=612pt \pageheight=1008pt }{}%
+\@ifvariable{geometry.paperwidth}{\pagewidth=\@variable{geometry.paperwidth} }{}%
+\@ifvariable{geometry.paperheight}{\pageheight=\@variable{geometry.paperheight} }{}%
+\@ifvariable{geometry.margin}{\@leftmargin=\@variable{geometry.margin} \@rightmargin=\@variable{geometry.margin} \@topmargin=\@variable{geometry.margin} \@bottommargin=\@variable{geometry.margin} }{}%
+\@ifvariable{geometry.hmargin}{\@leftmargin=\@variable{geometry.hmargin} \@rightmargin=\@variable{geometry.hmargin} }{}%
+\@ifvariable{geometry.vmargin}{\@topmargin=\@variable{geometry.vmargin} \@bottommargin=\@variable{geometry.vmargin} }{}%
+\@ifvariable{geometry.left}{\@leftmargin=\@variable{geometry.left} }{}%
+\@ifvariable{geometry.right}{\@rightmargin=\@variable{geometry.right} }{}%
+\@ifvariable{geometry.top}{\@topmargin=\@variable{geometry.top} }{}%
+\@ifvariable{geometry.bottom}{\@bottommargin=\@variable{geometry.bottom} }{}%
+}
+
+% Whatever \usepackage was given, applied now.
+\geometry{}

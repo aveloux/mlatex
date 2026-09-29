@@ -1,0 +1,6 @@
+% comment: text left out. The comment block is the engine's own; a block of
+% another name made one with \excludecomment is set as written here.
+
+\@define\includecomment[1]{}
+\@define\excludecomment[1]{}
+\@define\specialcomment[3]{}

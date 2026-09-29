@@ -1,0 +1,11 @@
+% titling: the title block's parts, each with a before and an after to
+% change. \title, \author, \date and \maketitle are the core package's; the
+% hooks around them are read and let go.
+
+\@define\pretitle[1]{}
+\@define\posttitle[1]{}
+\@define\preauthor[1]{}
+\@define\postauthor[1]{}
+\@define\predate[1]{}
+\@define\postdate[1]{}
+\newlength\droptitle

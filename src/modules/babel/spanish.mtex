@@ -1,0 +1,17 @@
+% Spanish: babel's captions for it, and its date: 28 de septiembre de 2026.
+
+\@define\captionsspanish{%
+\@define\abstractname{Resumen}%
+\@define\proofname{Demostración}%
+\@define\figurename{Figura}%
+\@define\tablename{Cuadro}%
+\@define\refname{Referencias}%
+\@define\bibname{Bibliografía}%
+\@define\contentsname{Índice general}%
+\@define\listfigurename{Índice de figuras}%
+\@define\listtablename{Índice de cuadros}%
+\@define\appendixname{Apéndice}%
+\@define\partname{Parte}%
+\@define\chaptername{Capítulo}%
+\@define\indexname{Índice alfabético}}
+\@define\datespanish{\@define\today{\@evaluate{\day} de \ifcase\month\or enero de \or febrero de \or marzo de \or abril de \or mayo de \or junio de \or julio de \or agosto de \or septiembre de \or octubre de \or noviembre de \or diciembre de \fi\@evaluate{\year}}}

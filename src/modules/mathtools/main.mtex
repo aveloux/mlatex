@@ -1,0 +1,15 @@
+% mathtools: amsmath's fixes and additions. Loads amsmath first, as LaTeX's
+% own does, so a document that asks for mathtools has both.
+
+\@requirepackage{amsmath}
+
+% \DeclarePairedDelimiter\abs{\lvert}{\rvert} makes \abs{x} the pair around
+% x, grown to fit it. The inner definition's parameter is written ##1 so it
+% survives this one's substitution as #1.
+\@define\DeclarePairedDelimiter[3]{\@define#1[1]{\left#2##1\right#3}}
+
+% The two pairs almost every document declares for itself, declared here with
+% the package's own command. A document that declares them again only
+% replaces them.
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}

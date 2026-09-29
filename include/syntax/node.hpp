@@ -25,12 +25,25 @@ namespace syntax {
         };
 
         Type type = Type::Text;
-        std::string_view value{};
-        memory::Location location{};
-        memory::Slice<Node*> nodes{};
-        const expression::Node* expression{nullptr};
-        bool display = false;   ///< \\[...\\] rather than \\(...\\)
-        void* directive{nullptr};
+        std::string_view value{};                      ///< Its literal text, if any.
+        memory::Location location{};                   ///< Where it came from.
+        memory::Slice<Node*> nodes{};                  ///< Child nodes, if any.
+        const expression::Node* expression{nullptr};   ///< Set for Type::Expression.
+        bool display = false;                          ///< `\\[...\\]` rather than `\\(...\\)`.
+        void* directive{nullptr};                      ///< Set for Type::Directive; opaque here.
+
+        /// @brief The face this text is to be set in, or null for whichever is
+        ///        in use when it is composed.
+        ///
+        /// Opaque, and deliberately so: the syntax layer has no business
+        /// knowing what a face is. It is stamped as the text is read --
+        /// Parser::stamp -- because a style is chosen while the document is
+        /// being read and the text is not shaped until long afterwards, by
+        /// which time the choice would otherwise be gone.
+        const void* face{nullptr};
+        /// @brief The color this text is to be set in, or null for the
+        ///        default; opaque here for the same reason #face is.
+        const void* tint{nullptr};
 
         Node() = default;
 

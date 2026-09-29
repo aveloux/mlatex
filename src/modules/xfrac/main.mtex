@@ -1,0 +1,3 @@
+% xfrac: \sfrac, a fraction set small either side of a slash.
+
+\@define\sfrac[3][]{\ensuremath{{}^{#2}\!/\!{}_{#3}}}

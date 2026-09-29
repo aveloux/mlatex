@@ -1,166 +1,88 @@
+/// @file
+/// @brief Paragraph implementation: a horizontal list broken into lines.
+///
+/// The breaker chooses where the lines end; the work here is spacing them
+/// afterwards. That is TeX's `\\baselineskip` rule, and doing it per gap
+/// rather than uniformly is what keeps a line holding a tall fraction from
+/// colliding with the one above it.
 #include "layout/paragraph.hpp"
 #include "layout/breaker.hpp"
 #include "layout/line.hpp"
 
 #include <algorithm>
-#include <cstdint>
-#include <vector>
 
 namespace render::layout {
 
-    namespace {
-
-        memory::Slice<Node*> hyphenate(
-            const typography::Shaper& shaper,
-            const typography::Hyphenator& hyphenator,
-            const typography::Font& font,
-            const std::string_view text,
-            memory::Arena& arena,
-            memory::Arena& scratch
-        ) {
-            std::vector<Node*> nodes;
-            nodes.reserve(text.size());
-
-            const typography::Font* fonts[] = { &font };
-            Node* space = nullptr;
-
-            std::size_t cursor = 0;
-            while (cursor < text.size()) {
-                if (text[cursor] == ' ') {
-                    while (cursor < text.size() && text[cursor] == ' ') ++cursor;
-                    if (!nodes.empty()) {
-                        if (!space) {
-                            const memory::Slice<Node*> shaped = shaper.shape(memory::Slice{fonts, 1}, " ", {});
-                            space = shaped.empty() ? nullptr : shaped[0];
-                        }
-                        if (space) nodes.push_back(space);
-                    }
-                    continue;
-                }
-
-                const std::size_t start = cursor;
-                while (cursor < text.size() && text[cursor] != ' ') ++cursor;
-                const std::string_view word = text.substr(start, cursor - start);
-
-                const memory::Slice<Node*> glyphs = shaper.shape(memory::Slice{fonts, 1}, word, {});
-                if (glyphs.empty()) continue;
-
-                memory::Slice<std::uint32_t> codepoints = scratch.allocate<std::uint32_t>(word.size());
-                for (std::size_t index = 0; index < word.size(); ++index) {
-                    codepoints[index] = static_cast<std::uint32_t>(static_cast<unsigned char>(word[index]));
-                }
-
-                const memory::Slice<std::uint8_t> breaks = hyphenator.execute(scratch, codepoints);
-                const std::size_t limit = std::min(glyphs.size(), breaks.size());
-
-                for (std::size_t index = 0; index < glyphs.size(); ++index) {
-                    nodes.push_back(glyphs[index]);
-
-                    if (index + 1 < glyphs.size() && index < limit && breaks[index]) {
-                        auto* penalty = arena.compose<Node>(Node::Type::Penalty);
-                        penalty->penalty({ .value = 50, .flag = true });
-                        nodes.push_back(penalty);
-                    }
-                }
-            }
-
-            memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
-            for (std::size_t index = 0; index < nodes.size(); ++index) {
-                slice[index] = nodes[index];
-            }
-            return slice;
-        }
-
-    }
-
     Paragraph::Paragraph(
         memory::Arena& arena,
-        const std::string_view text,
-        const typography::Font& font,
-        const float size
+        const memory::Slice<Node*> material,
+        const Node::Justification setting,
+        const float left,
+        const float right,
+        const bool reversed
     ) noexcept
-        : arena(arena), content(text), face(&font), scale(size) {}
+        : arena(arena), content(material), justification(setting), margin(left),
+          gutter(right), reversed(reversed) {}
 
-    void Paragraph::assign(const std::string_view text) noexcept {
-        if (content != text) {
-            content = text;
-            stale = true;
+    void Paragraph::layout(memory::Arena& scratch, const float width, const float leading) noexcept {
+        // Lines already broken to this column stay broken. A column of a
+        // different width needs new ones even though the content is the same.
+        if (tree && column == width) return;
+        column = width;
+
+        if (content.empty() || width - margin - gutter <= 0.0f) {
+            tree = nullptr;
+            return;
         }
-    }
 
-    void Paragraph::touch() noexcept {
-        stale = true;
-    }
+        const Breaker breaker(arena, scratch, Breaker::Configuration{
+            .target = width - margin - gutter,
+            .penalty = 10.0f,
+            .justification = justification
+        });
 
-    bool Paragraph::dirty() const noexcept {
-        return stale;
-    }
+        const memory::Slice<Node*> lines = breaker.compose(content);
+        if (lines.empty()) {
+            tree = nullptr;
+            return;
+        }
 
-    float Paragraph::height() const noexcept {
-        return tall;
-    }
+        // Put in the order they are drawn, wherever there is anything that
+        // reads right to left: see the class notes.
+        for (Node* line : lines) Line::reorder(arena, line, reversed);
 
-    float Paragraph::offset() const noexcept {
-        return shift;
-    }
+        // One glue between each pair of lines, sized so the baselines end up
+        // the asked-for distance apart. A line deep enough to eat that
+        // distance gets the minimum clearance instead of a negative gap.
+        const memory::Slice<Node*> column_ = arena.allocate<Node*>(lines.count * 2 - 1);
+        std::size_t filled = 0;
+        float depth = 0.0f;
 
-    void Paragraph::offset(const float value) noexcept {
-        shift = value;
-    }
+        for (std::size_t index = 0; index < lines.count; ++index) {
+            Node* line = lines[index];
+            if (!line) continue;
 
-    Node* Paragraph::node() const noexcept {
-        return tree;
-    }
-
-    float Paragraph::layout(
-        const typography::Shaper& shaper,
-        Ledger& ledger,
-        memory::Arena& scratch,
-        const float width,
-        const float leading,
-        const typography::Hyphenator* hyphenator
-    ) noexcept {
-        if (!stale) return 0.0f;
-
-        const Ledger::Key key{ .font = face, .text = content, .size = scale };
-        memory::Slice<Node*> nodes = ledger.find(key);
-
-        if (nodes.empty()) {
-            if (hyphenator) {
-                nodes = hyphenate(shaper, *hyphenator, *face, content, arena, scratch);
-            } else {
-                const typography::Font* fonts[] = { face };
-                nodes = shaper.shape(memory::Slice{fonts, 1}, content, {});
+            if (filled > 0) {
+                auto* glue = arena.compose<Node>(Node::Type::Glue);
+                glue->glue({.width = std::max(leading - depth - line->box().height,
+                                              leading * minimum)});
+                column_[filled++] = glue;
             }
-            if (!nodes.empty()) {
-                ledger.insert(key, nodes);
+
+            // Moved in by the margin, which is how every line of a list item
+            // lines up under the first word after its label -- the margin at
+            // the right, right to left, where a label then hangs.
+            if (const float inset = reversed ? gutter : margin; inset != 0.0f) {
+                Node::Box shape = line->box();
+                shape.offset = inset;
+                line->box(shape);
             }
+
+            column_[filled++] = line;
+            depth = line->box().depth;
         }
 
-        const Breaker::Configuration configuration{
-            .target = static_cast<double>(width),
-            .leading = static_cast<double>(leading),
-            .tolerance = 2000.0,
-            .penalty = 0.0,
-            .skip = static_cast<double>(leading),
-            .limit = 0.0
-        };
-
-        const Breaker breaker(arena, scratch, configuration);
-        const memory::Slice<Node*> lines = breaker.compose(nodes);
-
-        tree = Line::vertical(arena, lines, leading);
-
-        float updated = 0.0f;
-        if (tree) {
-            updated = tree->box().height;
-        }
-
-        const float delta = updated - tall;
-        tall = updated;
-        stale = false;
-
-        return delta;
+        tree = Line::vertical(arena, memory::Slice{column_.data, filled}, 0.0f);
     }
 
 }

@@ -1,0 +1,3 @@
+% a4wide: a wider text block than the article class's on A4.
+
+\@leftmargin=1in \@rightmargin=1in

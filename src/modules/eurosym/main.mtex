@@ -1,0 +1,4 @@
+% eurosym: the euro sign, and an amount written with it.
+
+\@define\EUR[1]{#1\,\euro}
+\@define\officialeuro{\euro}

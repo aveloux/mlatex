@@ -1,0 +1,7 @@
+% fancybox: boxes framed with a shadow, a double line or rounded corners,
+% each drawn here as a plain frame.
+
+\@define\shadowbox[1]{\fbox{#1}}
+\@define\doublebox[1]{\fbox{\fbox{#1}}}
+\@define\ovalbox[1]{\fbox{#1}}
+\@define\Ovalbox[1]{\fbox{#1}}

@@ -7,6 +7,8 @@
 #include <vector>
 #include "syntax/semantics/registers.hpp"
 
+#include <array>
+#include <cstdint>
 #include <optional>
 
 namespace syntax::primitives {
@@ -39,35 +41,31 @@ namespace syntax::primitives {
     class Values {
     public:
         /// @brief Interns the control sequences this module binds.
-        /// @param names Interning table, shared with the expander.
-        explicit Values(Lexicon& names) noexcept;
+        /// @param lexicon Interning table, shared with the expander.
+        explicit Values(Lexicon& lexicon) noexcept;
 
         /// @brief Installs the register primitives.
         /// @param mouth   Expander to bind into.
-        /// @param context Engine services; assignments land in its ledger.
+        /// @param context Engine services; assignments land in its registers.
         void operator()(Mouth& mouth, Context& context) const;
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return faults; }
+        ///
+        /// Each module keeps its own list rather than sharing one, so nothing
+        /// has to be constructed and threaded through them, and
+        /// Wrapper::tracebacks() gathers them when a run finishes. A module
+        /// records an error by appending to the list where it finds it, which
+        /// is why there is no reporting function to go looking for.
+        [[nodiscard]] const std::vector<Traceback>& tracebacks() const noexcept { return tracebacks_; }
 
     private:
-        /// @brief Records an error this module found.
-        ///
-        /// Each module keeps its own list rather than sharing one: nothing has
-        /// to be constructed and passed in, and Wrapper::tracebacks() gathers
-        /// them when a run finishes.
-        ///
-        /// @param type     What kind of mistake it is.
-        /// @param location Where it happened; a zero location means "no position".
-        /// @param message  Human-readable explanation.
-        void fault(Traceback::Type type, memory::Location location, std::string_view message) const;
+        mutable std::vector<Traceback> tracebacks_{};   ///< Errors this module found.
 
-        mutable std::vector<Traceback> faults{};   ///< Errors this module found.
-
-        /// @brief What kind of register a control sequence names.
-        /// @param symbol Interned control sequence.
-        /// @return Its bank, or std::nullopt when it names no bank.
-        [[nodiscard]] std::optional<semantics::Registers::Type> bank(Symbol symbol) const noexcept;
+        /// The last glue read's stretch and shrink, in scaled points or
+        /// scaled `fil`s, and their orders of infinity packed as the Order
+        /// bank packs them: what an assignment to a glue register keeps
+        /// beside its natural width.
+        mutable std::array<std::int32_t, 3> flex{};
 
         /// @brief Reads a `<kind><index>` or a bound name.
         /// @param mouth   Expander to read from.
@@ -80,9 +78,21 @@ namespace syntax::primitives {
         /// @param text  The word to skip.
         static void skip(Mouth& mouth, std::string_view text);
 
-        Symbol integer{};   ///< `\\integer`, the count bank.
-        Symbol length{};    ///< `\\length`, the dimension bank.
-        Symbol glue{};      ///< `\\glue`, the flexible-space bank.
+        Lexicon* lexicon{nullptr};   ///< For naming the banks when this module installs.
+
+        Symbol relax{};     ///< `\\relax`, which ends an expression.
+        Symbol toks{};      ///< `\\toks`, the token registers by number.
+        Symbol numexpr{};   ///< `\\numexpr`, which \\the prints as a number.
+        Symbol dimexpr{};   ///< `\\dimexpr`, which \\the prints as a length.
+
+        /// The next register each bank gives out -- integers, lengths, glue
+        /// -- counted up from 128 to the engine's own at 240.
+        mutable std::array<std::size_t, 3> following{128, 128, 128};
+        mutable std::size_t boxes{10};    ///< The next box register \\newbox gives out.
+        mutable std::size_t tokens{10};   ///< The next token register \\newtoks gives out.
+
+        mutable std::array<std::vector<Token>, semantics::Registers::slots> lists{};   ///< The token registers.
+        mutable std::vector<std::uint16_t> listed{};   ///< The token register each name means, plus one; 0 for none.
     };
 
 }

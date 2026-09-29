@@ -1,0 +1,218 @@
+% LaTeX's kernel as a preamble or a package meets it: the words a .sty file
+% opens with, the internals a preamble borrows, xparse's tests, and the small
+% commands every document may use without asking for a package. What only a
+% package's bookkeeping needs is read and let go, since a package here is
+% read once and takes its options as its variables.
+
+% ---------------------------------------------------------------------------
+% @ is always a letter here, so there is nothing for these to switch.
+
+\@define\makeatletter{}
+\@define\makeatother{}
+
+% ---------------------------------------------------------------------------
+% The internals a preamble borrows most: the first or the second of two
+% arguments, one argument dropped, a name built from text.
+
+\@define\@firstofone[1]{#1}
+\@define\@firstoftwo[2]{#1}
+\@define\@secondoftwo[2]{#2}
+\@define\@gobble[1]{}
+\@define\@gobbletwo[2]{}
+\@define\@gobblethree[3]{}
+\@define\@gobblefour[4]{}
+\@define\@empty{}
+\@alias\protect\relax
+\@define\@namedef[1]{\expandafter\@define\csname #1\endcsname}
+\@define\@nameuse[1]{\csname #1\endcsname}
+\@define\@ifundefined[1]{\ifcsname #1\endcsname\expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
+
+% TeX's constants as the kernel names them, for a preamble that borrows the
+% kernel's own code: \z@ a length of nothing, read as 0 where a number is
+% wanted, and \p@ a point; the numbers \@ne to \@MM, and \m@ne; \@plus and
+% \@minus between a glue's parts; and the scratch registers packages work in.
+\newdimen\z@
+\newdimen\p@ \@set\p@=1pt
+\chardef\@ne=1 \chardef\tw@=2 \chardef\thr@@=3 \chardef\sixt@@n=16
+\chardef\@m=1000 \chardef\@M=10000 \chardef\@MM=20000
+\newcount\m@ne \@set\m@ne=-1
+\@define\@plus{plus}
+\@define\@minus{minus}
+\newdimen\@tempdima \newdimen\@tempdimb \newdimen\@tempdimc
+\newcount\@tempcnta \newcount\@tempcntb
+\newskip\@tempskipa \newskip\@tempskipb
+\newif\if@tempswa
+\@define\@nil{}
+\@define\@nnil{\@nil}
+\countdef\count@=255 \dimendef\dimen@=0 \dimendef\dimen@i=1 \dimendef\dimen@ii=2
+\skipdef\skip@=0 \toksdef\toks@=0
+
+% The kernel's loops over a list: \@for over its commas -- `\@for\x:=a,b,c\do
+% {...}`, the list a macro's when it is one -- and \@tfor over its tokens.
+\@spanning\@define\@for#1:=#2\do#3{\@foreach#1 in {#2} {#3}}
+\@spanning\@define\@tfor#1:=#2\do#3{\@tforloop#2\@nil\@@#1{#3}}
+\@spanning\@define\@tforloop#1#2\@@#3#4{\ifx\@nil#1\else\@define#3{#1}#4\@tforloop#2\@@#3{#4}\fi}
+
+% Text added to the end of a macro, for good: \g@addto@macro\@notes{more}.
+% The macro is opened once before it is defined again, so it holds what it
+% held and the text after it, rather than a call to itself.
+\@spanning\@define\g@addto@macro[2]{\@shared\expandafter\@define\expandafter#1\expandafter{#1#2}}
+
+% ---------------------------------------------------------------------------
+% Plain TeX's loop: what to do, then a test, then what to do while it holds --
+%   \loop \advance\n by 1 \ifnum\n<10 \repeat
+% The test is left open by the body and closed by \iterate, which runs the
+% body again or stops. \repeat here is only the loop's end mark, read as a
+% delimiter and never run.
+
+\@define\loop#1\repeat{\@define\body{#1}\iterate}
+\@define\iterate{\body\@alias\next\iterate\else\@alias\next\relax\fi\next}
+
+% ---------------------------------------------------------------------------
+% The line breaker's moods, and the ways TeX can be told to report. A sloppy
+% paragraph tolerates looser lines rather than overfull ones.
+
+\@define\sloppy{\tolerance=9999 \emergencystretch=3em }
+\@define\fussy{\tolerance=200 \emergencystretch=0pt }
+% \@ before a stop after a capital, which would make it a sentence's end in
+% LaTeX; here the capital's stop is an abbreviation's either way.
+\@define\@{}
+\@define\frenchspacing{}
+\@define\nonfrenchspacing{}
+\@define\raggedbottom{}
+\@define\flushbottom{}
+\@define\nonstopmode{}
+\@define\batchmode{}
+\@define\scrollmode{}
+\@define\errorstopmode{}
+\@define\showhyphens[1]{}
+\@define\showthe{}
+\@define\show[1]{}
+
+% Line ends and spaces written as they are to stand: here a document is read
+% whole before any category could change, so a line is a line whichever way.
+\@define\obeylines{}
+\@define\obeyspaces{}
+
+% The name of the run, as LaTeX takes it from the file being read.
+\@define\jobname{document}
+
+% Which engine is running, as ifpdf, ifxetex, ifluatex and iftex ask: this
+% one writes a PDF itself and reads its faces itself, so it answers as
+% pdfTeX does, and a preamble takes the branch written for it.
+\newif\ifpdf        \pdftrue
+\newif\ifPDFTeX     \PDFTeXtrue
+\newif\ifxetex
+\newif\ifXeTeX
+\newif\ifluatex
+\newif\ifLuaTeX
+\newif\iftutex
+
+% Plain TeX's boxes of no width, which lap over what is beside them, and its
+% lines set whole: \centerline{a title} is a line to itself, centred.
+\@define\rlap[1]{\makebox[0pt][l]{#1}}
+\@define\llap[1]{\makebox[0pt][r]{#1}}
+\@define\clap[1]{\makebox[0pt][c]{#1}}
+\@define\centerline[1]{\par\noindent\makebox[\linewidth][c]{#1}\par}
+\@define\leftline[1]{\par\noindent\makebox[\linewidth][l]{#1}\par}
+\@define\rightline[1]{\par\noindent\makebox[\linewidth][r]{#1}\par}
+\@define\underbar[1]{\underline{#1}}
+
+% LaTeX's short stack: lines one above the other, as a table of one column.
+\@define\shortstack[2][c]{\begin{tabular}[b]{@{}#1@{}}#2\end{tabular}}
+
+% A line's height and depth with nothing in it, so a box that holds a strut is
+% as tall as a line of text.
+\@define\strut{\vrule width0pt height.7\baselineskip depth.3\baselineskip\relax}
+
+% ---------------------------------------------------------------------------
+% What a package or a class says of itself, the options it declares and the
+% messages it prints: read, and let go. A date after a name is optional in
+% brackets, as it is there.
+
+\@define\@gobbleoption[1][]{}
+\@define\@gobbledate{\@ifnextchar{[}{\@gobbleoption}{}}
+\@define\NeedsTeXFormat[1]{\@gobbledate}
+\@alias\ProvidesPackage\NeedsTeXFormat
+\@alias\ProvidesFile\NeedsTeXFormat
+\@alias\ProvidesClass\NeedsTeXFormat
+\@define\RequirePackage[2][]{\@requirepackage[#1]{#2}\@gobbledate}
+
+% LaTeX's \DocumentMetadata, before \documentclass: its keys kept as the
+% variables metadata.key -- `pdfstandard=A-2b` makes the file PDF/A.
+\@define\DocumentMetadata[1]{\@setkeys{metadata}{#1}}
+\@define\LoadClass[2][]{\@gobbledate}
+\@define\DeclareOption{\@ifstar{\@gobble}{\@gobbletwo}}
+\@define\ProcessOptions{\@ifstar{}{}}
+\@define\ExecuteOptions[1]{}
+\@define\PassOptionsToPackage[2]{}
+\@define\PassOptionsToClass[2]{}
+\@define\CurrentOption{}
+\@define\AtEndOfPackage[1]{#1}
+\@define\AtEndOfClass[1]{#1}
+\@define\InputIfFileExists[3]{\@iffile{#1}{\input{#1}#2}{#3}}
+
+% What a package or a class says: its warnings heard beside the engine's own,
+% its errors too, neither stopping the document; what it only tells the log,
+% the log.
+\@define\PackageInfo[2]{\typeout{#1: #2}}
+\@define\PackageWarning[2]{\warning{#1: #2}}
+\@define\PackageWarningNoLine[2]{\warning{#1: #2}}
+\@define\PackageError[3]{\warning{#1: #2}}
+\@define\ClassInfo[2]{\typeout{#1: #2}}
+\@define\ClassWarning[2]{\warning{#1: #2}}
+\@define\ClassWarningNoLine[2]{\warning{#1: #2}}
+\@define\ClassError[3]{\warning{#1: #2}}
+
+% A command made robust is one LaTeX's moving arguments cannot break. There
+% are none here to break it, so every command already is.
+\@define\MakeRobust[1]{}
+\@define\robustify[1]{}
+
+% ---------------------------------------------------------------------------
+% xparse's tests of what \NewDocumentCommand passed: an s or t argument is
+% \BooleanTrue or \BooleanFalse, and an o argument left out is -NoValue-.
+
+\@define\BooleanTrue{1}
+\@define\BooleanFalse{0}
+\@define\IfBooleanTF[1]{\ifx#1\BooleanTrue\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+\@define\IfBooleanT[2]{\IfBooleanTF{#1}{#2}{}}
+\@define\IfBooleanF[2]{\IfBooleanTF{#1}{}{#2}}
+\@define\IfNoValueTF[1]{\@ifstrequal{#1}{-NoValue-}}
+\@define\IfNoValueT[2]{\IfNoValueTF{#1}{#2}{}}
+\@define\IfNoValueF[2]{\IfNoValueTF{#1}{}{#2}}
+\@define\IfValueTF[3]{\IfNoValueTF{#1}{#3}{#2}}
+\@define\IfValueT[2]{\IfNoValueTF{#1}{}{#2}}
+\@define\IfValueF[2]{\IfNoValueTF{#1}{#2}{}}
+
+% ---------------------------------------------------------------------------
+% Small things a document writes: an empty box, a space no line breaks at,
+% the breaks a document may forbid, and what a one-sided page has no use for.
+
+\@define\null{\hbox{}}
+\@alias\leavevmode\relax
+\@alias\unskip\relax
+\@alias\nobreakspace~
+\@define\nolinebreak[1][4]{\penalty10000\relax}
+\@define\nopagebreak[1][4]{}
+\@define\enlargethispage{\@ifstar{\@gobble}{\@gobble}}
+\@define\cleardoublepage{\clearpage}
+
+% A new page, and the text from there on in two columns -- under a heading
+% set across both, when one is given -- or in one.
+\@define\twocolumn[1][]{\clearpage\@columns1 #1\par\@columns2 }
+\@define\onecolumn{\clearpage\@columns1 }
+
+% The running heads' marks, which a page style here sets from the headings
+% themselves, and text written straight into a list's file, which here has
+% no file: the lists are made from the headings and captions as they are read.
+\@define\markboth[2]{}
+\@define\markright[1]{}
+\@define\addtocontents[2]{}
+
+% A character by its number, as \char takes one: \symbol{"2713}.
+\@define\symbol[1]{\char#1\relax}
+
+% Letters raised or lowered as a formula's scripts are, in the text's face.
+\@define\textsuperscript[1]{\ensuremath{{}^{\text{#1}}}}
+\@define\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}

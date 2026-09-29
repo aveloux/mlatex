@@ -1,0 +1,82 @@
+% IEEEtran: the IEEE's conference and journal papers -- two columns of
+% ten-point type on letter paper, set with the class's narrow margins, and
+% sections numbered I, II, III with subsections A, B, C under them.
+%
+%   \documentclass[conference]{IEEEtran}
+%   \author{\IEEEauthorblockN{Ada Lovelace}\IEEEauthorblockA{Analytical Engines\\London}}
+%
+% What only the IEEE's production needs -- the lockouts, the publication
+% notices, the triggers that balance the last page -- is read and let go.
+
+\@leftmargin=0.625in \@rightmargin=0.625in \@topmargin=0.75in \@bottommargin=1in
+\setlength{\columnsep}{0.2in}
+
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\Alph{subsection}}
+\renewcommand\thesubsubsection{\arabic{subsubsection}}
+
+% Its headings: a section centred in small capitals, `I. Introduction`; a
+% subsection in italic, `A. Method`; one beneath that in italic too.
+\@heading{\section}{hang}{\centering\scshape\normalsize}{\thesection.}{1em}{}
+\@heading{\subsection}{hang}{\itshape\normalsize}{\thesubsection.}{0.5em}{}
+\@heading{\subsubsection}{hang}{\itshape\normalsize}{\thesubsubsection)}{0.5em}{}
+
+\@define\IEEEauthorrefmark[1]{\textsuperscript{#1}}
+\@define\IEEEmembership[1]{{\itshape #1}}
+\@define\IEEEspecialpapernotice[1]{{\itshape #1}}
+\@define\IEEEcompsocitemizethanks[1]{\thanks{#1}}
+\@define\IEEEcompsocthanksitem{}
+
+% A paper's first word, its first letter large and the rest in capitals.
+\@define\IEEEPARstart[2]{{\LARGE #1}\textsc{#2}}
+
+\@define\IEEEQED{\hfill\ensuremath{\square}}
+\@define\IEEEQEDhere{\hfill\ensuremath{\square}}
+\@define\IEEEQEDclosed{\hfill\ensuremath{\square}}
+\@define\IEEEQEDopen{\hfill\ensuremath{\square}}
+
+\@define\IEEEoverridecommandlockouts{}
+\@define\IEEEpubid[1]{}
+\@define\IEEEpubidadjcol{}
+\@define\IEEEpeerreviewmaketitle{}
+\@define\IEEEtriggeratref[1]{}
+\@define\IEEEtriggercmd[1]{}
+\@define\IEEEaftertitletext[1]{}
+\@define\IEEEraisesectionheading[1]{#1}
+\@define\IEEEdisplaynontitleabstractindextext{}
+\@define\IEEEdisplaynotcompsoctitleabstractindextext{}
+\@define\IEEEsetpagenumber[1]{}
+\@define\IEEEappendix{\appendix}
+
+% Its abstract and index terms run in, in bold at nine points, their heads
+% in italic and a dash: `Abstract---`, `Index Terms---`.
+\@define\@abstractshape{\leftskip=0pt\rightskip=0pt\justifying}
+\@define\@abstracthead{\small\bfseries\par\@abstractshape\indent{\itshape\abstractname}---\ignorespaces}
+\@define\@keywordshead{\small\bfseries\par\@abstractshape\indent{\itshape Index Terms}---\ignorespaces}
+
+% Its captions -- `Fig. 1.`, and `TABLE I.` over its table -- in footnotes'
+% size, and its references in footnotes' size too.
+\renewcommand\thetable{\Roman{table}}
+\@define\figurename{Fig.}
+\@define\tablename{TABLE}
+\@setvariable{caption.labelsep}{period}
+\@setvariable{caption.font}{footnotesize}
+\@define\bibfont{\footnotesize}
+
+% An author's block: the name, the affiliation's lines in italic under it,
+% as one column of its own, so \and sets the next beside it.
+\@define\IEEEauthorblockN[1]{\begin{tabular}[t]{c}#1}
+\@define\IEEEauthorblockA[1]{\\\textit{\begin{tabular}[t]{@{}c@{}}#1\end{tabular}}\end{tabular}}
+
+% Its title: in \Huge across both columns, the authors under it, and no date.
+\@define\maketitle{%
+\par\@columns1 \vskip 1em%
+\begin{center}%
+{\Huge\thetitle\par}%
+\vskip 1.5em%
+{\normalsize\theauthor\par}%
+\end{center}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}

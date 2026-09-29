@@ -1,0 +1,8 @@
+% makecell: a cell of several lines, set as a table of one column inside it,
+% and \thead, the same in bold for a table's head.
+
+\@define\makecell[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\@define\thead[2][c]{\begin{tabular}[#1]{@{}c@{}}\bfseries #2\end{tabular}}
+\@define\makegapedcells{}
+\@define\setcellgapes[2][]{}
+\@define\Xhline[1]{\hline}

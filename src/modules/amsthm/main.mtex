@@ -1,0 +1,32 @@
+% amsthm: theorem-like statements and proofs.
+%
+% \newtheorem, \theoremstyle, \newtheoremstyle, the proof block and \qed are
+% the engine's own, set as amsthm sets them: a bold head and an italic body
+% in the plain style, an upright body in the definition style, an italic head
+% in the remark style, and the proof's box at the right margin.
+%
+%   \newtheorem{theorem}{Theorem}[section]
+%   \begin{theorem}[Fermat] ... \end{theorem}      % Theorem 2.1 (Fermat).
+%   \begin{proof} ... \end{proof}                   % Proof. ...  []
+%
+% The statements most documents declare are declared here already, each
+% counted on its own. A document that declares them itself -- sharing one
+% counter, or numbering within sections -- replaces them, as it would expect
+% to.
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{note}{Note}
+\theoremstyle{plain}
+
+% amsthm's own name for the box.
+\@define\openbox{$\square$}

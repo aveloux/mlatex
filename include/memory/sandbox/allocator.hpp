@@ -21,10 +21,10 @@ namespace sandbox {
         explicit Allocator(std::size_t capacity) noexcept;
         ~Allocator() = default;
 
-        Allocator(const Allocator&) = delete;
-        Allocator& operator=(const Allocator&) = delete;
-        Allocator(Allocator&&) noexcept = delete;
-        Allocator& operator=(Allocator&&) noexcept = delete;
+        Allocator(const Allocator&) = delete("the sandbox has one byte budget, and a second allocator would count against another");
+        Allocator& operator=(const Allocator&) = delete("the sandbox has one byte budget, and a second allocator would count against another");
+        Allocator(Allocator&&) noexcept = delete("the sandbox has one byte budget, and a second allocator would count against another");
+        Allocator& operator=(Allocator&&) noexcept = delete("the sandbox has one byte budget, and a second allocator would count against another");
 
         /// @brief Allocates, if the budget allows.
         /// @param size Bytes wanted.

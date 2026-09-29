@@ -1,0 +1,17 @@
+% Arabic: babel's captions for it, and its date: 28 سبتمبر 2026.
+
+\@define\captionsarabic{%
+\@define\abstractname{ملخص}%
+\@define\proofname{برهان}%
+\@define\figurename{شكل}%
+\@define\tablename{جدول}%
+\@define\refname{المراجع}%
+\@define\bibname{المراجع}%
+\@define\contentsname{المحتويات}%
+\@define\listfigurename{قائمة الأشكال}%
+\@define\listtablename{قائمة الجداول}%
+\@define\appendixname{الملحق}%
+\@define\partname{الجزء}%
+\@define\chaptername{الفصل}%
+\@define\indexname{الفهرس}}
+\@define\datearabic{\@define\today{\@evaluate{\day}~\ifcase\month\or يناير \or فبراير \or مارس \or أبريل \or مايو \or يونيو \or يوليو \or أغسطس \or سبتمبر \or أكتوبر \or نوفمبر \or ديسمبر \fi\@evaluate{\year}}}

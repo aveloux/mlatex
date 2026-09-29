@@ -1,0 +1,119 @@
+#include "engine.hpp"
+#include "render/primitives/plots.hpp"
+
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <filesystem>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+// The Plots primitive: pgfplots' axes, their ticks and labels, and what
+// \addplot draws in them -- coordinates, tables and functions of x -- and
+// the legend, with the functions worked out as pgfplots writes them.
+
+/// One document as the engine set it: whether it reported nothing, what it
+/// reported, its PDF, and each page's text -- and every page's together --
+/// with the spaces and line ends taken out, which is what a check compares.
+struct Result {
+    bool clean{false};
+    std::string errors{};
+    std::string pdf{};
+    std::vector<std::string> pages{};
+    std::string text{};
+};
+
+/// Typesets a whole document, as written, with what a program hands in.
+static Result typeset(const std::string_view document, const engine::Host& host = {}) {
+    static const std::filesystem::path assets = engine::locate(__FILE__);
+    Result result;
+    std::ostringstream errors;
+    result.clean = engine::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.errors = errors.str();
+    for (std::string& page : result.pages) {
+        std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
+        result.text += page;
+    }
+    return result;
+}
+
+/// Typesets one picture with pgfplots loaded, and says what was reported
+/// when anything was.
+static Result picture(const std::string_view body) {
+    Result result = typeset("\\documentclass{article}\\usepackage{pgfplots}\\begin{document}"
+                            "\\begin{tikzpicture}" + std::string(body) + "\\end{tikzpicture}\\end{document}");
+    if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
+    return result;
+}
+
+/// Whether a text holds another.
+static bool holds(const std::string_view text, const std::string_view part) {
+    return text.find(part) != std::string_view::npos;
+}
+
+/// Whether a function comes to what it should, near enough.
+static bool comes(const std::string_view function, const double x, const double expected) {
+    const auto value = render::primitives::Plots::calculate(function, x);
+    return value && std::abs(*value - expected) < 1e-9;
+}
+
+int main() {
+    using render::primitives::Plots;
+
+    assert(comes("x^2 - 3*x + 2", 4.0, 6.0) && "sums, products and a power");
+    assert(comes("-x^2", 3.0, -9.0) && "a sign binds looser than a power");
+    assert(comes("2^3^2", 0.0, 512.0) && "a power binds to the right");
+    assert(comes("sin(90) + cos(0)", 0.0, 2.0) && "sine and cosine in degrees");
+    assert(comes("sin(deg(pi/2))", 0.0, 1.0) && "deg turns radians to degrees");
+    assert(comes("sin(\\x r)", std::acos(-1.0) / 2.0, 1.0) && "TikZ's \\x, and r for radians");
+    assert(comes("exp(ln(5)) + sqrt(16) + abs(-2)", 0.0, 11.0) && "exp, ln, sqrt and abs");
+    assert(comes("max(1, min(x, 3)) + pow(2, 10)", 7.0, 1027.0) && "functions of two");
+    assert(comes("{1e-3} * 1000", 0.0, 1.0) && "braces as parentheses, and a number with an exponent");
+    assert(!Plots::calculate("ln(0)", 0.0) && "no finite value is none");
+    assert(!Plots::calculate("foo(1)", 0.0) && !Plots::calculate("1 +", 0.0) && "nor is what is not a function");
+
+    {
+        const Result result = picture("\\begin{axis}[xlabel={Time}, ylabel={Speed}, title={Run}]"
+                                      "\\addplot[blue, domain=0:4] {x^2};"
+                                      "\\end{axis}");
+        assert((result.clean && holds(result.text, "Run") && holds(result.text, "Time") &&
+                holds(result.text, "Speed")) &&
+               "an axis's title and labels");
+        assert((holds(result.text, "10") && holds(result.text, "15") && holds(result.text, "3")) &&
+               "its ticks at round numbers across the data, fives up and ones across");
+    }
+    {
+        const Result result = picture("\\begin{axis}"
+                                      "\\addplot coordinates {(0,1) (1,3) (2,2)};"
+                                      "\\addplot table {x y \\\\ 0 5 \\\\ 2 1 \\\\};"
+                                      "\\legend{first, second}"
+                                      "\\end{axis}");
+        assert((result.clean && holds(result.text, "first") && holds(result.text, "second")) &&
+               "coordinates, a table and a legend");
+        assert(holds(result.text, "5") && "the table's data in the limits");
+    }
+    {
+        const Result result = picture("\\begin{semilogyaxis}\\addplot coordinates {(1,1) (2,100)};"
+                                      "\\addlegendentry{errors}\\end{semilogyaxis}");
+        assert((result.clean && holds(result.text, "10") && holds(result.text, "errors")) &&
+               "a logarithmic axis's powers of ten");
+    }
+    {
+        const Result result = picture("\\begin{axis}[ybar, symbolic x coords={A,B}, xtick=data]"
+                                      "\\addplot coordinates {(A,3) (B,5)};\\end{axis}");
+        assert((result.clean && holds(result.text, "A") && holds(result.text, "B")) &&
+               "bars at symbolic coordinates, labelled by them");
+    }
+    {
+        const Result result = typeset("\\documentclass{article}\\usepackage{pgfplots}\\begin{document}"
+                                      "\\addplot {x};\\end{document}");
+        assert((!result.clean && holds(result.errors, "\\addplot outside an axis")) && "a plot needs an axis");
+    }
+    {
+        const Result result = picture("\\begin{axis}\\addplot {nosuch(x)};\\end{axis}");
+        assert(holds(result.errors, "is not a function this can work out") && "a function it cannot work out");
+    }
+    return 0;
+}

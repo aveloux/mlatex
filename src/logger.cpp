@@ -2,9 +2,9 @@
 /// @brief Logger implementation: filtering, formatting and sinks.
 ///
 /// The filter state lives in atomics so that check() can be called from
-/// noexcept paths without taking the mutex -- log() takes it a moment later,
+/// noexcept paths without taking the mutex -- write() takes it a moment later,
 /// and std::mutex is not recursive. Every entry point here swallows its own
-/// failures: Cursor::advance and Registers::fetch are noexcept and call
+/// failures: Cursor::advance and Registers::get are noexcept and call
 /// straight into this file, so a throwing std::format would mean terminate().
 #include "logger.hpp"
 
@@ -13,24 +13,9 @@
 #include <format>
 #include <iostream>
 
-namespace {
+static constexpr std::string_view plain = "\x1b[0m";
 
-    [[nodiscard]] std::string_view tint(const Logger::Level value) noexcept {
-        switch (value) {
-            case Logger::Level::Traceback:   return "\x1b[90m";
-            case Logger::Level::Debug:       return "\x1b[36m";
-            case Logger::Level::Informative: return "\x1b[32m";
-            case Logger::Level::Warning:     return "\x1b[33m";
-            case Logger::Level::Error:       return "\x1b[31m";
-            default:                         return "";
-        }
-    }
-
-    constexpr std::string_view plain = "\x1b[0m";
-
-}
-
-void Logger::init(const int count, char** arguments) {
+void Logger::compose(const int count, char** arguments) {
     types(Type::None);
     level(Level::Error);
     color(true);
@@ -87,13 +72,6 @@ void Logger::enable(const Type target) noexcept {
     }
 }
 
-void Logger::disable(const Type target) noexcept {
-    Type current = mask.load(std::memory_order_relaxed);
-    while (!mask.compare_exchange_weak(current, current & ~target,
-                                       std::memory_order_relaxed, std::memory_order_relaxed)) {
-    }
-}
-
 void Logger::level(const Level value) noexcept {
     threshold.store(value, std::memory_order_relaxed);
 }
@@ -118,16 +96,17 @@ void Logger::close() {
 }
 
 bool Logger::check(const Type target, const Level value) noexcept {
+    if constexpr (floor != Level::Traceback) {
+        if (value < floor) return false;
+    }
     if (static_cast<std::uint8_t>(value) < static_cast<std::uint8_t>(threshold.load(std::memory_order_relaxed))) {
         return false;
     }
     return static_cast<std::uint32_t>(mask.load(std::memory_order_relaxed) & target) != 0;
 }
 
-void Logger::log(const Type target, const Level value, const std::string_view text,
-                 const std::source_location& location) noexcept {
-    if (!check(target, value)) return;
-
+void Logger::write(const Type target, const Level value, const std::string_view text,
+                   const std::source_location& location) noexcept {
     try {
         const auto now = std::chrono::system_clock::now();
         const std::time_t seconds = std::chrono::system_clock::to_time_t(now);
@@ -148,7 +127,14 @@ void Logger::log(const Type target, const Level value, const std::string_view te
         const std::lock_guard guard(mutex);
 
         if (colored) {
-            std::clog << tint(value) << output << plain << std::flush;
+            // Each level its own colour: grey, cyan, green, yellow, red.
+            const std::string_view tint = value == Level::Traceback     ? "\x1b[90m"
+                                          : value == Level::Debug       ? "\x1b[36m"
+                                          : value == Level::Informative ? "\x1b[32m"
+                                          : value == Level::Warning     ? "\x1b[33m"
+                                          : value == Level::Error       ? "\x1b[31m"
+                                                                        : "";
+            std::clog << tint << output << plain << std::flush;
         } else {
             std::clog << output << std::flush;
         }

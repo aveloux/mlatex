@@ -1,0 +1,50 @@
+% revtex4-2: the American Physical Society's and the American Institute of
+% Physics's papers -- reprint in two columns, preprint in one. Each author
+% is followed by an affiliation, which is set under the authors; what only
+% the journal's production reads is read and let go.
+%
+%   \documentclass[aps,prl,reprint]{revtex4-2}
+%   \author{Ada Lovelace}
+%   \affiliation{Analytical Engines, London}
+
+\@define\@affiliations{}
+\@define\affiliation[1]{\g@addto@macro\@affiliations{\\\small\itshape #1}}
+\@define\altaffiliation[2][]{}
+\@define\collaboration[1]{}
+\@define\email[2][]{}
+\@define\homepage[2][]{}
+\@define\preprint[1]{}
+\@define\pacs[1]{}
+\@define\colrule{\hline}
+\@define\keywords[1]{}
+\@define\received[2][]{}
+\@define\revised[2][]{}
+\@define\accepted[2][]{}
+\@define\published[2][]{}
+\@define\noaffiliation{}
+\@define\bibinfo[2]{#2}
+\@define\eprint[2][]{#2}
+\@define\href[2]{#2}
+\@define\onlinecite[1]{\cite{#1}}
+\@define\textcite[1]{\cite{#1}}
+
+% Its headings, as the APS sets them: centred, a section in bold capitals
+% numbered I, II; a subsection bold, A, B; one beneath in italic, 1, 2.
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\Alph{subsection}}
+\renewcommand\thesubsubsection{\arabic{subsubsection}}
+\@heading{\section}{hang}{\centering\bfseries\small}{\thesection.}{0.5em}{\MakeUppercase}
+\@heading{\subsection}{hang}{\centering\bfseries\small}{\thesubsection.}{0.5em}{}
+\@heading{\subsubsection}{hang}{\centering\itshape\small}{\thesubsubsection.}{0.5em}{}
+
+\@define\maketitle{%
+\par\@columns1 \vskip 2em%
+\begin{center}%
+{\large\bfseries\thetitle\par}%
+\vskip 1em%
+{\theauthor\@affiliations\par}%
+\end{center}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}

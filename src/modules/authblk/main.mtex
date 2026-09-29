@@ -1,0 +1,11 @@
+% authblk: authors and their affiliations, each author numbered to the
+% affiliations they belong to. The affiliations are set after the authors,
+% one to a line.
+
+\@define\@affiliations{}
+\@define\affil[2][]{\g@addto@macro\@affiliations{\\\small #2}}
+\@define\Authfont{}
+\@define\Affilfont{}
+\@define\Authsep{, }
+\@define\Authand{ and }
+\@define\Authands{, and }

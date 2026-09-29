@@ -1,0 +1,742 @@
+% The glossary: what CTAN's packages define, for the commands no package of
+% the engine's own gives a meaning. Each line is one command as \@define
+% takes it -- its name, how many arguments, a default for the first, and a
+% body -- and nothing is read until a document uses the command: the first
+% time a name is met with no meaning, its line is read as
+%   \@shared\@spanning\@define\name[n][default]{body}
+% -- for the rest of the run, and taking a paragraph in an argument, as
+% \newcommand's commands do -- and the name is read again. A document that
+% never writes one pays nothing, and one that does pays a single lookup and
+% a line.
+%
+% A body either keeps what the command was for -- \contour{white}{word} is
+% the word, \textls{letters} the letters -- or lets it go, when the command
+% only tunes what the engine decides itself: fonts, line breaking, kerning,
+% page geometry after the preamble. A line is a line; a % starts a comment.
+
+% ---------------------------------------------------------------------------
+% microtype: the line breaker weighs each paragraph whole already; tracking
+% and protrusion settings are read and let go, letter-spaced text kept.
+
+\microtypesetup[1]{}
+\microtypecontext[1]{}
+\textls[2][]{#2}
+\lsstyle{}
+\SetTracking[3][]{}
+\SetExtraKerning[3][]{}
+\SetProtrusion[3][]{}
+\SetExpansion[3][]{}
+\DisableLigatures[2][]{}
+\DeclareMicrotypeSet{\@ifstar{\@gobbleoptiontwo}{\@gobbleoptiontwo}}
+\UseMicrotypeSet[2][]{}
+\DeclareMicrotypeSetDefault[2][]{}
+\DeclareMicrotypeAlias[2]{}
+\DeclareMicrotypeBabelHook[2]{}
+\DeclareCharacterInheritance[3][]{}
+\LoadMicrotypeFile[1]{}
+
+% ---------------------------------------------------------------------------
+% geometry after the preamble: one page set on other margins, then the old
+% ones back. The page keeps the preamble's margins throughout.
+
+\newgeometry[1]{}
+\restoregeometry{}
+\savegeometry[1]{}
+\loadgeometry[1]{}
+
+% ---------------------------------------------------------------------------
+% hyperref and friends: what a link is kept; the PDF's bookkeeping let go.
+
+\subpdfbookmark[2]{}
+\hyperbaseurl[1]{}
+\hyperdef[3]{#3}
+\pdfstringdefDisableCommands[1]{}
+\urlstyle[1]{}
+\urldef[2]{\@define#1{#2}}
+\doi[1]{doi:#1}
+\orcid[1]{\usepackage{orcidlink}\orcidlink{#1}}
+\ORCID[1]{\usepackage{orcidlink}\orcidlink{#1}}
+
+% ---------------------------------------------------------------------------
+% cleveref's formats, which its names already give; its other references
+% as the nearest the engine writes.
+
+\crefformat[2]{}
+\Crefformat[2]{}
+\crefrangeformat[2]{}
+\Crefrangeformat[2]{}
+\crefmultiformat[5]{}
+\Crefmultiformat[5]{}
+\crefrangemultiformat[5]{}
+\Crefrangemultiformat[5]{}
+\crefalias[2]{}
+\labelcref[1]{\ref{#1}}
+\namecref[1]{\cref{#1}}
+\nameCref[1]{\Cref{#1}}
+\lcnamecref[1]{\cref{#1}}
+\crefrange[2]{\cref{#1} to~\ref{#2}}
+\Crefrange[2]{\Cref{#1} to~\ref{#2}}
+\cpageref[1]{page~\pageref{#1}}
+\Cpageref[1]{Page~\pageref{#1}}
+\cpagerefrange[2]{pages~\pageref{#1} to~\pageref{#2}}
+\Cpagerefrange[2]{Pages~\pageref{#1} to~\pageref{#2}}
+
+% ---------------------------------------------------------------------------
+% amsmath and mathtools: the rest of their commands, each as the nearest
+% thing the formula setter draws.
+
+\cfrac[3][c]{\dfrac{#2}{#3}}
+\genfrac[6]{\frac{#5}{#6}}
+\sideset[3]{{}#1#3#2}
+\lefteqn[1]{#1}
+\shortintertext[1]{\intertext{#1}}
+\boxed[1]{#1}
+\Aboxed[1]{#1}
+\mathclap[1]{#1}
+\mathllap[1]{#1}
+\mathrlap[1]{#1}
+\mathmakebox[1][]{\@gobbleoption}
+\cramped[2][]{#2}
+\smashoperator[2][]{#2}
+\adjustlimits{}
+\prescript[3]{{}^{#1}_{#2}#3}
+\splitfrac[2]{#1#2}
+\splitdfrac[2]{#1#2}
+\shoveleft[1]{#1}
+\shoveright[1]{#1}
+\MoveEqLeft{\@gobbleoption}
+\mathtoolsset[1]{}
+\usetagform[1]{}
+\newtagform[1]{\@gobbleoptiontwo}
+\allowdisplaybreaks{\@gobbleoption}
+\displaybreak{\@gobbleoption}
+\xrightarrow[2][]{\underset{#1}{\overset{#2}{\longrightarrow}}}
+\xleftarrow[2][]{\underset{#1}{\overset{#2}{\longleftarrow}}}
+\xRightarrow[2][]{\underset{#1}{\overset{#2}{\Longrightarrow}}}
+\xLeftarrow[2][]{\underset{#1}{\overset{#2}{\Longleftarrow}}}
+\xleftrightarrow[2][]{\underset{#1}{\overset{#2}{\longleftrightarrow}}}
+\xLeftrightarrow[2][]{\underset{#1}{\overset{#2}{\Longleftrightarrow}}}
+\xmapsto[2][]{\underset{#1}{\overset{#2}{\longmapsto}}}
+\xhookrightarrow[2][]{\underset{#1}{\overset{#2}{\hookrightarrow}}}
+\xhookleftarrow[2][]{\underset{#1}{\overset{#2}{\hookleftarrow}}}
+\xrightharpoonup[2][]{\underset{#1}{\overset{#2}{\rightharpoonup}}}
+\xrightleftharpoons[2][]{\underset{#1}{\overset{#2}{\rightleftharpoons}}}
+\coloneqq{\coloneq}
+\eqqcolon{\eqcolon}
+\Coloneqq{\Coloneq}
+\vcentcolon{:}
+\dblcolon{\Colon}
+\DeclarePairedDelimiterX#1[#2]#3#4#5{\@define#1[#2]{\left#3#5\right#4}}
+\mspace[1]{\hspace{#1}}
+\nobreakdash{}
+
+% ---------------------------------------------------------------------------
+% graphicx, adjustbox and pdfpages: a picture's own keys are read by
+% \includegraphics; what only a driver needs is let go.
+
+\DeclareGraphicsExtensions[1]{}
+\DeclareGraphicsRule[4]{}
+\adjustbox[2]{#2}
+\adjincludegraphics[2][]{\includegraphics[#1]{#2}}
+\adjustimage[2]{\includegraphics{#2}}
+\clipbox[2]{#2}
+\trimbox[2]{#2}
+\marginbox[2]{#2}
+\lapbox[2][]{#2}
+\maxsizebox[3]{#3}
+\epsfbox[1]{\includegraphics{#1}}
+\includepdf[2][]{\warning{includepdf #2: pages of a PDF are not set here, and are left out}}
+\includepdfmerge[2][]{\warning{includepdfmerge #2: pages of a PDF are not set here, and are left out}}
+\includepdfset[1]{}
+
+% ---------------------------------------------------------------------------
+% The page and its paragraphs: running heads' styles and the spacing
+% commands the engine does not need a word for.
+
+\fancypagestyle[2]{}
+\iffloatpage[2]{#2}
+\fancyheadoffset[2][]{}
+\headrule{}
+\footrule{}
+\linespread[1]{}
+\addvspace[1]{\vspace{#1}}
+\addpenalty[1]{\penalty#1\relax}
+\samepage{}
+\reversemarginpar{}
+\normalmarginpar{}
+\hyphenation[1]{}
+\discretionary[3]{#3}
+\vcenter[1]{#1}
+\raise#1\hbox#2{\raisebox{#1}{#2}}
+\lower#1\hbox#2{\raisebox{-#1}{#2}}
+\lettrine[3][]{{\LARGE #2}\textsc{#3}}
+
+% ---------------------------------------------------------------------------
+% etoolbox's hooks and its command tools. A command here is compiled and a
+% block native, so patching either is let go.
+
+\patchcmd[5]{}
+\apptocmd[4]{}
+\pretocmd[4]{}
+\AtBeginEnvironment[2]{}
+\AtEndEnvironment[2]{}
+\BeforeBeginEnvironment[2]{}
+\AfterEndEnvironment[2]{}
+\AtEndPreamble[1]{\AtBeginDocument{#1}}
+\AfterEndPreamble[1]{\AtBeginDocument{#1}}
+\AfterEndDocument[1]{}
+\newrobustcmd{\newcommand}
+\renewrobustcmd{\renewcommand}
+\providerobustcmd{\providecommand}
+\csdef[1]{\@namedef{#1}}
+\csgdef[1]{\@shared\@namedef{#1}}
+\csedef[1]{\expandafter\edef\csname #1\endcsname}
+\csxdef[1]{\expandafter\xdef\csname #1\endcsname}
+\csuse[1]{\ifcsname #1\endcsname\csname #1\endcsname\fi}
+\cslet[2]{\expandafter\let\csname #1\endcsname#2}
+\letcs[2]{\expandafter\let\expandafter#1\csname #2\endcsname}
+\csletcs[2]{\expandafter\let\csname #1\expandafter\endcsname\csname #2\endcsname}
+\appto[2]{\edef#1{\ifdefined#1\unexpanded\expandafter{#1}\fi\unexpanded{#2}}}
+\gappto[2]{\xdef#1{\ifdefined#1\unexpanded\expandafter{#1}\fi\unexpanded{#2}}}
+\preto[2]{\edef#1{\unexpanded{#2}\ifdefined#1\unexpanded\expandafter{#1}\fi}}
+\gpreto[2]{\xdef#1{\unexpanded{#2}\ifdefined#1\unexpanded\expandafter{#1}\fi}}
+\eappto[2]{\edef#1{\ifdefined#1\unexpanded\expandafter{#1}\fi#2}}
+\xappto[2]{\xdef#1{\ifdefined#1\unexpanded\expandafter{#1}\fi#2}}
+\ifstrempty[1]{\@ifstrequal{#1}{}}
+\ifdefempty[1]{\ifx#1\@empty\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+\ifcsdef[1]{\ifcsname #1\endcsname\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+\ifcsundef[1]{\ifcsname #1\endcsname\expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
+\ifdefmacro[1]{\ifdefined#1\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+\ifdefstring[2]{\expandafter\@ifstrequal\expandafter{#1}{#2}}
+\ifcsstring[2]{\expandafter\ifdefstring\csname #1\endcsname{#2}}
+
+% ---------------------------------------------------------------------------
+% Definitions a document may carry of blocks and fonts. A block is the
+% engine's own, so a new one is set as a plain group and says so; a font is
+% set in the faces the engine carries, so a new one is read and let go.
+
+\lstnewenvironment[1]{\@gobbleblock}
+\setmainfont{\@gobblefont}
+\setsansfont{\@gobblefont}
+\setmonofont{\@gobblefont}
+\setromanfont{\@gobblefont}
+\setmathfont{\@gobblefont}
+\setCJKmainfont{\@gobblefont}
+\setCJKsansfont{\@gobblefont}
+\setCJKmonofont{\@gobblefont}
+\newfontfamily[1]{\@define#1{}\@gobblefont}
+\newfontface[1]{\@define#1{}\@gobblefont}
+\fontspec{\@gobblefont}
+\defaultfontfeatures[2][]{}
+\addfontfeatures[1]{}
+\addfontfeature[1]{}
+\DeclareTextFontCommand[2]{\@define#1[1]{{#2##1}}}
+\DeclareOldFontCommand[3]{\@define#1{#2}}
+\DeclareTextCommand[2]{\@define#1}
+\DeclareTextSymbol[3]{}
+\DeclareTextAccent[3]{}
+\DeclareUnicodeCharacter[2]{}
+\DeclareFontFamily[3]{}
+\DeclareFontShape[6]{}
+\DeclareFontEncoding[3]{}
+\DeclareFontSubstitution[4]{}
+\DeclareSizeFunction[2]{}
+\DeclareSymbolFont[5]{}
+\DeclareSymbolFontAlphabet[2]{}
+\DeclareMathVersion[1]{}
+\DeclareMathSymbol[4]{}
+\DeclareMathAccent[4]{}
+\DeclareMathAlphabet[5]{}
+\SetMathAlphabet[6]{}
+
+% ---------------------------------------------------------------------------
+% Tables: striped rows, dashed rules, booktabs' last few.
+
+\rowcolors[4][]{}
+\showrowcolors{}
+\hiderowcolors{}
+\hdashline[1][]{\hline}
+\cdashline[1]{\cline{#1}\@gobbleoption}
+\firsthline{\hline}
+\lasthline{\hline}
+\morecmidrules{}
+
+% ---------------------------------------------------------------------------
+% Captions, floats and their lists.
+
+\DeclareCaptionStyle[1]{\@gobbleoptionone}
+\DeclareCaptionJustification[2]{}
+\DeclareCaptionTextFormat[2]{}
+\clearcaptionsetup[2][]{}
+\captionlistentry[2][]{}
+\ContinuedFloat{}
+\subref[1]{\ref{#1}}
+\listof[2]{}
+\subfigure[2][]{#2}
+\subtable[2][]{#2}
+\titlecontents[1]{\@titlecontents}
+\@titlecontents[5][]{\@gobbleoption}
+\dottedcontents[1]{\@gobbleoptionthree}
+\contentsmargin[2][]{}
+\assignpagestyle[2]{}
+\listoftodos{\@gobbleoption}
+\multirowsetup{}
+
+% ---------------------------------------------------------------------------
+% TikZ and PGF outside a picture: styles and libraries a picture reads its
+% keys without, and PGF's arithmetic kept as the expression it computes.
+
+\tikzset[1]{}
+\tikzstyle#1=[#2]{}
+\pgfplotsset[1]{}
+\usepgfplotslibrary[1]{}
+\usepgflibrary[1]{}
+\pgfkeys[1]{}
+\pgfmathsetmacro[2]{\@define#1{#2}}
+\pgfmathparse[1]{\@define\pgfmathresult{#1}}
+\pgfdeclarelayer[1]{}
+\pgfsetlayers[1]{}
+\tikzexternalize{\@gobbleoption}
+\tikzsetnextfilename[1]{}
+\tikzcdset[1]{}
+
+% ---------------------------------------------------------------------------
+% Symbols: textcomp's rarer marks and the quotation marks of other
+% languages, as the characters they are.
+
+\textinterrobang{‽}
+\textmusicalnote{♪}
+\textopenbullet{◦}
+\textbigcircle{◯}
+\textrecipe{℞}
+\textreferencemark{※}
+\textborn{★}
+\textdied{†}
+\textmarried{⚭}
+\textdivorced{⚮}
+\textestimated{℮}
+\textdiscount{⁒}
+\textcentoldstyle{¢}
+\textlquill{⁅}
+\textrquill{⁆}
+\textlbrackdbl{⟦}
+\textrbrackdbl{⟧}
+\textcircledP{℗}
+\textpilcrow{¶}
+\textblank{␢}
+\glqq{„}
+\grqq{“}
+\glq{‚}
+\grq{‘}
+\flqq{«}
+\frqq{»}
+\flq{‹}
+\frq{›}
+\dq{"}
+
+% ---------------------------------------------------------------------------
+% A title page's extra fields, as the classes that print them name them. A
+% class of the engine's own sets them; under any other they are let go.
+
+\affiliation[1]{}
+\address[1]{}
+\email[1]{}
+\institute[1]{}
+\inst[1]{}
+\orcidID[1]{}
+\keywords[1]{}
+\authorrunning[1]{}
+\titlerunning[1]{}
+\subtitle[1]{}
+\subject[1]{}
+\publishers[1]{}
+\received[1]{}
+\revised[1]{}
+\accepted[1]{}
+\runningtitle[1]{}
+
+% ---------------------------------------------------------------------------
+% Theorems and algorithms by the names other packages give them.
+
+\declaretheorem[2][]{\newtheorem{#2}{#2}}
+\declaretheoremstyle[2][]{}
+\SetKwFunction[2]{\@define#1[1]{\textsc{#2}(##1)}}
+\acused[1]{}
+\blindmathtrue{}
+
+% ---------------------------------------------------------------------------
+% Symbols from wasysym, marvosym, bbding and textgreek, as the characters
+% they are.
+
+\Square{□}
+\CheckedBox{☑}
+\XBox{☒}
+\smiley{☺}
+\frownie{☹}
+\permil{‰}
+\phone{☎}
+\Letter{✉}
+\Email{@}
+\EUR{€}
+\Checkmark{✓}
+\CheckmarkBold{✔}
+\XSolid{✗}
+\XSolidBold{✘}
+\XSolidBrush{✘}
+\HandRight{☞}
+\HandLeft{☜}
+\Pointinghand{☞}
+\textalpha{α}
+\textbeta{β}
+\textgamma{γ}
+\textdelta{δ}
+\textepsilon{ε}
+\textzeta{ζ}
+\texteta{η}
+\texttheta{θ}
+\textiota{ι}
+\textkappa{κ}
+\textlambda{λ}
+\textnu{ν}
+\textxi{ξ}
+\textomikron{ο}
+\textpi{π}
+\textrho{ρ}
+\textsigma{σ}
+\texttau{τ}
+\textupsilon{υ}
+\textphi{φ}
+\textchi{χ}
+\textpsi{ψ}
+\textomega{ω}
+\textGamma{Γ}
+\textDelta{Δ}
+\textTheta{Θ}
+\textLambda{Λ}
+\textXi{Ξ}
+\textPi{Π}
+\textSigma{Σ}
+\textPhi{Φ}
+\textPsi{Ψ}
+\textOmega{Ω}
+
+% ---------------------------------------------------------------------------
+% References by other packages' names: zref, varioref, prettyref, refcount,
+% totcount, fancyref -- each the reference the engine writes nearest it.
+
+\zlabel[1]{\label{#1}}
+\zref[2][]{\ref{#2}}
+\vref{\@ifstar{\@vref}{\@vref}}
+\@vref[1]{\ref{#1} on page~\pageref{#1}}
+\Vref{\@ifstar{\@vref}{\@vref}}
+\vpageref{\@ifstar{\@vpageref}{\@vpageref}}
+\@vpageref[2][]{on page~\pageref{#2}}
+\vrefrange[3][]{\ref{#2} to~\ref{#3}}
+\labelformat[2]{}
+\prettyref[1]{\ref{#1}}
+\newrefformat[2]{}
+\getrefnumber[1]{\ref{#1}}
+\getpagerefnumber[1]{\pageref{#1}}
+\setcounterref[2]{}
+\addtocounterref[2]{}
+\refused[1]{}
+\newtotcounter[2][]{\newcounter{#2}}
+\total[1]{\arabic{#1}}
+\fref[2][]{\cref{#2}}
+\Fref[2][]{\Cref{#2}}
+
+% ---------------------------------------------------------------------------
+% Numbers and dates: an ordinal's ending worked out from its last two
+% digits -- 1st, 12th, 23rd -- and a number printed as it is written.
+
+\nth[1]{#1\textsuperscript{\@ordinal{#1}}}
+\@ordinal[1]{\ifnum\numexpr(#1-5)/10-10*((#1-50)/100)\relax=1 th\else\ifcase\numexpr#1-10*((#1-5)/10)\relax th\or st\or nd\or rd\else th\fi\fi}
+\ordinalnum[1]{\nth{#1}}
+\ordinal[1]{\nth{\arabic{#1}}}
+\numprint[2][]{#2}
+\np[2][]{#2}
+\nprounddigits[1]{}
+\npthousandsep[1]{}
+\npdecimalsign[1]{}
+\isempty[1]{\equal{#1}{}}
+
+% ---------------------------------------------------------------------------
+% Notes an author leaves while writing -- fixme's, changes' -- read as the
+% final text reads: what was added kept, what was deleted gone.
+
+\fxnote[2][]{}
+\fxwarning[2][]{}
+\fxerror[2][]{}
+\fxfatal[2][]{}
+\fixme[1]{}
+\fxsetup[1]{}
+\listoffixmes{}
+\added[2][]{#2}
+\deleted[2][]{}
+\replaced[3][]{#2}
+\highlight[2][]{#2}
+\definechangesauthor[2][]{}
+\listofchanges{\@gobbleoption}
+\setaddedmarkup[1]{}
+\setdeletedmarkup[1]{}
+
+% ---------------------------------------------------------------------------
+% Tables, stacks and sizes: bold rules as rules, a table's footnote as a
+% footnote, stacks as short stacks, and a size a step up or down.
+
+\hlineB[1]{\hline}
+\clineB[2]{\cline{#1}}
+\tablefootnote[1]{\footnote{#1}}
+\tab{\quad}
+\tabto{\@ifstar{\@tabto}{\@tabto}}
+\@tabto[1]{\quad}
+\stackon[3][]{\shortstack{#3\\#2}}
+\stackunder[3][]{\shortstack{#2\\#3}}
+\Centerstack[2][c]{\shortstack{#2}}
+\Shortstack[2][c]{\shortstack{#2}}
+\scalerel{\@ifstar{\@firstoftwo}{\@firstoftwo}}
+\stretchrel{\@ifstar{\@firstoftwo}{\@firstoftwo}}
+\smaller[1][1]{\small}
+\larger[1][1]{\large}
+\relsize[1]{}
+\textsmaller[2][1]{{\small #2}}
+\textlarger[2][1]{{\large #2}}
+\mathsmaller[1]{#1}
+\mathlarger[1]{#1}
+\HUGE{\Huge}
+\ssmall{\scriptsize}
+\hyp{-}
+\qrcode[2][]{\fbox{\makebox[2cm]{\rule{0pt}{2cm}}}}
+\dirtree[1]{\texttt{#1}}
+
+% ---------------------------------------------------------------------------
+% Mathematics by other packages' names: isomath's alphabets, the
+% derivatives of derivative, esdiff and commath, their brackets, and the
+% particle physicists' units.
+
+\vectorsym[1]{\mathbf{#1}}
+\matrixsym[1]{\mathbf{#1}}
+\tensorsym[1]{\mathsf{#1}}
+\mathbfit[1]{\bm{#1}}
+\mathsfit[1]{\mathsf{#1}}
+\mathsfbfit[1]{\bm{\mathsf{#1}}}
+\odv[3][]{\frac{\mathrm{d}#2}{\mathrm{d}#3}}
+\pdv[3][]{\frac{\partial #2}{\partial #3}}
+\diff[3][]{\frac{\mathrm{d}#2}{\mathrm{d}#3}}
+\diffp[3][]{\frac{\partial #2}{\partial #3}}
+\od[3][]{\frac{\mathrm{d}#2}{\mathrm{d}#3}}
+\pd[3][]{\frac{\partial #2}{\partial #3}}
+\dif{\mathrm{d}}
+\Dif{\mathrm{D}}
+\abs[1]{\left|#1\right|}
+\norm[1]{\left\|#1\right\|}
+\sbr[1]{\left[#1\right]}
+\cbr[1]{\left\{#1\right\}}
+\del[1]{\left(#1\right)}
+\eval[1]{\left.#1\right|}
+\mleft{\left}
+\mright{\right}
+\mleftright{}
+\mleftrightrestore{}
+\brk[1]{\left(#1\right)}
+\interval[3][]{[#2, #3]}
+\slashed[1]{#1\!\!\!/}
+\iddots{⋰}
+\accentset[2]{\overset{#1}{#2}}
+\underaccent[2]{\underset{#1}{#2}}
+\wideparen[1]{\overset{\frown}{#1}}
+\widering[1]{\mathring{#1}}
+\widetriangle[1]{\overset{\triangle}{#1}}
+\GeV{\ensuremath{\mathrm{GeV}}}
+\MeV{\ensuremath{\mathrm{MeV}}}
+\TeV{\ensuremath{\mathrm{TeV}}}
+\keV{\ensuremath{\mathrm{keV}}}
+\eV{\ensuremath{\mathrm{eV}}}
+\GeVc{\ensuremath{\mathrm{GeV}/c}}
+\MeVc{\ensuremath{\mathrm{MeV}/c}}
+\GeVcc{\ensuremath{\mathrm{GeV}/c^2}}
+\MeVcc{\ensuremath{\mathrm{MeV}/c^2}}
+\invfb{\ensuremath{\mathrm{fb}^{-1}}}
+\invpb{\ensuremath{\mathrm{pb}^{-1}}}
+\ch[2][]{\ce{#2}}
+\iupac[1]{#1}
+
+% ---------------------------------------------------------------------------
+% The page's decorations and a reader's extras -- pictures behind the text,
+% watermarks, comments, attachments, animations -- which the page here does
+% without: each read and let go, an animation shown by its first frame.
+
+\AddToShipoutPicture{\@ifstar{\@gobble}{\@gobble}}
+\AddToShipoutPictureBG{\@ifstar{\@gobble}{\@gobble}}
+\AddToShipoutPictureFG{\@ifstar{\@gobble}{\@gobble}}
+\ClearShipoutPicture{}
+\backgroundsetup[1]{}
+\BgThispage{}
+\NoBgThispage{}
+\SetWatermarkText[1]{}
+\SetWatermarkScale[1]{}
+\SetWatermarkColor[2][]{}
+\SetWatermarkLightness[1]{}
+\SetWatermarkAngle[1]{}
+\DraftwatermarkOptions[1]{}
+\AddEverypageHook[1]{}
+\AddThispageHook[1]{}
+\textblockorigin[2]{}
+\TPGrid[3][]{}
+\textblockcolour[1]{}
+\transparent[1]{}
+\texttransparent[2]{#2}
+\contour[3][]{#3}
+\contourlength[1]{}
+\contournumber[1]{}
+\newpagecolor[1]{\pagecolor{#1}}
+\restorepagecolor{}
+\nopagecolor{}
+\pdfcomment[2][]{}
+\pdfmargincomment[2][]{}
+\pdfmarkupcomment[3][]{#2}
+\pdftooltip[3][]{#2}
+\animategraphics[5][]{\includegraphics{#3#4}}
+\includemedia[3][]{#2}
+\addmediapath[1]{}
+\attachfile[2][]{}
+\textattachfile[3][]{#3}
+\embedfile[2][]{}
+\includesvg[2][]{\includegraphics[#1]{#2}}
+\svgsetup[1]{}
+\svgpath[1]{}
+
+% ---------------------------------------------------------------------------
+% Running heads by KOMA-Script's names, and the layouts of sections, pages,
+% contents and floats that other packages give -- the running heads set as
+% fancyhdr's, the rest set as the class sets them.
+
+\ihead[2][]{\fancyhead[L]{#2}}
+\chead[2][]{\fancyhead[C]{#2}}
+\ohead[2][]{\fancyhead[R]{#2}}
+\ifoot[2][]{\fancyfoot[L]{#2}}
+\cfoot[2][]{\fancyfoot[C]{#2}}
+\ofoot[2][]{\fancyfoot[R]{#2}}
+\automark{\@ifstar{\@gobbleoptionone}{\@gobbleoptionone}}
+\clearpairofpagestyles{\fancyhf{}}
+\pagemark{\thepage}
+\headmark{}
+\KOMAoptions[1]{}
+\KOMAoption[2]{}
+\setkomafont[2]{}
+\addtokomafont[2]{}
+\typearea[2][]{}
+\areaset[3][]{}
+\recalctypearea{}
+\allsectionsfont[1]{}
+\sectionfont[1]{}
+\subsectionfont[1]{}
+\subsubsectionfont[1]{}
+\paragraphfont[1]{}
+\chapterfont[1]{}
+\partfont[1]{}
+\sectionrule[5]{}
+\newpagestyle[2]{}
+\renewpagestyle[2]{}
+\dominitoc{\@gobbleoption}
+\minitoc{}
+\dosecttoc{}
+\secttoc{}
+\faketableofcontents{}
+\localtableofcontents{}
+\etocsettocstyle[2]{}
+\etocsetnexttocdepth[1]{}
+\etocsettocdepth[1]{}
+\floatsetup[2][]{}
+\ffigbox[3][]{#2#3}
+\ttabbox[3][]{#3#2}
+\RawFloats{}
+\makesavenoteenv[2][]{}
+\savenotes{}
+\spewnotes{}
+\DeclareNewFootnote[2][]{\@gobbleoption}
+\endnote[1]{\footnote{#1}}
+\endnotetext[1]{}
+\theendnotes{}
+\printendnotes{\@gobbleoption}
+\setenotez[1]{}
+\externaldocument[2][]{}
+\hvFloat[5][]{\begin{center}#3\par\small #4\end{center}}
+\changetext[5]{}
+\cleartooddpage[1][]{\cleardoublepage}
+\nowidow[1][2]{}
+\noclub[1][2]{}
+\balance{}
+\nobalance{}
+\flushend{}
+\raggedend{}
+\fnbelowfloat{}
+
+% ---------------------------------------------------------------------------
+% What packages tell LaTeX about themselves and each other -- warnings
+% silenced, commands copied and patched, options declared -- read and let
+% go, a copy made as \let makes one.
+
+\WarningFilter[3][]{}
+\WarningsOff{\@ifstar{\@gobbleoption}{\@gobbleoption}}
+\ErrorFilter[3][]{}
+\LetLtxMacro[2]{\let#1#2}
+\xpatchcmd[5]{}
+\xapptocmd[4]{}
+\xpretocmd[4]{}
+\regexpatchcmd[5]{}
+\define@key[2]{\@gobbleoptionone}
+\DeclareStringOption[2][]{\@gobbleoption}
+\DeclareBoolOption[2][]{}
+\DeclareVoidOption[2]{}
+\DeclareDefaultOption[1]{}
+\ProcessKeyvalOptions{\@ifstar{}{\@gobble}}
+\SetupKeyvalOptions[1]{}
+\NewEnviron[1]{\warning{NewEnviron #1: blocks are the engine's own, so this one is set as a plain group}\@environ}
+\RenewEnviron[1]{\warning{RenewEnviron #1: blocks are the engine's own, and this one is set as the engine sets it}\@environ}
+\@environ[1][]{\@environbody}
+\@environbody[2][]{\@gobbleoption}
+\AtBeginShipout[1]{}
+\AtBeginShipoutNext[1]{}
+\AtBeginShipoutFirst[1]{}
+\AtBeginShipoutDiscard{}
+\AtVeryEndDocument[1]{}
+\AfterLastShipout[1]{}
+\AtEndAfterFileList[1]{}
+\EveryShipout[1]{}
+\AtNextShipout[1]{}
+\CatchFileDef[3]{\@define#1{}}
+\ShellEscape[1]{}
+\directlua[1]{}
+\luaexec[1]{}
+\luadirect[1]{}
+\CJKfamily[1]{}
+\ctexset[1]{}
+\BeginAccSupp[1]{}
+\EndAccSupp[1]{}
+
+% ---------------------------------------------------------------------------
+% Bibliographies by other packages' commands: an entry cited in full where
+% bibentry sets it, a second list's commands let go, and the diagonal cell
+% and the chemical structure written out as their text.
+
+\bibentry[1]{\cite{#1}}
+\nobibliography[1]{}
+\newcites[2]{}
+\backslashbox[3][]{\diagbox{#2}{#3}}
+\chemfig[1]{\texttt{#1}}
+\NiceMatrixOptions[1]{}
+\SetTblrInner[1]{}
+\SetTblrOuter[1]{}
+\UseTblrLibrary[1]{}
+
+% ---------------------------------------------------------------------------
+% What the lines above read and let go with, each ending in the one command
+% that reads on: an option and so many arguments; a font's name between two
+% options; a block's count, default and two bodies.
+
+\@gobbleoptionone[2][]{}
+\@gobbleoptiontwo[3][]{}
+\@gobbleoptionthree[4][]{}
+\@gobblefont[2][]{\@gobbleoption}
+\@gobbleblock[1][]{\@gobbleoptiontwo}

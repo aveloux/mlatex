@@ -1,0 +1,17 @@
+% Croatian: babel's captions for it, and its date: 28. rujna 2026.
+
+\@define\captionscroatian{%
+\@define\abstractname{Sažetak}%
+\@define\proofname{Dokaz}%
+\@define\figurename{Slika}%
+\@define\tablename{Tablica}%
+\@define\refname{Literatura}%
+\@define\bibname{Bibliografija}%
+\@define\contentsname{Sadržaj}%
+\@define\listfigurename{Popis slika}%
+\@define\listtablename{Popis tablica}%
+\@define\appendixname{Dodatak}%
+\@define\partname{Dio}%
+\@define\chaptername{Poglavlje}%
+\@define\indexname{Kazalo}}
+\@define\datecroatian{\@define\today{\@evaluate{\day}.~\ifcase\month\or siječnja \or veljače \or ožujka \or travnja \or svibnja \or lipnja \or srpnja \or kolovoza \or rujna \or listopada \or studenoga \or prosinca \fi\@evaluate{\year}.}}

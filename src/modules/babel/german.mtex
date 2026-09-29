@@ -1,0 +1,17 @@
+% German: babel's captions for it, and its date: 28. September 2026.
+
+\@define\captionsgerman{%
+\@define\abstractname{Zusammenfassung}%
+\@define\proofname{Beweis}%
+\@define\figurename{Abbildung}%
+\@define\tablename{Tabelle}%
+\@define\refname{Literatur}%
+\@define\bibname{Literaturverzeichnis}%
+\@define\contentsname{Inhaltsverzeichnis}%
+\@define\listfigurename{Abbildungsverzeichnis}%
+\@define\listtablename{Tabellenverzeichnis}%
+\@define\appendixname{Anhang}%
+\@define\partname{Teil}%
+\@define\chaptername{Kapitel}%
+\@define\indexname{Index}}
+\@define\dategerman{\@define\today{\@evaluate{\day}.~\ifcase\month\or Januar \or Februar \or März \or April \or Mai \or Juni \or Juli \or August \or September \or Oktober \or November \or Dezember \fi\@evaluate{\year}}}

@@ -1,0 +1,6 @@
+% verbatim: the kernel's verbatim block made to read long files and a comment
+% block that sets nothing. Both are the engine's own already -- the lexer
+% reads a block's body as it stands, however long -- so asking for the
+% package adds nothing but what it names: \verbatiminput of a file handed in.
+
+\@define\verbatiminput[1]{\lstinputlisting{#1}}

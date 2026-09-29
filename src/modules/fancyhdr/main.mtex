@@ -1,0 +1,37 @@
+% fancyhdr: heads and feet of the page's own choosing.
+%
+%   \pagestyle{fancy}
+%   \fancyhf{}
+%   \fancyhead[L]{\textit{Annual report}}
+%   \fancyhead[R]{Acme Ltd.}
+%   \fancyfoot[C]{Page \thepage}
+%   \renewcommand{\headrulewidth}{0.4pt}
+%
+% \pagestyle, \thispagestyle, \fancyhead, \fancyfoot, \fancyhf and \thepage
+% are the engine's own, as is \pagenumbering: a page's head and foot are set
+% as the page is drawn, which is the only point its number is known. What
+% this package adds is fancyhdr's own names over them, and its defaults.
+
+% The marks a head may show -- the chapter's or the section's title -- which
+% nothing here keeps: a head that shows one shows nothing in its place.
+\@define\leftmark{}
+\@define\rightmark{}
+
+% fancyhdr's first spelling, still the one most documents use.
+\@define\lhead[1]{\fancyhead[L]{#1}}
+\@define\chead[1]{\fancyhead[C]{#1}}
+\@define\rhead[1]{\fancyhead[R]{#1}}
+\@define\lfoot[1]{\fancyfoot[L]{#1}}
+\@define\cfoot[1]{\fancyfoot[C]{#1}}
+\@define\rfoot[1]{\fancyfoot[R]{#1}}
+
+% The two rules, written as fancyhdr writes them -- a document changes
+% them with \renewcommand -- and handed to the page once the document is
+% over, so whatever it last set is what every page draws.
+\@define\headrulewidth{0.4pt}
+\@define\footrulewidth{0pt}
+\AtEndDocument{\pagerules{\headrulewidth}{\footrulewidth}}
+
+% The fancy style as fancyhdr starts it: the number in the middle of the foot.
+\fancyhf{}
+\fancyfoot[C]{\thepage}

@@ -1,0 +1,25 @@
+% The core package: the vocabulary every document gets, whether it asks for
+% it or not -- what LaTeX's own kernel and document classes give it before
+% any \usepackage. The prelude loads it with \usepackage{core} before
+% anything else, so every other package may take it for granted.
+%
+% Anything a LaTeX document would have to ask a package for is in that
+% package's folder instead, under that package's name: theorems in amsthm,
+% \abs and \dv in physics, \R and \N in amssymb. So a document asks for the
+% same packages here as it did there, and gets what it asked for.
+%
+% Like any package, this folder's main.mtex is its wrapper and the only file
+% \usepackage reads; the topics below are reached from here with \include,
+% which finds a bare name in this package's own folder first. Adding a topic
+% is a new file here and one line below.
+
+\include{aliases}     % \def, \let, \global, \AtBeginDocument and TeX's other names
+\include{kernel}      % \ProvidesPackage, \@ifundefined, \IfBooleanTF and the kernel's small commands
+\include{registers}   % \tolerance, \parskip and the other named slots
+\include{names}       % \figurename, \proofname and the other words a class prints
+\include{dates}       % \today, \monthname
+\include{compatibility}  % inputenc, graphicx, xcolor and the rest the engine does itself
+\include{titling}     % \title, \author, \date, \maketitle
+\include{headings}    % \paragraph and \subparagraph, run in
+\include{shorthand}   % \eg, \ie, \etc and the other Latin abbreviations
+\include{text}        % \bf, \it, \rm and TeX's other one-word styles

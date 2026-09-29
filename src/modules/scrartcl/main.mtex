@@ -1,0 +1,61 @@
+% scrartcl: KOMA-Script's article, and the commands scrreprt and scrbook
+% share with it. Its title page's extra fields -- a subject above the title,
+% a subtitle under it, the publishers under the date -- are set; its font
+% and option settings are read and let go, the text set in the class's own
+% faces.
+%
+%   \subject{Report}\title{Engines}\subtitle{Their analysis}
+
+\@define\@subject{}
+\@define\@subtitle{}
+\@define\@publishers{}
+\@define\subject[1]{\@define\@subject{#1}}
+\@define\subtitle[1]{\@define\@subtitle{#1}}
+\@define\publishers[1]{\@define\@publishers{#1}}
+\@define\titlehead[1]{}
+\@define\uppertitleback[1]{}
+\@define\lowertitleback[1]{}
+\@define\dedication[1]{}
+\@define\extratitle[1]{}
+
+\@define\KOMAoptions[1]{}
+\@define\KOMAoption[2]{}
+\@define\setkomafont[2]{}
+\@define\addtokomafont[2]{}
+\@define\usekomafont[1]{}
+\@define\setkomavar{\@ifstar{\@gobbletwo}{\@gobbletwo}}
+\@define\recalctypearea{}
+\@define\areaset[3][]{}
+\@define\typearea[2][]{}
+\@define\setcapindent{\@ifstar{\@gobble}{\@gobble}}
+\@define\RedeclareSectionCommand[2][]{}
+\@define\RedeclareSectionCommands[2][]{}
+\@define\DeclareTOCStyleEntry[3][]{}
+\@define\deffootnote[4][]{}
+\@define\minisec[1]{\par\noindent\textbf{#1}\par\nopagebreak}
+\@define\addsec{\section*}
+\@define\addchap{\section*}
+\@define\addpart{\part*}
+
+% Its headings, in the sans-serif bold KOMA-Script sets them in.
+\@heading{\chapter}{hang}{\sffamily\bfseries\huge}{*}{1em}{}
+\@heading{\section}{hang}{\sffamily\bfseries\Large}{*}{1em}{}
+\@heading{\subsection}{hang}{\sffamily\bfseries\large}{*}{1em}{}
+\@heading{\subsubsection}{hang}{\sffamily\bfseries\normalsize}{*}{1em}{}
+
+\@define\maketitle{%
+\par\@columns1 \vskip 2em%
+\begin{center}%
+{\small\@subject\par}%
+{\LARGE\sffamily\bfseries\thetitle\par}%
+{\large\sffamily\@subtitle\par}%
+\vskip 1.5em%
+{\large\theauthor\par}%
+\vskip 1em%
+{\large\thedate\par}%
+{\@publishers\par}%
+\end{center}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}

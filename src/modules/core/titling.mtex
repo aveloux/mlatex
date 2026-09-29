@@ -1,0 +1,41 @@
+% \title, \author, \date and \maketitle, as LaTeX's article class sets them:
+% the title \LARGE, the authors \large beneath it -- side by side when
+% separated by \and, each carrying its own \thanks -- and the date, the whole
+% block centred, with the class's own space above, between and below. Built
+% entirely from primitives the engine already has.
+
+\@define\thetitle{}
+\@define\theauthor{}
+\@define\thedate{\today}
+
+\@define\title[1]{\@define\thetitle{#1}}
+\@define\author[1]{\@define\theauthor{#1}}
+\@define\date[1]{\@define\thedate{#1}}
+
+% The abstract's head and shape, and the keywords' head: the article
+% class's, \abstractname centred in bold over the text in \small, set in
+% from both margins, its first line indented. A class that sets them its own
+% way redefines these.
+\@define\@abstractshape{\leftskip=2.5em\rightskip=2.5em\justifying}
+\@define\@abstracthead{\small\par\leftskip=0pt\rightskip=0pt\centering{\bfseries\abstractname}\par\vskip 0.4em\@abstractshape\indent\ignorespaces}
+\@define\@keywordshead{\small\par\@abstractshape\noindent{\bfseries\keywordsname:}~\ignorespaces}
+
+% Between two authors on the one line: a gap that grows a little with the
+% line, as the class's own \and does between its columns.
+\@define\and{\hskip 1em plus .17fil }
+
+% On a page of two columns the title is set across both, as the class's
+% own \twocolumn[\@maketitle] sets it.
+\@define\maketitle{%
+\par\@columns1 \vskip 2em%
+\begin{center}%
+{\LARGE\thetitle\par}%
+\vskip 1.5em%
+{\large\theauthor\par}%
+\vskip 1em%
+{\large\thedate\par}%
+\end{center}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}

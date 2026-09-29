@@ -1,0 +1,40 @@
+% algorithmic: the older pseudocode package, its commands in capitals.
+%
+%   \begin{algorithmic}[1]
+%     \REQUIRE $n \ge 0$
+%     \FOR{$i = 1$ to $n$}
+%       \STATE $s \gets s + i$
+%     \ENDFOR
+%     \RETURN $s$
+%   \end{algorithmic}
+%
+% The same block and lines as algpseudocode's, and the same words: this
+% package only spells them the old way.
+
+\@requirepackage{algpseudocode}
+
+\@define\STATE{\State}
+\@define\REQUIRE{\Require}
+\@define\ENSURE{\Ensure}
+\@define\RETURN{\State\algorithmicreturn\ }
+\@define\PRINT{\State\textbf{print}\ }
+\@define\COMMENT[1]{\Comment{#1}}
+\@alias\IF\If
+\@alias\ELSIF\ElsIf
+\@alias\ELSE\Else
+\@alias\ENDIF\EndIf
+\@alias\FOR\For
+\@alias\FORALL\ForAll
+\@alias\ENDFOR\EndFor
+\@alias\WHILE\While
+\@alias\ENDWHILE\EndWhile
+\@alias\REPEAT\Repeat
+\@alias\UNTIL\Until
+\@alias\LOOP\Loop
+\@alias\ENDLOOP\EndLoop
+\@define\TRUE{\textbf{true}}
+\@define\FALSE{\textbf{false}}
+\@define\AND{\textbf{and}}
+\@define\OR{\textbf{or}}
+\@define\NOT{\textbf{not}}
+\@define\TO{\textbf{to}}

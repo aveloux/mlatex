@@ -1,0 +1,17 @@
+% Catalan: babel's captions for it, and its date: 28 de setembre de 2026.
+
+\@define\captionscatalan{%
+\@define\abstractname{Resum}%
+\@define\proofname{Demostració}%
+\@define\figurename{Figura}%
+\@define\tablename{Taula}%
+\@define\refname{Referències}%
+\@define\bibname{Bibliografia}%
+\@define\contentsname{Índex}%
+\@define\listfigurename{Índex de figures}%
+\@define\listtablename{Índex de taules}%
+\@define\appendixname{Apèndix}%
+\@define\partname{Part}%
+\@define\chaptername{Capítol}%
+\@define\indexname{Índex alfabètic}}
+\@define\datecatalan{\@define\today{\@evaluate{\day}~\ifcase\month\or de gener de \or de febrer de \or de març de \or d'abril de \or de maig de \or de juny de \or de juliol de \or d'agost de \or de setembre de \or d'octubre de \or de novembre de \or de desembre de \fi\@evaluate{\year}}}

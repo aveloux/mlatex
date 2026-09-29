@@ -1,16 +1,22 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <optional>
-#include <string>
 #include <string_view>
-#include <unordered_map>
 
 namespace syntax::expression {
 
+    /// @brief Maths symbol names to the characters they stand for: `alpha`
+    ///        to U+03B1, `le` to U+2264, `sum` to U+2211.
+    ///
+    /// A perfect hash built from `assets/unicodes.gperf` when the engine is
+    /// compiled, so a name is found in one probe and nothing is read at run
+    /// time. Each symbol also carries its category -- whether it is an
+    /// operator, a relation, an opening delimiter -- because that is what
+    /// decides the space around it in a formula.
     class Unicodes {
     public:
+        /// @brief What kind of atom a symbol makes, as TeX classes them.
         enum class Category : std::uint8_t {
             Ordinary,    ///< Standard math symbols, variables, and digits (e.g., x, 1)
             Operator,    ///< Prefix operators and functions (e.g., \\sum, \\sin)
@@ -23,28 +29,23 @@ namespace syntax::expression {
             Accent       ///< Math diacritics (e.g., \\hat, \\vec)
         };
 
+        /// @brief One symbol: its character, and the atom it makes.
         struct Symbol {
-            std::uint32_t codepoint;
-            Category category;
+            std::uint32_t codepoint;   ///< The character.
+            Category category;         ///< The kind of atom.
         };
 
+        /// The replacement character, for a symbol that has none of its own.
         static const std::uint32_t invalid;
 
+        /// @brief The table; there is nothing to set up.
         Unicodes();
 
-        void compose(std::string_view name, std::uint32_t codepoint, Category category);
-        void dispose(std::string_view name);
+        /// @brief Finds a symbol by its name, without the backslash.
+        /// @param name As `alpha` or `le`.
+        /// @return The symbol, or nothing when the name is not one.
+        /// @complexity O(n) in the name's length, one probe.
         [[nodiscard]] std::optional<Symbol> query(std::string_view name) const noexcept;
-
-    private:
-        struct Hash {
-            using is_transparent = void;
-            std::size_t operator()(const std::string_view value) const noexcept {
-                return std::hash<std::string_view>{}(value);
-            }
-        };
-
-        std::unordered_map<std::string, Symbol, Hash, std::equal_to<>> overrides;
     };
 
 }

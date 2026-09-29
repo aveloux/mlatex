@@ -1,0 +1,4 @@
+% mhchem: chemical formulas and equations, \ce{2H2 + O2 -> 2H2O}. \ce is the
+% engine's own.
+
+\@define\cee{\ce}

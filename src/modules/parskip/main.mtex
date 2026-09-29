@@ -1,0 +1,5 @@
+% parskip: paragraphs set apart by space rather than by indentation, half a
+% line between them.
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip}

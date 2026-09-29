@@ -1,0 +1,34 @@
+% babel: the languages a document is written in, named as its options -- the
+% last the one it is in, those before it the ones it quotes. Choosing one
+% breaks its words by its own patterns, sets its paragraphs right to left
+% when it is written so, and says its captions and its date its own way:
+% \abstractname, \figurename, \today. The captions of each language are in
+% the file named for it beside this one, read the first time it is chosen.
+%
+%   \usepackage[english,russian]{babel}
+%   \selectlanguage{english} ... \foreignlanguage{russian}{текст}
+%   \begin{otherlanguage}{arabic} ... \end{otherlanguage}
+%
+% \addto adds to a language's captions by making the change now, which is
+% what a document that writes it in its preamble means. Shorthands, and the
+% font a language asks for, are read and let go: every character is typed
+% as itself, and a script the body's face lacks is drawn in the nearest
+% face that has it.
+
+\@define\languagename{english}
+\@ifvariable{babel.options}{\@language{\@variable{babel.options}}}{}
+
+\@define\selectlanguage[1]{\@language{#1}}
+\@define\foreignlanguage[3][]{\@hyphenation{#2}#3\@hyphenation{\languagename}}
+\@define\iflanguage[1]{\@ifstrequal{#1}{\languagename}}
+\@define\addto[2]{#2}
+
+\@define\babelprovide[2][]{}
+\@define\babelfont[2][]{\@gobbleoptionone}
+\@define\babeltags[1]{}
+\@define\babelhyphenation[2][]{}
+\@define\useshorthands{\@ifstar{\@gobble}{\@gobble}}
+\@define\defineshorthand[3][]{}
+\@define\languageshorthands[1]{}
+\@define\shorthandon[1]{}
+\@define\shorthandoff{\@ifstar{\@gobble}{\@gobble}}

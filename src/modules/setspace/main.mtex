@@ -1,0 +1,15 @@
+% setspace: the distance between lines. The body is set on 14pt lines; the
+% wider spacings stretch that by the factors setspace itself uses at a
+% twelve-point size. The distance is the document's, not a stretch of it:
+% whichever of these comes last is the one every paragraph is set at.
+
+\@define\singlespacing{\leading=14pt }
+\@define\onehalfspacing{\leading=17.4pt }
+\@define\doublespacing{\leading=23.2pt }
+
+% \setstretch{1.5} is one and a half single lines.
+\@define\setstretch[1]{\leading=\@calculate{14*#1}pt }
+
+% The options stand for the switches of the same names.
+\@ifvariable{setspace.onehalfspacing}{\onehalfspacing}{}
+\@ifvariable{setspace.doublespacing}{\doublespacing}{}

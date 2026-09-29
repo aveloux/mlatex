@@ -1,0 +1,8 @@
+% multirow: a cell's text over several rows. The text is set in the first
+% of them, where the table reads it from; the rows below it are left as the
+% document wrote them, which is empty.
+%
+%   \multirow{2}{*}{Method} & 1 \\
+%                           & 2 \\
+
+\@define\multirow[4][]{#4}

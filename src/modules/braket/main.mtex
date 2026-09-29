@@ -1,0 +1,10 @@
+% braket: Dirac's bras and kets, and set-builder braces that grow with what
+% they hold.
+
+\@define\Set[1]{\left\{ #1 \right\}}
+
+\@define\bra[1]{\left\langle #1 \right|}
+\@define\ket[1]{\left| #1 \right\rangle}
+
+% One argument, as braket's own: the bar is written inside it, \braket{a|b}.
+\@define\braket[1]{\left\langle #1 \right\rangle}

@@ -1,0 +1,40 @@
+% svjour3: Springer's journal articles -- the authors numbered to their
+% institutes, which are set under them, and the keywords after the
+% abstract. Only the journal's production reads the rest.
+%
+%   \author{Ada Lovelace \and Charles Babbage}
+%   \institute{A. Lovelace \at Analytical Engines \email{ada@engines.org}}
+
+\@define\@institutes{}
+\@define\institute[1]{\@define\@institutes{#1}}
+\@define\at{\\}
+\@define\email[1]{\\\texttt{#1}}
+\@define\inst[1]{\textsuperscript{#1}}
+\@define\journalname[1]{}
+\@define\titlerunning[1]{}
+\@define\authorrunning[1]{}
+\@define\subtitle[1]{}
+\@define\dedication[1]{}
+\@define\date[1]{}
+\@define\keywords[1]{\par\noindent{\bfseries Keywords} #1\par}
+\@define\subclass[1]{\par\noindent{\bfseries Mathematics Subject Classification} #1\par}
+\@define\PACS[1]{}
+\@define\CRclass[1]{}
+
+% Its headings: bold, at the body's size.
+\@heading{\section}{hang}{\bfseries\normalsize}{\thesection}{1em}{}
+\@heading{\subsection}{hang}{\bfseries\normalsize}{\thesubsection}{1em}{}
+\@heading{\subsubsection}{hang}{\itshape\normalsize}{\thesubsubsection}{1em}{}
+
+\@define\maketitle{%
+\par\vskip 2em%
+\begin{center}%
+{\LARGE\bfseries\thetitle\par}%
+\vskip 1.5em%
+{\large\theauthor\par}%
+\vskip 1em%
+{\small\@institutes\par}%
+\end{center}%
+\par\vskip 1.5em%
+\thispagestyle{plain}%
+}

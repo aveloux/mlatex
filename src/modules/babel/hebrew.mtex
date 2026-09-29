@@ -1,0 +1,17 @@
+% Hebrew: babel's captions for it, and its date: 28 בספטמבר 2026.
+
+\@define\captionshebrew{%
+\@define\abstractname{תקציר}%
+\@define\proofname{הוכחה}%
+\@define\figurename{איור}%
+\@define\tablename{טבלה}%
+\@define\refname{מקורות}%
+\@define\bibname{ביבליוגרפיה}%
+\@define\contentsname{תוכן העניינים}%
+\@define\listfigurename{רשימת האיורים}%
+\@define\listtablename{רשימת הטבלאות}%
+\@define\appendixname{נספח}%
+\@define\partname{חלק}%
+\@define\chaptername{פרק}%
+\@define\indexname{מפתח}}
+\@define\datehebrew{\@define\today{\@evaluate{\day}~ב\ifcase\month\or ינואר \or פברואר \or מרץ \or אפריל \or מאי \or יוני \or יולי \or אוגוסט \or ספטמבר \or אוקטובר \or נובמבר \or דצמבר \fi\@evaluate{\year}}}

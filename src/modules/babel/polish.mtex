@@ -1,0 +1,17 @@
+% Polish: babel's captions for it, and its date: 28 września 2026.
+
+\@define\captionspolish{%
+\@define\abstractname{Streszczenie}%
+\@define\proofname{Dowód}%
+\@define\figurename{Rysunek}%
+\@define\tablename{Tabela}%
+\@define\refname{Literatura}%
+\@define\bibname{Bibliografia}%
+\@define\contentsname{Spis treści}%
+\@define\listfigurename{Spis rysunków}%
+\@define\listtablename{Spis tablic}%
+\@define\appendixname{Dodatek}%
+\@define\partname{Część}%
+\@define\chaptername{Rozdział}%
+\@define\indexname{Indeks}}
+\@define\datepolish{\@define\today{\@evaluate{\day}~\ifcase\month\or stycznia \or lutego \or marca \or kwietnia \or maja \or czerwca \or lipca \or sierpnia \or września \or października \or listopada \or grudnia \fi\@evaluate{\year}}}

@@ -1,0 +1,4 @@
+% epigraph: a quotation at a chapter's head, set right, its source under it.
+
+\@define\epigraph[2]{\par\begin{flushright}\begin{minipage}{0.5\linewidth}\small #1\par\raggedleft --- #2\end{minipage}\end{flushright}\par}
+\@define\epigraphwidth{0.5\linewidth}

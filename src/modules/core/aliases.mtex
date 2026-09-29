@@ -1,0 +1,39 @@
+% The spellings LaTeX and plain TeX use, over the primitives the engine names
+% differently. Each is one alias, so both names reach one implementation and
+% neither can drift from the other; the few that are a prefix and a
+% definition together are a macro of the two. LaTeX's own definitions take
+% a paragraph in an argument unless starred -- \newcommand* -- and TeX's
+% \def does not.
+
+\@alias\def\@define
+\@define\newcommand{\@spanning\@define}
+\@define\renewcommand{\@spanning\@define}
+\@define\DeclareRobustCommand{\@spanning\protected\@define}
+\@define\providecommand{\@provided\@spanning\@define}
+\@define\gdef{\@shared\@define}
+\@define\edef{\@expanded\@define}
+\@define\xdef{\@shared\@expanded\@define}
+\@alias\undef\@forget
+\@alias\let\@alias
+\@alias\newif\@switch
+
+% xparse's, which LaTeX's kernel has carried itself since 2020.
+\@alias\NewDocumentCommand\@declare
+\@alias\RenewDocumentCommand\@declare
+\@alias\DeclareDocumentCommand\@declare
+\@define\ProvideDocumentCommand{\@provided\@declare}
+
+\@alias\global\@shared
+\@alias\long\@spanning
+\@alias\outer\@guarded
+
+\@alias\advance\@increase
+\@alias\multiply\@scale
+\@alias\divide\@reduce
+
+\@alias\IfFileExists\@iffile
+
+% LaTeX's two document hooks, over the engine's named ones: the engine runs
+% begindocument as \begin{document} opens and enddocument as it closes.
+\@define\AtBeginDocument[1]{\@addtohook{begindocument}{#1}}
+\@define\AtEndDocument[1]{\@addtohook{enddocument}{#1}}

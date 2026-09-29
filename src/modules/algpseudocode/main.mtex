@@ -1,0 +1,65 @@
+% algpseudocode: pseudocode, as the algorithmicx bundle writes it.
+%
+%   \begin{algorithmic}[1]
+%     \Require $n \ge 0$
+%     \For{$i = 1, \dots, n$}
+%       \State $s \gets s + i$   \Comment{running total}
+%     \EndFor
+%     \State \Return $s$
+%   \end{algorithmic}
+%
+% The block, its numbered \State lines and its unnumbered \Statex lines are
+% the engine's own. Every word here is written over those the way the
+% package writes it over algorithmicx: a block is a line that opens it --
+% after which its lines stand a step in, \algorithmopen -- and a line that
+% closes it, the step taken back first, \algorithmclose. The words are
+% macros of their own, so a document says them differently as it would in
+% LaTeX: \renewcommand{\algorithmicrequire}{\textbf{Input:}}.
+
+\@define\algorithmicrequire{\textbf{Require:}}
+\@define\algorithmicensure{\textbf{Ensure:}}
+\@define\algorithmicend{\textbf{end}}
+\@define\algorithmicdo{\textbf{do}}
+\@define\algorithmicwhile{\textbf{while}}
+\@define\algorithmicfor{\textbf{for}}
+\@define\algorithmicforall{\textbf{for all}}
+\@define\algorithmicloop{\textbf{loop}}
+\@define\algorithmicrepeat{\textbf{repeat}}
+\@define\algorithmicuntil{\textbf{until}}
+\@define\algorithmicprocedure{\textbf{procedure}}
+\@define\algorithmicfunction{\textbf{function}}
+\@define\algorithmicif{\textbf{if}}
+\@define\algorithmicthen{\textbf{then}}
+\@define\algorithmicelse{\textbf{else}}
+\@define\algorithmicreturn{\textbf{return}}
+
+% Lines that are not statements, and the pieces a statement is written with.
+\@define\Require{\Statex\algorithmicrequire\ }
+\@define\Ensure{\Statex\algorithmicensure\ }
+\@define\Return{\algorithmicreturn\ }
+\@define\textproc[1]{\textsc{#1}}
+\@define\Call[2]{\textproc{#1}(#2)}
+\@define\Comment[1]{\hfill$\triangleright$ #1}
+
+% The blocks.
+\@define\While[1]{\State\algorithmicwhile\ #1\ \algorithmicdo\algorithmopen}
+\@define\EndWhile{\algorithmclose\State\algorithmicend\ \algorithmicwhile}
+\@define\For[1]{\State\algorithmicfor\ #1\ \algorithmicdo\algorithmopen}
+\@define\ForAll[1]{\State\algorithmicforall\ #1\ \algorithmicdo\algorithmopen}
+\@define\EndFor{\algorithmclose\State\algorithmicend\ \algorithmicfor}
+\@define\Loop{\State\algorithmicloop\algorithmopen}
+\@define\EndLoop{\algorithmclose\State\algorithmicend\ \algorithmicloop}
+\@define\Repeat{\State\algorithmicrepeat\algorithmopen}
+\@define\Until[1]{\algorithmclose\State\algorithmicuntil\ #1}
+\@define\If[1]{\State\algorithmicif\ #1\ \algorithmicthen\algorithmopen}
+\@define\ElsIf[1]{\algorithmclose\State\algorithmicelse\ \algorithmicif\ #1\ \algorithmicthen\algorithmopen}
+\@define\Else{\algorithmclose\State\algorithmicelse\algorithmopen}
+\@define\EndIf{\algorithmclose\State\algorithmicend\ \algorithmicif}
+\@define\Procedure[2]{\State\algorithmicprocedure\ \textproc{#1}(#2)\algorithmopen}
+\@define\EndProcedure{\algorithmclose\State\algorithmicend\ \algorithmicprocedure}
+\@define\Function[2]{\State\algorithmicfunction\ \textproc{#1}(#2)\algorithmopen}
+\@define\EndFunction{\algorithmclose\State\algorithmicend\ \algorithmicfunction}
+
+% algorithmicx's own ways of naming a word again.
+\@alias\algrenewcommand\@define
+\@alias\algnewcommand\@define

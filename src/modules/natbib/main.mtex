@@ -1,0 +1,21 @@
+% natbib: citations by author and year. Its forms are the engine's own --
+% \citet, \citep, \citeauthor, \citeyear, \citealt, \citealp, \citenum --
+% and name the author and year of every entry that has them: an entry a
+% natbib style such as plainnat set from a .bib file, or one written
+%   \bibitem[Knuth(1984)]{knuth} ...
+% An entry without them is cited by its number, as the `numbers` option
+% cites every entry, in brackets.
+
+\@setvariable{cite.natbib}{true}
+
+% What natbib lets a document change about its punctuation, read and let go:
+% the forms here are its defaults, round brackets and semicolons.
+\@define\setcitestyle[1]{}
+\@define\bibpunct[7][]{}
+\@define\citetext[1]{(#1)}
+\@define\bibsection{\section*{\refname}}
+
+% The space between entries and the indent of an entry's later lines, which a
+% document may set: `\setlength{\bibsep}{0pt}`.
+\newskip\bibsep            \@set\bibsep = 4pt plus 2pt minus 1pt
+\newdimen\bibhang          \@set\bibhang = 1em

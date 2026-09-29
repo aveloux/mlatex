@@ -1,0 +1,11 @@
+% soul: words highlighted, underlined, struck through or spaced out, a box
+% at a time.
+
+\newsavebox\@soul
+\@define\hl[1]{\colorbox{yellow}{#1}}
+\@define\ul[1]{\underline{#1}}
+\@define\st[1]{\sbox\@soul{#1}\rlap{\usebox\@soul}\rule[0.55ex]{\wd\@soul}{0.4pt}}
+\@define\so[1]{#1}
+\@define\caps[1]{\textsc{#1}}
+\@define\sethlcolor[1]{}
+\@define\setul[2]{}

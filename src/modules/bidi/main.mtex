@@ -1,0 +1,17 @@
+% bidi: text in both directions, for XeLaTeX. Which way a word runs is read
+% from its letters, so a phrase in Arabic or Hebrew inside a line of Latin
+% -- or the other way round -- is set in its own order without being told;
+% what is said here is which way whole paragraphs read.
+%
+%   \setRTL  Paragraphs from here on read right to left.
+%   \setLTR  And left to right again.
+
+\@define\setRTL{\@direction{RTL}}
+\@define\setRL{\@direction{RTL}}
+\@define\setLTR{\@direction{LTR}}
+\@define\setLR{\@direction{LTR}}
+\@define\unsetRL{\@direction{LTR}}
+\@define\RL[1]{#1}
+\@define\LR[1]{#1}
+\@define\RLE[1]{#1}
+\@define\LRE[1]{#1}

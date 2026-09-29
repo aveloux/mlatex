@@ -1,0 +1,42 @@
+% elsarticle: Elsevier's journal articles. The front matter is written in a
+% block of its own -- the title, the authors each with an address, the
+% abstract and the keywords -- and set as article sets a title page, the
+% addresses under the authors. The notes and the correspondence marks are
+% read and let go; 5p sets two columns.
+%
+%   \author[inst1]{Ada Lovelace}
+%   \address[inst1]{Analytical Engines, London}
+
+\@define\@addresses{}
+\@define\address[2][]{\g@addto@macro\@addresses{\\\small #2}}
+\@define\affiliation[2][]{\g@addto@macro\@addresses{\\\small #2}}
+\@define\author[2][]{\@define\theauthor{#2}}
+\@define\ead[2][]{}
+\@define\tnoteref[1]{}
+\@define\tnotetext[2][]{}
+\@define\fnref[1]{}
+\@define\fntext[2][]{}
+\@define\corref[1]{}
+\@define\cortext[2][]{}
+\@define\journal[1]{}
+\@define\sep{, }
+\@define\MSC[2][]{}
+\@define\PACS{}
+
+% Its headings: a section bold, `1. Introduction`; a subsection in italic.
+\@heading{\section}{hang}{\bfseries\normalsize}{\thesection.}{0.5em}{}
+\@heading{\subsection}{hang}{\itshape\normalsize}{\thesubsection.}{0.5em}{}
+\@heading{\subsubsection}{hang}{\itshape\normalsize}{\thesubsubsection.}{0.5em}{}
+
+\@define\maketitle{%
+\par\@columns1 \vskip 2em%
+\begin{center}%
+{\LARGE\thetitle\par}%
+\vskip 1.5em%
+{\large\theauthor\par}%
+{\@addresses\par}%
+\end{center}%
+\par\vskip 1.5em%
+\@columns0 %
+\thispagestyle{plain}%
+}

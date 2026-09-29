@@ -1,0 +1,4 @@
+% stmaryrd: St Mary's Road symbols; the double brackets among them.
+
+\@define\llbracket{\lBrack}
+\@define\rrbracket{\rBrack}

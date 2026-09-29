@@ -1,0 +1,9 @@
+% The run's own date, as three integer registers -- \year, \month and \day --
+% already bound by the engine, read back as digits the way any register is:
+% through \evaluate, which is the one primitive that turns a number into the
+% tokens that print it. \today is LaTeX's own: September 25, 2026. The
+% datetime package writes the same date other ways.
+
+\@define\monthname[1]{\ifcase#1\or January\or February\or March\or April\or May\or June\or July\or August\or September\or October\or November\or December\fi}
+
+\@define\today{\monthname{\month} \@evaluate{\day}, \@evaluate{\year}}

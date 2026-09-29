@@ -6,37 +6,76 @@
 /// yields one space. Getting that wrong does not merely lose paragraph breaks
 /// -- `\\par` is also the parser's error-recovery anchor.
 #include "syntax/lexer.hpp"
-#include "syntax/cache.hpp"
 #include "logger.hpp"
 
 #include <algorithm>
+#include <array>
+#include <string>
 #include <format>
 #include <utility>
 
 namespace syntax {
 
-    Lexer::Lexer(const std::string_view source, CatCodes& codes, Lexicon& names)
-        : sources(source), table(codes), lexicon(names) {
-        Logger::fmt(Logger::Type::Lexer, Logger::Level::Informative,
+    Lexer::Lexer(const std::string_view source, CatCodes& codes, Lexicon& lexicon)
+        : sources(source), table(codes), lexicon(lexicon) {
+        Logger::log(Logger::Type::Lexer, Logger::Level::Informative,
                     "Lexer bound to {} byte buffer", source.size());
     }
 
     bool Lexer::empty() const noexcept {
-        return offset >= sources.size();
+        return offset >= sources.size() && held.empty();
     }
 
     Token Lexer::advance() {
+        // Read through a plain pointer: this loop runs once per character of
+        // every buffer the engine lexes, and a checked accessor per character
+        // costs more than the character does.
+        const char* const text = sources.data();
         const std::size_t size = sources.size();
 
+        // The text of a \verb, read along with the command itself.
+        if (!held.empty()) return std::exchange(held, Token{});
+
         while (offset < size) {
+            // A verbatim block's body, whole: without the rest of the line its
+            // \begin stands on when that is empty, and without the line its
+            // \end stands on, as LaTeX's verbatim leaves both out.
+            if (offset == opening) {
+                std::string_view body(text + opening, stop - opening);
+                std::size_t first = 0;
+                while (first < body.size() && (body[first] == ' ' || body[first] == '\t')) ++first;
+                if (first < body.size() && ending(body[first])) {
+                    body.remove_prefix(first + (body[first] == '\r' && first + 1 < body.size() &&
+                                                body[first + 1] == '\n' ? 2 : 1));
+                }
+                const std::size_t last = body.find_last_not_of(" \t");
+                body = last == std::string_view::npos ? std::string_view{} : body.substr(0, last + 1);
+                if (body.ends_with('\n')) body.remove_suffix(1);
+                if (body.ends_with('\r')) body.remove_suffix(1);
+
+                const memory::Location position = location;
+                for (std::size_t at = opening; at < stop; ++at) {
+                    if (text[at] == '\n') {
+                        location.line++;
+                        location.column = 1;
+                    } else {
+                        location.column++;
+                    }
+                }
+                offset = stop;
+                opening = std::string_view::npos;
+                type = Type::Middle;
+                return Token{none, CatCodes::Category::Other, position, body};
+            }
+
             const std::size_t origin = offset;
             const memory::Location position = location;
-            const char symbol = sources[offset];
+            const char symbol = text[offset];
             const CatCodes::Category category = table.get(symbol);
 
             if (category == CatCodes::Category::Space && ending(symbol)) {
                 offset++;
-                if (symbol == '\r' && offset < size && sources[offset] == '\n') {
+                if (symbol == '\r' && offset < size && text[offset] == '\n') {
                     offset++;
                 }
                 location.line++;
@@ -46,28 +85,35 @@ namespace syntax {
 
                 if (previous == Type::Middle) {
                     type = Type::Newline;
-                    const auto [bound, value] = entry(lexicon, " ");
-                    return Token{bound, CatCodes::Category::Space, position, value};
+                    const Symbol bound = lexicon.intern(" ");
+                    return Token{bound, CatCodes::Category::Space, position, lexicon.resolve(bound)};
                 }
 
                 if (previous == Type::Newline) {
-                    type = Type::Skip;
+                    type = Type::Blank;
                     const Symbol bound = lexicon.intern("\\par");
-                    Logger::fmt(Logger::Type::Lexer, Logger::Level::Debug,
+                    Logger::log(Logger::Type::Lexer, Logger::Level::Debug,
                                 "Lexed <Escape> [\\par] at {}:{}", position.line, position.column);
                     return Token{bound, CatCodes::Category::Escape, position, lexicon.resolve(bound)};
                 }
 
+                // Every line starts afresh, however the last one ended: a
+                // line that ended in spaces, or in a control word, has had
+                // its space already, and an empty line after it is still a
+                // paragraph break -- which TeX gets by stripping every line's
+                // trailing spaces before it reads it. Only a run of empty
+                // lines stays one break rather than several.
+                if (previous == Type::Skip) type = Type::Newline;
                 continue;
             }
 
             if (category == CatCodes::Category::Space) {
                 offset++;
                 location.column++;
-                if (type == Type::Skip || type == Type::Newline) continue;
+                if (type == Type::Skip || type == Type::Newline || type == Type::Blank) continue;
                 type = Type::Skip;
-                const auto [bound, value] = entry(lexicon, " ");
-                return Token{bound, CatCodes::Category::Space, position, value};
+                const Symbol bound = lexicon.intern(" ");
+                return Token{bound, CatCodes::Category::Space, position, lexicon.resolve(bound)};
             }
 
             if (category == CatCodes::Category::Ignore) {
@@ -77,10 +123,10 @@ namespace syntax {
             }
 
             if (category == CatCodes::Category::Invalid) {
-                faults.emplace_back(Traceback::Type::Token, position,
+                tracebacks_.emplace_back(Traceback::Type::Token, position,
                                     std::format("Illegal byte 0x{:02X} in input",
                                                 static_cast<unsigned>(static_cast<unsigned char>(symbol))));
-                Logger::fmt(Logger::Type::Lexer, Logger::Level::Warning,
+                Logger::log(Logger::Type::Lexer, Logger::Level::Warning,
                             "Illegal byte 0x{:02X} at {}:{} discarded",
                             static_cast<unsigned>(static_cast<unsigned char>(symbol)),
                             position.line, position.column);
@@ -90,14 +136,14 @@ namespace syntax {
             }
 
             if (category == CatCodes::Category::Comment) {
-                while (offset < size && !ending(sources[offset])) {
+                while (offset < size && !ending(text[offset])) {
                     offset++;
                     location.column++;
                 }
                 if (offset < size) {
-                    const char terminator = sources[offset];
+                    const char terminator = text[offset];
                     offset++;
-                    if (terminator == '\r' && offset < size && sources[offset] == '\n') {
+                    if (terminator == '\r' && offset < size && text[offset] == '\n') {
                         offset++;
                     }
                     location.line++;
@@ -112,17 +158,17 @@ namespace syntax {
                 location.column++;
 
                 if (offset < size) {
-                    const char next = sources[offset];
+                    const char next = text[offset];
 
                     if (table.get(next) == CatCodes::Category::Letter) {
-                        while (offset < size && table.get(sources[offset]) == CatCodes::Category::Letter) {
+                        while (offset < size && table.get(text[offset]) == CatCodes::Category::Letter) {
                             offset++;
                             location.column++;
                         }
                         type = Type::Skip;
                     } else if (ending(next)) {
                         offset++;
-                        if (next == '\r' && offset < size && sources[offset] == '\n') {
+                        if (next == '\r' && offset < size && text[offset] == '\n') {
                             offset++;
                         }
                         location.line++;
@@ -144,11 +190,79 @@ namespace syntax {
                     type = Type::Middle;
                 }
 
-                const std::string_view slice = sources.substr(origin, offset - origin);
+                const std::string_view slice(text + origin, offset - origin);
                 const Symbol bound = lexicon.intern(slice);
                 const std::string_view value = lexicon.resolve(bound);
-                Logger::fmt(Logger::Type::Lexer, Logger::Level::Debug,
+                Logger::log(Logger::Type::Lexer, Logger::Level::Debug,
                             "Lexed <Escape> [{}] at {}:{}", slice, position.line, position.column);
+
+                // Text read as it stands, as TeX reads it once \verb or a
+                // verbatim block has made every character an ordinary one:
+                // `\verb|a_b $x$|`, and `\lstinline` the same way or in
+                // braces -- `\mintinline{python}{f(x)}` after its language.
+                // The text is one token after the command's own, viewing the
+                // buffer, which outlives every token lexed from it.
+                if (slice == "\\verb" || slice == "\\lstinline" || slice == "\\mintinline") {
+                    std::size_t at = offset;
+                    if (at < size && text[at] == '*' && slice == "\\verb") ++at;
+                    if (at < size && text[at] == '[' && slice != "\\verb") {
+                        while (at < size && text[at] != ']' && !ending(text[at])) ++at;
+                        if (at < size && text[at] == ']') ++at;
+                    }
+                    if (at < size && text[at] == '{' && slice == "\\mintinline") {
+                        while (at < size && text[at] != '}' && !ending(text[at])) ++at;
+                        if (at < size && text[at] == '}') ++at;
+                    }
+                    if (at < size && !ending(text[at]) && table.get(text[at]) != CatCodes::Category::Letter) {
+                        const char close = text[at] == '{' ? '}' : text[at];
+                        std::size_t last = at + 1;
+                        while (last < size && text[last] != close && !ending(text[last])) ++last;
+                        if (last < size && text[last] == close) {
+                            held = Token{none, CatCodes::Category::Other,
+                                         {location.line, location.column + static_cast<std::uint32_t>(at + 1 - offset)},
+                                         std::string_view(text + at + 1, last - at - 1)};
+                            location.column += static_cast<std::uint32_t>(last + 1 - offset);
+                            offset = last + 1;
+                            type = Type::Middle;
+                        }
+                    }
+                }
+
+                // A block whose body is read as it stands -- verbatim,
+                // listings' lstlisting, the verbatim package's comment,
+                // acmart's CCSXML, the file a filecontents block writes -- is
+                // marked here, where the text is still text: the body begins
+                // after its name and any options in brackets, and runs to the
+                // `\end` that closes it. Everything up to the body is lexed
+                // as usual, so \begin reads its name and the block its options.
+                if (slice == "\\begin") {
+                    static constexpr std::array<std::string_view, 9> blocks{
+                        "{verbatim}", "{verbatim*}", "{lstlisting}", "{Verbatim}", "{comment}", "{minted}",
+                        "{filecontents}", "{filecontents*}", "{CCSXML}",
+                    };
+                    const std::string_view rest = sources.substr(offset);
+                    for (const std::string_view name : blocks) {
+                        if (!rest.starts_with(name)) continue;
+                        std::size_t begin = offset + name.size();
+                        if (begin < size && text[begin] == '[') {
+                            while (begin < size && text[begin] != ']') ++begin;
+                            if (begin < size) ++begin;
+                        }
+                        // minted's language, after its options, and the name
+                        // of the file filecontents writes.
+                        if ((name == "{minted}" || name.starts_with("{filecontents")) && begin < size &&
+                            text[begin] == '{') {
+                            while (begin < size && text[begin] != '}') ++begin;
+                            if (begin < size) ++begin;
+                        }
+                        const std::string closing = std::string("\\end") + std::string(name);
+                        const std::size_t end = sources.find(closing, begin);
+                        opening = begin;
+                        stop = end == std::string_view::npos ? size : end;
+                        break;
+                    }
+                }
+
                 return Token{bound, CatCodes::Category::Escape, position, value};
             }
 
@@ -159,23 +273,15 @@ namespace syntax {
             location.column++;
             type = Type::Middle;
 
-            const std::string_view slice = sources.substr(origin, span);
-            const auto [bound, value] = entry(lexicon, slice);
-            Logger::fmt(Logger::Type::Lexer, Logger::Level::Traceback,
+            const std::string_view slice(text + origin, span);
+            const Symbol bound = lexicon.intern(slice);
+            Logger::log(Logger::Type::Lexer, Logger::Level::Traceback,
                         "Lexed <{}> [{}] at {}:{}", std::to_underlying(category), slice,
                         position.line, position.column);
-            return Token{bound, category, position, value};
+            return Token{bound, category, position, lexicon.resolve(bound)};
         }
 
         return {};
-    }
-
-    void Lexer::reset() noexcept {
-        offset = 0;
-        location = {1, 1};
-        type = Type::Newline;
-        faults.clear();
-        Logger::log(Logger::Type::Lexer, Logger::Level::Debug, "Lexer state reset");
     }
 
 }

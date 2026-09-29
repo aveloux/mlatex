@@ -1,0 +1,17 @@
+% Italian: babel's captions for it, and its date: 28 settembre 2026.
+
+\@define\captionsitalian{%
+\@define\abstractname{Sommario}%
+\@define\proofname{Dimostrazione}%
+\@define\figurename{Figura}%
+\@define\tablename{Tabella}%
+\@define\refname{Riferimenti bibliografici}%
+\@define\bibname{Bibliografia}%
+\@define\contentsname{Indice}%
+\@define\listfigurename{Elenco delle figure}%
+\@define\listtablename{Elenco delle tabelle}%
+\@define\appendixname{Appendice}%
+\@define\partname{Parte}%
+\@define\chaptername{Capitolo}%
+\@define\indexname{Indice analitico}}
+\@define\dateitalian{\@define\today{\@evaluate{\day}~\ifcase\month\or gennaio \or febbraio \or marzo \or aprile \or maggio \or giugno \or luglio \or agosto \or settembre \or ottobre \or novembre \or dicembre \fi\@evaluate{\year}}}

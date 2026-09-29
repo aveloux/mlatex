@@ -1,0 +1,53 @@
+% Text switches: the one-word styles and the page breaks TeX itself names,
+% each an alias over a primitive the engine already binds under a longer
+% LaTeX spelling.
+
+% ---------------------------------------------------------------------------
+% TeX's own names for the running styles, which LaTeX kept as shorthands.
+% Aliasing copies the primitive itself, so `\bf` behaves exactly as
+% `\bfseries` does and not merely as a name that expands to it.
+
+\@alias\bf\bfseries
+\@alias\it\itshape
+\@alias\rm\rmfamily
+\@alias\sc\scshape
+\@alias\sl\itshape
+\@alias\tt\ttfamily
+
+% The logos, drawn as LaTeX draws them: TeX's E lowered between its T and X,
+% LaTeX's A small and raised to the top of the L, and the 2e's epsilon set
+% low after its 2.
+\@define\TeX{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125em{}X}
+\@define\LaTeX{L\kern-.36em\raise.21em\hbox{\scriptsize A}\kern-.15em\TeX}
+\@define\LaTeXe{\LaTeX\kern.15em2\lower.15em\hbox{$\varepsilon$}}
+
+% Maths wherever it is written: as it is inside a formula, and a formula of
+% its own in the text. What siunitx sets its numbers with.
+\@define\ensuremath[1]{\ifmmode#1\else$#1$\fi}
+
+% LaTeX's names for a space of a given size, over TeX's: \vspace between
+% paragraphs, \hspace within a line. \vspace* keeps its space at the head
+% of a page, behind a rule of no height as LaTeX's own does; \hspace* keeps
+% its at a line's edge, where the space is kept here anyway. \fill is all
+% the room there is, \stretch{2} twice the share of it.
+\@define\vspace{\@ifstar{\hrule height0pt\relax\@vspace}{\@vspace}}
+\@define\@vspace[1]{\@ifstrequal{#1}{\fill}{\vfill}{\vskip #1\relax}}
+\@define\hspace{\@ifstar{\@hspace}{\@hspace}}
+\@define\@hspace[1]{\@ifstrequal{#1}{\fill}{\hfill}{\hskip #1\relax}}
+\@define\stretch[1]{0pt plus #1fill}
+
+% The families a document's normal face is set in: roman unless it says
+% otherwise, `\renewcommand{\familydefault}{\sfdefault}`, before the
+% document starts.
+\@define\rmdefault{lmr}
+\@define\sfdefault{lmss}
+\@define\ttdefault{lmtt}
+\@define\familydefault{\rmdefault}
+
+% The body's alignment, which a block set otherwise returns to: justified,
+% and a class's own where it has one.
+\@define\@bodyshape{\justifying}
+
+% \newpage and \clearpage, LaTeX's names for a forced page break, are bound
+% directly beside \pagebreak in the Penalties module: \alias only reaches a
+% name Mouth itself knows, and a page break is a Node the Parser builds.

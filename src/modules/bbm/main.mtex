@@ -1,0 +1,3 @@
+% bbm: blackboard bold, as the maths face draws it.
+
+\@define\mathbbm[1]{\mathbb{#1}}
