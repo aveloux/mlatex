@@ -157,5 +157,14 @@ int main() {
                                                             "a & b & c \\\\ \\end{tabu}");
         assert((result.clean && holds(result.text, "abc")) && "tabu's X columns, their sides in brackets");
     }
+    {
+        // A table in Arabic runs right to left, its first column at the right.
+        const std::string_view table = "\\begin{tabular}{|l|l|l|}\\hline x & y & z \\\\\\hline q \\\\\\hline\\end{tabular}";
+        const Result forward = article("", table);
+        const Result mirrored = article("\\usepackage{polyglossia}\\setmainlanguage{arabic}", table);
+        assert((forward.clean && holds(forward.text, "xyz")) && "a table read left to right");
+        assert((mirrored.clean && holds(mirrored.text, "zyx")) && "and in Arabic right to left");
+        assert((count(mirrored.pdf, " re f") == count(forward.pdf, " re f")) && "its rules the same, mirrored");
+    }
     return 0;
 }

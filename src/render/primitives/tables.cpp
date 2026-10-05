@@ -505,6 +505,11 @@ namespace render::primitives {
             const Opening opening = std::move(openings.back());
             openings.pop_back();
 
+            // Which way the text read where the table began: a table in
+            // Arabic or Hebrew runs right to left, its first column at the
+            // right, as one set under polyglossia does.
+            const bool reversed = context.reversed;
+
             syntax::Lexicon& lexicon = mouth.lexicon;
             const syntax::Symbol ampersand = column;
             const syntax::Symbol newline = lexicon.intern("\\\\");
@@ -842,6 +847,41 @@ namespace render::primitives {
             if (count == 0) return directive(arena, nullptr, origin, true);
             columns.resize(count, Column{});
 
+            // Right to left, the table is its mirror: the columns in the
+            // other order, each rule and each padding on the other side, a
+            // row's cells from the right -- a short row's empty ones at its
+            // left -- and a rule over some of the columns over their mirror.
+            if (reversed) {
+                // The vertical rules on each boundary between columns, from
+                // the table's left edge, 0, to its right, `count`; boundary k
+                // is boundary count - k in the mirror.
+                std::vector<int> rules(count + 1, 0);
+                for (std::size_t index = 0; index < count; ++index) {
+                    rules[index] += columns[index].before;
+                    rules[index + 1] += columns[index].after;
+                }
+                std::ranges::reverse(columns);
+                for (std::size_t index = 0; index < count; ++index) {
+                    Column& format = columns[index];
+                    std::swap(format.opened, format.closed);
+                    format.before = rules[count - index];
+                    format.after = 0;
+                }
+                columns.back().after = rules[0];
+                for (Line& line : lines) {
+                    std::size_t taken = 0;
+                    for (const Cell& item : line.cells) taken += item.span;
+                    for (; taken < count; ++taken) line.cells.emplace_back();
+                    std::ranges::reverse(line.cells);
+                    for (Stroke& rule : line.strokes) {
+                        if (rule.to == 0) continue;
+                        const std::size_t from = count - std::min(rule.to, count);
+                        rule.to = count - rule.from;
+                        rule.from = from;
+                    }
+                }
+            }
+
             const layout::Document::Configuration& page = context.document.configuration;
 
             // Pass one: every cell's material, and how wide each column must be.
@@ -959,7 +999,8 @@ namespace render::primitives {
                                 setting = node->directive().justification;
                             }
                         }
-                        auto* paragraph = arena.compose<layout::Paragraph>(arena, piece.material, setting, 0.0f, 0.0f);
+                        auto* paragraph = arena.compose<layout::Paragraph>(arena, piece.material, setting, 0.0f, 0.0f,
+                                                                           reversed);
                         paragraph->layout(arena, measure, page.leading);
                         layout::Node* broken = paragraph->node();
                         if (broken && broken->type == layout::Node::Type::Box && !broken->box().list.empty()) {
@@ -978,7 +1019,10 @@ namespace render::primitives {
                             piece.box = layout::Line::horizontal(arena, only, 0.0f);
                         }
                     } else {
+                        // One line, put in the order it is drawn in: Arabic in
+                        // a cell reads right to left in any table.
                         piece.box = layout::Line::horizontal(arena, piece.material, 0.0f);
+                        layout::Line::reorder(arena, piece.box, reversed);
                     }
 
                     // A cell over several columns wider than they are widens the

@@ -252,6 +252,12 @@ sees, newest work last within each group.
   framed block begun in Arabic or Hebrew set their paragraphs right to left,
   each line in the order it is drawn in, and a direction changed inside one
   holds to its end; their lines were left in the order they were written.
+- **A table in Arabic or Hebrew runs right to left**: its first column at
+  the right, each vertical rule and padding mirrored, a short row's cells
+  from the right and a rule over some columns over their mirror, as a table
+  set under polyglossia is. A cell's paragraph reads the table's way, and a
+  one-line cell is put in drawing order, so Arabic in a cell reads right to
+  left in any table.
 - **babel and polyglossia are packages of their own**, over a native
   `Languages` primitive. `\usepackage[english,russian]{babel}` sets the
   document in the last language named (or `main=`); `\selectlanguage`,
