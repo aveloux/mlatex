@@ -18,7 +18,7 @@
 
 namespace render::primitives {
 
-    std::optional<double> Plots::calculate(const std::string_view text, const double x) {
+    std::optional<double> Plots::calculate(const std::string_view text, const double x, bool* const measured) {
         constexpr double degree = std::numbers::pi / 180.0;
         std::size_t at = 0;
         bool broken = false;
@@ -86,6 +86,27 @@ namespace render::primitives {
                     return 0.0;
                 }
                 at = static_cast<std::size_t>(stop - text.data());
+
+                // A unit after it, as TikZ's formulas take one: the length in
+                // points, and the whole formula a length -- `\x1+1cm`. An em
+                // is ten points here, an ex 4.3.
+                static constexpr std::array<std::pair<std::string_view, double>, 11> units{{
+                    {"pt", 1.0}, {"cm", 72.27 / 2.54}, {"mm", 72.27 / 25.4}, {"in", 72.27}, {"bp", 72.27 / 72.0},
+                    {"pc", 12.0}, {"dd", 1238.0 / 1157.0}, {"cc", 12.0 * 1238.0 / 1157.0}, {"sp", 1.0 / 65536.0},
+                    {"em", 10.0}, {"ex", 4.3},
+                }};
+                std::size_t after = at;
+                while (after < text.size() && text[after] == ' ') ++after;
+                for (const auto& [name, points] : units) {
+                    const std::size_t end = after + name.size();
+                    if (text.substr(after, name.size()) != name) continue;
+                    if (end < text.size() && ((text[end] >= 'a' && text[end] <= 'z') || (text[end] >= 'A' && text[end] <= 'Z'))) {
+                        continue;
+                    }
+                    at = end;
+                    if (measured) *measured = true;
+                    return number * points;
+                }
                 return number;
             }
 
@@ -125,6 +146,10 @@ namespace render::primitives {
             if (name == "acos") return std::acos(first) / degree;
             if (name == "atan") return std::atan(first) / degree;
             if (name == "atan2") return std::atan2(first, second) / degree;
+            if (name == "veclen") return std::hypot(first, second);
+            if (name == "mod") return std::fmod(first, second);
+            if (name == "sign") return first > 0.0 ? 1.0 : first < 0.0 ? -1.0 : 0.0;
+            if (name == "int") return std::trunc(first);
             if (name == "deg") return first / degree;
             if (name == "rad") return first * degree;
             if (name == "exp") return std::exp(first);

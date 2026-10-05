@@ -476,6 +476,10 @@ sees, newest work last within each group.
 - **TikZ plots**: `plot coordinates {...}` and `plot ({\x}, {\x*\x})` over
   `domain` in `samples` steps, the function worked out as pgfmath works one
   -- trigonometry in degrees, `r` for radians.
+- **Lengths in a formula**: a number with a unit, `1cm`, `3pt`, `2em`, is a
+  length in points, and a formula that holds one is a length, as pgfmath
+  has it -- `\x1+1cm`; `veclen`, `mod`, `int` and `sign` are worked out
+  with the rest.
 - **pgfplots axes are drawn**: `axis`, `semilogxaxis`, `semilogyaxis` and
   `loglogaxis`; ticks at round numbers no more than about 35 points apart,
   powers of ten on a logarithmic axis, or the ones `xtick` lists; labels,

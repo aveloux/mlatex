@@ -59,12 +59,18 @@ namespace render::primitives {
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Works out a function of x as pgfplots writes one.
-        /// @param text The function: `x^2 - 3*sin(deg(x))`.
-        /// @param x    The value of x.
+        ///
+        /// A number may carry a unit, as TikZ's formulas do -- `\\x1+1cm`,
+        /// `veclen(3pt,4pt)` -- and is then a length in points.
+        ///
+        /// @param text     The function: `x^2 - 3*sin(deg(x))`.
+        /// @param x        The value of x.
+        /// @param measured Set when a number in it carried a unit, so the
+        ///                 value is in points; left alone otherwise.
         /// @return Its value, or nothing when it is not a function this reads
         ///         or has no finite value there.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x);
+        [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x, bool* measured = nullptr);
 
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }

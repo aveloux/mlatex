@@ -74,6 +74,15 @@ int main() {
     assert(!Plots::calculate("ln(0)", 0.0) && "no finite value is none");
     assert(!Plots::calculate("foo(1)", 0.0) && !Plots::calculate("1 +", 0.0) && "nor is what is not a function");
 
+    // TikZ's formulas: a number with a unit is a length in points, and says so.
+    bool measured = false;
+    const auto length = Plots::calculate("veclen(3pt, 4pt) + 1in", 0.0, &measured);
+    assert((length && std::abs(*length - 77.27) < 1e-9 && measured) && "veclen, and a length in points");
+    measured = false;
+    assert((comes("mod(7, 3) + int(2.7) + sign(-4)", 0.0, 2.0)) && "mod, int and sign");
+    assert((Plots::calculate("2*3", 0.0, &measured) && !measured) && "a formula of no unit is a number");
+    assert((comes("1cm", 0.0, 72.27 / 2.54)) && "a centimetre in points");
+
     {
         const Result result = picture("\\begin{axis}[xlabel={Time}, ylabel={Speed}, title={Run}]"
                                       "\\addplot[blue, domain=0:4] {x^2};"
