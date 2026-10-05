@@ -118,6 +118,19 @@ int main() {
             assert(holds(result.text, part) && "each object and label set");
         }
         assert((holds(result.pdf, "] 0 d")) && "its dashed arrow dashed");
+
+        // Objects written xy's way: framed, round, dashed and rounded,
+        // doubled, and text in stacked lines -- their modifiers drawn, not set.
+        const Result framed = article("xy", "\\[\\xymatrix{*+[F]{A} \\ar[r] & *++[o][F]{q_0} \\ar[r] & "
+                                            "*+[F-:<3pt>]{C} \\ar[r] & *+[F=]\\txt{two\\\\lines}}\\]");
+        assert((framed.clean && framed.errors.empty()) && "an xy-pic diagram of framed objects");
+        for (const std::string_view part : {"A", "q0", "C", "two", "lines"}) {
+            assert(holds(framed.text, part) && "each object's text set");
+        }
+        assert((!holds(framed.text, "*") && !holds(framed.text, "[F") && !holds(framed.text, "txt")) &&
+               "and none of its modifiers");
+        assert((holds(framed.pdf, "] 0 d") && count(framed.pdf, " l S") > 4 + 48 + 28 + 8) &&
+               "a box, a circle, a dashed box with round corners and a double one");
     }
     {
         // amscd: arrows written between objects and under them.

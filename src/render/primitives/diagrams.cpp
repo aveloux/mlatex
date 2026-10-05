@@ -250,11 +250,16 @@ namespace render::primitives {
             return found;
         };
         // The grid of a diagram's objects alone, for one inside a formula of
-        // other things, which is set as a matrix is.
+        // other things, which is set as a matrix is -- a cell's node
+        // options, `|[draw]|`, left out.
         const auto objects = [](const Diagram& diagram) {
             std::string out = "\\matrix{";
             for (const std::vector<std::string>& row : diagram.cells) {
-                for (std::size_t column = 0; column < row.size(); ++column) out += (column > 0 ? " & " : "") + row[column];
+                for (std::size_t column = 0; column < row.size(); ++column) {
+                    std::string_view cell = row[column];
+                    if (cell.starts_with("|[")) cell = trim(cell.substr(std::min(cell.find("]|") + 2, cell.size())));
+                    out += (column > 0 ? " & " : "") + std::string(cell);
+                }
                 out += " \\\\ ";
             }
             return out + "}";
@@ -612,6 +617,81 @@ namespace render::primitives {
                                        static_cast<std::size_t>(std::ranges::count(direction, 'l'));
                         arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," + style;
                         diagram.arrows.push_back(std::move(arrow));
+                    }
+
+                    // An object written xy's way, `*` and its modifiers
+                    // before its text: `+` and `-` grow and shrink its margin
+                    // by xy's \objectmargin, three points, or the length in
+                    // `<>`; `[F]` frames it, `[F-]` dashed, `[F.]` dotted,
+                    // `[F=]` twice, `[F-:<3pt>]` its corners rounded; `[o]`
+                    // makes it round; `!` and `=`, which place and size it,
+                    // are let go; `\txt{...}` is text, its lines stacked. The
+                    // matrix's cell takes them as its node's options.
+                    std::string_view entry = trim(object);
+                    if (entry.starts_with('*')) {
+                        entry.remove_prefix(1);
+                        std::string margin = "0pt";
+                        std::string options;
+                        std::string content;
+                        while (!entry.empty()) {
+                            const char head = entry.front();
+                            if (head == ' ') {
+                                entry.remove_prefix(1);
+                            } else if (head == '+' || head == '-') {
+                                entry.remove_prefix(1);
+                                std::string_view amount = "3pt";
+                                if (entry.starts_with('<')) {
+                                    const std::size_t shut = std::min(entry.find('>'), entry.size());
+                                    amount = trim(entry.substr(1, shut - 1));
+                                    entry.remove_prefix(std::min(shut + 1, entry.size()));
+                                }
+                                margin += head;
+                                margin += amount;
+                            } else if (head == '[') {
+                                const std::size_t shut = std::min(closing(entry, 0), entry.size() - 1);
+                                const std::string_view shape = entry.substr(1, shut - 1);
+                                entry.remove_prefix(shut + 1);
+                                if (shape.find('o') != std::string_view::npos) options += "circle,";
+                                if (!shape.starts_with('F')) continue;
+                                options += "draw,";
+                                if (shape.find('-') != std::string_view::npos) options += "dashed,";
+                                if (shape.find('.') != std::string_view::npos) options += "dotted,";
+                                if (shape.find('=') != std::string_view::npos) options += "double,";
+                                if (const std::size_t colon = shape.find(':'); colon != std::string_view::npos) {
+                                    std::string_view radius = trim(shape.substr(colon + 1));
+                                    if (radius.starts_with('<') && radius.ends_with('>')) radius = radius.substr(1, radius.size() - 2);
+                                    options += "rounded corners=" + std::string(radius.empty() ? "4pt" : radius) + ",";
+                                }
+                            } else if (head == '!' || head == '=') {
+                                entry.remove_prefix(1);
+                                if (entry.starts_with('<')) {
+                                    entry.remove_prefix(std::min(entry.find('>') + 1, entry.size()));
+                                } else {
+                                    while (!entry.empty() && std::isupper(static_cast<unsigned char>(entry.front()))) entry.remove_prefix(1);
+                                }
+                            } else if (entry.starts_with("\\txt")) {
+                                // Its lines, each text, in a column of their own --
+                                // braced, so the matrix does not end a row at them.
+                                entry = trim(entry.substr(4));
+                                if (entry.starts_with('<')) entry = trim(entry.substr(std::min(entry.find('>') + 1, entry.size())));
+                                const std::size_t shut = entry.starts_with('{') ? closing(entry, 0) : std::string_view::npos;
+                                const std::string_view lines = shut == std::string_view::npos ? entry : entry.substr(1, shut - 1);
+                                const std::vector<std::vector<std::string>> rows = grid(lines, "\x01");
+                                content = "{\\begin{array}{c}";
+                                for (std::size_t line = 0; line < rows.size(); ++line) {
+                                    content += (line > 0 ? "\\\\\\text{" : "\\text{") + rows[line].front() + "}";
+                                }
+                                content += "\\end{array}}";
+                                break;
+                            } else if (head == '{') {
+                                content = entry.substr(1, std::min(closing(entry, 0), entry.size()) - 1);
+                                break;
+                            } else {
+                                content = entry;
+                                break;
+                            }
+                        }
+                        object = "|[" + options + "inner sep={" + margin + "}]| " + (trim(content).empty() ? "{}" : content);
                     }
                     diagram.cells.back().emplace_back(trim(object));
                 }

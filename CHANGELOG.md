@@ -513,6 +513,10 @@ sees, newest work last within each group.
   `phantom`, `from=`, spacing by tikz-cd's names; xy-pic's `\xymatrix`, with
   `^`, `_` and `|` labels, `@{-->}` shapes, `@<1ex>` shifts, `@/^/` curves
   and `@C=`/`@R=`; amscd's `CD`, its `@>>>`, `@VVV`, `@<<<`, `@AAA` and `@=`.
+  xy-pic's objects are drawn as written: `*+[F]{A}` framed, `*++[o][F]{q_0}`
+  round, `[F-]` dashed, `[F.]` dotted, `[F=]` doubled, `[F-:<3pt>]` its
+  corners rounded, `+` and `+<2pt>` growing its margin, and `\txt{a\\b}`
+  text in stacked lines; their modifiers used to be set as text.
   A display holding one alone is set as the picture, its number level with
   its middle, as tikz-cd sets a diagram on the formula's axis; one in a
   formula of other things is the grid of its objects.
@@ -834,8 +838,7 @@ font folders are listed only for a script the engine carries no face for.
 ### Not yet
 
 EPS and SVG are placeholders, not drawn; pgfplots' 3D plots, error bars and
-`fill between` are not drawn; xy-pic's objects written with `*+[F]` keep that
-text. beamer's overlays are one slide and
+`fill between` are not drawn. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
