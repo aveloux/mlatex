@@ -17,10 +17,10 @@ namespace render::typography {
     /// @par Why HarfBuzz alone
     /// A rasteriser is not needed here. Every glyph the engine draws is named
     /// by index and positioned from the font's own tables, and the writer
-    /// embeds the file whole rather than rendering it -- so the outlines are
-    /// never asked for. Opening a file through HarfBuzz reads only the table
-    /// directory and leaves each table unread until something wants it, which
-    /// is as little work as opening a font can be.
+    /// embeds the file whole rather than rendering it -- so an outline is
+    /// asked for only to measure its ink. Opening a file through HarfBuzz
+    /// reads only the table directory and leaves each table unread until
+    /// something wants it, which is as little work as opening a font can be.
     ///
     /// @warning The bytes must outlive the Face. Collection allocates them from
     ///          the arena and never frees them, which satisfies that as long
@@ -67,6 +67,11 @@ namespace render::typography {
         [[nodiscard]] std::size_t count() const noexcept;
 
         /// @brief One glyph's ink extent, in the face's own units.
+        ///
+        /// The box of what its outline draws, which is not always the box
+        /// the file keeps for it: a contour of one point, an anchor some
+        /// faces keep far from the ink, draws nothing and so counts for
+        /// nothing. A glyph with no outline, a bitmap, has the file's box.
         ///
         /// Kept here rather than by each Font, because it is the same at
         /// every size: the maths face is set at three sizes in any formula

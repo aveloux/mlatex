@@ -346,6 +346,11 @@ sees, newest work last within each group.
 - A character the text's face cannot draw — ✓, ★, ①, a card suit — is set
   from the formulas' face instead of vanishing; a letter of another script from
   New Computer Modern (see Languages).
+- **A glyph's ink is what its outline draws**, not the box its file keeps for
+  it: a contour of one point, an anchor some faces keep far above or below a
+  glyph, no longer counts as ink. Noto Naskh's tatweel measured from under
+  the baseline to over the x-height that way; it is the thin stroke on the
+  baseline it draws. A face with no such point measures as it did.
 - **Fractions clear their bar as TeX's rule 15 has it**, with the font's own
   numbers: a fraction in a line rises and falls by the MATH table's text shifts
   (`FractionNumeratorShiftUp`, `…DenominatorShiftDown`) and keeps the bar's

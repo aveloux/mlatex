@@ -56,6 +56,22 @@ int main() {
     const hb_glyph_extents_t again = face.extents(36);
     assert((first.width == again.width && first.height == again.height) && "a glyph measures the same twice");
 
+    // Noto Naskh's tatweel keeps two contours of one point, anchors, far
+    // above and below its stroke; its ink is the stroke alone, a little
+    // above the baseline and no more than a tenth of an em thick.
+    if (const render::typography::Collection::Entry* naskh = collection.get("notonaskharabic-regular")) {
+        render::typography::Face arabic;
+        assert((arabic.compose(naskh->bytes)) && "Noto Naskh Arabic opens");
+        hb_codepoint_t tatweel = 0;
+        hb_font_t* font = hb_font_create(arabic.handle());
+        assert((hb_font_get_nominal_glyph(font, 0x0640, &tatweel)) && "and has a tatweel");
+        hb_font_destroy(font);
+        const hb_glyph_extents_t stroke = arabic.extents(tatweel);
+        assert((stroke.y_bearing > 0 && stroke.y_bearing + stroke.height >= 0 &&
+                -stroke.height < static_cast<int>(arabic.units() / 10.0f)) &&
+               "a glyph's ink is what its outline draws, not every point it keeps");
+    }
+
     render::typography::Face moved(std::move(face));
     assert((moved.handle() != nullptr && face.handle() == nullptr) &&
            "a face moves, and the one moved from is empty");
