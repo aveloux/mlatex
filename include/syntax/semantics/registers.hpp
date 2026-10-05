@@ -61,6 +61,8 @@ namespace syntax::semantics {
         struct Target {
             Type type;          ///< Bank.
             std::size_t slot;   ///< Slot number.
+            bool character;     ///< Whether the name is a character's, as \\chardef makes one: set as that
+                                ///< character where it is written, read as its number wherever one is read.
         };
 
         /// @brief Opens a group.
@@ -93,11 +95,12 @@ namespace syntax::semantics {
         /// @p slot, @p symbol addresses that one slot directly, as
         /// `\tolerance` addresses a fixed slot of the integer bank.
         ///
-        /// @param symbol Interned name.
-        /// @param type   Bank it addresses.
-        /// @param slot   Slot to bind to, or nothing to bind the whole bank.
+        /// @param symbol    Interned name.
+        /// @param type      Bank it addresses.
+        /// @param slot      Slot to bind to, or nothing to bind the whole bank.
+        /// @param character Whether a slot's name is a character's, as \\chardef makes one.
         /// @complexity O(1) amortized.
-        void bind(Symbol symbol, Type type, std::optional<std::size_t> slot = std::nullopt);
+        void bind(Symbol symbol, Type type, std::optional<std::size_t> slot = std::nullopt, bool character = false);
 
         /// @brief The bank a name addresses, if it names one.
         /// @param symbol Interned name.
@@ -124,7 +127,7 @@ namespace syntax::semantics {
         struct Name {
             Type type{Type::Count};   ///< Bank.
             std::uint8_t slot{0};     ///< Slot, for a slot name.
-            std::uint8_t role{0};     ///< 0: nothing; 1: a bank; 2: a slot.
+            std::uint8_t role{0};     ///< 0: nothing; 1: a bank; 2: a slot; 3: a slot that is a character.
         };
 
         std::array<std::array<std::int32_t, slots>, banks> values{};    ///< Value of each slot.

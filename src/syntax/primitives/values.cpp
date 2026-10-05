@@ -66,7 +66,7 @@ namespace syntax::primitives {
             return std::nullopt;
         }
 
-        return semantics::Registers::Target{*kind, static_cast<std::size_t>(*index)};
+        return semantics::Registers::Target{*kind, static_cast<std::size_t>(*index), false};
     }
 
     void Values::operator()(Mouth& mouth, Context& context) const {
@@ -339,14 +339,19 @@ namespace syntax::primitives {
         }
 
         // \chardef and \mathchardef: a name for a number, kept in an integer
-        // register of its own so it reads as the number anywhere one is read.
+        // register of its own so it reads as the number anywhere one is read
+        // -- and \chardef's, written where text is, as its character, as
+        // TeX's: `\chardef\x=65 \x` is an A.
         for (const std::string_view primitive : {"\\chardef", "\\mathchardef"}) {
             mouth.bind(primitive, [&context, named, allocate, primitive](Mouth& mouth) {
                 const Token name = named(mouth, primitive);
                 if (name.empty()) return;
                 skip(mouth, "=");
                 const std::int32_t value = Number::integer(mouth, context.registers).value_or(0);
-                if (const auto slot = allocate(name, Type::Count)) context.registers.set(Type::Count, *slot, value, true);
+                if (const auto slot = allocate(name, Type::Count)) {
+                    context.registers.set(Type::Count, *slot, value, true);
+                    if (primitive == "\\chardef") context.registers.bind(name.symbol, Type::Count, *slot, true);
+                }
             });
         }
 
@@ -541,7 +546,7 @@ namespace syntax::primitives {
             if (lead.symbol == numexpr || lead.symbol == dimexpr) {
                 mouth.read();
                 held = calculate(mouth, lead.symbol == dimexpr).value_or(0);
-                target = semantics::Registers::Target{lead.symbol == dimexpr ? Type::Dimension : Type::Count, 0};
+                target = semantics::Registers::Target{lead.symbol == dimexpr ? Type::Dimension : Type::Count, 0, false};
             } else {
                 target = slot(mouth, context);
                 if (!target) return;

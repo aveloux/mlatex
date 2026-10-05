@@ -135,12 +135,44 @@ namespace syntax {
                 continue;
             }
 
+            // A name \chardef gave a character is that character, in the run
+            // of text it stands in: `\chardef\x=65 a\x b` is aAb.
+            const semantics::Registers& registers = mouth.state.registers;
+            if (token.category == Catcodes::Category::Escape) {
+                if (const auto held = registers.target(token.symbol); held && held->character) {
+                    const auto code = static_cast<std::uint32_t>(registers.get(held->type, held->slot));
+                    if (changes && *changes != seen) flush();
+                    if (buffer.empty()) {
+                        position = token.location;
+                        text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node*>{});
+                        if (stamp) stamp(*text);
+                        if (changes) seen = *changes;
+                    }
+                    mouth.vertical = false;
+                    if (code < 0x80) {
+                        buffer += static_cast<char>(code);
+                    } else if (code < 0x800) {
+                        buffer += static_cast<char>(0xC0 | (code >> 6));
+                        buffer += static_cast<char>(0x80 | (code & 0x3F));
+                    } else if (code < 0x10000) {
+                        buffer += static_cast<char>(0xE0 | (code >> 12));
+                        buffer += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+                        buffer += static_cast<char>(0x80 | (code & 0x3F));
+                    } else if (code < 0x110000) {
+                        buffer += static_cast<char>(0xF0 | (code >> 18));
+                        buffer += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
+                        buffer += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+                        buffer += static_cast<char>(0x80 | (code & 0x3F));
+                    }
+                    continue;
+                }
+            }
+
             if (token.category == Catcodes::Category::Escape) {
                 flush();
 
                 // A register's name standing on its own is an assignment to
                 // it, as TeX reads one: `\parskip=6pt`, `\count0 5`.
-                const semantics::Registers& registers = mouth.state.registers;
                 if (registers.target(token.symbol) || registers.bank(token.symbol)) {
                     const std::array<Token, 2> assignment{
                         Token{assign, Catcodes::Category::Escape, token.location, mouth.lexicon.resolve(assign)},

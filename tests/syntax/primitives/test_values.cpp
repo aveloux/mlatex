@@ -136,6 +136,8 @@ int main() {
          "glue printed with its stretch");
     sets("\\newtoks\\stash \\stash={saved tokens}\\the\\stash", "saved tokens", "a token list");
     sets("\\chardef\\letter=65 \\number\\letter", "65", "\\chardef gives a number a name");
+    sets("\\chardef\\letter=65 a\\letter b", "aAb", "and, written where text is, is its character");
+    sets("\\chardef\\section=167 \\section", "\xC2\xA7", "past ASCII as well");
     sets("\\countdef\\first=5 \\first=7 \\the\\first", "7", "\\countdef names a count register");
 
     // --- Expressions ------------------------------------------------------------

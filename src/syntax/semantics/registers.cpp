@@ -29,10 +29,12 @@ namespace syntax::semantics {
         values[bank][slot] = value;
     }
 
-    void Registers::bind(const Symbol symbol, const Type type, const std::optional<std::size_t> slot) {
+    void Registers::bind(const Symbol symbol, const Type type, const std::optional<std::size_t> slot,
+                         const bool character) {
         if (slot && *slot >= slots) return;
         if (symbol >= names.size()) names.resize(symbol + 1);
-        names[symbol] = slot ? Name{type, static_cast<std::uint8_t>(*slot), 2} : Name{type, 0, 1};
+        names[symbol] = slot ? Name{type, static_cast<std::uint8_t>(*slot), static_cast<std::uint8_t>(character ? 3 : 2)}
+                             : Name{type, 0, 1};
     }
 
     std::optional<Registers::Type> Registers::bank(const Symbol symbol) const noexcept {
@@ -41,8 +43,8 @@ namespace syntax::semantics {
     }
 
     std::optional<Registers::Target> Registers::target(const Symbol symbol) const noexcept {
-        if (symbol >= names.size() || names[symbol].role != 2) return std::nullopt;
-        return Target{names[symbol].type, names[symbol].slot};
+        if (symbol >= names.size() || names[symbol].role < 2) return std::nullopt;
+        return Target{names[symbol].type, names[symbol].slot, names[symbol].role == 3};
     }
 
 }

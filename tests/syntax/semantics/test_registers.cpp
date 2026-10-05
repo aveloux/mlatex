@@ -51,7 +51,11 @@ int main() {
     registers.bind(500, Type::Count, 3);
     const auto target = registers.target(500);
     assert((target && target->type == Type::Count && target->slot == 3) && "a named register addresses its slot");
+    assert((!target->character) && "and is no character");
     assert((!registers.target(501)) && "an unbound name addresses nothing");
+    registers.bind(502, Type::Count, 4, true);
+    assert((registers.target(502) && registers.target(502)->character && registers.target(502)->slot == 4) &&
+           "a character's name, as \\chardef makes one, still addresses its slot");
 
     registers.quad = 12 * 65536;
     assert((registers.quad == 12 * 65536) && "an em is what the body face says it is");
