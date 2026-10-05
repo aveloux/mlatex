@@ -56,7 +56,7 @@ namespace render::layout {
     /// @code
     /// layout::Document document(arena, scratch, shaper, typesetter);
     /// document.configuration.width = 595.0f;     // A4
-    /// document.hyphenate(&hyphenator);
+    /// document.hyphenate({.command = layout::Node::Directive::Command::Language, .hyphenator = &hyphenator});
     ///
     /// document.append("some text ", *text, 12.0f);
     /// document.append(formula, *maths);            // joins that sentence
@@ -208,19 +208,20 @@ namespace render::layout {
         /// @complexity O(n) in the paragraph's own material.
         void separate();
 
-        /// @brief Sets where words may be broken.
+        /// @brief Sets the language the words from here on are in: where they
+        ///        may be broken, the digits they are drawn with, and French's
+        ///        spaces before its high punctuation.
         ///
-        /// A different hyphenator from the one in use forgets every word
-        /// already shaped, since each was remembered with the breaks the old
-        /// one gave it. So does a change to how near a word's ends it may
-        /// break -- which a document changes by changing its language, as a
+        /// A change to any of them forgets every word and run already
+        /// shaped, since each was remembered as the old language set it --
+        /// which a document changes by changing its language, as a
         /// Node::Directive::Command::Language in its place does.
         ///
-        /// @param hyphenator Hyphenator to use, or null to break no word;
-        ///                   must outlive the document.
-        /// @param left       Least letters a break may leave before it: `\\lefthyphenmin`.
-        /// @param right      Least it may carry over after it: `\\righthyphenmin`.
-        void hyphenate(const typography::Hyphenator* hyphenator, std::size_t left = 2, std::size_t right = 3) noexcept;
+        /// @param language A Command::Language directive: its #hyphenator, or
+        ///                 null to break no word, which must outlive the
+        ///                 document; its least letters either side of a break;
+        ///                 its digits; whether it is spaced as French is.
+        void hyphenate(const Node::Directive& language) noexcept;
 
         /// @brief Ends any open paragraph and lays every paragraph out.
         ///
@@ -331,6 +332,8 @@ namespace render::layout {
         const typography::Hyphenator* hyphenation{nullptr};  ///< Where words may break.
         std::size_t before{2};                                ///< Least letters a break leaves: `\\lefthyphenmin`.
         std::size_t after{3};                                 ///< Least it carries over: `\\righthyphenmin`.
+        std::uint32_t digits{0};                              ///< The code point digits are drawn from, or 0.
+        bool spaced{false};                                   ///< Whether words are spaced as French spaces them.
 
         std::vector<Node*> pending{};   ///< The paragraph being built.
         bool indentation{true};         ///< Whether the next paragraph opens indented.

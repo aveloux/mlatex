@@ -45,15 +45,17 @@ namespace render::layout {
         ++blocks;
     }
 
-    void Document::hyphenate(const typography::Hyphenator* hyphenator, const std::size_t left,
-                             const std::size_t right) noexcept {
-        if (hyphenation != hyphenator || before != left || after != right) {
+    void Document::hyphenate(const Node::Directive& language) noexcept {
+        if (hyphenation != language.hyphenator || before != language.before || after != language.after ||
+            digits != language.digits || spaced != language.spaced) {
             words.dispose();
             ledger.dispose();
         }
-        hyphenation = hyphenator;
-        before = left;
-        after = right;
+        hyphenation = language.hyphenator;
+        before = language.before;
+        after = language.after;
+        digits = language.digits;
+        spaced = language.spaced;
     }
 
     void Document::append(const std::string_view text, const typography::Font& font, const float size,
@@ -390,16 +392,74 @@ namespace render::layout {
                 continue;
             }
 
+            // French's high punctuation and its guillemets, with the spaces
+            // babel and polyglossia set at them, no line ending at one: a
+            // word space before a colon, half of one before ; ! ? and » and
+            // after «, the space the source typed there taken into it. A
+            // colon in a time or an address -- 12:30, http:// -- is left be.
+            const auto high = [&](const std::size_t at) {
+                const std::string_view rest = text.substr(at);
+                if (rest.starts_with("«") || rest.starts_with("»")) return true;
+                if (rest.front() == ':') return rest.size() < 2 || (rest[1] != '/' && (rest[1] < '0' || rest[1] > '9'));
+                return rest.front() == ';' || rest.front() == '!' || rest.front() == '?';
+            };
+            if (spaced && high(cursor)) {
+                const std::string_view rest = text.substr(cursor);
+                const bool opens = rest.starts_with("«");
+                const std::size_t length = opens || rest.starts_with("»") ? 2 : 1;
+                const memory::Slice<Node*> space = piece(" ", false);
+                const float word = !space.empty() && space[0]->type == Node::Type::Glue ? space[0]->glue().width
+                                                                                       : font.size() / 3.0f;
+                const auto hold = [&](const float width) {
+                    auto* kern = arena.compose<Node>(Node::Type::Kern);
+                    kern->kern({.width = width});
+                    into.push_back(kern);
+                };
+                if (!opens) {
+                    if (!into.empty() && into.back()->type == Node::Type::Glue) into.pop_back();
+                    if (!into.empty()) hold(rest.front() == ':' ? word : word * 0.5f);
+                }
+                const memory::Slice<Node*> mark = piece(rest.substr(0, length), false);
+                into.insert(into.end(), mark.begin(), mark.end());
+                cursor += length;
+                if (opens) {
+                    while (cursor < text.size() && (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
+                        ++cursor;
+                    }
+                    hold(word * 0.5f);
+                }
+                factor = 1000;
+                continue;
+            }
+
             const std::size_t begun = cursor;
             while (cursor < text.size() && text[cursor] != ' ' && text[cursor] != '\t' &&
                    text[cursor] != '\n' && text[cursor] != '-' && text[cursor] != '`' &&
-                   text[cursor] != '\'') {
+                   text[cursor] != '\'' && !(spaced && high(cursor))) {
                 ++cursor;
             }
 
-            const memory::Slice<Node*> word = piece(text.substr(begun, cursor - begun), true);
+            // A word's digits in the language's own, where it has them --
+            // Arabic's ١٢٣ for 123 -- as polyglossia's mapping draws them.
+            std::string_view written = text.substr(begun, cursor - begun);
+            if (digits != 0 && written.find_first_of("0123456789") != std::string_view::npos) {
+                std::string mapped;
+                for (const char letter : written) {
+                    if (letter < '0' || letter > '9') {
+                        mapped += letter;
+                        continue;
+                    }
+                    const std::uint32_t code = digits + static_cast<std::uint32_t>(letter - '0');
+                    mapped += static_cast<char>(0xC0 | (code >> 6));
+                    mapped += static_cast<char>(0x80 | (code & 0x3F));
+                }
+                written = arena.copy(mapped);
+            }
+
+            const memory::Slice<Node*> word = piece(written, true);
             into.insert(into.end(), word.begin(), word.end());
-            factor = weigh(text.substr(begun, cursor - begun), factor);
+            // French spaces a sentence's stop as any other, as \frenchspacing does.
+            factor = spaced ? 1000 : weigh(text.substr(begun, cursor - begun), factor);
         }
     }
 
@@ -490,7 +550,7 @@ namespace render::layout {
                     }
                     break;
                 case Node::Directive::Command::Language:
-                    hyphenate(order.hyphenator, order.before, order.after);
+                    hyphenate(order);
                     break;
                 case Node::Directive::Command::Direction:
                     reversed = order.reversed;

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <filesystem>
 #include <iterator>
+#include <vector>
 
 // The document: material in the order it was written, gathered into
 // paragraphs and the blocks between them -- a word space never lost to the
@@ -175,6 +176,49 @@ int main() {
         const layout::Node* line = elements[elements.size() - 1]->paragraph->node()->box().list[0];
         assert((line->box().list[0]->type == layout::Node::Type::Glue) &&
                "a paragraph read right to left ends at the left of its last line");
+    }
+
+    // --- A language's own digits and spaces ---------------------------------------------------
+    {
+        const render::typography::Shaper covering(fonts.arena, &fonts.registry);
+        layout::Document document(fonts.arena, fonts.scratch, covering, typesetter);
+        using Command = layout::Node::Directive::Command;
+        const auto points = [](const memory::Slice<layout::Node*> nodes) {
+            std::vector<std::uint32_t> found;
+            for (const layout::Node* node : nodes) {
+                if (node->type == layout::Node::Type::Glyph) found.push_back(node->glyph().point);
+            }
+            return found;
+        };
+
+        document.hyphenate({.command = Command::Language, .digits = 0x0660});
+        assert((points(document.set("2024", font, true)) == std::vector<std::uint32_t>{0x0662, 0x0660, 0x0662, 0x0664}) &&
+               "Arabic's own digits, a number read left to right in them");
+        document.hyphenate({.command = Command::Language, .digits = 0x06F0});
+        assert((points(document.set("7", font, true)) == std::vector<std::uint32_t>{0x06F7}) && "Persian's");
+        document.hyphenate({.command = Command::Language});
+        assert((points(document.set("7", font, true)) == std::vector<std::uint32_t>{'7'}) && "and the digits as typed");
+
+        // French: a space no line ends at before its high punctuation and
+        // inside its guillemets, the source's own space taken into it.
+        document.hyphenate({.command = Command::Language, .spaced = true});
+        const memory::Slice<layout::Node*> french = document.set("mot ; fin", font, true);
+        std::size_t mark = 0;
+        while (mark < french.count && !(french[mark]->type == layout::Node::Type::Glyph && french[mark]->glyph().point == ';')) {
+            ++mark;
+        }
+        assert((mark > 0 && mark < french.count && french[mark - 1]->type == layout::Node::Type::Kern) &&
+               "a fixed space before a semicolon, in place of the one typed");
+        const memory::Slice<layout::Node*> quoted = document.set("«cité»", font, true);
+        assert((quoted.count >= 4 && quoted[1]->type == layout::Node::Type::Kern &&
+                quoted[quoted.count - 2]->type == layout::Node::Type::Kern) && "and inside guillemets");
+        const memory::Slice<layout::Node*> time = document.set("12:30", font, true);
+        assert((std::ranges::none_of(time, [](const layout::Node* node) { return node->type == layout::Node::Type::Kern; })) &&
+               "but none in a time");
+        document.hyphenate({.command = Command::Language});
+        const memory::Slice<layout::Node*> english = document.set("word; end", font, true);
+        assert((std::ranges::none_of(english, [](const layout::Node* node) { return node->type == layout::Node::Type::Kern; })) &&
+               "and none in English");
     }
 
     return 0;

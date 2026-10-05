@@ -186,7 +186,8 @@ namespace latex {
         const std::filesystem::path language = assets / "hyphens" / "hyph-en-us.pat.txt";
         std::size_t patterns = hyphenator.embed(language.filename().string());
         if (patterns == 0) patterns = hyphenator.compose(language.string());
-        composer.document.hyphenate(&hyphenator);
+        composer.document.hyphenate(
+            {.command = render::layout::Node::Directive::Command::Language, .hyphenator = &hyphenator});
 
         const auto hyphenated = std::chrono::high_resolution_clock::now();
 
@@ -454,7 +455,8 @@ namespace latex {
         // The language chosen last while the document was read was told to
         // the document then, for the boxes; its text goes in from the start,
         // where the language is the one the run began with.
-        composer.document.hyphenate(&hyphenator);
+        composer.document.hyphenate(
+            {.command = render::layout::Node::Directive::Command::Language, .hyphenator = &hyphenator});
         post(post, outputs);
 
         // What the file says of itself, as hyperref's \hypersetup gave it, and

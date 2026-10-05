@@ -307,6 +307,11 @@ namespace render::layout {
             const typography::Hyphenator* hyphenator{nullptr};   ///< For Command::Language: its patterns; null breaks no word.
             std::uint8_t before{2};                  ///< For Command::Language: least letters a break leaves, `\\lefthyphenmin`.
             std::uint8_t after{3};                   ///< For Command::Language: least it carries over, `\\righthyphenmin`.
+            std::uint32_t digits{0};                 ///< For Command::Language: the code point its digits are drawn
+                                                     ///< from -- U+0660 for Arabic's, U+06F0 for Persian's and
+                                                     ///< Urdu's -- or 0 for the digits as they were written.
+            bool spaced{false};                      ///< For Command::Language: French's spaces, no line ending at
+                                                     ///< one, before `;` `:` `!` `?` and `»` and after `«`.
             bool reversed{false};                    ///< For Command::Direction: whether paragraphs read right to left.
             Node* head{nullptr};                     ///< For Command::Repeat: the rows set atop each column a table
                                                      ///< carries on into, or none.

@@ -138,7 +138,7 @@ namespace render::primitives {
         // instruction is reached in its place, and is set in the language
         // chosen by then.
         const auto order = [&context](syntax::Parser& parser, const layout::Node::Directive& said) -> syntax::Node* {
-            if (said.command == Command::Language) context.document.hyphenate(said.hyphenator, said.before, said.after);
+            if (said.command == Command::Language) context.document.hyphenate(said);
             memory::Arena& arena = parser.arena;
             auto* mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
             mark->directive(said);
