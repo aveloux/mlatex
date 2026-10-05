@@ -205,16 +205,20 @@ namespace render::primitives {
         // -- \centering, \raggedright, \leftskip -- shape the ones after
         // them, and a display or a vertical space stands between them as it
         // is. Consecutive blocks sit a baseline apart where they can, and a
-        // point apart where they cannot.
+        // point apart where they cannot. Its paragraphs read the way the
+        // text did where the box began, right to left in Arabic, and as a
+        // block inside it turns them; each line, and each line a block sets
+        // whole, is put in the order it is drawn in, as the document's are.
         const auto column = [&context](memory::Arena& arena, const memory::Slice<syntax::Node*> children,
-                                       const float width) {
+                                       const float width, const bool opened) {
             const float leading = context.document.configuration.leading;
             std::vector<layout::Node*> blocks;
             std::vector<layout::Node*> material;
-            std::vector<std::tuple<Justification, float, float>> kept;
+            std::vector<std::tuple<Justification, float, float, bool>> kept;
             Justification justification = Justification::Full;
             float left = 0.0f;
             float right = 0.0f;
+            bool reversed = opened;
 
             // The baseline at a block's top and at its bottom: its first
             // line's height and its last line's depth.
@@ -261,7 +265,7 @@ namespace render::primitives {
                 const memory::Slice<layout::Node*> pieces = arena.allocate<layout::Node*>(material.size() - first);
                 std::copy(material.begin() + static_cast<std::ptrdiff_t>(first), material.end(), pieces.begin());
                 material.clear();
-                layout::Paragraph set(arena, pieces, justification, left, right);
+                layout::Paragraph set(arena, pieces, justification, left, right, reversed);
                 set.layout(arena, width, leading);
                 if (set.node()) append(set.node());
             };
@@ -285,15 +289,17 @@ namespace render::primitives {
                             const layout::Node::Directive& order = node->directive();
                             if (order.command == Command::Align) justification = order.justification;
                             else if (order.command == Command::Margin) (order.trailing ? right : left) = order.width;
-                            else if (order.command == Command::Save) kept.emplace_back(justification, left, right);
+                            else if (order.command == Command::Direction) reversed = order.reversed;
+                            else if (order.command == Command::Save) kept.emplace_back(justification, left, right, reversed);
                             else if (order.command == Command::Restore && !kept.empty()) {
-                                std::tie(justification, left, right) = kept.back();
+                                std::tie(justification, left, right, reversed) = kept.back();
                                 kept.pop_back();
                             }
                             continue;
                         }
                         if (child->display) {
                             settle();
+                            layout::Line::reorder(arena, node, reversed);
                             append(node);
                             continue;
                         }
@@ -491,8 +497,9 @@ namespace render::primitives {
                 static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             }
             const float width = measure(syntax::Argument::text(mouth), mouth, context);
+            const bool opened = context.reversed;
             const memory::Slice<syntax::Node*> children = contents(parser, "\\parbox", width);
-            return directive(arena, hung(arena, column(arena, children, width), position.empty() ? 'c' : position[0]),
+            return directive(arena, hung(arena, column(arena, children, width, opened), position.empty() ? 'c' : position[0]),
                              origin);
         });
 
@@ -670,6 +677,7 @@ namespace render::primitives {
 
             syntax::Symbol matched = syntax::none;
             const std::array<syntax::Symbol, 1> stops{framed};
+            const bool opened = context.reversed;
             const memory::Slice<syntax::Node*> children = parser.parse(0, stops, matched);
 
             const auto option = [&settings, setting](const std::string_view key) { return setting(settings, key); };
@@ -687,7 +695,7 @@ namespace render::primitives {
             const layout::Node::Color back = colored(option(box ? "colback" : "backgroundcolor"),
                                                      box ? layout::Node::Color{0.95f, 0.95f, 0.95f}
                                                          : layout::Node::Color{1.0f, 1.0f, 1.0f});
-            layout::Node* body = column(arena, children, span);
+            layout::Node* body = column(arena, children, span, opened);
 
             // The column as a row as tall as it is, which the frame goes round.
             const auto upright = [&arena](layout::Node* stack) {
@@ -877,7 +885,7 @@ namespace render::primitives {
             mouth.stream().inject(std::span{marks});
         });
 
-        parser.bind(start, [this, column, hung](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind(start, [this, &context, column, hung](syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             if (openings.empty()) return nullptr;
@@ -886,8 +894,9 @@ namespace render::primitives {
 
             syntax::Symbol matched = syntax::none;
             const std::array<syntax::Symbol, 1> stops{finish};
+            const bool opened = context.reversed;
             const memory::Slice<syntax::Node*> children = parser.parse(0, stops, matched);
-            return directive(arena, hung(arena, column(arena, children, width), position), origin);
+            return directive(arena, hung(arena, column(arena, children, width, opened), position), origin);
         });
 
         // TeX's box registers: `\setbox3=\hbox{...}` keeps a box, `\copy3`

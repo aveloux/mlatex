@@ -248,6 +248,10 @@ sees, newest work last within each group.
 
 ### Languages
 
+- **A box reads the way its text does.** A minipage, a `\parbox` and a
+  framed block begun in Arabic or Hebrew set their paragraphs right to left,
+  each line in the order it is drawn in, and a direction changed inside one
+  holds to its end; their lines were left in the order they were written.
 - **babel and polyglossia are packages of their own**, over a native
   `Languages` primitive. `\usepackage[english,russian]{babel}` sets the
   document in the last language named (or `main=`); `\selectlanguage`,
@@ -768,7 +772,6 @@ and a second run's `.aux` -- the engine's one pass does what that run is for.
 Languages: no face for Arabic ships with the engine, so it needs one
 on the system (Windows and the Mac have one; a Linux without Noto or Amiri
 does not); digits stay Western; French spacing before `:;!?`, Arabic's
-kashida and CJK line breaking are not done; a box's own lines — a minipage in
-Arabic — are not yet reordered. Coverage figures above count packages that
+kashida and CJK line breaking are not done. Coverage figures above count packages that
 load and whose common commands set text — not that every feature of each is
 drawn.

@@ -150,6 +150,17 @@ int main() {
         assert((result.clean && holds(result.text, "HeadsBody.")) && "a box \\newtcolorbox names, its title its argument");
         assert((holds(result.pdf, "1 0 0 rg")) && "in \\tcbset's colors");
     }
+    {
+        // A box in Arabic reads right to left, as the paragraphs around it
+        // do: its lines are drawn in the order an Arabic paragraph's are.
+        const std::string_view preamble = "\\usepackage{polyglossia}\\setmainlanguage{arabic}";
+        const Result paragraph = article(preamble, "واحد اثنان ثلاثة");
+        const Result minipage = article(preamble, "\\begin{minipage}{8cm}واحد اثنان ثلاثة\\end{minipage}");
+        const Result parbox = article(preamble, "\\parbox{8cm}{واحد اثنان ثلاثة}");
+        assert((paragraph.clean && minipage.clean && parbox.clean) && "boxes in Arabic");
+        assert((minipage.text == paragraph.text && parbox.text == paragraph.text) &&
+               "a minipage's and a parbox's lines drawn in the order an Arabic paragraph's are");
+    }
 
     return 0;
 }
