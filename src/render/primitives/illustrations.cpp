@@ -740,6 +740,11 @@ namespace render::primitives {
             bool circular = false;
             bool oval = false;
             bool centred = false;
+            // Its outline dashed as the path's is unless it says, drawn
+            // twice with `double`, and its corners rounded this far.
+            bool dashing = broken;
+            bool twice = false;
+            float corner = 0.0f;
             graphics::Color edge = graphics::black;
             std::optional<graphics::Color> inside;
             float inner = em / 3.0f;
@@ -776,6 +781,16 @@ namespace render::primitives {
                     circular = true;
                 } else if (option == "ellipse" || value == "ellipse") {
                     circular = oval = true;
+                } else if (std::ranges::contains(dashes, option)) {
+                    dashing = true;
+                } else if (option == "solid") {
+                    dashing = false;
+                } else if (option == "double") {
+                    twice = true;
+                } else if (key == "rounded corners") {
+                    corner = value.empty() ? 4.0f : distance(value, 1.0f, em).value_or(4.0f);
+                } else if (option == "sharp corners") {
+                    corner = 0.0f;
                 } else if (key == "inner sep") {
                     inner = distance(value, 1.0f, em).value_or(inner);
                 } else if (key == "minimum width") {
@@ -901,23 +916,42 @@ namespace render::primitives {
                 }
             }
 
-            // Its outline, filled and then drawn, under its text.
-            if (outlined || inside) {
+            // Its outline, filled and then drawn, under its text: round, or
+            // a box, its corners rounded when it asks -- and with `double`
+            // drawn again two points outside the first.
+            const auto shape = [&](const float reach, const float height) {
                 std::vector<graphics::Point2> outline;
                 if (circular) {
                     for (int index = 0; index < 48; ++index) {
                         const float angle = static_cast<float>(index) * std::numbers::pi_v<float> / 24.0f;
-                        outline.push_back({centre.x + half * std::cos(angle), centre.y + rise * std::sin(angle)});
+                        outline.push_back({centre.x + reach * std::cos(angle), centre.y + height * std::sin(angle)});
+                    }
+                } else if (corner > 0.0f) {
+                    // A quarter circle at each corner, from the bottom right
+                    // round against the clock.
+                    const float bend = std::min({corner, reach, height});
+                    const std::array<std::array<float, 3>, 4> corners{{
+                        {reach - bend, -height + bend, -90.0f}, {reach - bend, height - bend, 0.0f},
+                        {-reach + bend, height - bend, 90.0f}, {-reach + bend, -height + bend, 180.0f},
+                    }};
+                    for (const auto& [x, y, from] : corners) {
+                        for (int step = 0; step <= 6; ++step) {
+                            const float angle = (from + 15.0f * static_cast<float>(step)) * std::numbers::pi_v<float> / 180.0f;
+                            outline.push_back({centre.x + x + bend * std::cos(angle), centre.y + y + bend * std::sin(angle)});
+                        }
                     }
                 } else {
-                    outline = {{centre.x - half, centre.y - rise}, {centre.x + half, centre.y - rise},
-                               {centre.x + half, centre.y + rise}, {centre.x - half, centre.y + rise}};
+                    outline = {{centre.x - reach, centre.y - height}, {centre.x + reach, centre.y - height},
+                               {centre.x + reach, centre.y + height}, {centre.x - reach, centre.y + height}};
                 }
-                if (inside) canvas.fill(outline, *inside);
-                if (outlined) {
-                    for (std::size_t index = 0; index < outline.size(); ++index) {
-                        canvas.line(outline[index], outline[(index + 1) % outline.size()], edge, width, broken);
-                    }
+                return outline;
+            };
+            if (inside) canvas.fill(shape(half, rise), *inside);
+            for (int ring = 0; outlined && ring < (twice ? 2 : 1); ++ring) {
+                const float out = 2.0f * static_cast<float>(ring);
+                const std::vector<graphics::Point2> outline = shape(half + out, rise + out);
+                for (std::size_t index = 0; index < outline.size(); ++index) {
+                    canvas.line(outline[index], outline[(index + 1) % outline.size()], edge, width, dashing);
                 }
             }
             canvas.place(centre, setting, 0, 0, 0.0f);

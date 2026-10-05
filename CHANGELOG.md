@@ -465,6 +465,9 @@ sees, newest work last within each group.
   an encrypted one is refused.
 - **TikZ curves and fills**: `.. controls ..`, `to[bend left]`,
   `to[out=,in=,looseness=]`, `\fill`, `\filldraw`, `fill=` and `draw=`.
+- **A node's own outline**: `\node[draw, dashed]`, `dotted`, `double` -- a
+  second outline two points out -- and `rounded corners=3pt`, each corner
+  a quarter circle; a node's outline was solid and square whatever it said.
 - **TikZ nodes as flowcharts use them**: `draw`, `fill`, `circle`,
   `ellipse`, `rounded corners`, `inner sep`, `minimum width` and `height`,
   `text width` (the text set as a paragraph), `font`, `align`; positioning's

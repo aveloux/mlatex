@@ -294,6 +294,16 @@ int main() {
         assert((holds(result.text, "1") && count(result.pdf, " l S") > 150) && "drawn, the label set");
     }
     {
+        // A node's own outline: dashed, doubled, its corners rounded.
+        const Result result = article("\\usepackage{tikz}",
+                                      "\\begin{tikzpicture}\\node[draw, dashed] at (0,0) {a};"
+                                      "\\node[draw, double] at (2,0) {b};"
+                                      "\\node[draw, rounded corners=3pt] at (4,0) {c};\\end{tikzpicture}");
+        assert((result.clean && result.errors.empty() && holds(result.pdf, "] 0 d")) && "a node's outline dashed");
+        assert((count(result.pdf, " l S") == 4 + 8 + 28) &&
+               "a box of four sides, one drawn twice, and one of four sides and four quarter circles");
+    }
+    {
         // A coordinate's parts may be formulas, and a point may be shifted.
         const Result result = article("\\usepackage{tikz}",
                                       "\\begin{tikzpicture}\\coordinate (a) at (0,0);\\coordinate (b) at (2,0);"
