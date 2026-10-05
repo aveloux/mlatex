@@ -262,6 +262,12 @@ sees, newest work last within each group.
   ends at before `;` `!` `?` and `»` and after `«` -- half a word space --
   and a word space before `:`, taking in the space typed there, and spaces a
   stop as any other mark; a colon in a time or an address is left be.
+- **Chinese and Japanese break between characters**: a line may end between
+  any two, written without spaces as they are, at a glue of no width that
+  stretches a little when the line is justified (xeCJK's `\CJKglue`) --
+  but before no closing mark, small kana or long vowel and after no opening
+  bracket, the kinsoku rules; a Latin run among them is kept whole. A line
+  of them used to run on to the next space.
 - **A box reads the way its text does.** A minipage, a `\parbox` and a
   framed block begun in Arabic or Hebrew set their paragraphs right to left,
   each line in the order it is drawn in, and a direction changed inside one
@@ -789,6 +795,6 @@ labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
-Languages: Arabic's kashida and CJK line breaking are not done. Coverage figures above count packages that
+Languages: Arabic's kashida is not done. Coverage figures above count packages that
 load and whose common commands set text — not that every feature of each is
 drawn.

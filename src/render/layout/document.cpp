@@ -456,6 +456,75 @@ namespace render::layout {
                 written = arena.copy(mapped);
             }
 
+            // Chinese and Japanese are written without spaces, and a line
+            // may end between any two of their characters -- before none of
+            // the marks that close a phrase, a small kana or the long vowel,
+            // and after none of those that open one: the kinsoku rules. Each
+            // such character is set on its own, a run of anything else in the
+            // word kept whole, and a glue of no width stands between two
+            // where a line may end, stretching a little when it is justified,
+            // as xeCJK's \CJKglue does.
+            const auto decode = [](const std::string_view from, const std::size_t at) -> std::pair<std::uint32_t, std::size_t> {
+                const auto* data = reinterpret_cast<const std::uint8_t*>(from.data() + at);
+                const std::size_t rest = from.size() - at;
+                if ((data[0] & 0xE0) == 0xC0 && rest >= 2) return {((data[0] & 0x1Fu) << 6) | (data[1] & 0x3Fu), 2};
+                if ((data[0] & 0xF0) == 0xE0 && rest >= 3) {
+                    return {((data[0] & 0x0Fu) << 12) | ((data[1] & 0x3Fu) << 6) | (data[2] & 0x3Fu), 3};
+                }
+                if ((data[0] & 0xF8) == 0xF0 && rest >= 4) {
+                    return {((data[0] & 0x07u) << 18) | ((data[1] & 0x3Fu) << 12) | ((data[2] & 0x3Fu) << 6) |
+                                (data[3] & 0x3Fu), 4};
+                }
+                return {data[0], 1};
+            };
+            const auto ideographic = [](const std::uint32_t code) {
+                return (code >= 0x3000 && code <= 0x30FF) || (code >= 0x3100 && code <= 0x312F) ||
+                       (code >= 0x31F0 && code <= 0x31FF) || (code >= 0x3400 && code <= 0x4DBF) ||
+                       (code >= 0x4E00 && code <= 0x9FFF) || (code >= 0xF900 && code <= 0xFAFF) ||
+                       (code >= 0xFF00 && code <= 0xFFEF) || (code >= 0x20000 && code <= 0x2FA1F);
+            };
+            static constexpr std::u32string_view closers = U"、。，．・：；？！ー」』）】〉》〕〗〙〛〟｝］"
+                                                           U"ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐゠〜";
+            static constexpr std::u32string_view openers = U"「『（【〈《〔〖〘〚〝｛［";
+            bool mixed = false;
+            for (std::size_t at = 0; !mixed && at < written.size();) {
+                const auto [code, size] = decode(written, at);
+                mixed = ideographic(code);
+                at += size;
+            }
+            if (mixed) {
+                std::uint32_t last = 0;   // the character before, 0 at the word's start
+                for (std::size_t at = 0; at < written.size();) {
+                    const auto [code, size] = decode(written, at);
+                    std::size_t end = at + size;
+                    // A run of anything else -- Latin in a Japanese sentence
+                    // -- whole, broken where its own patterns break it.
+                    if (!ideographic(code)) {
+                        while (end < written.size() && !ideographic(decode(written, end).first)) {
+                            end += decode(written, end).second;
+                        }
+                    }
+                    if (last != 0 && (ideographic(code) || ideographic(last)) &&
+                        closers.find(static_cast<char32_t>(code)) == std::u32string_view::npos &&
+                        openers.find(static_cast<char32_t>(last)) == std::u32string_view::npos) {
+                        auto* glue = arena.compose<Node>(Node::Type::Glue);
+                        glue->glue({.width = 0.0f, .stretch = font.size() * 0.1f});
+                        into.push_back(glue);
+                    }
+                    const memory::Slice<Node*> part = piece(written.substr(at, end - at), !ideographic(code));
+                    into.insert(into.end(), part.begin(), part.end());
+                    std::size_t step = at;
+                    while (step < end) {
+                        const auto [inner, length] = decode(written, step);
+                        last = inner;
+                        step += length;
+                    }
+                    at = end;
+                }
+                factor = 1000;
+                continue;
+            }
+
             const memory::Slice<Node*> word = piece(written, true);
             into.insert(into.end(), word.begin(), word.end());
             // French spaces a sentence's stop as any other, as \frenchspacing does.

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <filesystem>
 #include <iterator>
+#include <string>
 #include <vector>
 
 // The document: material in the order it was written, gathered into
@@ -219,6 +220,20 @@ int main() {
         const memory::Slice<layout::Node*> english = document.set("word; end", font, true);
         assert((std::ranges::none_of(english, [](const layout::Node* node) { return node->type == layout::Node::Type::Kern; })) &&
                "and none in English");
+
+        // Chinese and Japanese: a line may end between any two characters,
+        // but before no mark that closes a phrase and after none that opens one.
+        const auto shape = [](const memory::Slice<layout::Node*> nodes) {
+            std::string kinds;
+            for (const layout::Node* node : nodes) {
+                kinds += node->type == layout::Node::Type::Glyph ? 'g' : node->type == layout::Node::Type::Glue ? '_' : '?';
+            }
+            return kinds;
+        };
+        assert((shape(document.set("日本語", font, true)) == "g_g_g") && "between any two characters");
+        assert((shape(document.set("語。", font, true)) == "gg") && "never before a stop");
+        assert((shape(document.set("「日」", font, true)) == "ggg") && "nor after an opening bracket, nor before a closing one");
+        assert((shape(document.set("日abc", font, true)) == "g_ggg") && "a Latin run in it kept whole");
     }
 
     return 0;
