@@ -11,7 +11,11 @@
 \@define\@tabuspread spread#1#2{\@define\@tabuend{\end{tabularx}}\begin{tabularx}{\linewidth}{#2}}
 \@define\@tabunatural#1{\@define\@tabuend{\end{tabular}}\begin{tabular}{#1}}
 \@define\endtabu{\@tabuend}
-\@define\longtabu{\@ifnextchar t{\@tabuto}{\@ifnextchar s{\@tabuspread}{\@tabunatural}}}
+% longtabu: the same over pages, an xltabular or a longtable.
+\@define\longtabu{\@ifnextchar t{\@longtabuto}{\@ifnextchar s{\@longtabuspread}{\@longtabunatural}}}
+\@define\@longtabuto to#1#2{\@define\@tabuend{\end{xltabular}}\begin{xltabular}{#1}{#2}}
+\@define\@longtabuspread spread#1#2{\@define\@tabuend{\end{xltabular}}\begin{xltabular}{\linewidth}{#2}}
+\@define\@longtabunatural#1{\@define\@tabuend{\end{longtable}}\begin{longtable}{#1}}
 \@define\endlongtabu{\@tabuend}
 \@define\rowfont[2][]{}
 \@define\tabulinesep{}

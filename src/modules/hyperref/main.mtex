@@ -9,11 +9,11 @@
 \@setvariable{links}{true}
 
 \@define\href[2]{\@link{#1}{#2}}
-\@define\url[1]{\@link{#1}{\texttt{#1}}}
+\@define\url[1]{\@link{#1}{\texttt{\@breakable{#1}}}}
 \@define\hyperlink[2]{\@linkto{#1}{#2}}
 \@define\hypertarget[2]{\label{#1}#2}
 \@define\hyperref[2][]{\@linkto{#1}{#2}}
-\@define\nolinkurl[1]{\texttt{#1}}
+\@define\nolinkurl[1]{\texttt{\@breakable{#1}}}
 \@define\phantomsection{}
 \@define\texorpdfstring[2]{#1}
 \@define\pdfbookmark[3][]{}

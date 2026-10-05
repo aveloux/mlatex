@@ -114,5 +114,48 @@ int main() {
         assert((!result.clean && holds(result.errors, "\\tabular outside a tabular block")) &&
                "a table's body outside one");
     }
+    {
+        // A long table over pages: its rows all set, a page ending between
+        // two of them; its head atop every page, its first head on the
+        // first; its foot under the last row of each page but the last.
+        std::string rows;
+        for (int index = 1; index <= 90; ++index) {
+            rows += "r" + std::to_string(index) + " & v" + std::to_string(index) + " \\\\\n";
+        }
+        const Result result = article("\\usepackage{longtable}",
+                                      "Before.\n\n\\begin{longtable}{lr}\\caption{Prices}\\\\ First & Head \\\\ "
+                                      "\\endfirsthead Item & Value \\\\ \\endhead Continued \\\\ \\endfoot "
+                                      "Closing \\\\ \\endlastfoot " + rows + "\\end{longtable}After.");
+        assert((result.clean && result.pages.size() >= 2) && "a long table runs over pages");
+        assert((holds(result.text, "Table1:Prices") && !holds(result.text, "Figure")) && "its caption a table's");
+        for (int index = 1; index <= 90; ++index) {
+            const std::string cell = "r" + std::to_string(index) + "v" + std::to_string(index);
+            assert((holds(result.text, cell)) && "every row set, none lost past a page's foot");
+        }
+        assert((count(result.text, "FirstHead") == 1) && "the first head once, on the first page");
+        assert((count(result.text, "ItemValue") == result.pages.size() - 1) && "the head atop every other");
+        assert((count(result.text, "Continued") == result.pages.size() - 1) && "the foot closing each but the last");
+        assert((count(result.text, "Closing") == 1 && holds(result.pages.back(), "Closing")) &&
+               "the last foot on the last page");
+        assert((!holds(result.pages.front(), "ItemValue")) && "and not the head the first page has its own for");
+    }
+    {
+        // A plain tabular is one box, as LaTeX's is.
+        const Result result = article("", "\\begin{tabular}{l}a \\\\ b \\\\ \\end{tabular}");
+        assert((result.clean && result.pages.size() == 1 && holds(result.text, "ab")) && "a tabular set whole");
+    }
+    {
+        const Result result = article("\\usepackage{multirow}",
+                                      "\\begin{tabular}{|c|c|}\\multirow{2}{*}{Both} & a \\\\ & b \\\\ "
+                                      "\\multirow[t]{2}{*}{Top} & c \\\\ & d \\\\ \\end{tabular} and "
+                                      "\\multirow{2}{*}{plain}.");
+        assert((result.clean && holds(result.text, "Both") && holds(result.text, "Top") &&
+                holds(result.text, "plain.")) && "\\multirow in a cell, and its text alone outside one");
+    }
+    {
+        const Result result = article("\\usepackage{tabu}", "\\begin{tabu} to \\linewidth {X[l] X[c] X[r]}"
+                                                            "a & b & c \\\\ \\end{tabu}");
+        assert((result.clean && holds(result.text, "abc")) && "tabu's X columns, their sides in brackets");
+    }
     return 0;
 }

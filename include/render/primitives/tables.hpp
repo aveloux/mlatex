@@ -104,7 +104,10 @@ namespace render::primitives {
         struct Opening {
             std::vector<Column> columns{};   ///< Its preamble.
             std::string width{};             ///< The width it is stretched to, as written, or empty.
-            char position{'c'};              ///< Where its baseline falls: t, c or b, as `[t]` says.
+            char position{'c'};              ///< Where its baseline falls: t, c or b, as `[t]` says; for a
+                                             ///< long table, the side it stands at: l, c or r.
+            bool breakable{false};           ///< True for longtable and its kind, which a page may end between
+                                             ///< any two rows of.
         };
 
         /// Most rows one table may have, so a malformed table is reported

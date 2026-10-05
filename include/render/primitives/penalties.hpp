@@ -25,6 +25,7 @@ namespace render::primitives {
     /// \pagebreak        % and end the page here
     /// \newpage          % LaTeX's name for the same thing
     /// \clearpage        % and TeX's, for anyone who wants it
+    /// \@breakable{https://example.com/a/b}   % a line may end after any /
     /// @endcode
     ///
     /// Nothing here can fail, so the module keeps no traceback list: a number

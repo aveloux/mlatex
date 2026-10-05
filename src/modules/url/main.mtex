@@ -2,9 +2,10 @@
 %
 % Read as an ordinary argument, not character by character as LaTeX's \url
 % reads one, so an address holding a % or a # has to escape it: \% and \#.
-% Every other character an address uses sets as itself.
+% Every other character an address uses sets as itself, and a line may end
+% after a slash, a stop and the rest url.sty breaks after.
 
-\@define\url[1]{\texttt{#1}}
+\@define\url[1]{\texttt{\@breakable{#1}}}
 
 % breakurl's spellings of the same: an address, and one shown as other text.
 \@define\burl[1]{\url{#1}}

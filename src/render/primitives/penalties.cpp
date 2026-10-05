@@ -4,10 +4,12 @@
 #include "syntax/number.hpp"
 #include "logger.hpp"
 
+#include <algorithm>
 #include <array>
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace render::primitives {
 
@@ -98,6 +100,43 @@ namespace render::primitives {
                 return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
             });
         }
+
+        // `\\@breakable{text}`: text a line may end in after any of the
+        // characters url.sty breaks an address after -- `/`, `.`, `-`, `_`,
+        // `?`, `&`, `=`, `#` and the rest -- the last of a run of them, so
+        // `https://` stays whole. What \\url and \\path set, so an address
+        // in a narrow column turns over rather than running out of it.
+        parser.bind("\\@breakable", [](syntax::Parser& parser) -> syntax::Node* {
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
+            const memory::Location origin = mouth.lookahead().location;
+
+            // The text as written, `\\#` and `\\_` their characters.
+            std::string text;
+            for (const syntax::Token& token : mouth.argument({}, 0)) {
+                text += token.category == syntax::Catcodes::Category::Escape && token.text.size() == 2
+                            ? token.text.substr(1) : token.text;
+            }
+
+            constexpr std::string_view breaks = "./-_?&=#!|;:,+@>])\\'";
+            std::vector<syntax::Node*> parts;
+            std::size_t begun = 0;
+            for (std::size_t at = 0; at < text.size(); ++at) {
+                if (!breaks.contains(text[at]) || (at + 1 < text.size() && breaks.contains(text[at + 1]))) continue;
+                if (at + 1 == text.size()) break;
+                parts.push_back(arena.compose<syntax::Node>(syntax::Node::Type::Text,
+                                                            arena.copy(text.substr(begun, at + 1 - begun)), origin));
+                auto* chance = arena.compose<layout::Node>();
+                chance->penalty({.value = 100});
+                parts.push_back(directive(arena, chance, origin));
+                begun = at + 1;
+            }
+            parts.push_back(arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text.substr(begun)), origin));
+
+            const memory::Slice<syntax::Node*> nodes = arena.allocate<syntax::Node*>(parts.size());
+            std::ranges::copy(parts, nodes.begin());
+            return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, nodes);
+        });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound penalty primitives");
     }

@@ -153,6 +153,10 @@ int main() {
                "a language chosen breaks the words after it by its patterns, capitals folded first");
         assert((flagged(document.set("дом", font, true)) == 0) &&
                "no nearer a word's ends than the language allows");
+        assert((flagged(document.set("(ЭЛЕКТРИФИКАЦИЯ).", font, true)) >= 3) &&
+               "a word's brackets and stop stand aside from it");
+        assert((flagged(document.set("дом/электрификация", font, true)) == 0) &&
+               "only the first run of letters is a word, as TeX's is: a path breaks nowhere");
 
         const memory::Slice<layout::Node*> opened = document.set("  два слова", font, true);
         assert((opened[0]->type == layout::Node::Type::Glyph &&

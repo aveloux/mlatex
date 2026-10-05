@@ -92,9 +92,23 @@ namespace render::primitives {
                 case 'p': case 'm': case 'b':
                     push(Tables::Column{.align = 'l', .width = std::string(enclosed(text, at))});
                     break;
-                case 'X':
-                    push(Tables::Column{.align = 'l', .stretch = true});
+                // tabularx's X, and tabu's with its options, `X[c]`, `X[2,r]`:
+                // the side its lines stand at among them, its share of the
+                // width let go.
+                case 'X': {
+                    char side = 'l';
+                    if (at < text.size() && text[at] == '[') {
+                        const std::size_t end = std::min(text.find(']', at), text.size());
+                        for (const char option : text.substr(at + 1, end - at - 1)) {
+                            if (option == 'c' || option == 'r' || option == 'C' || option == 'R') {
+                                side = static_cast<char>(option | 0x20);
+                            }
+                        }
+                        at = std::min(end + 1, text.size());
+                    }
+                    push(Tables::Column{.align = side, .stretch = true});
                     break;
+                }
                 case '|':
                     ++rules;
                     break;
@@ -333,21 +347,24 @@ namespace render::primitives {
         struct Kind {
             std::string_view name;   ///< The block.
             bool sized;              ///< True when a width comes before the preamble.
+            bool breakable;          ///< True when a page may end between its rows.
         };
         // nicematrix's and tabularray's tables are read as the tabular they
         // write out, their own keys aside.
         static constexpr std::array<Kind, 14> kinds{{
-            {"tabular", false}, {"tabular*", true}, {"tabularx", true}, {"longtable", false}, {"supertabular", false},
-            {"tabulary", true}, {"xtabular", false}, {"longtable*", false}, {"NiceTabular", false},
-            {"NiceTabular*", true}, {"NiceTabularX", true}, {"tblr", false}, {"longtblr", false},
-            {"xltabular", true},
+            {"tabular", false, false}, {"tabular*", true, false}, {"tabularx", true, false},
+            {"longtable", false, true}, {"supertabular", false, true}, {"tabulary", true, false},
+            {"xtabular", false, true}, {"longtable*", false, true}, {"NiceTabular", false, false},
+            {"NiceTabular*", true, false}, {"NiceTabularX", true, false}, {"tblr", false, false},
+            {"longtblr", false, true}, {"xltabular", true, true},
         }};
-        for (const auto& [name, sized] : kinds) {
+        for (const auto& [name, sized, breakable] : kinds) {
             const bool keyed = name.ends_with("tblr");
             context.blocks.watch(
                 name,
-                [this, sized, keyed](syntax::Mouth& mouth) {
+                [this, &context, sized, keyed, breakable](syntax::Mouth& mouth) {
                     Opening opening;
+                    opening.breakable = breakable;
                     if (sized) opening.width = syntax::Argument::text(mouth);
                     // A vertical position, `[t]`: which of its rows the table
                     // stands on, when it is set in a line or in another's cell.
@@ -376,8 +393,20 @@ namespace render::primitives {
                         columns = std::move(inside);
                     }
                     opening.columns = preamble(columns, &customs);
+
+                    // A long table's caption is longtable's: a table's, across
+                    // every column in a box of no width, so it widens none of
+                    // them, with room under it; `\\caption*` its text alone.
+                    std::string caption;
+                    if (breakable) {
+                        const std::string across = "\\multicolumn{" + std::to_string(opening.columns.size()) + "}{c}";
+                        caption = "\\@define\\caption{\\@ifstar\\@longplain\\@longcaption}"
+                                  "\\@define\\@longcaption[2][]{" + across +
+                                  "{\\makebox[0pt][c]{\\captionof{table}[#1]{#2}}\\rule[-1em]{0pt}{1em}}}"
+                                  "\\@define\\@longplain#1{" + across + "{\\makebox[0pt][c]{#1}\\rule[-1em]{0pt}{1em}}}";
+                    }
                     openings.push_back(std::move(opening));
-                    mouth.ingest("\\tabular ");
+                    mouth.ingest(context.arena.copy(caption + "\\tabular "));
                 },
                 [](syntax::Mouth& mouth) { mouth.ingest("\\endtabular "); });
         }
@@ -421,7 +450,48 @@ namespace render::primitives {
             made.body = std::move(body);
         });
 
-        parser.bind("\\tabular", [this, &context](syntax::Parser& parser) -> syntax::Node* {
+        // multirow's `\\multirow[place]{rows}[struts]{width}[move]{text}`:
+        // in a table's cell, text set down the rows it spans, in their middle
+        // or, for `[t]` and `[b]`, level with the first or the last, as
+        // \\tabular reads it; anywhere else, its text where it stands. The
+        // width, the struts and the move are read and let go.
+        struct Span {
+            std::size_t rows{1};                       ///< How many rows it spans.
+            char place{'c'};                           ///< t, c or b.
+            memory::Slice<syntax::Node*> nodes{};      ///< Its text.
+        };
+        const auto spanned = [&context](syntax::Parser& parser) {
+            syntax::Mouth& mouth = parser.mouth;
+            const syntax::Mouth::Parameter optional{.optional = true};
+            Span made;
+            for (const syntax::Token& token : mouth.argument(optional, 0)) {
+                if (!token.text.empty()) made.place = token.text.front();
+            }
+            const std::string count = syntax::Argument::text(mouth);
+            std::from_chars(count.data(), count.data() + count.size(), made.rows);
+            static_cast<void>(mouth.argument(optional, 0));
+            static_cast<void>(syntax::Argument::text(mouth));
+            static_cast<void>(mouth.argument(optional, 0));
+
+            syntax::Token open = mouth.read();
+            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            if (open.is(syntax::Catcodes::Category::Group, '{')) {
+                mouth.push(syntax::semantics::Scope::Type::Group);
+                made.nodes = parser.parse('}');
+                mouth.pop(syntax::semantics::Scope::Type::Group);
+                stamp(made.nodes, context);
+            } else if (!open.empty()) {
+                mouth.stream().inject(std::span{&open, 1});
+            }
+            return made;
+        };
+        parser.bind("\\multirow", [spanned](syntax::Parser& parser) -> syntax::Node* {
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const Span made = spanned(parser);
+            return parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, made.nodes);
+        });
+
+        parser.bind("\\tabular", [this, &context, spanned](syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -452,9 +522,15 @@ namespace render::primitives {
             const syntax::Symbol cellcolor = lexicon.intern("\\cellcolor");
             const syntax::Symbol columncolor = lexicon.intern("\\columncolor");
             const syntax::Symbol kill = lexicon.intern("\\kill");
-            const std::array<syntax::Symbol, 16> stops{
+            const syntax::Symbol firsthead = lexicon.intern("\\endfirsthead");
+            const syntax::Symbol head = lexicon.intern("\\endhead");
+            const syntax::Symbol foot = lexicon.intern("\\endfoot");
+            const syntax::Symbol lastfoot = lexicon.intern("\\endlastfoot");
+            const syntax::Symbol multirow = lexicon.intern("\\multirow");
+            const std::array<syntax::Symbol, 21> stops{
                 ampersand, newline, alternative, end, hline, toprule, midrule, bottomrule,
                 cmidrule, cline, addlinespace, multicolumn, rowcolor, cellcolor, columncolor, kill,
+                firsthead, head, foot, lastfoot, multirow,
             };
 
             const typography::Font* body = context.selection.text();
@@ -495,7 +571,13 @@ namespace render::primitives {
                 std::optional<Column> format{};        ///< Its own column, from \\multicolumn.
                 std::optional<layout::Node::Color> fill{};   ///< Painted behind it: `\\cellcolor`.
                 bool begun{false};                     ///< Its column's `>{...}` read already.
+                std::size_t rows{1};                   ///< How many rows it spans, from \\multirow.
+                char place{'c'};                       ///< Where in them it stands: t, c or b.
             };
+            /// Which part of a long table a row is in: its body, or the rows
+            /// longtable sets above it on its first page and on the others,
+            /// and below it on every page but the last and on the last.
+            enum class Part : std::uint8_t { Body, First, Head, Foot, Last };
             /// One row as read, with the rules above it.
             struct Line {
                 std::vector<Cell> cells{};       ///< Its cells, left to right.
@@ -503,11 +585,16 @@ namespace render::primitives {
                 float gap{0.0f};                 ///< Extra space below it, from `\\[length]`.
                 std::optional<layout::Node::Color> fill{};   ///< Painted behind it: `\\rowcolor`.
                 bool hidden{false};              ///< Ended by `\\kill`: measured, and not drawn.
+                Part part{Part::Body};           ///< The part of the table it is in.
             };
 
             std::vector<Line> lines;
             Line current;
             Cell cell;
+            // The rows up to the last of longtable's marks, which said what
+            // part they are, and which parts were given at all.
+            std::size_t marked = 0;
+            std::array<bool, 5> given{};
             std::vector<Stroke> trailing;
             bool closed = false;
 
@@ -659,6 +746,14 @@ namespace render::primitives {
                     continue;
                 }
 
+                if (matched == multirow) {
+                    const Span made = spanned(parser);
+                    cell.nodes.insert(cell.nodes.end(), made.nodes.begin(), made.nodes.end());
+                    cell.rows = std::max<std::size_t>(made.rows, 1);
+                    cell.place = made.place;
+                    continue;
+                }
+
                 if (matched == rowcolor) {
                     current.fill = paint();
                     continue;
@@ -692,6 +787,28 @@ namespace render::primitives {
                     }
                     lines.push_back(std::move(current));
                     current = Line{};
+                    continue;
+                }
+
+                // longtable's marks: the rows since the last mark are its first
+                // head, its head, its foot or its last foot. A row the mark
+                // ends without a `\\\\` is one of them; rules alone before it,
+                // `\\hline\\endfoot`, close the part.
+                if (matched == firsthead || matched == head || matched == foot || matched == lastfoot) {
+                    if (current.cells.empty() && cell.span == 1 && blank(cell.nodes)) {
+                        current.hidden = true;
+                    } else {
+                        current.cells.push_back(std::move(cell));
+                    }
+                    cell = Cell{};
+                    lines.push_back(std::move(current));
+                    current = Line{};
+                    const Part part = matched == firsthead ? Part::First
+                                      : matched == head    ? Part::Head
+                                      : matched == foot    ? Part::Foot
+                                                           : Part::Last;
+                    for (; marked < lines.size(); ++marked) lines[marked].part = part;
+                    given[static_cast<std::size_t>(part)] = true;
                     continue;
                 }
 
@@ -735,6 +852,8 @@ namespace render::primitives {
                 const Column* format{nullptr};             ///< How it sits in them.
                 layout::Node* box{nullptr};                ///< Built in pass two.
                 std::optional<layout::Node::Color> fill{}; ///< Painted behind it.
+                std::size_t rows{1};                       ///< How many rows it spans.
+                char place{'c'};                           ///< Where in them it stands.
             };
             std::vector<std::vector<Piece>> pieces(lines.size());
             std::vector<float> widths(count, 0.0f);
@@ -771,7 +890,8 @@ namespace render::primitives {
                     const std::size_t span = std::min(item.span, count - at);
                     const Column* format = item.format ? &*item.format : &columns[at];
                     pieces[line].push_back(
-                        Piece{.material = material, .first = at, .span = span, .format = format, .fill = item.fill});
+                        Piece{.material = material, .first = at, .span = span, .format = format, .fill = item.fill,
+                              .rows = item.rows, .place = item.place});
 
                     if (span == 1 && format->width.empty() && !format->stretch) {
                         float natural = 0.0f;
@@ -827,8 +947,12 @@ namespace render::primitives {
                         const float measure = piece.span == 1 ? widths[piece.first] : room(piece.first, piece.span);
 
                         // Set as a `\\centering` or `\\raggedright` in the cell
-                        // says -- the one a `>{...}` put there, most often.
-                        layout::Node::Justification setting = layout::Node::Justification::Full;
+                        // says -- the one a `>{...}` put there, most often --
+                        // or tabu's `X[c]` and `X[r]`.
+                        const char side = piece.format->align;
+                        layout::Node::Justification setting = side == 'c'   ? layout::Node::Justification::Center
+                                                              : side == 'r' ? layout::Node::Justification::Right
+                                                                            : layout::Node::Justification::Full;
                         for (const layout::Node* node : piece.material) {
                             if (node && node->type == layout::Node::Type::Directive &&
                                 node->directive().command == layout::Node::Directive::Command::Align) {
@@ -908,20 +1032,55 @@ namespace render::primitives {
                 if (rule.below > 0.0f) column.push_back(kern(rule.below));
             };
 
-            std::vector<layout::Node*> stack;
+            // Each row, with the rules above it and the room below it, in the
+            // part of the table it was written in.
+            std::array<std::vector<layout::Node*>, 5> stacks;
+
+            // How tall and deep each row stands: its tallest cell, and never
+            // less than a strut -- a cell over several rows aside, which
+            // stands in the rows it spans rather than stretching its first.
+            std::vector<float> heights(lines.size(), strut * 0.7f);
+            std::vector<float> depths(lines.size(), strut * 0.3f);
             for (std::size_t line = 0; line < lines.size(); ++line) {
+                for (const Piece& piece : pieces[line]) {
+                    if (!piece.box || piece.rows > 1) continue;
+                    heights[line] = std::max(heights[line], piece.box->box().height);
+                    depths[line] = std::max(depths[line], piece.box->box().depth);
+                }
+            }
+
+            // A cell over several rows, moved down to stand in their middle,
+            // or with its foot on the last one's for `[b]`: as far below its
+            // own row's baseline as the rows it spans, and the rules and the
+            // room between them, put it.
+            for (std::size_t line = 0; line < lines.size(); ++line) {
+                for (Piece& piece : pieces[line]) {
+                    if (!piece.box || piece.rows < 2 || piece.place == 't') continue;
+                    const std::size_t last = std::min(line + piece.rows, lines.size()) - 1;
+                    float span = 0.0f;   // from the top of its row to the foot of the last
+                    for (std::size_t below = line; below <= last; ++below) {
+                        if (below > line) {
+                            for (const Stroke& rule : lines[below].strokes) {
+                                span += rule.above + rule.thickness + rule.below;
+                            }
+                        }
+                        if (!lines[below].hidden) span += heights[below] + depths[below];
+                        if (below < last) span += lines[below].gap;
+                    }
+                    layout::Node::Box shape = piece.box->box();
+                    shape.shift += piece.place == 'b'
+                                       ? span - shape.depth - heights[line]
+                                       : (span - shape.height - shape.depth) * 0.5f + shape.height - heights[line];
+                    piece.box->box(shape);
+                }
+            }
+
+            for (std::size_t line = 0; line < lines.size(); ++line) {
+                std::vector<layout::Node*>& stack = stacks[static_cast<std::size_t>(lines[line].part)];
                 for (const Stroke& rule : lines[line].strokes) stroke(rule, stack);
                 if (lines[line].hidden) continue;
-
-                // How tall and deep the row stands: its tallest cell, and never
-                // less than a strut.
-                float height = strut * 0.7f;
-                float depth = strut * 0.3f;
-                for (const Piece& piece : pieces[line]) {
-                    if (!piece.box) continue;
-                    height = std::max(height, piece.box->box().height);
-                    depth = std::max(depth, piece.box->box().depth);
-                }
+                const float height = heights[line];
+                const float depth = depths[line];
 
                 std::vector<layout::Node*> parts;
 
@@ -990,12 +1149,90 @@ namespace render::primitives {
 
                 if (lines[line].gap > 0.0f) stack.push_back(kern(lines[line].gap));
             }
-            for (const Stroke& rule : trailing) stroke(rule, stack);
+            std::vector<layout::Node*>& rows = stacks[static_cast<std::size_t>(Part::Body)];
+            for (const Stroke& rule : trailing) stroke(rule, rows);
 
-            if (stack.empty()) return directive(arena, nullptr, origin, true);
+            // The rows above the body on the first page and below it on the
+            // last: longtable's \\endfirsthead and \\endlastfoot where they
+            // were given, and its \\endhead and \\endfoot where they were not.
+            const auto part = [&](const Part chosen, const Part otherwise) -> const std::vector<layout::Node*>& {
+                return stacks[static_cast<std::size_t>(given[static_cast<std::size_t>(chosen)] ? chosen : otherwise)];
+            };
+            const std::vector<layout::Node*>& opener = part(Part::First, Part::Head);
+            const std::vector<layout::Node*>& closer = part(Part::Last, Part::Foot);
 
             Logger::log(Logger::Type::Layout, Logger::Level::Debug,
                         "Tabulated {} rows over {} columns", lines.size(), count);
+
+            // A long table is set in the column a row at a time, so a page
+            // may end between any two: across the line, centred or at the
+            // side its `[l]` or `[r]` asks for, \\LTpre above it and \\LTpost
+            // below. Between its first head and its last foot a Repeat gives
+            // the pager the rows each page it breaks onto opens with, and
+            // each page it breaks off closes with.
+            if (opening.breakable) {
+                const float measure = breadth(context);
+                const auto set = [&](layout::Node* each) {
+                    if (each->type != layout::Node::Type::Box) return each;
+                    const memory::Slice<layout::Node*> line = arena.allocate<layout::Node*>(3);
+                    std::size_t filled = 0;
+                    const auto fill = [&arena] {
+                        auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                        glue->glue({.stretch = 1.0f, .expand = layout::Node::Order::Fil});
+                        return glue;
+                    };
+                    if (opening.position != 'l') line[filled++] = fill();
+                    line[filled++] = each;
+                    if (opening.position != 'r') line[filled++] = fill();
+                    return layout::Line::horizontal(arena, memory::Slice{line.data, filled}, measure);
+                };
+                const auto repeated = [&](const Part chosen) -> layout::Node* {
+                    const std::vector<layout::Node*>& chunk = stacks[static_cast<std::size_t>(chosen)];
+                    if (chunk.empty()) return nullptr;
+                    const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(chunk.size());
+                    for (std::size_t at = 0; at < chunk.size(); ++at) list[at] = set(chunk[at]);
+                    return layout::Line::vertical(arena, list, 0.0f);
+                };
+
+                std::vector<syntax::Node*> out;
+                const auto skip = [&] {
+                    auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                    glue->glue({.width = size * 1.2f, .stretch = size * 0.4f, .shrink = size * 0.4f});
+                    out.push_back(directive(arena, glue, origin, true));
+                };
+                const auto mark = [&](layout::Node* above, layout::Node* below) {
+                    auto* order = arena.compose<layout::Node>(layout::Node::Type::Directive);
+                    order->directive({.command = layout::Node::Directive::Command::Repeat, .head = above, .foot = below});
+                    out.push_back(directive(arena, order, origin));
+                };
+                // Each row stands where the one above leaves it, with no
+                // space between them for their baselines: a rule of nothing
+                // before each, as TeX's \\nointerlineskip, stops the space.
+                const auto put = [&](layout::Node* each) {
+                    auto* stop = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                    stop->rule({});
+                    out.push_back(directive(arena, stop, origin, true));
+                    out.push_back(directive(arena, set(each), origin, true));
+                };
+                skip();
+                for (layout::Node* each : opener) put(each);
+                mark(repeated(Part::Head), repeated(Part::Foot));
+                for (layout::Node* each : rows) put(each);
+                mark(nullptr, nullptr);
+                for (layout::Node* each : closer) put(each);
+                skip();
+
+                const memory::Slice<syntax::Node*> nodes = arena.allocate<syntax::Node*>(out.size());
+                std::ranges::copy(out, nodes.begin());
+                return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, nodes);
+            }
+
+            // Any other is one box: its first head, its body and its last
+            // foot, as a long table set whole is too.
+            std::vector<layout::Node*> stack(opener);
+            stack.insert(stack.end(), rows.begin(), rows.end());
+            stack.insert(stack.end(), closer.begin(), closer.end());
+            if (stack.empty()) return directive(arena, nullptr, origin, true);
 
             const memory::Slice<layout::Node*> down = arena.allocate<layout::Node*>(stack.size());
             std::ranges::copy(stack, down.begin());

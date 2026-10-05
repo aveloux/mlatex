@@ -569,6 +569,13 @@ namespace render::layout {
             return filling.empty() && space(block) && (!full.empty() || (above.empty() && !pages.empty()));
         };
 
+        // A long table being set: the rows each column it runs on into opens
+        // with, the rows each column it breaks out of closes with, and how
+        // many of its rows the column being filled holds.
+        Node* header = nullptr;
+        Node* footer = nullptr;
+        std::size_t rows = 0;
+
         std::vector<const Node*> added;
         for (std::size_t index = 0; index < total; ++index) {
             Node* block = column[index];
@@ -576,6 +583,14 @@ namespace render::layout {
 
             if (block->type == Node::Type::Directive) {
                 const Node::Directive& order = block->directive();
+
+                // A long table's rows begin, or end.
+                if (order.command == Command::Repeat) {
+                    header = order.head;
+                    footer = order.foot;
+                    rows = 0;
+                    continue;
+                }
 
                 // The columns change: those open are set down level where
                 // they end, and the blocks after go into as many as asked.
@@ -691,14 +706,34 @@ namespace render::layout {
             // A non-empty column keeps a block taller than a whole page in a
             // column of its own instead of looping forever trying to fit it.
             // A column that took waiting floats and has no room left for the
-            // block is a column of floats, and the block goes on.
-            while (used + crown + sole + height + span + reserved + extra > context.height &&
+            // block is a column of floats, and the block goes on. A long
+            // table's row leaves room under it for the table's foot, which
+            // closes the column when the next row does not fit; its head
+            // opens the next, as longtable sets them.
+            // A head and a row too tall for a page together are set anyway,
+            // rather than turned over forever.
+            const bool running = header || footer;
+            const float closing = running ? Line::extent(footer) : 0.0f;
+            bool turned = false;
+            while (used + crown + sole + height + span + closing + reserved + extra > context.height &&
                    !(filling.empty() && heads.empty() && feet.empty())) {
+                if (turned && running && filling.size() <= 1 && heads.empty() && feet.empty()) break;
+                turned = true;
+                if (footer && rows > 0) {
+                    filling.push_back(footer);
+                    height += closing;
+                }
                 turn(false);
+                if (header) {
+                    filling.push_back(header);
+                    height += Line::extent(header);
+                }
+                rows = 0;
                 extra = room(added, notes.empty());
             }
             if (dropped(block)) continue;
 
+            if (running && block->type == Node::Type::Box) ++rows;
             filling.push_back(block);
             height += span;
             reserved += extra;

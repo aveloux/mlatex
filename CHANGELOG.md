@@ -569,6 +569,29 @@ font folders are listed only for a script the engine carries no face for.
 - A binary operator with nothing after it before a formula's closing `$` or
   a group's `}` -- `$a+$`, `{x-}` -- took the closing token as its operand
   and read on past the formula.
+- **A long table ran off the page.** longtable, `longtable*`, supertabular,
+  xtabular, tabularray's `longtblr`, xltabular and tabu's `longtabu` were one
+  box: a table taller than a page jumped to the next and ran past its foot,
+  the rows below lost. They are set a row at a time now, so a page ends
+  between two rows; the rows before `\endhead` stand atop every page the
+  table carries on to, those before `\endfoot` close every page it breaks
+  off, and `\endfirsthead` and `\endlastfoot` give the first page and the
+  last their own (the page builder's `Repeat`). The table is centred, or
+  set to the side `[l]` or `[r]` names, `\LTpre` above and `\LTpost` below;
+  its `\caption` is a table's, across every column in a box of no width, so
+  it widens none of them -- it was a figure's, and widened the first column.
+- A formula in a table's paragraph cell, a minipage or a `\parbox` was one
+  box and ran out of its cell over the next; it ends a line after a relation
+  or an operator, as it does in running text.
+- `\url`, `\path` and `\nolinkurl` turn over after a slash, a stop and the
+  rest of url.sty's characters (`\@breakable`), instead of running out of
+  a narrow column. A typewriter face breaks no word with a hyphen, as TeX's
+  `\hyphenchar` of -1 has it, and a word is broken only in its first run of
+  letters, as TeX's is: `a/very/long/path` was broken as `long/-path`.
+- `\multirow` stands in the middle of the rows it spans -- level with the
+  first for `[t]`, the last for `[b]` -- not at the top of the first; tabu's
+  `X[l]`, `X[c]` and `X[r]` were read as three more columns each; makecell's
+  `[l]`, `[r]`, `[t]` and `[b]` were taken for a vertical position.
 
 ### Tests
 
@@ -608,6 +631,9 @@ font folders are listed only for a script the engine carries no face for.
   Greek, alphabets, accents, relations, arrows, dots, matrices, braces,
   radicals, delimiters, operators and limits; and every kind of reference.
   The paper runs to eleven pages, and the test reads the appendix's text.
+- Then: a long table over pages, its heads and feet, every row kept, its
+  caption; `\multirow`, tabu's X columns; the pager's repeated head and foot;
+  an address turning over unhyphenated; a word's first run of letters.
 
 ### Documentation
 

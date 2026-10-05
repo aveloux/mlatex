@@ -167,6 +167,12 @@ namespace render::layout {
         const typography::Font* fonts[] = {&font, fallback};
         const std::size_t faces = fallback && fallback != &font ? 2 : 1;
 
+        // A typewriter face breaks no word, as TeX's \\hyphenchar of -1 has
+        // it: code and addresses are never split with a hyphen of their own.
+        // Known by its `i` standing as wide as its `m`.
+        const float narrow = font.advance(font.index('i'));
+        const bool typewriter = narrow > 0.0f && narrow == font.advance(font.index('m'));
+
         // One piece of the run -- a word, a dash, a quotation mark, the space
         // between two words -- as the nodes it sets as, shaped and hyphenated
         // the first time this font meets it and looked up every time after.
@@ -194,11 +200,17 @@ namespace render::layout {
             // The language's least letters either side of a break are counted
             // in letters, not bytes, here.
             memory::Slice<std::uint8_t> breaks{};
-            if (breakable && hyphenation && glyphs.count <= part.size()) {
+            if (breakable && hyphenation && !typewriter && glyphs.count <= part.size()) {
                 const memory::Slice<std::uint32_t> bytes = scratch.allocate<std::uint32_t>(part.size());
                 const memory::Slice<std::size_t> ends = scratch.allocate<std::size_t>(part.size());
+                // TeX's word: the first run of letters in the piece, what
+                // stands before it and after it -- a bracket, a stop, a
+                // slash and the rest of a path -- never broken.
                 std::size_t count = 0;
                 std::size_t written = 0;
+                std::size_t opened = 0;            // the word's first letter, counted in letters
+                std::size_t closed = 0;            // one past its last
+                bool found = false;
                 for (std::size_t at = 0; at < part.size();) {
                     const auto* data = reinterpret_cast<const std::uint8_t*>(part.data() + at);
                     const std::size_t rest = part.size() - at;
@@ -212,6 +224,17 @@ namespace render::layout {
                         length = 3;
                     }
                     at += length;
+
+                    const bool letter = (code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z') ||
+                                        (code >= 0xC0 && code != 0xD7 && code != 0xF7 &&
+                                         !(code >= 0x2000 && code <= 0x206F));
+                    if (letter && !found) {
+                        found = true;
+                        opened = count;
+                        closed = count + 1;
+                    } else if (letter && closed == count) {
+                        closed = count + 1;
+                    }
 
                     if ((code >= 'A' && code <= 'Z') || (code >= 0xC0 && code <= 0xDE && code != 0xD7) ||
                         (code >= 0x391 && code <= 0x3AB) || (code >= 0x410 && code <= 0x42F)) {
@@ -240,14 +263,17 @@ namespace render::layout {
                     ends[count++] = written - 1;
                 }
 
-                if (count == glyphs.count && count >= before + after) {
-                    const memory::Slice<std::uint8_t> found =
-                        hyphenation->execute(scratch, memory::Slice{bytes.data, written}, '.', 1, 1);
-                    if (!found.empty()) {
+                if (count == glyphs.count && closed - opened >= before + after) {
+                    const std::size_t from = opened == 0 ? 0 : ends[opened - 1] + 1;
+                    const std::size_t to = ends[closed - 1] + 1;
+                    const memory::Slice<std::uint8_t> points =
+                        hyphenation->execute(scratch, memory::Slice{bytes.data + from, to - from}, '.', 1, 1);
+                    if (!points.empty()) {
                         breaks = scratch.allocate<std::uint8_t>(count);
                         for (std::size_t index = 0; index < count; ++index) {
-                            breaks[index] = index + 1 >= before && count - index - 1 >= after &&
-                                            ends[index] < found.count && found[ends[index]];
+                            breaks[index] = index >= opened && index + 1 < closed &&
+                                            index + 1 - opened >= before && closed - index - 1 >= after &&
+                                            ends[index] - from < points.count && points[ends[index] - from];
                         }
                     }
                 }
@@ -492,12 +518,14 @@ namespace render::layout {
                 case Node::Directive::Command::Release:
                 case Node::Directive::Command::Page:
                 case Node::Directive::Command::Barrier:
+                case Node::Directive::Command::Repeat:
                 case Node::Directive::Command::Columns: {
                     // A block of no height in the column, so it lands on the
                     // page where the text around it did, and the composer
                     // meets it as it draws that page -- or, around a float,
                     // so the pager knows which blocks it may not part, where
-                    // no float may pass, and where the columns change. The
+                    // no float may pass, where the columns change, and which
+                    // rows a long table repeats where it breaks. The
                     // paragraph before a change is set in the columns it was
                     // written in.
                     if (!pending.empty()) separate();

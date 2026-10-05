@@ -2,6 +2,7 @@
 #include "layout/pager.hpp"
 #include "memory/arena.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <vector>
 
@@ -91,6 +92,35 @@ int main() {
             .order({.command = Command::Release}).block(50);
         const auto pages = column.paginate();
         assert((pages.size() == 2 && boxes(pages[0]) == 1 && boxes(pages[1]) == 2) && "[H] is set where written");
+    }
+    {
+        // A long table's rows: a page ends between two of them, the foot
+        // under the last row of each page the table breaks off, the head
+        // atop each page it carries on to, and no row lost.
+        auto* head = arena.compose<layout::Node>(layout::Node::Type::Box);
+        head->box({.width = 100.0f, .height = 10.0f});
+        auto* foot = arena.compose<layout::Node>(layout::Node::Type::Box);
+        foot->box({.width = 100.0f, .height = 5.0f});
+        Column column{arena};
+        column.block(20).order({.command = Command::Repeat, .head = head, .foot = foot});
+        for (int row = 0; row < 30; ++row) column.block(20);
+        column.order({.command = Command::Repeat}).block(20);
+        const auto pages = column.paginate();
+        assert((pages.size() >= 3) && "a long table runs over pages");
+
+        std::size_t rows = 0;
+        for (std::size_t index = 0; index < pages.size(); ++index) {
+            std::vector<const layout::Node*> set;
+            for (const layout::Node* node : pages[index].nodes) {
+                if (node->type == layout::Node::Type::Box) set.push_back(node);
+            }
+            assert((index == 0 || set.front() == head) && "the head atop every page after the first");
+            assert((index + 1 == pages.size() || set.back() == foot) && "the foot closing every page but the last");
+            rows += static_cast<std::size_t>(std::ranges::count_if(set, [&](const layout::Node* node) {
+                return node != head && node != foot;
+            }));
+        }
+        assert((rows == 32) && "and every row set");
     }
 
     // --- Floats as LaTeX places them ----------------------------------------------------

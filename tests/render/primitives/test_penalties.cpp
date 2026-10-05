@@ -87,6 +87,14 @@ int main() {
         assert((plain.clean && spaced.clean && std::abs(gap(spaced) - gap(plain) - 20.0f) < 3.0f) &&
                "\\\\[20pt] puts twenty points more under its line");
     }
+    {
+        // An address in a narrow box turns over after its slashes, and is
+        // never hyphenated -- a typewriter face breaks no word.
+        const Result result = article("\\usepackage{url}",
+                                      "\\parbox{2cm}{\\url{https://example.com/a/very/long/path/to/somewhere}}");
+        assert((result.clean && holds(result.text, "https://example.com/a/very/long/path/to/somewhere")) &&
+               "\\url turns over where url.sty would, with no hyphen of its own");
+    }
 
     return 0;
 }

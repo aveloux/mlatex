@@ -1,8 +1,12 @@
 % makecell: a cell of several lines, set as a table of one column inside it,
 % and \thead, the same in bold for a table's head.
 
-\@define\makecell[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
-\@define\thead[2][c]{\begin{tabular}[#1]{@{}c@{}}\bfseries #2\end{tabular}}
+% Its option names the side its lines stand at, l, c or r, and the row it
+% stands on, t, c or b -- `[lt]` both.
+\@define\makecell[2][c]{\@makecell{#1}{#2}}
+\@define\thead[2][c]{\@makecell{#1}{\bfseries #2}}
+\@define\@makecell#1#2{\IfSubStr{#1}{l}{\@makecellside{l}{#1}{#2}}{\IfSubStr{#1}{r}{\@makecellside{r}{#1}{#2}}{\@makecellside{c}{#1}{#2}}}}
+\@define\@makecellside#1#2#3{\IfSubStr{#2}{t}{\begin{tabular}[t]{@{}#1@{}}#3\end{tabular}}{\IfSubStr{#2}{b}{\begin{tabular}[b]{@{}#1@{}}#3\end{tabular}}{\begin{tabular}{@{}#1@{}}#3\end{tabular}}}}
 \@define\makegapedcells{}
 \@define\setcellgapes[2][]{}
 \@define\Xhline[1]{\hline}

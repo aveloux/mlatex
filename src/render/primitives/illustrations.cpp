@@ -1562,7 +1562,7 @@ namespace render::primitives {
                             written += token.text;
                         }
                     }
-                    mouth.ingest(parser.arena.copy("\\texttt{" + written + "}"), memory::Location{});
+                    mouth.ingest(parser.arena.copy("\\texttt{\\@breakable{" + written + "}}"), memory::Location{});
                     return nullptr;
                 }
 

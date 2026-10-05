@@ -815,9 +815,11 @@ namespace render::primitives {
 
             // Each entry as its type is set: blocks, a \newblock between each.
             // natbib's styles print a URL, and say what \url is where no
-            // package has: typewriter text, as theirs does.
-            std::string written = natural || house != House::Standard ? "\\providecommand{\\url}[1]{\\texttt{#1}}\n"
-                                                                      : std::string{};
+            // package has: typewriter text, as theirs does, a line ending
+            // after a slash where it must.
+            std::string written = natural || house != House::Standard
+                                      ? "\\providecommand{\\url}[1]{\\texttt{\\@breakable{#1}}}\n"
+                                      : std::string{};
             if (house == House::Springer) written += "\\providecommand{\\doi}[1]{\\url{https://doi.org/#1}}\n";
             written += std::format("\\begin{{thebibliography}}{{{}}}\n", alpha ? std::string("MMM99")
                                                                                : std::to_string(chosen.size()));

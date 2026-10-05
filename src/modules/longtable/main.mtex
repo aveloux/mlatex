@@ -1,9 +1,15 @@
 % longtable: a table that may run over pages. The block is the engine's own
-% table, which a page may already end between rows; the marks that repeat a
-% head and a foot on each page are read and let go, the head set once.
+% table, set a row at a time so a page may end between any two, centred, its
+% caption a table's across every column. \endfirsthead, \endhead, \endfoot
+% and \endlastfoot are the table's own marks, read where they stand: the
+% head repeats atop each page the table carries on to and the foot closes
+% each page it breaks off, as longtable sets them.
+%
+%   \begin{longtable}{lr}
+%     \caption{Prices}\\ \hline Item & Price \\ \hline \endfirsthead
+%     \hline Item & Price \\ \hline \endhead
+%     \hline \endfoot
+%     Tea & 2 \\ Cake & 3 \\
+%   \end{longtable}
 
-\@define\endfirsthead{}
-\@define\endhead{}
-\@define\endfoot{}
-\@define\endlastfoot{}
 \@define\LTcapwidth{\linewidth}

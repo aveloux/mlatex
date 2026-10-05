@@ -387,12 +387,23 @@ namespace render::primitives {
             const auto* maths = child->face
                                     ? static_cast<const typography::Font*>(child->face)
                                     : context.selection.formula();
+            const auto* tint = static_cast<const layout::Node::Color*>(child->tint);
+
+            // A formula in the line comes in pieces, as running text has it,
+            // so a paragraph cell or a minipage may end a line after one of
+            // its relations or operators rather than let it run out of the
+            // cell; a displayed one is a block whole.
+            if (maths && child->expression->style != syntax::expression::Node::Style::Display) {
+                for (layout::Node* piece : context.typesetter.unfold(child->expression, *maths)) {
+                    if (tint) layout::Typesetter::paint(piece, *tint);
+                    nodes.push_back(piece);
+                }
+                return;
+            }
             if (maths) {
                 if (layout::Node* lowered =
                         context.typesetter.lower(child->expression, *maths, 0.0f)) {
-                    if (const auto* tint = static_cast<const layout::Node::Color*>(child->tint)) {
-                        layout::Typesetter::paint(lowered, *tint);
-                    }
+                    if (tint) layout::Typesetter::paint(lowered, *tint);
                     nodes.push_back(lowered);
                 }
             }

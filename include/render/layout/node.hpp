@@ -258,7 +258,9 @@ namespace render::layout {
                 Language,   ///< Words from here on break by #hyphenator, no nearer their ends than #before and #after.
                 Direction,  ///< Paragraphs from here on read right to left when #reversed is set, left to right if not.
                 Link,       ///< What is drawn from here to the next Unlink goes to #target, or to #index's anchor.
-                Unlink      ///< The innermost open link ends.
+                Unlink,     ///< The innermost open link ends.
+                Repeat      ///< A long table's rows follow, to the next Repeat: a column they break out of ends
+                            ///< with #foot, and the next opens with #head. One with neither ends the table.
             };
 
             /// @brief Where a float may go, as LaTeX's `[htbp!]` says: a bit
@@ -306,6 +308,10 @@ namespace render::layout {
             std::uint8_t before{2};                  ///< For Command::Language: least letters a break leaves, `\\lefthyphenmin`.
             std::uint8_t after{3};                   ///< For Command::Language: least it carries over, `\\righthyphenmin`.
             bool reversed{false};                    ///< For Command::Direction: whether paragraphs read right to left.
+            Node* head{nullptr};                     ///< For Command::Repeat: the rows set atop each column a table
+                                                     ///< carries on into, or none.
+            Node* foot{nullptr};                     ///< For Command::Repeat: the rows set under the last row in each
+                                                     ///< column a table breaks out of, or none.
             std::string_view target{};               ///< For Command::Link: the address it goes to; empty for #index's anchor.
             Color border{};                          ///< For Command::Link: the frame a reader draws round it; none at no alpha.
             std::size_t index{0};                    ///< For Command::Anchor: which anchor, counted from 0 in the order written;
