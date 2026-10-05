@@ -241,6 +241,7 @@ namespace render::layout {
         // that reads so, has anything to put in another order.
         if (!line || line->type != Node::Type::Box || line->box().alignment != Node::Alignment::Horizontal) return;
         const memory::Slice<Node*> list = line->box().list;
+        if (list.count == 0) return;
         bool mixed = reversed;
         for (std::size_t index = 0; !mixed && index < list.count; ++index) mixed = run(list[index]) == 2;
         if (!mixed) return;

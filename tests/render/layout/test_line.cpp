@@ -148,6 +148,12 @@ int main() {
         Line::reorder(arena, counted, false);
         assert((points(counted) == std::vector<std::uint32_t>{a, one, alef}) &&
                "a number after right-to-left words stands to their left, as it follows them");
+
+        // A line with nothing in it -- an empty cell of a table read right to
+        // left -- has nothing to put in another order, and is left as it is.
+        layout::Node* empty = Line::horizontal(arena, list(arena, {}));
+        Line::reorder(arena, empty, true);
+        assert((empty->box().list.empty()) && "an empty line read right to left");
     }
 
     return 0;
