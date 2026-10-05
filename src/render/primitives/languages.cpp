@@ -145,6 +145,42 @@ namespace render::primitives {
             return directive(arena, mark, parser.mouth.lookahead().location);
         };
 
+        // A language's words as they are set: its patterns and how near a
+        // word's ends they break; the digits it is written with -- Arabic's
+        // own, ٠١٢٣, and Persian's and Urdu's, ۰۱۲۳, unless polyglossia was
+        // told `numerals=maghrib` -- and French's spaces before its high
+        // punctuation, as babel and polyglossia set them.
+        const auto spoken = [this, patterns](const Language& language) -> layout::Node::Directive {
+            const auto chosen = std::ranges::find(numerals, language.name, &std::pair<std::string, std::string>::first);
+            const bool western = chosen != numerals.end() && (chosen->second == "maghrib" || chosen->second == "western");
+            std::uint32_t digits = 0;
+            if (language.name == "arabic") digits = 0x0660;
+            if (language.name == "persian" || language.name == "farsi" || language.name == "urdu") digits = 0x06F0;
+            return {.command = Command::Language, .hyphenator = patterns(language), .before = language.left,
+                    .after = language.right, .digits = western ? 0 : digits, .spaced = language.captions == "french"};
+        };
+
+        // polyglossia's options for a language, `[numerals=maghrib]`, read
+        // ahead of its name and kept for it by name: its block chosen later
+        // is written so too.
+        const auto options = [](syntax::Mouth& mouth) {
+            std::string written;
+            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                written += token.text;
+            }
+            return written;
+        };
+        const auto remember = [this](const std::string& written, const std::string_view name) {
+            const std::size_t at = written.find("numerals=");
+            if (at == std::string::npos) return;
+            std::string value = written.substr(at + 9);
+            value = value.substr(0, value.find(','));
+            std::erase(value, ' ');
+            const auto known = std::ranges::find(numerals, name, &std::pair<std::string, std::string>::first);
+            if (known != numerals.end()) known->second = value;
+            else numerals.emplace_back(std::string(name), value);
+        };
+
         // The language a list of names means: babel's options in the order
         // they were written, the last the language the document is in unless
         // `main=` names another. What is not a language -- babel's other
@@ -180,11 +216,14 @@ namespace render::primitives {
         // A language chosen whole: its words, its direction, the name
         // \languagename says, and its captions and date, its file of them
         // read the first time. The instruction goes first, then what the
-        // rest comes to is read after it.
-        parser.bind("\\@language", [this, patterns, order, named](syntax::Parser& parser) -> syntax::Node* {
+        // rest comes to is read after it. polyglossia's options for it may
+        // come first: `\@language[numerals=maghrib]{arabic}`.
+        parser.bind("\\@language", [this, order, named, spoken, options, remember](syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
+            const std::string given = options(mouth);
             const Language* language = named(mouth);
             if (!language) return nullptr;
+            remember(given, language->name);
             current = language->name;
 
             std::string said = std::format("\\@direction{{{}}}\\@define\\languagename{{{}}}",
@@ -197,16 +236,15 @@ namespace render::primitives {
                 said += std::format("\\csname captions{0}\\endcsname\\csname date{0}\\endcsname", language->captions);
             }
             mouth.ingest(mouth.arena.copy(said));
-            return order(parser, {.command = Command::Language, .hyphenator = patterns(*language),
-                                  .before = language->left, .after = language->right});
+            return order(parser, spoken(*language));
         });
 
-        // Its words alone: a phrase in it inside the text of another.
-        parser.bind("\\@hyphenation", [patterns, order, named](syntax::Parser& parser) -> syntax::Node* {
+        // Its words alone: a phrase in it inside the text of another, set as
+        // it sets them -- its breaks, its digits, French's spaces.
+        parser.bind("\\@hyphenation", [order, named, spoken](syntax::Parser& parser) -> syntax::Node* {
             const Language* language = named(parser.mouth);
             if (!language) return nullptr;
-            return order(parser, {.command = Command::Language, .hyphenator = patterns(*language),
-                                  .before = language->left, .after = language->right});
+            return order(parser, spoken(*language));
         });
 
         // Which way the paragraphs from here on read: `RTL`, right to left,
@@ -249,8 +287,11 @@ namespace render::primitives {
 
         // polyglossia's commands for a language it is told the document
         // quotes: \textrussian{...}, and a block named for it -- `Arabic`
-        // for Arabic, since \arabic is a counter's numbering already.
-        parser.mouth.bind("\\@languagecommands", [this, block](syntax::Mouth& mouth) {
+        // for Arabic, since \arabic is a counter's numbering already. Its
+        // options, `\@languagecommands[numerals=maghrib]{arabic}`, are kept
+        // for each language named.
+        parser.mouth.bind("\\@languagecommands", [this, block, options, remember](syntax::Mouth& mouth) {
+            const std::string given = options(mouth);
             const std::string list = syntax::Argument::expanded(mouth);
             std::string said;
             for (std::size_t start = 0; start <= list.size();) {
@@ -263,6 +304,7 @@ namespace render::primitives {
 
                 const Language* language = get(item);
                 if (!language) continue;
+                remember(given, language->name);
                 said += std::format("\\@define\\text{0}{{\\foreignlanguage{{{0}}}}}", language->name);
                 if (std::ranges::contains(watched, language->name)) continue;
                 watched.push_back(language->name);

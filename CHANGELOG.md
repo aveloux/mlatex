@@ -253,6 +253,15 @@ sees, newest work last within each group.
   `assets/fonts/text`), and draws Arabic, Persian and Urdu with it before
   looking at the system's faces: an Arabic document is the same on every
   system, a Linux with no Arabic face of its own included.
+- **A language's own digits**: Arabic's ٠١٢٣ and Persian's and Urdu's ۰۱۲۳
+  for the digits typed, a number read left to right in them, as
+  polyglossia's mapping draws them -- the digits as typed again for
+  `\setmainlanguage[numerals=maghrib]{arabic}`, polyglossia's options now
+  reaching the engine (`\@language[options]{name}`).
+- **French's spaces**: babel's and polyglossia's French sets a space no line
+  ends at before `;` `!` `?` and `»` and after `«` -- half a word space --
+  and a word space before `:`, taking in the space typed there, and spaces a
+  stop as any other mark; a colon in a time or an address is left be.
 - **A box reads the way its text does.** A minipage, a `\parbox` and a
   framed block begun in Arabic or Hebrew set their paragraphs right to left,
   each line in the order it is drawn in, and a direction changed inside one
@@ -780,7 +789,6 @@ labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
-Languages: digits stay Western; French spacing before `:;!?`, Arabic's
-kashida and CJK line breaking are not done. Coverage figures above count packages that
+Languages: Arabic's kashida and CJK line breaking are not done. Coverage figures above count packages that
 load and whose common commands set text — not that every feature of each is
 drawn.

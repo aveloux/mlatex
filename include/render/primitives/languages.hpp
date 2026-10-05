@@ -9,6 +9,7 @@
 #include <deque>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace render::primitives {
@@ -83,6 +84,11 @@ namespace render::primitives {
         mutable std::string current{"english"};                ///< The language chosen.
         mutable std::vector<std::string> kept{};               ///< What each open language block will go back to.
         mutable std::vector<std::string_view> watched{};       ///< The languages polyglossia's commands made a block for.
+
+        /// The numerals each language was told to be written with, as
+        /// polyglossia's `numerals=` names them: `maghrib` or `western` for
+        /// the digits as typed, `mashriq` or `eastern` for its own.
+        mutable std::vector<std::pair<std::string, std::string>> numerals{};
         mutable std::vector<syntax::Traceback> tracebacks{};  ///< What was reported.
     };
 

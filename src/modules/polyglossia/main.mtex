@@ -3,8 +3,10 @@
 % each of which gets a command and a block of its own, \textrussian{...} and
 % \begin{russian}, Arabic's block being Arabic since \arabic numbers a
 % counter. A language sets how its words break, which way its paragraphs
-% read, and its captions and date, from babel's file for it. Its options --
-% a variant, its numerals -- are read and let go.
+% read, the digits it is written with -- Arabic's own unless it is told
+% `numerals=maghrib` -- French's spaces before its high punctuation, and its
+% captions and date, from babel's file for it. Its other options -- a
+% variant -- are read and let go.
 %
 %   \setmainlanguage{english}
 %   \setotherlanguage{arabic}
@@ -12,12 +14,12 @@
 
 \@define\languagename{english}
 
-\@define\setdefaultlanguage[2][]{\@language{#2}\@languagecommands{#2}}
-\@define\setmainlanguage[2][]{\@language{#2}\@languagecommands{#2}}
-\@define\resetdefaultlanguage[2][]{\@language{#2}}
-\@define\setotherlanguage[2][]{\@languagecommands{#2}}
+\@define\setdefaultlanguage[2][]{\@language[#1]{#2}\@languagecommands[#1]{#2}}
+\@define\setmainlanguage[2][]{\@language[#1]{#2}\@languagecommands[#1]{#2}}
+\@define\resetdefaultlanguage[2][]{\@language[#1]{#2}}
+\@define\setotherlanguage[2][]{\@languagecommands[#1]{#2}}
 \@define\setotherlanguages[1]{\@languagecommands{#1}}
-\@define\selectlanguage[2][]{\@language{#2}}
+\@define\selectlanguage[2][]{\@language[#1]{#2}}
 \@define\foreignlanguage[3][]{\@hyphenation{#2}#3\@hyphenation{\languagename}}
 \@define\textlang[3][]{\foreignlanguage{#2}{#3}}
 \@define\iflanguageloaded[3]{#2}
