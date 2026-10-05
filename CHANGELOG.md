@@ -480,6 +480,10 @@ sees, newest work last within each group.
   length in points, and a formula that holds one is a length, as pgfmath
   has it -- `\x1+1cm`; `veclen`, `mod`, `int` and `sign` are worked out
   with the rest.
+- **A TikZ coordinate may be formulas**: `({1+1},{sin(30)*2})`, a polar
+  `({atan2(1,2)}:{veclen(3,4)})`, a length anywhere one is read; parentheses
+  and braces nest inside a coordinate, which used to end at its first `)`.
+  `([xshift=10pt]b)` and `yshift` move a point or a node's anchor.
 - **pgfplots axes are drawn**: `axis`, `semilogxaxis`, `semilogyaxis` and
   `loglogaxis`; ticks at round numbers no more than about 35 points apart,
   powers of ten on a logarithmic axis, or the ones `xtick` lists; labels,

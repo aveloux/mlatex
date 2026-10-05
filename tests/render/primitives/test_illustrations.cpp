@@ -63,6 +63,26 @@ static std::size_t count(const std::string_view text, const std::string_view par
     return found;
 }
 
+/// Each straight stroke a PDF draws, `x y m` then `x y l S`, as how far it
+/// goes across and how far up, in points.
+static std::vector<std::pair<float, float>> strokes(const std::string_view pdf) {
+    std::vector<std::pair<float, float>> found;
+    for (std::size_t at = pdf.find(" l S"); at != std::string_view::npos; at = pdf.find(" l S", at + 1)) {
+        const std::size_t move = pdf.rfind(" m\n", at);
+        if (move == std::string_view::npos) continue;
+        float numbers[4]{};
+        const std::size_t begin = pdf.rfind('\n', move - 1) + 1;
+        const std::string_view written = pdf.substr(begin, at - begin);
+        const char* cursor = written.data();
+        for (float& number : numbers) {
+            while (cursor < written.data() + written.size() && (*cursor == ' ' || *cursor == '\n' || *cursor == 'm')) ++cursor;
+            cursor = std::from_chars(cursor, written.data() + written.size(), number).ptr;
+        }
+        found.emplace_back(numbers[2] - numbers[0], numbers[1] - numbers[3]);
+    }
+    return found;
+}
+
 /// A one-pixel PNG, for a picture handed in from memory.
 static std::string dot() {
     static constexpr unsigned char bytes[] = {
@@ -272,6 +292,21 @@ int main() {
                                       "\\draw[hook->] (b) -- (c);\\end{tikzpicture}");
         assert((result.clean && result.errors.empty()) && "edges, loops, double lines, shifts and every tip");
         assert((holds(result.text, "1") && count(result.pdf, " l S") > 150) && "drawn, the label set");
+    }
+    {
+        // A coordinate's parts may be formulas, and a point may be shifted.
+        const Result result = article("\\usepackage{tikz}",
+                                      "\\begin{tikzpicture}\\coordinate (a) at (0,0);\\coordinate (b) at (2,0);"
+                                      "\\draw (0,0) -- ({1+1},{sin(30)*2});"
+                                      "\\draw (a) -- ([xshift=10pt]b);\\end{tikzpicture}");
+        const std::vector<std::pair<float, float>> drawn = strokes(result.pdf);
+        constexpr float centimetre = 72.27f / 2.54f;
+        const auto near = [](const std::pair<float, float> stroke, const float across, const float up) {
+            return std::abs(stroke.first - across) < 0.01f && std::abs(stroke.second - up) < 0.01f;
+        };
+        assert((result.clean && result.errors.empty() && drawn.size() == 2) && "two lines, each read");
+        assert((near(drawn[0], 2 * centimetre, centimetre)) && "a coordinate of formulas");
+        assert((near(drawn[1], 2 * centimetre + 10.0f, 0.0f)) && "a point shifted");
     }
 
     return 0;

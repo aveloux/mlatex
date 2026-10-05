@@ -82,20 +82,27 @@ namespace render::primitives {
         text = trim(text);
         float value = 0.0f;
         const auto [stop, failure] = std::from_chars(text.data(), text.data() + text.size(), value);
-        if (failure != std::errc{}) return std::nullopt;
-
-        const std::string_view unit = trim(text.substr(static_cast<std::size_t>(stop - text.data())));
-        static constexpr std::array<std::pair<std::string_view, float>, 8> units{{
-            {"pt", 1.0f}, {"cm", 72.27f / 2.54f}, {"mm", 72.27f / 25.4f}, {"in", 72.27f}, {"bp", 72.27f / 72.0f},
-            {"pc", 12.0f}, {"dd", 1238.0f / 1157.0f}, {"cc", 12.0f * 1238.0f / 1157.0f},
-        }};
-        if (unit.empty()) return value * fallback;
-        if (unit == "em") return value * em;
-        if (unit == "ex") return value * em * 0.43f;
-        for (const auto& [name, factor] : units) {
-            if (unit == name) return value * factor;
+        if (failure == std::errc{}) {
+            const std::string_view unit = trim(text.substr(static_cast<std::size_t>(stop - text.data())));
+            static constexpr std::array<std::pair<std::string_view, float>, 8> units{{
+                {"pt", 1.0f}, {"cm", 72.27f / 2.54f}, {"mm", 72.27f / 25.4f}, {"in", 72.27f}, {"bp", 72.27f / 72.0f},
+                {"pc", 12.0f}, {"dd", 1238.0f / 1157.0f}, {"cc", 12.0f * 1238.0f / 1157.0f},
+            }};
+            if (unit.empty()) return value * fallback;
+            if (unit == "em") return value * em;
+            if (unit == "ex") return value * em * 0.43f;
+            for (const auto& [name, factor] : units) {
+                if (unit == name) return value * factor;
+            }
         }
-        return std::nullopt;
+
+        // A formula, as TikZ reads one wherever a number goes -- `\x1+1cm`,
+        // `{sin(30)}`, `2*0.5` -- in points when a length is in it and in
+        // the unit a bare number has when none is. No variable is in reach.
+        bool measured = false;
+        const auto worked = Plots::calculate(text, std::numeric_limits<double>::quiet_NaN(), &measured);
+        if (!worked) return std::nullopt;
+        return measured ? static_cast<float>(*worked) : static_cast<float>(*worked) * fallback;
     }
 
     /// @brief A TikZ option list cut at its commas, those inside braces or
@@ -453,19 +460,57 @@ namespace render::primitives {
             return meet(mark, {mark.centre.x + dx, mark.centre.y + dy});
         };
 
-        // One coordinate in its parentheses, `at` on the opening one: a
-        // point, a polar one, or a node by its name -- whose outline a line
-        // to it stops at, said by `touched` -- or one of its anchors.
-        const Landmark* touched = nullptr;
-        const auto coordinate = [&]() -> std::optional<graphics::Point2> {
-            touched = nullptr;
-            const std::size_t close = text.find(')', at);
-            if (close == std::string_view::npos) return std::nullopt;
-            const std::string_view inside = text.substr(at + 1, close - at - 1);
-            at = close + 1;
+        // Where a run of text closes what opens at its start -- a
+        // parenthesis or a brace, either nesting in the other -- or npos.
+        const auto closing = [](const std::string_view written, const std::size_t open) {
+            int depth = 0;
+            for (std::size_t index = open; index < written.size(); ++index) {
+                if (written[index] == '(' || written[index] == '{' || written[index] == '[') ++depth;
+                if ((written[index] == ')' || written[index] == '}' || written[index] == ']') && --depth == 0) return index;
+            }
+            return std::string_view::npos;
+        };
 
-            if (inside.find(',') == std::string_view::npos && inside.find(':') == std::string_view::npos) {
-                std::string_view label = trim(inside);
+        // What one coordinate's parentheses hold, as a point: a point, a
+        // polar one, its parts formulas -- `({sin(30)}, \y1+1cm)` -- or a
+        // node by its name -- whose outline a line to it stops at, said by
+        // `touched` -- or one of its anchors; `[xshift=2pt]` before any of
+        // them moves it.
+        const Landmark* touched = nullptr;
+        const auto resolve = [&](this const auto& self, std::string_view inside) -> std::optional<graphics::Point2> {
+            inside = trim(inside);
+            touched = nullptr;
+
+            graphics::Point2 moved{};
+            if (inside.starts_with('[')) {
+                const std::size_t shut = closing(inside, 0);
+                if (shut == std::string_view::npos) return std::nullopt;
+                for (const std::string_view piece : pieces(inside.substr(1, shut - 1))) {
+                    const std::string_view option = trim(piece);
+                    const std::size_t equals = equality(option);
+                    const std::string_view key = trim(option.substr(0, equals));
+                    const float amount = equals == std::string_view::npos ? 0.0f
+                                                                          : distance(option.substr(equals + 1), 1.0f).value_or(0.0f);
+                    if (key == "xshift") moved.x += amount;
+                    if (key == "yshift") moved.y += amount;
+                }
+                const auto point = self(inside.substr(shut + 1));
+                touched = nullptr;
+                if (!point) return std::nullopt;
+                return graphics::Point2{point->x + moved.x, point->y + moved.y};
+            }
+
+            std::size_t comma = std::string_view::npos;
+            std::size_t colon = std::string_view::npos;
+            for (std::size_t index = 0, depth = 0; index < inside.size(); ++index) {
+                if (inside[index] == '(' || inside[index] == '{') ++depth;
+                if ((inside[index] == ')' || inside[index] == '}') && depth > 0) --depth;
+                if (depth == 0 && inside[index] == ',' && comma == std::string_view::npos) comma = index;
+                if (depth == 0 && inside[index] == ':' && colon == std::string_view::npos) colon = index;
+            }
+
+            if (comma == std::string_view::npos && colon == std::string_view::npos) {
+                std::string_view label = inside;
                 std::string_view anchor;
                 auto found = landmarks.find(std::string(label));
                 if (found == landmarks.end()) {
@@ -483,19 +528,28 @@ namespace render::primitives {
                 return spot(found->second, anchor);
             }
 
-            if (const std::size_t colon = inside.find(':'); colon != std::string_view::npos) {
+            if (colon != std::string_view::npos) {
                 const auto angle = distance(inside.substr(0, colon), 1.0f);
                 const auto radius = distance(inside.substr(colon + 1), centimetre);
                 if (!angle || !radius) return std::nullopt;
                 const float turn = *angle * std::numbers::pi_v<float> / 180.0f;
                 return graphics::Point2{*radius * std::cos(turn) * scale, *radius * std::sin(turn) * scale};
             }
-            const std::size_t comma = inside.find(',');
-            if (comma == std::string_view::npos) return std::nullopt;
             const auto x = distance(inside.substr(0, comma), centimetre);
             const auto y = distance(inside.substr(comma + 1), centimetre);
             if (!x || !y) return std::nullopt;
             return graphics::Point2{*x * scale, *y * scale};
+        };
+
+        // One coordinate in its parentheses, `at` on the opening one, and
+        // #at past the closing one.
+        const auto coordinate = [&]() -> std::optional<graphics::Point2> {
+            touched = nullptr;
+            const std::size_t close = closing(text, at);
+            if (close == std::string_view::npos) return std::nullopt;
+            const std::string_view inside = text.substr(at + 1, close - at - 1);
+            at = close + 1;
+            return resolve(inside);
         };
 
         // Round a centre, from one angle to another, in degrees.
@@ -1200,8 +1254,8 @@ namespace render::primitives {
                     }
                     break;
                 }
-                const std::size_t close = text.find(')', at);
-                if (at >= text.size() || text[at] != '(' || close == std::string_view::npos) {
+                const std::size_t close = at < text.size() && text[at] == '(' ? closing(text, at) : std::string_view::npos;
+                if (close == std::string_view::npos) {
                     fail("\\draw: an edge needs the point it goes to");
                     return;
                 }
