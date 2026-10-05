@@ -475,7 +475,7 @@ namespace render::primitives {
         // polar one, its parts formulas -- `({sin(30)}, \y1+1cm)` -- or a
         // node by its name -- whose outline a line to it stops at, said by
         // `touched` -- or one of its anchors; `[xshift=2pt]` before any of
-        // them moves it.
+        // them moves it, and calc's `$...$` works one out of others.
         const Landmark* touched = nullptr;
         const auto resolve = [&](this const auto& self, std::string_view inside) -> std::optional<graphics::Point2> {
             inside = trim(inside);
@@ -498,6 +498,79 @@ namespace render::primitives {
                 touched = nullptr;
                 if (!point) return std::nullopt;
                 return graphics::Point2{point->x + moved.x, point->y + moved.y};
+            }
+
+            // calc's: terms added and taken away, each a point times a
+            // factor, `2*(a)`, and taken partway towards another, `(a)!0.5!(b)`
+            // -- turned first by an angle, `(a)!0.5!90:(b)` -- or a length
+            // towards it, `(a)!1cm!(b)`.
+            if (inside.size() >= 2 && inside.front() == '$' && inside.back() == '$') {
+                const std::string_view body = inside.substr(1, inside.size() - 2);
+                std::size_t step = 0;
+                const auto blank = [&] {
+                    while (step < body.size() && (body[step] == ' ' || body[step] == '\n')) ++step;
+                };
+                const auto point = [&]() -> std::optional<graphics::Point2> {
+                    blank();
+                    if (step >= body.size() || body[step] != '(') return std::nullopt;
+                    const std::size_t shut = closing(body, step);
+                    if (shut == std::string_view::npos) return std::nullopt;
+                    const auto found = self(body.substr(step + 1, shut - step - 1));
+                    step = shut + 1;
+                    return found;
+                };
+                graphics::Point2 sum{};
+                for (blank(); step < body.size(); blank()) {
+                    float sign = 1.0f;
+                    if (body[step] == '+' || body[step] == '-') {
+                        sign = body[step] == '-' ? -1.0f : 1.0f;
+                        ++step;
+                        blank();
+                    }
+                    float factor = 1.0f;
+                    if (step < body.size() && body[step] != '(') {
+                        std::size_t star = step;
+                        while (star < body.size() && body[star] != '*') {
+                            star = body[star] == '{' ? std::min(closing(body, star), body.size() - 1) + 1 : star + 1;
+                        }
+                        const auto written = Plots::calculate(body.substr(step, star - step), 0.0);
+                        if (!written || star >= body.size()) return std::nullopt;
+                        factor = static_cast<float>(*written);
+                        step = star + 1;
+                    }
+                    auto term = point();
+                    if (!term) return std::nullopt;
+                    for (blank(); step < body.size() && body[step] == '!'; blank()) {
+                        const std::size_t mark = body.find('!', step + 1);
+                        if (mark == std::string_view::npos) return std::nullopt;
+                        const std::string_view part = trim(body.substr(step + 1, mark - step - 1));
+                        step = mark + 1;
+                        blank();
+                        float angle = 0.0f;
+                        if (const std::size_t open = body.find('(', step); open != std::string_view::npos &&
+                                                                          body.substr(step, open - step).find(':') != std::string_view::npos) {
+                            const std::string_view turned = body.substr(step, body.find(':', step) - step);
+                            angle = distance(turned, 1.0f).value_or(0.0f) * std::numbers::pi_v<float> / 180.0f;
+                            step = body.find(':', step) + 1;
+                        }
+                        const auto toward = point();
+                        if (!toward) return std::nullopt;
+                        const float dx = toward->x - term->x;
+                        const float dy = toward->y - term->y;
+                        const graphics::Point2 way{dx * std::cos(angle) - dy * std::sin(angle),
+                                                   dx * std::sin(angle) + dy * std::cos(angle)};
+                        bool measured = false;
+                        const auto share = Plots::calculate(part, 0.0, &measured);
+                        if (!share) return std::nullopt;
+                        const float length = std::hypot(way.x, way.y);
+                        const float reach = measured ? (length > 0.0f ? static_cast<float>(*share) / length : 0.0f)
+                                                     : static_cast<float>(*share);
+                        term = graphics::Point2{term->x + way.x * reach, term->y + way.y * reach};
+                    }
+                    sum = {sum.x + sign * factor * term->x, sum.y + sign * factor * term->y};
+                }
+                touched = nullptr;
+                return sum;
             }
 
             std::size_t comma = std::string_view::npos;

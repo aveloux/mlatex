@@ -484,6 +484,10 @@ sees, newest work last within each group.
   `({atan2(1,2)}:{veclen(3,4)})`, a length anywhere one is read; parentheses
   and braces nest inside a coordinate, which used to end at its first `)`.
   `([xshift=10pt]b)` and `yshift` move a point or a node's anchor.
+- **TikZ's calc library**: a coordinate `($...$)` worked out of others --
+  added and taken away, `($(a)+(0,1)$)`, times a factor, `($2*(b)$)`,
+  partway along, `($(a)!0.5!(b)$)`, turned first, `($(a)!0.5!90:(b)$)`, or
+  a length along, `($(a)!1cm!(b)$)`.
 - **pgfplots axes are drawn**: `axis`, `semilogxaxis`, `semilogyaxis` and
   `loglogaxis`; ticks at round numbers no more than about 35 points apart,
   powers of ten on a logarithmic axis, or the ones `xtick` lists; labels,

@@ -307,6 +307,21 @@ int main() {
         assert((result.clean && result.errors.empty() && drawn.size() == 2) && "two lines, each read");
         assert((near(drawn[0], 2 * centimetre, centimetre)) && "a coordinate of formulas");
         assert((near(drawn[1], 2 * centimetre + 10.0f, 0.0f)) && "a point shifted");
+
+        // calc's `$...$` works one point out of others: partway, a length
+        // along, turned, scaled and summed.
+        const Result calc = article("\\usepackage{tikz}\\usetikzlibrary{calc}",
+                                    "\\begin{tikzpicture}\\coordinate (a) at (0,0);\\coordinate (b) at (2,0);"
+                                    "\\draw (a) -- ($(a)!0.5!(b)+(0,1)$);"
+                                    "\\draw (a) -- ($(a)!1cm!(b)$);"
+                                    "\\draw (a) -- ($(a)!0.5!90:(b)$);"
+                                    "\\draw (a) -- ($2*(b)-(0,1)$);\\end{tikzpicture}");
+        const std::vector<std::pair<float, float>> worked = strokes(calc.pdf);
+        assert((calc.clean && calc.errors.empty() && worked.size() == 4) && "four lines, each read");
+        assert((near(worked[0], centimetre, centimetre)) && "halfway to a point, then up one");
+        assert((near(worked[1], centimetre, 0.0f)) && "a centimetre towards a point");
+        assert((near(worked[2], 0.0f, centimetre)) && "halfway to a point turned a quarter round");
+        assert((near(worked[3], 4 * centimetre, -centimetre)) && "twice a point, less another");
     }
 
     return 0;
