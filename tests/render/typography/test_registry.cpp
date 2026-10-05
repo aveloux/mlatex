@@ -64,8 +64,13 @@ int main() {
     assert((plain && plain->family() == "newcmsans10-regular") && "sans text's Cyrillic is sans");
     const render::typography::Font* devanagari = registry.cover(*fonts.text, 0x0915);
     assert((devanagari && devanagari->family() == "newcm10devanagari-regular") && "Devanagari has faces of its own");
-    assert((registry.cover(*fonts.text, 0x0627, false) == nullptr) &&
-           "Arabic is in no face the engine carries, and the system's are not looked in unless asked");
+    const render::typography::Font* arabic = registry.cover(*fonts.text, 0x0627, false);
+    assert((arabic && arabic->family() == "notonaskharabic-regular") &&
+           "Arabic is the engine's own Noto Naskh Arabic, the system's faces not looked in");
+    const render::typography::Font* heavier = bold ? registry.cover(*bold, 0x0627, false) : nullptr;
+    assert((heavier && heavier->family() == "notonaskharabic-bold") && "and bold Arabic its bold");
+    assert((registry.cover(*fonts.text, 0x4E2D, false) == nullptr) &&
+           "Chinese is in no face the engine carries, and the system's are not looked in unless asked");
 
     return 0;
 }

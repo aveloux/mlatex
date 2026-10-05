@@ -133,8 +133,9 @@ with no patterns breaks no word.
 
 A script the body's face has no glyphs for is drawn by the same design's face
 for it (New Computer Modern) where the engine carries one, and by one of the
-system's faces where it does not -- Arabic, Chinese. Nothing in a package
-chooses that; `\newfontfamily\arabicfont{...}` is read and let go.
+system's faces where it does not -- Chinese, Japanese. Arabic, Persian and
+Urdu are drawn by the Noto Naskh Arabic the engine carries. Nothing in a
+package chooses that; `\newfontfamily\arabicfont{...}` is read and let go.
 
 ## Diagrams
 

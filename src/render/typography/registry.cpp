@@ -173,7 +173,10 @@ namespace render::typography {
         };
 
         // New Computer Modern, in the cut in hand and then upright, and its
-        // Devanagari, which it keeps in faces of their own.
+        // Devanagari, which it keeps in faces of their own; then the Arabic
+        // face the engine carries, Noto Naskh Arabic, so an Arabic document
+        // is drawn the same on every system, one without a face of its own
+        // for the script included.
         static constexpr std::array<std::array<std::string_view, 4>, 3> carried{{
             {"newcm10-regular", "newcm10-bold", "newcm10-italic", "newcm10-bolditalic"},
             {"newcmsans10-regular", "newcmsans10-bold", "newcmsans10-oblique", "newcmsans10-boldoblique"},
@@ -181,7 +184,8 @@ namespace render::typography {
         }};
         const auto& own = carried[says("sans") ? 1 : says("mono") ? 2 : 0];
         for (const std::string_view family :
-             {own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"}}) {
+             {own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"},
+              std::string_view{bold ? "notonaskharabic-bold" : "notonaskharabic-regular"}}) {
             if (const Font* found = draws(family)) return remember(found);
         }
         if (!outside) return remember(nullptr);

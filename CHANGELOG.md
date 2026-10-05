@@ -248,6 +248,11 @@ sees, newest work last within each group.
 
 ### Languages
 
+- **The engine carries an Arabic face**, Noto Naskh Arabic in its regular
+  and bold cuts (SIL Open Font License, its text beside the fonts in
+  `assets/fonts/text`), and draws Arabic, Persian and Urdu with it before
+  looking at the system's faces: an Arabic document is the same on every
+  system, a Linux with no Arabic face of its own included.
 - **A box reads the way its text does.** A minipage, a `\parbox` and a
   framed block begun in Arabic or Hebrew set their paragraphs right to left,
   each line in the order it is drawn in, and a direction changed inside one
@@ -775,9 +780,7 @@ labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
-Languages: no face for Arabic ships with the engine, so it needs one
-on the system (Windows and the Mac have one; a Linux without Noto or Amiri
-does not); digits stay Western; French spacing before `:;!?`, Arabic's
+Languages: digits stay Western; French spacing before `:;!?`, Arabic's
 kashida and CJK line breaking are not done. Coverage figures above count packages that
 load and whose common commands set text — not that every feature of each is
 drawn.
