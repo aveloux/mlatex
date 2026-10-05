@@ -1,9 +1,9 @@
 #pragma once
 
 #include "memory/arena.hpp"
+#include "typography/collection.hpp"
 #include "typography/face.hpp"
 #include "typography/font.hpp"
-#include "typography/library.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,7 +33,7 @@ namespace render::typography {
     ///
     /// @par Use
     /// @code
-    /// typography::Registry registry(arena, library);
+    /// typography::Registry registry(arena, collection);
     ///
     /// const typography::Registry::Request body{ .family = "text", .size = 12.0f };
     /// typography::Font* font = registry.get(body);
@@ -49,7 +49,7 @@ namespace render::typography {
     public:
         /// @brief What a caller is asking for.
         struct Request {
-            std::string_view family{};   ///< Family or alias, as the Library names it.
+            std::string_view family{};   ///< Family or alias, as the Collection names it.
             int weight{400};             ///< Stroke weight, 400 being regular.
             int slant{0};                ///< Non-zero for an italic or oblique cut.
             float size{12.0f};           ///< Size in points.
@@ -57,9 +57,9 @@ namespace render::typography {
 
         /// @brief Builds an empty registry over a font collection.
         /// @param arena Allocator for buckets and entries.
-        /// @param library  Where faces come from; must outlive this object.
+        /// @param collection  Where faces come from; must outlive this object.
         /// @param buckets Bucket count for each cache; rounded up to a power of two.
-        Registry(memory::Arena& arena, Library& library, std::size_t buckets = 128) noexcept;
+        Registry(memory::Arena& arena, Collection& collection, std::size_t buckets = 128) noexcept;
 
         ~Registry() noexcept;
 
@@ -101,15 +101,13 @@ namespace render::typography {
         ///             about for this face.
         [[nodiscard]] const Font* cover(const Font& font, std::uint32_t code, bool outside = true) noexcept;
 
-        /// @brief How many distinct fonts have been built.
-        [[nodiscard]] std::size_t count() const noexcept { return fonts; }
+        std::size_t fonts{0};       ///< How many distinct fonts have been built.
 
-        /// @brief How many distinct faces have been opened.
-        ///
-        /// At most one per family and cut a document actually used, whatever
-        /// number of sizes it was asked for at -- the number a writer will
-        /// later cut exactly that many subsets down to.
-        [[nodiscard]] std::size_t opened() const noexcept { return faces; }
+        /// How many distinct faces have been opened: at most one per family
+        /// and cut a document actually used, whatever number of sizes it was
+        /// asked for at -- the number a writer will later cut exactly that
+        /// many subsets down to.
+        std::size_t faces{0};
 
     private:
         /// @brief One font, at the size it was asked for.
@@ -137,13 +135,11 @@ namespace render::typography {
         };
 
         memory::Arena& arena;       ///< Storage for buckets and entries.
-        Library& library;           ///< Where faces come from.
+        Collection& collection;     ///< Where faces come from.
         std::vector<Cover> covers{};   ///< Every answer cover() gave, by face and block.
         std::size_t slots{0};       ///< Bucket count, always a power of two.
         Entry** table{nullptr};     ///< Font buckets.
         Surface** surfaces{nullptr};   ///< Face buckets.
-        std::size_t fonts{0};       ///< Distinct fonts built so far.
-        std::size_t faces{0};       ///< Distinct faces opened so far.
     };
 
 }

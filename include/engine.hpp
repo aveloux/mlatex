@@ -146,19 +146,24 @@ namespace engine {
     /// @brief Composes one document from disk into a PDF on disk, start to
     ///        finish, with whatever the command line hands it.
     ///
-    /// Reports what it did and how long each step took on standard output,
-    /// and every error on standard error.
+    /// The files the document inputs are found beside it.
     ///
     /// @param assets      The engine's own assets directory (fonts, hyphenation patterns).
     /// @param source      The document to read.
-    /// @param destination Where to write the PDF.
+    /// @param destination Where to write the PDF; empty to read and set the
+    ///                    document and write none, as TeX's draft mode does.
     /// @param host        Values, commands and files handed to the document.
+    /// @param report      Where what it did and how long each step took is
+    ///                    written, or null for nowhere.
+    /// @param errors      Where every error is written, one per line.
     /// @return True when the document compiled with nothing left broken.
     [[nodiscard]] bool compose(
         const std::filesystem::path& assets,
         const std::filesystem::path& source,
         const std::filesystem::path& destination,
-        const Host& host
+        const Host& host,
+        std::ostream* report,
+        std::ostream& errors
     );
 
     /// @brief Composes a document held in memory into a PDF held in memory,

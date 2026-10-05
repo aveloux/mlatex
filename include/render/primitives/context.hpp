@@ -5,15 +5,15 @@
 #include "memory/arena.hpp"
 #include "memory/location.hpp"
 #include "render/layout/node.hpp"
-#include "syntax/node.hpp"
 #include "syntax/expression/unicodes.hpp"
+#include "syntax/node.hpp"
+#include "syntax/number.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/primitives/blocks.hpp"
 #include "syntax/primitives/variables.hpp"
-#include "syntax/number.hpp"
 #include "syntax/semantics/registers.hpp"
+#include "typography/collection.hpp"
 #include "typography/font.hpp"
-#include "typography/library.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
 
@@ -111,7 +111,7 @@ namespace render::primitives {
         const layout::Typesetter& typesetter;              ///< Lowers formulas into boxes.
         syntax::semantics::Registers& registers;           ///< The register bank, scoped by Union.
         typography::Registry& registry;                    ///< Fonts already built.
-        typography::Library& library;                      ///< Where font files come from.
+        typography::Collection& collection;                      ///< Where font files come from.
         const typography::Shaper& shaper;                  ///< Text into positioned glyphs.
         const syntax::expression::Unicodes& unicodes;      ///< Maths symbol names.
         const syntax::primitives::Blocks& blocks;          ///< Named blocks, for a module that hooks one.
@@ -335,7 +335,7 @@ namespace render::primitives {
         return scanned ? static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale) : 0.0f;
     }
 
-    /// @brief Turns one parsed child into the boxes it stands for.
+    /// @brief Composes the boxes one parsed child stands for.
     ///
     /// Boxes, tables and list items all parse a group and then need its
     /// contents as layout nodes. This is that step, in one place: text is
@@ -346,7 +346,7 @@ namespace render::primitives {
     /// @param child   The parsed node; null and empty text add nothing.
     /// @param context Engine services, for the font and the two engines.
     /// @complexity O(n) in the characters, plus the shaper's or typesetter's work.
-    inline void gather(
+    inline void compose(
         std::vector<layout::Node*>& nodes,
         const syntax::Node* child,
         const Context& context
@@ -357,7 +357,7 @@ namespace render::primitives {
         // Its children go in where it stood.
         if (child->type == syntax::Node::Type::Group) {
             for (std::size_t index = 0; index < child->nodes.count; ++index) {
-                gather(nodes, child->nodes[index], context);
+                compose(nodes, child->nodes[index], context);
             }
             return;
         }

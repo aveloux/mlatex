@@ -38,8 +38,8 @@ namespace render::typography {
         return value;
     }
 
-    Registry::Registry(memory::Arena& arena, Library& library, const std::size_t buckets) noexcept
-        : arena(arena), library(library) {
+    Registry::Registry(memory::Arena& arena, Collection& collection, const std::size_t buckets) noexcept
+        : arena(arena), collection(collection) {
         this->slots = std::bit_ceil(buckets > 0 ? buckets : 128);
         table = arena.allocate<Entry*>(this->slots).data;
         surfaces = arena.allocate<Surface*>(this->slots).data;
@@ -83,10 +83,10 @@ namespace render::typography {
         // The face behind it, shared by every size of the family: resolved
         // before its own cache is consulted, so `text` and the file name it
         // stands for land in the same bucket -- whatever alias a caller used
-        // to ask for a family, the file behind it is one entry. Library's
+        // to ask for a family, the file behind it is one entry. Collection's
         // lookup is O(1) average and free of I/O past the first read, so
         // paying for it ahead of the cache costs nothing on a hit.
-        const Library::Entry* file = library.read(request.family);
+        const Collection::Entry* file = collection.get(request.family);
         if (!file) {
             Logger::log(Logger::Type::Layout, Logger::Level::Error,
                         "No font indexed for family '{}'", request.family);
@@ -103,7 +103,7 @@ namespace render::typography {
         }
         if (!built) {
             built = arena.compose<Surface>();
-            built->family = file->family;   // already arena-resident, via Library
+            built->family = file->family;   // already arena-resident, via Collection
             built->weight = request.weight;
             built->slant = request.slant;
             if (!built->face.compose(file->bytes)) {
@@ -163,7 +163,7 @@ namespace render::typography {
         const std::size_t cut = (bold ? 1 : 0) + (says("italic") || says("oblique") || says("slant") ? 2 : 0);
 
         const auto draws = [&](const std::string_view family) -> const Font* {
-            if (family.empty() || family == name || !library.read(family)) return nullptr;
+            if (family.empty() || family == name || !collection.get(family)) return nullptr;
             const Font* found = get({.family = family, .size = font.size()});
             return found && found->index(code) != 0 ? found : nullptr;
         };
@@ -206,7 +206,7 @@ namespace render::typography {
              "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
              "segoeuiz", "tahomabd", "msyhbd", "notosanscjk-bold", "seguisym", "notosanssymbols2-regular"},
         }};
-        library.system();
+        collection.post();
         for (const std::size_t pass : {cut, std::size_t{0}}) {
             for (const std::string_view family : systems[pass]) {
                 if (const Font* found = draws(family)) return remember(found);

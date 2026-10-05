@@ -40,13 +40,13 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Parser parser(mouth, arena);
 
     std::string text;
-    const auto gather = [&text](this const auto& self, const memory::Slice<syntax::Node*> nodes) -> void {
+    const auto get = [&text](this const auto& self, const memory::Slice<syntax::Node*> nodes) -> void {
         for (const syntax::Node* node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
     };
-    gather(parser.parse(0));
+    get(parser.parse(0));
 
     std::string folded;
     for (const char letter : text) {

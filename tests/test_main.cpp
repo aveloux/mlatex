@@ -50,7 +50,36 @@ int main() {
 
     const std::filesystem::path broken =
         write("main-broken.mtex", "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
-    assert((run(broken, "") != 0) && "a document with a mistake fails the run");
+    assert((run(broken, "") == 1) && "a document with a mistake fails the run");
+
+    // TeX's options, with one dash or two, and the engine's own.
+    assert((run(document, "--version") == 0 && run(document, "-v") == 0) && "--version");
+    assert((run(document, "--help") == 0 && run(document, "-h") == 0) && "--help");
+    assert((run(document, "--no-such-option") == 2) && "an option nothing knows is the command line's mistake");
+    assert((run(document, "-interaction=batchmode") == 0 && run(document, "--interaction nonstopmode") == 0) &&
+           "-interaction, written as TeX writes it or with its value after it");
+    assert((run(document, "--interaction=sometimes") == 2) && "an interaction TeX has no name for");
+    assert((run(document, "--aot=windows -q") == 0 && run(document, "--aot=amiga") == 2) &&
+           "--aot for a system, and none it does not know");
+
+    std::filesystem::remove(pdf);
+    assert((run(document, "--jit") == 0 && !std::filesystem::exists(pdf)) && "--jit is taken, and does nothing yet");
+    assert((run(document, "--draftmode -q") == 0 && !std::filesystem::exists(pdf)) && "--draftmode writes no PDF");
+
+    std::filesystem::path stray = broken;
+    stray.replace_extension(".pdf");
+    std::filesystem::remove(stray);
+    assert((run(broken, "-halt-on-error -q") == 1 && !std::filesystem::exists(stray)) &&
+           "-halt-on-error leaves no PDF from a document with a mistake");
+
+    const std::filesystem::path folder = std::filesystem::temp_directory_path() / "main-output";
+    std::filesystem::remove_all(folder);
+    assert((run(document, "-q --output-directory=\"" + folder.string() + "\" -jobname=final") == 0 &&
+            std::filesystem::exists(folder / "final.pdf")) && "--output-directory and --jobname place and name the PDF");
+
+    std::filesystem::path bare = document;
+    bare.replace_extension();
+    assert((run(bare, "-q") == 0) && "a document named without its extension is found as .mtex");
 
     return 0;
 }

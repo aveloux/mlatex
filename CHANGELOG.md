@@ -500,6 +500,24 @@ sees, newest work last within each group.
   and an output intent with an sRGB ICC profile made by the engine; every
   face is embedded already, and every link marked to print.
 
+### The command line
+
+`latex [options] [document]` takes TeX's own options, with one dash or two
+as TeX does, so a script written for pdflatex runs it unchanged:
+`-h`/`--help`, `-v`/`--version`, `-o`/`--output-directory`, `-j`/`--jobname`,
+`-i`/`--interaction` (batchmode prints nothing but errors), `-q`/`--quiet`,
+`--halt-on-error` (no PDF from a document with an error), `--draftmode`
+(every error found, no PDF written) and `--file-line-error` (each error as
+`file:line:column: message`); a value after `=` or as the next argument, and
+`--` ending the options. `-s`/`--set=NAME=VALUE` hands the document a value.
+`--aot[=windows|macos|linux]` typesets ahead of time into a PDF, the
+default; `--jit` is taken and does nothing yet. A document named without an
+extension is found as `.mtex`, then `.tex`. The exit status is 0 for a clean
+document, 1 for one with an error and 2 for a mistake on the command line.
+The logger's `--debug`, `--trace`, `--log-level`, `--log-file` and
+`--no-color` are listed with them. `engine::compose` takes where its report
+and its errors go, and an empty destination for a draft.
+
 ### For programs
 
 - `engine::Session`: values, commands, packages and pictures handed in once
@@ -673,6 +691,16 @@ font folders are listed only for a script the engine carries no face for.
   what `define` gave, as the language's `\forget` does (`undefine`).
 - `CatCodes` is `Catcodes`, and the last snake_case names (in the plots
   module) are single words.
+- **The font collection is `typography::Collection`** (was `Library`, in
+  `collection.hpp`), on the engine's own verbs: `post(directory)` indexes a
+  tree and `post()` the system's folders (were `survey` and `system`),
+  `set(name, family)` points a name at a face (was `alias`), `get(family)`
+  reads one (was `read`); how many faces it holds and how many bytes are
+  resident are its fields `faces` and `bytes`, as the registry's `fonts`
+  and `faces` and the document's `blocks` are (were `count()`, `resident()`,
+  `opened()`). The step that turns a parsed child into its boxes is
+  `render::primitives::compose` (was `gather`), and the lambdas named
+  `gather` are named for what they do.
 - `#embed` needs no pragmas: Clang's claim that it is an extension under
   C++26 is turned off once in CMakeLists.txt, and the
   `#if defined(__clang__)` blocks around the three files that embed are gone.

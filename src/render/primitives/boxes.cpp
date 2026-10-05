@@ -97,7 +97,7 @@ namespace render::primitives {
                                     const float target = 0.0f) {
             std::vector<layout::Node*> nodes;
             nodes.reserve(children.count);
-            for (const syntax::Node* child : children) gather(nodes, child, context);
+            for (const syntax::Node* child : children) compose(nodes, child, context);
             const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(nodes.size());
             std::ranges::copy(nodes, list.begin());
             return layout::Line::horizontal(arena, list, target);
@@ -113,7 +113,7 @@ namespace render::primitives {
         const auto placed = [&context](memory::Arena& arena, const memory::Slice<syntax::Node*> children,
                                        const float target, const char position) {
             std::vector<layout::Node*> nodes;
-            for (const syntax::Node* child : children) gather(nodes, child, context);
+            for (const syntax::Node* child : children) compose(nodes, child, context);
             memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(nodes.size());
             std::ranges::copy(nodes, list.begin());
             if (position == 's') return layout::Line::horizontal(arena, list, target);
@@ -279,7 +279,7 @@ namespace render::primitives {
                         continue;
                     }
                     gathered.clear();
-                    gather(gathered, child, context);
+                    compose(gathered, child, context);
                     for (layout::Node* node : gathered) {
                         if (node->type == layout::Node::Type::Directive) {
                             const layout::Node::Directive& order = node->directive();
@@ -371,7 +371,7 @@ namespace render::primitives {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             std::vector<layout::Node*> nodes;
-            for (const syntax::Node* child : contents(parser, "\\vbox")) gather(nodes, child, context);
+            for (const syntax::Node* child : contents(parser, "\\vbox")) compose(nodes, child, context);
             const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(nodes.size());
             std::ranges::copy(nodes, list.begin());
             return directive(arena, layout::Line::vertical(arena, list, 0.0f), origin);
@@ -765,7 +765,7 @@ namespace render::primitives {
                 context.selection.color(painted);
 
                 std::vector<layout::Node*> written;
-                for (const syntax::Node* child : heading) gather(written, child, context);
+                for (const syntax::Node* child : heading) compose(written, child, context);
                 layout::Node* words = row(written);
                 const float tall = words->box().height + room;
                 const float low = words->box().depth + room;
@@ -970,7 +970,7 @@ namespace render::primitives {
                 box = row(arena, contents(parser, "\\setbox"), target);
             } else if (kind.symbol == made[1] || kind.symbol == made[2]) {
                 std::vector<layout::Node*> nodes;
-                for (const syntax::Node* child : contents(parser, "\\setbox")) gather(nodes, child, context);
+                for (const syntax::Node* child : contents(parser, "\\setbox")) compose(nodes, child, context);
                 const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(nodes.size());
                 std::ranges::copy(nodes, list.begin());
                 box = layout::Line::vertical(arena, list, 0.0f);

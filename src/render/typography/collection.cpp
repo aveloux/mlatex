@@ -1,14 +1,14 @@
 /// @file
-/// @brief Library implementation: index the font tree, keep its bytes resident.
+/// @brief Collection implementation: index the font tree, keep its bytes resident.
 ///
-/// Two things happen here and nothing else. survey() walks a directory and
+/// Two things happen here and nothing else. post() walks a directory and
 /// writes one table entry per font file, holding the path and no contents.
-/// read() turns an entry's path into bytes the first time it is asked -- by
+/// get() turns an entry's path into bytes the first time it is asked -- by
 /// mapping the file, or reading it where it will not map -- and keeps them,
 /// so every later request for that family is a table lookup. WebAssembly is
 /// always read: its file system is memory already, and a mapping there would
 /// only be a copy made a slower way.
-#include "typography/library.hpp"
+#include "typography/collection.hpp"
 #include "logger.hpp"
 
 #include <bit>
@@ -76,7 +76,7 @@ namespace render::typography {
         return true;
     }
 
-    Library::Library(memory::Arena& arena, const std::size_t buckets) noexcept : arena(arena) {
+    Collection::Collection(memory::Arena& arena, const std::size_t buckets) noexcept : arena(arena) {
         // Rounded to a power of two so that a lookup masks instead of dividing.
         // A modulo on the hot path costs more than the comparison after it.
         this->slots = std::bit_ceil(buckets > 0 ? buckets : 512);
@@ -84,7 +84,7 @@ namespace render::typography {
         for (std::size_t index = 0; index < this->slots; ++index) table[index] = nullptr;
     }
 
-    Library::~Library() noexcept {
+    Collection::~Collection() noexcept {
         // The views, not the entries: an entry an alias took over no longer
         // names the bytes it once held, and a Face may be reading them still
         // right up to this point.
@@ -97,7 +97,7 @@ namespace render::typography {
         }
     }
 
-    std::size_t Library::survey(const std::string_view directory, const std::span<const std::string_view> files) {
+    std::size_t Collection::post(const std::string_view directory, const std::span<const std::string_view> files) {
         if (directory.empty() || !table) return 0;
 
         // A listing handed in is taken as the tree's own, and nothing on the
@@ -116,7 +116,7 @@ namespace render::typography {
         // the stem, the folder it sits in -- is cut out of that one string,
         // because on a system whose paths are not bytes each conversion is a
         // transcode, and three of them per file would be most of the cost of
-        // surveying a tree.
+        // listing a tree.
         const auto enter = [&](const std::string_view name) {
             const std::size_t dot = name.find_last_of('.');
             if (dot == std::string_view::npos) return;
@@ -149,7 +149,7 @@ namespace render::typography {
                 family[index] = fold(stem[index]);
             }
 
-            // Kept with a terminating zero after it, so read() can hand the
+            // Kept with a terminating zero after it, so get() can hand the
             // path to the system as it stands rather than copying it first.
             const memory::Slice<char> path = arena.allocate<char>(name.size() + 1);
             std::memcpy(path.data, name.data(), name.size());
@@ -186,9 +186,9 @@ namespace render::typography {
 
             // Earlier by name wins, so the choice does not depend on order.
             if (!named) {
-                alias(folder, stem);
+                set(folder, stem);
             } else if (named->target && entry->family < named->target->family) {
-                alias(folder, stem);
+                set(folder, stem);
             }
         };
 
@@ -279,7 +279,7 @@ namespace render::typography {
         return indexed;
     }
 
-    std::size_t Library::system() {
+    std::size_t Collection::post() {
         const std::scoped_lock lock(guard);
         if (searched) return 0;
         searched = true;
@@ -311,12 +311,12 @@ namespace render::typography {
         for (const std::filesystem::path& folder : folders) {
             if (!std::filesystem::is_directory(folder, failure) || failure) continue;
             const std::u8string written = folder.u8string();
-            indexed += survey(std::string_view(reinterpret_cast<const char*>(written.data()), written.size()));
+            indexed += post(std::string_view(reinterpret_cast<const char*>(written.data()), written.size()));
         }
         return indexed;
     }
 
-    void Library::alias(const std::string_view name, const std::string_view family) {
+    void Collection::set(const std::string_view name, const std::string_view family) {
         if (name.empty() || family.empty() || !table) return;
 
         const std::size_t slot = digest(name) & (slots - 1);
@@ -343,7 +343,7 @@ namespace render::typography {
         // An alias owns no file of its own, so anything it held as a face is
         // dropped. Naming a target that is not indexed yet leaves the alias
         // dangling rather than failing, which is what lets a driver express a
-        // preference before the tree is surveyed.
+        // preference before the tree is posted.
         entry->path = {};
         entry->bytes = {};
         entry->target = nullptr;
@@ -356,7 +356,7 @@ namespace render::typography {
         }
     }
 
-    const Library::Entry* Library::read(const std::string_view family) const {
+    const Collection::Entry* Collection::get(const std::string_view family) const {
         const std::scoped_lock lock(guard);
         if (family.empty() || !table) return nullptr;
 
@@ -435,7 +435,7 @@ namespace render::typography {
         if (extent <= 0) return nullptr;
         file.seekg(0, std::ios::beg);
 
-        // Into storage the library keeps: a face borrows this span rather than
+        // Into storage the collection keeps: a face borrows this span rather than
         // taking a copy, so a second size of the same family costs nothing.
         const auto count = static_cast<std::size_t>(extent);
         auto storage = std::make_unique_for_overwrite<std::uint8_t[]>(count);

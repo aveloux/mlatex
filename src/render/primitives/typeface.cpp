@@ -3,7 +3,7 @@
 ///
 /// Nothing here opens a file. The registry is asked for a family at a size and
 /// returns a font it may already have built; the bytes behind it come from the
-/// library, which read them at most once for the whole run.
+/// collection, which read them at most once for the whole run.
 #include "render/primitives/typeface.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"

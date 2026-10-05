@@ -737,7 +737,7 @@ namespace render::primitives {
                 mouth.pop(syntax::semantics::Scope::Type::Group);
 
                 std::vector<layout::Node*> set;
-                for (const syntax::Node* child : read) gather(set, child, context);
+                for (const syntax::Node* child : read) compose(set, child, context);
                 if (set.empty()) return static_cast<layout::Node*>(nullptr);
                 const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(set.size());
                 std::ranges::copy(set, row.begin());

@@ -15,7 +15,6 @@
 #include "layout/document.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
-#include "syntax/modules.hpp"
 #include "render/composer.hpp"
 #include "render/pdf.hpp"
 #include "render/primitives/context.hpp"
@@ -24,6 +23,7 @@
 #include "syntax/cursor.hpp"
 #include "syntax/expression/unicodes.hpp"
 #include "syntax/lexicon.hpp"
+#include "syntax/modules.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/node.hpp"
 #include "syntax/parser.hpp"
@@ -31,8 +31,8 @@
 #include "syntax/primitives/wrapper.hpp"
 #include "syntax/semantics/union.hpp"
 #include "syntax/tokens.hpp"
+#include "typography/collection.hpp"
 #include "typography/hyphenator.hpp"
-#include "typography/library.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
 
@@ -41,7 +41,6 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -104,13 +103,13 @@ namespace engine {
         // The font tree is indexed, not parsed: this records where each file
         // is, from the listing the build took of the tree, and the first face
         // a document actually asks for is the first one read.
-        render::typography::Library library(arena);
-        const std::size_t indexed = library.survey((assets / "fonts").string(), faces);
+        render::typography::Collection collection(arena);
+        const std::size_t indexed = collection.post((assets / "fonts").string(), faces);
 
         // Two roles, pointed at concrete faces. A document may change either
         // with `\\textfont` or `\\mathfont`; these are only where it starts.
-        library.alias("text", "lmroman10-regular");
-        library.alias("expression", "NewCMMath-Regular");
+        collection.set("text", "lmroman10-regular");
+        collection.set("expression", "NewCMMath-Regular");
 
         // The faces nearly every document sets in besides those two -- Latin
         // Modern's italic and bold, its sizes for headings, scripts and notes,
@@ -124,9 +123,9 @@ namespace engine {
             "lmroman10-italic", "lmroman10-bold", "lmroman12-regular", "lmroman17-regular", "lmroman7-regular",
             "lmroman5-regular", "lmroman8-regular", "lmroman9-regular", "lmroman10-bolditalic", "lmmono10-regular",
         };
-        const auto warm = [&library] {
+        const auto warm = [&collection] {
             for (const std::string_view family : likely) {
-                const render::typography::Library::Entry* entry = library.read(family);
+                const render::typography::Collection::Entry* entry = collection.get(family);
                 if (!entry) continue;
                 std::uint8_t touched = 0;
                 for (std::size_t at = 0; at < entry->bytes.size(); at += 4096) touched ^= entry->bytes[at];
@@ -156,7 +155,7 @@ namespace engine {
 
         const auto surveyed = std::chrono::high_resolution_clock::now();
 
-        render::typography::Registry registry(arena, library);
+        render::typography::Registry registry(arena, collection);
 
         constexpr float body = 12.0f;
         const render::typography::Font* prose = registry.get({.family = "text", .size = body});
@@ -287,7 +286,7 @@ namespace engine {
         // either layer having to know about the other's modules.
         const render::primitives::Wrapper visuals(lexicon);
         render::primitives::Context rendering{
-            composer.document, typesetter, state.registers, registry, library,
+            composer.document, typesetter, state.registers, registry, collection,
             shaper, unicodes, core.blocks, core.variables, arena, selection
         };
         rendering.files = &host.files;
@@ -410,7 +409,7 @@ namespace engine {
         // `\\textfont` part way through is honoured from that point on.
         // Recursive, because a brace group is a boundary around nodes rather
         // than a node in its own right: what it holds goes in where it stood.
-        const auto gather = [&composer, &selection](
+        const auto post = [&composer, &selection](
             auto&& again, const memory::Slice<syntax::Node*> nodes) -> void {
             for (std::size_t index = 0; index < nodes.count; ++index) {
                 const syntax::Node* node = nodes[index];
@@ -458,7 +457,7 @@ namespace engine {
         // the document then, for the boxes; its text goes in from the start,
         // where the language is the one the run began with.
         composer.document.hyphenate(&hyphenator);
-        gather(gather, outputs);
+        post(post, outputs);
 
         // What the file says of itself, as hyperref's \hypersetup gave it, and
         // whether it keeps to PDF/A-2b: pdfx's `a-2b` and its kin, or
@@ -524,17 +523,18 @@ namespace engine {
         out << std::fixed << std::setprecision(1);
         out << "Pipeline\n";
         out << "  Font files indexed      : " << indexed << '\n';
-        out << "  Font bytes resident     : " << library.resident() << '\n';
-        out << "  Fonts built             : " << registry.count() << '\n';
-        out << "  Faces opened            : " << registry.opened() << '\n';
+        out << "  Font bytes resident     : " << collection.bytes << '\n';
+        out << "  Fonts built             : " << registry.fonts << '\n';
+        out << "  Faces opened            : " << registry.faces << '\n';
         out << "  Faces embedded          : " << composer.faces.size() << '\n';
         out << "  Images embedded         : " << composer.pictures.size() << '\n';
         out << "  Hyphenation patterns    : " << patterns << '\n';
         out << "  Top-level nodes         : " << outputs.count << '\n';
-        out << "  Document blocks         : " << composer.document.count() << '\n';
+        out << "  Document blocks         : " << composer.document.blocks << '\n';
         out << "  Pages                   : " << pages.count << '\n';
         out << "  Page size               : " << page.width << " by " << page.height << " pt\n";
-        out << "  Output file             : " << (destination ? destination->string() : "(memory)") << '\n';
+        out << "  Output file             : "
+            << (destination ? destination->string() : pdf ? std::string("(memory)") : std::string("(none)")) << '\n';
         out << '\n';
 
         out << std::setprecision(4);
@@ -623,9 +623,12 @@ namespace engine {
         const std::filesystem::path& assets,
         const std::filesystem::path& source,
         const std::filesystem::path& destination,
-        const Host& host
+        const Host& host,
+        std::ostream* report,
+        std::ostream& errors
     ) {
-        return run(assets, &source, {}, &destination, nullptr, nullptr, host, &std::cout, std::cerr);
+        return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, nullptr, host,
+                   report, errors);
     }
 
     bool typeset(

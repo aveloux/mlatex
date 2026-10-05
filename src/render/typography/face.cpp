@@ -1,7 +1,7 @@
 /// @file
 /// @brief Face implementation: open a font file that is already in memory.
 ///
-/// Nothing here reads from disk and nothing copies. Library holds the bytes, a
+/// Nothing here reads from disk and nothing copies. Collection holds the bytes, a
 /// blob points at them, and HarfBuzz reads the table directory out of that.
 #include "typography/face.hpp"
 #include "logger.hpp"

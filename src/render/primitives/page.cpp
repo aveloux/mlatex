@@ -675,7 +675,7 @@ namespace render::primitives {
             stamp(content, context);
 
             std::vector<layout::Node*> gathered;
-            for (const syntax::Node* child : content) gather(gathered, child, context);
+            for (const syntax::Node* child : content) compose(gathered, child, context);
             const memory::Slice<layout::Node*> nodes = arena.allocate<layout::Node*>(gathered.size());
             std::ranges::copy(gathered, nodes.begin());
 

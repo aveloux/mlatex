@@ -67,7 +67,7 @@ int main() {
     {
         const Result result = article("\\usepackage{amsmath}",
                                       "\\begin{align} a &= b \\\\ c &= d \\notag \\\\ e &= f \\end{align}"
-                                      "\\begin{gather*} g \\end{gather*}");
+                                      "\\begin{get*} g \\end{get*}");
         assert((result.clean && holds(result.text, "a=b(1)") && holds(result.text, "e=f(2)") &&
                !holds(result.text, "(3)")) && "an align numbers each row, but one marked \\notag");
     }

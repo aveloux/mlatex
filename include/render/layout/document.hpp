@@ -272,8 +272,7 @@ namespace render::layout {
             bool archival{false};                 ///< Kept to PDF/A-2b.
         };
 
-        /// @brief How many blocks the document holds.
-        [[nodiscard]] std::size_t count() const noexcept { return blocks; }
+        std::size_t blocks{0};          ///< How many blocks the document holds.
 
         /// @brief How wide one of so many columns is across the text block,
         ///        `\\columnsep` apart: `\\columnwidth`.
@@ -353,7 +352,6 @@ namespace render::layout {
         std::vector<Shape> shapes{};    ///< What Save kept, innermost last.
         Element* head{nullptr};         ///< First block.
         Element* tail{nullptr};         ///< Last block, so appending stays O(1).
-        std::size_t blocks{0};          ///< How many there are.
     };
 
 }

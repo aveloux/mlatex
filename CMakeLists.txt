@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(latex C CXX)
+project(latex VERSION 0.1.0 LANGUAGES C CXX)
 
 # C++26, for #embed above all: the prelude, its packages and the hyphenation
 # patterns are compiled into the engine as the files they are, by the
@@ -362,6 +362,8 @@ if(EMSCRIPTEN)
 else()
     add_executable(latex "${source}/src/main.cpp")
     target_link_libraries(latex PRIVATE engine)
+    # What `latex --version` prints.
+    target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
 
     # The engine as a C library, for a program that wants documents made
     # without running a second process: see include/network/ffi.hpp. Named

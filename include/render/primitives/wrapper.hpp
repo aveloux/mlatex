@@ -60,7 +60,7 @@ namespace render::primitives {
     /// @code
     /// render::primitives::Wrapper visuals(lexicon);
     /// render::primitives::Context context{
-    ///     document, typesetter, registers, registry, library,
+    ///     document, typesetter, registers, registry, collection,
     ///     shaper, unicodes, core.blocks, core.variables, arena, selection
     /// };
     /// visuals(parser, context);

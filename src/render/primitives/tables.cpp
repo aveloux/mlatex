@@ -249,7 +249,7 @@ namespace render::primitives {
                 std::vector<layout::Node*> nodes;
                 nodes.reserve(children.count);
                 for (std::size_t index = 0; index < children.count; ++index) {
-                    gather(nodes, children[index], context);
+                    compose(nodes, children[index], context);
                 }
 
                 const memory::Slice<layout::Node*> contents =
@@ -883,7 +883,7 @@ namespace render::primitives {
                     }
 
                     std::vector<layout::Node*> gathered;
-                    for (const syntax::Node* node : nodes) gather(gathered, node, context);
+                    for (const syntax::Node* node : nodes) compose(gathered, node, context);
                     const memory::Slice<layout::Node*> material = arena.allocate<layout::Node*>(gathered.size());
                     std::ranges::copy(gathered, material.begin());
 

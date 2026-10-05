@@ -384,7 +384,7 @@ namespace render::primitives {
                 if (delimiter == '$' && mouth.lookahead().text == "$") static_cast<void>(mouth.read());
 
                 std::vector<layout::Node*> set;
-                for (const syntax::Node* child : read) gather(set, child, context);
+                for (const syntax::Node* child : read) compose(set, child, context);
                 const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(set.size());
                 std::ranges::copy(set, row.begin());
                 layout::Node* body = layout::Line::horizontal(arena, row, 0.0f);

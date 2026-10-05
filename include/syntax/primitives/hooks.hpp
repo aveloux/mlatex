@@ -49,7 +49,7 @@ namespace syntax::primitives {
         ///
         /// Adding to a hook and running one cannot fail -- an unknown hook
         /// is an empty one -- but every module answers the same question, so
-        /// Wrapper can gather them without knowing which ones can.
+        /// Wrapper can merge them without knowing which ones can.
         [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
 
         /// @brief Runs a hook: its code goes in front of whatever is read

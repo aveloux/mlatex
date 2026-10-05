@@ -127,7 +127,7 @@ namespace render::primitives {
         // Measured once, so a caption that fits on one line is centred and
         // a longer one justified, as the standard classes decide.
         std::vector<layout::Node*> measured;
-        for (const syntax::Node* child : body) gather(measured, child, context);
+        for (const syntax::Node* child : body) compose(measured, child, context);
         context.selection.text(restore);
 
         const typography::Font* labelled[] = {heavy ? heavy : face};

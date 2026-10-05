@@ -85,7 +85,7 @@ namespace render::primitives {
             content.push_back(before);
             content.push_back(raised);
         }
-        for (const syntax::Node* child : body) gather(content, child, context);
+        for (const syntax::Node* child : body) compose(content, child, context);
         context.selection.text(restore);
 
         const memory::Slice<layout::Node*> pieces = arena.allocate<layout::Node*>(content.size());
@@ -196,7 +196,7 @@ namespace render::primitives {
                 context.selection = kept;
 
                 std::vector<layout::Node*> content;
-                for (const syntax::Node* child : body) gather(content, child, context);
+                for (const syntax::Node* child : body) compose(content, child, context);
                 if (content.empty()) return nullptr;
                 const memory::Slice<layout::Node*> pieces = arena.allocate<layout::Node*>(content.size());
                 std::ranges::copy(content, pieces.begin());

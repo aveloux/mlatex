@@ -8,8 +8,8 @@
 #include "syntax/lexicon.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/semantics/union.hpp"
+#include "typography/collection.hpp"
 #include "typography/expression.hpp"
-#include "typography/library.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
 
@@ -231,12 +231,12 @@ int main() {
     memory::Arena arena(1u << 24);
     memory::Arena scratch(1u << 22);
 
-    typography::Library library(arena);
-    const std::size_t surveyed = library.survey((assets / "fonts").string());
+    typography::Collection collection(arena);
+    const std::size_t surveyed = collection.post((assets / "fonts").string());
     assert((surveyed > 0) && "the font tree is found");
-    library.alias("expression", "NewCMMath-Regular");
+    collection.set("expression", "NewCMMath-Regular");
 
-    typography::Registry registry(arena, library);
+    typography::Registry registry(arena, collection);
     const typography::Font* font = registry.get({.family = "expression", .size = 12.0f});
     assert((font != nullptr) && "the maths face opens");
     if (!font) return 1;

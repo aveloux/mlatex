@@ -22,14 +22,14 @@ namespace render::typography {
     /// directory and leaves each table unread until something wants it, which
     /// is as little work as opening a font can be.
     ///
-    /// @warning The bytes must outlive the Face. Library allocates them from
+    /// @warning The bytes must outlive the Face. Collection allocates them from
     ///          the arena and never frees them, which satisfies that as long
     ///          as the arena outlives the Face -- Registry arranges it.
     ///
     /// @par Use
     /// @code
     /// typography::Face face;
-    /// if (const auto* entry = library.read("text")) {
+    /// if (const auto* entry = collection.get("text")) {
     ///     face.compose(entry->bytes);
     /// }
     /// @endcode

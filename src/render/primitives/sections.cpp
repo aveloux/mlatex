@@ -176,7 +176,7 @@ namespace render::primitives {
                 quad->kern({.width = look && look->sep >= 0.0f ? look->sep : font->size()});
                 nodes.push_back(quad);
             }
-            for (const syntax::Node* child : title) gather(nodes, child, context);
+            for (const syntax::Node* child : title) compose(nodes, child, context);
 
             // Centred or flush right: the line as wide as the column, the
             // room left taken by glue at its edges.
@@ -845,7 +845,7 @@ namespace render::primitives {
                         }
                         syntax::Node copy = *child;
                         if (copy.type == syntax::Node::Type::Text) copy.face = face;
-                        gather(line, &copy, context);
+                        compose(line, &copy, context);
                     }
                 };
                 retitle(entry.title);
@@ -931,7 +931,7 @@ namespace render::primitives {
                         const bool last = level + 1 == keys.size();
                         if (!last && level < printed.size() && printed[level] == keys[level]) continue;
                         std::vector<layout::Node*> line{kern(static_cast<float>(level) * 20.0f)};
-                        for (const syntax::Node* child : sorted[at]->shown[level]) gather(line, child, context);
+                        for (const syntax::Node* child : sorted[at]->shown[level]) compose(line, child, context);
 
                         // Its pages, each in the face its encap asks for, and
                         // what it sends a reader to see.

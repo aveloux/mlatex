@@ -389,7 +389,7 @@ namespace render::primitives {
                 stamp(read, context);
 
                 std::vector<layout::Node*> nodes;
-                for (const syntax::Node* child : read) gather(nodes, child, context);
+                for (const syntax::Node* child : read) compose(nodes, child, context);
                 context.selection.text(restore);
                 const memory::Slice<layout::Node*> shaped = arena.allocate<layout::Node*>(nodes.size());
                 std::ranges::copy(nodes, shaped.begin());

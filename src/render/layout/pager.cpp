@@ -360,7 +360,7 @@ namespace render::layout {
         // this height -- in order, at least the first when forced, a kind
         // whose float does not fit, or waits earlier in the other list,
         // holding back its later ones -- and how tall they stand together.
-        const auto gather = [&](const std::deque<Float>& list, const std::deque<Float>& other, const float tall,
+        const auto fitting = [&](const std::deque<Float>& list, const std::deque<Float>& other, const float tall,
                                 const bool forced) {
             std::vector<std::size_t> taken;
             std::vector<std::size_t> held;
@@ -389,7 +389,7 @@ namespace render::layout {
         // allow, \\textfloatsep above the columns.
         const auto spread = [&](const bool forced) {
             while (!spanning.empty()) {
-                const auto [taken, filled] = gather(spanning, waiting, context.height - used, forced);
+                const auto [taken, filled] = fitting(spanning, waiting, context.height - used, forced);
                 if (taken.empty() || (!forced && filled < rules.sheet * context.height)) break;
                 if (!above.empty()) seal();
                 std::vector<Float> set;
@@ -510,7 +510,7 @@ namespace render::layout {
             // -- \\floatpagefraction -- or the break is forced.
             if (!waiting.empty() && filling.empty() && heads.empty() && feet.empty()) {
                 const float tall = context.height - used - reserved;
-                const auto [taken, filled] = gather(waiting, spanning, tall, forced);
+                const auto [taken, filled] = fitting(waiting, spanning, tall, forced);
                 if (!taken.empty() && (forced || filled >= rules.page * tall)) {
                     std::vector<Float> set;
                     for (const std::size_t index : taken) set.push_back(std::move(waiting[index]));

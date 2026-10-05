@@ -16,7 +16,7 @@ namespace render::typography {
     ///
     /// A font family is reached by name in constant time, and the bytes behind
     /// it are mapped into memory at most once for the life of the process.
-    /// Nothing here parses a font: survey() only walks the directory and
+    /// Nothing here parses a font: post() only walks the directory and
     /// records where each file is, so a collection of any size costs one pass
     /// over the tree rather than one shaping-engine parse per file.
     ///
@@ -35,7 +35,7 @@ namespace render::typography {
     /// and waiting while it reads the name table out of each one. For the
     /// hundred-odd faces a document set ships with that is tens of
     /// milliseconds, every run, to answer a question the file names already
-    /// answer. survey() answers it from the file names, and read() pays for a
+    /// answer. post() answers it from the file names, and get() pays for a
     /// face only when a document actually asks for one.
     ///
     /// @par Naming
@@ -43,30 +43,30 @@ namespace render::typography {
     /// registers as `lmroman10-regular`. A lookup folds its query the same way,
     /// so a document may write the family however it likes.
     ///
-    /// Each directory surveyed also registers its own name as a family, bound
+    /// Each directory posted also registers its own name as a family, bound
     /// to the first face inside it. A tree laid out as `fonts/text` and
     /// `fonts/expression` therefore answers `text` and `expression` with no
-    /// configuration at all, and alias() overrides that when a document wants
+    /// configuration at all, and set() overrides that when a document wants
     /// a particular face in the role.
     ///
     /// @par Use
     /// @code
     /// memory::Arena arena(16 * 1024 * 1024);
-    /// typography::Library library(arena);
+    /// typography::Collection collection(arena);
     ///
-    /// library.survey("assets/fonts");                   // index, no parsing
-    /// library.alias("text", "lmroman10-regular");       // pick the body face
+    /// collection.post("assets/fonts");                // index, no parsing
+    /// collection.set("text", "lmroman10-regular");    // pick the body face
     ///
-    /// if (const auto* entry = library.read("text")) {
-    ///     face.compose(entry->bytes);                   // resident, borrowed
+    /// if (const auto* entry = collection.get("text")) {
+    ///     face.compose(entry->bytes);                 // resident, borrowed
     /// }
     /// @endcode
     ///
-    /// @warning The arena must outlive the library: every name handed out
+    /// @warning The arena must outlive the collection: every name handed out
     ///          points into it. The bytes of a mapped file live exactly as
-    ///          long as the library does, so nothing built over them -- a
+    ///          long as the collection does, so nothing built over them -- a
     ///          Face, a Registry -- may outlive it either.
-    class Library {
+    class Collection {
     public:
         /// @brief One indexed face, or one alias standing in for another name.
         struct Entry {
@@ -77,30 +77,31 @@ namespace render::typography {
             Entry* next{nullptr};                      ///< Next entry in this bucket.
         };
 
-        /// @brief Builds an empty library.
+        /// @brief Builds an empty collection.
         /// @param arena Allocator for names, buckets and font bytes.
         /// @param buckets Bucket count; rounded up to a power of two so that a
         ///                lookup can mask rather than divide.
-        explicit Library(memory::Arena& arena, std::size_t buckets = 512) noexcept;
+        explicit Collection(memory::Arena& arena, std::size_t buckets = 512) noexcept;
 
         /// @brief Unmaps every file mapped so far.
-        ~Library() noexcept;
+        ~Collection() noexcept;
 
-        Library(const Library&) = delete("a library owns the font bytes it keeps resident, and every face points into them");
-        Library& operator=(const Library&) = delete("a library owns the font bytes it keeps resident, and every face points into them");
+        Collection(const Collection&) = delete("a collection owns the font bytes it keeps resident, and every face points into them");
+        Collection& operator=(const Collection&) = delete("a collection owns the font bytes it keeps resident, and every face points into them");
 
-        /// @brief Indexes every font file under a directory, recursively.
+        /// @brief Posts every font file under a directory to the collection,
+        ///        recursively.
         ///
         /// Registers each file under its stem, and each directory under its own
         /// name bound to the first face found inside it. Files that are not
-        /// fonts are skipped, and a family already registered is kept, so an
-        /// earlier survey wins over a later one.
+        /// fonts are skipped, and a family already registered is kept, so a
+        /// directory posted earlier wins over one posted later.
         ///
         /// On Windows the tree is listed through the system's own directory
         /// search, one request per directory for its whole listing and nothing
         /// but names and attributes; std::filesystem asks for the same thing
         /// an entry and a conversion at a time, which on a tree of a hundred
-        /// files is most of what surveying it costs. Everywhere else it is
+        /// files is most of what listing it costs. Everywhere else it is
         /// walked with std::filesystem. Either way the order is the directory
         /// listing's, depth first, and links to directories are not followed.
         ///
@@ -112,26 +113,26 @@ namespace render::typography {
         /// @param files     The files under it, relative to it; empty to walk it.
         /// @return How many faces were indexed.
         /// @complexity O(n) in the files present, with no font parsing.
-        std::size_t survey(std::string_view directory, std::span<const std::string_view> files = {});
+        std::size_t post(std::string_view directory, std::span<const std::string_view> files = {});
 
-        /// @brief Indexes the system's own font folders, once.
+        /// @brief Posts the system's own font folders, once.
         ///
         /// The faces the engine carries draw Latin, Greek, Cyrillic, Hebrew,
         /// Armenian, Georgian and Devanagari; a script past them -- Arabic
         /// above all -- is drawn only by a face the system has. Its folders
-        /// are surveyed the first time such a face is wanted and never
+        /// are posted the first time such a face is wanted and never
         /// otherwise, so a document in the carried scripts never looks
         /// outside the engine's own tree, and a face the engine carries
-        /// keeps its name, since an earlier survey wins.
+        /// keeps its name, since what was posted first wins.
         ///
-        /// Taken under the same lock as read(), since a face may be opening
+        /// Taken under the same lock as get(), since a face may be opening
         /// on another thread while the folders are listed.
         ///
         /// @return How many faces the system added; 0 on every call after the first.
         /// @complexity O(n) in the files the folders hold, the first time.
-        std::size_t system();
+        std::size_t post();
 
-        /// @brief Registers a face under a second name.
+        /// @brief Sets a second name to stand for a face.
         ///
         /// This is how a role such as `text` is pointed at a concrete face.
         /// The alias resolves at lookup time, so aliasing a name that is not
@@ -140,11 +141,11 @@ namespace render::typography {
         /// @param name   New name, folded to lower case.
         /// @param family Face it stands for, folded to lower case.
         /// @complexity O(1).
-        void alias(std::string_view name, std::string_view family);
+        void set(std::string_view name, std::string_view family);
 
         /// @brief A family's file, its bytes mapped on first request.
         ///
-        /// The bytes stay mapped for the life of the library -- or, for a
+        /// The bytes stay mapped for the life of the collection -- or, for a
         /// file that would not map, live in the arena for as long -- so every
         /// request after the first is a table lookup. Faces borrow the span
         /// rather than copying it, which is what keeps a second size of the
@@ -164,18 +165,15 @@ namespace render::typography {
         ///         the family is unknown or the file cannot be read.
         /// @complexity O(1) average after the first call for that family; the
         ///             first is O(1) in the file's size when it maps.
-        [[nodiscard]] const Entry* read(std::string_view family) const;
+        [[nodiscard]] const Entry* get(std::string_view family) const;
 
-        /// @brief How many faces are indexed, aliases excluded.
-        [[nodiscard]] std::size_t count() const noexcept { return faces; }
-
-        /// @brief How many bytes of font data are resident, mapped or read.
-        [[nodiscard]] std::size_t resident() const noexcept { return bytes; }
+        std::size_t faces{0};             ///< How many faces are indexed, aliases excluded.
+        mutable std::size_t bytes{0};     ///< How many bytes of font data are resident, mapped or read.
 
     private:
-        /// @brief One file mapped into memory, kept until the library goes.
+        /// @brief One file mapped into memory, kept until the collection goes.
         ///
-        /// Held apart from the entries on purpose. alias() may turn an entry
+        /// Held apart from the entries on purpose. set() may turn an entry
         /// that was a face into one that stands for another, dropping the
         /// span it held; a Face opened over those bytes is still reading
         /// them, so the mapping has to outlive the entry's claim on it.
@@ -187,12 +185,10 @@ namespace render::typography {
         memory::Arena& arena;             ///< Storage for names, buckets and bytes.
         std::size_t slots{0};             ///< Bucket count, always a power of two.
         Entry** table{nullptr};           ///< Bucket heads.
-        std::size_t faces{0};             ///< Indexed files, aliases excluded.
-        bool searched{false};             ///< Whether system() has listed the system's folders.
-        mutable std::size_t bytes{0};     ///< Font data mapped or read so far.
+        bool searched{false};             ///< Whether post() has listed the system's folders.
 
         /// Every file mapped so far, and every one read where it would not
-        /// map. Kept on the heap rather than in the arena, and read() taken
+        /// map. Kept on the heap rather than in the arena, and get() taken
         /// under a lock, so a second thread may open faces ahead of the one
         /// that sets the document while that one allocates from the arena.
         mutable std::vector<View> views{};
