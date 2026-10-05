@@ -5,10 +5,12 @@
 /// the drawing code follows the same two. Keeping them in one place is what
 /// stops a box from claiming one size and occupying another.
 #include "layout/line.hpp"
+#include "typography/font.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -247,20 +249,57 @@ namespace render::layout {
         if (!mixed) return;
 
         // The line cut into pieces: a word -- the glyphs and the breaks
-        // between them that no space parts -- and each space, kern or
-        // box on its own. Each piece keeps its nodes' order.
+        // between them that no space parts -- and each space, kern or box
+        // on its own. Each piece keeps its nodes' order.
+        //
+        // A word set in two faces, right-to-left letters in one, is a piece
+        // for each face: `والفلسفة.` is the Arabic face's letters, drawn in
+        // their order already, and the text face's stop, which goes where
+        // the algorithm puts it -- the left, at the end of a sentence read
+        // right to left -- not where the face's run left it. A word in two
+        // faces with nothing right to left in it, `x²`, stays whole.
         std::vector<std::pair<std::size_t, std::size_t>> pieces;
-        std::vector<int> ways;
         for (std::size_t at = 0; at < list.count;) {
             std::size_t end = at + 1;
-            const auto inside = [&](const Node* node) {
+            const auto inside = [&](const std::size_t index) {
+                const Node* node = list[index];
                 return node && (node->type == Node::Type::Glyph || node->type == Node::Type::Penalty);
             };
-            if (inside(list[at])) {
-                while (end < list.count && inside(list[end])) ++end;
+            if (inside(at)) {
+                while (end < list.count && inside(end)) ++end;
             }
-            int way = 0;
+
+            std::size_t from = at;
+            const typography::Font* face = nullptr;
+            bool backward = false;   // whether the face's run from `from` holds a right-to-left letter
             for (std::size_t step = at; step < end; ++step) {
+                const Node* node = list[step];
+                if (!node || node->type != Node::Type::Glyph) continue;
+                const typography::Font* font = node->glyph().font;
+                if (face && font != face) {
+                    bool ahead = false;   // whether the run that starts here holds one
+                    for (std::size_t next = step; next < end; ++next) {
+                        const Node* other = list[next];
+                        if (!other || other->type != Node::Type::Glyph) continue;
+                        if (other->glyph().font != font) break;
+                        ahead = ahead || sense(other->glyph().point) == 2;
+                    }
+                    if (backward || ahead) {
+                        pieces.emplace_back(from, step);
+                        from = step;
+                        backward = false;
+                    }
+                }
+                face = font;
+                backward = backward || sense(node->glyph().point) == 2;
+            }
+            pieces.emplace_back(from, end);
+            at = end;
+        }
+        std::vector<int> ways;
+        for (const auto& [from, end] : pieces) {
+            int way = 0;
+            for (std::size_t step = from; step < end; ++step) {
                 const int found = run(list[step]);
                 if (found == 1 || found == 2) {
                     way = found;
@@ -268,9 +307,7 @@ namespace render::layout {
                 }
                 if (found == 3) way = 3;
             }
-            pieces.emplace_back(at, end);
             ways.push_back(way);
-            at = end;
         }
 
         // Each piece's level, as the algorithm resolves it, a word at
@@ -323,11 +360,32 @@ namespace render::layout {
             }
         }
 
+        // A bracket read right to left faces the other way: `(` opens a
+        // phrase at its right, so it is drawn as `)`. HarfBuzz mirrors one
+        // inside a run it sets right to left; a mark of punctuation the
+        // text face set on its own, left to right, is mirrored here when
+        // its level is odd. The character it stands for stays, for the
+        // text copied out of the page.
+        constexpr std::u32string_view pairs = U"()[]{}<>«»‹›";
         const memory::Slice<Node*> drawn = arena.allocate<Node*>(list.count);
         std::size_t filled = 0;
         for (const std::size_t index : order) {
             for (std::size_t step = pieces[index].first; step < pieces[index].second; ++step) {
-                drawn[filled++] = list[step];
+                Node* node = list[step];
+                const bool turned = ways[index] == 0 && levels[index] % 2 == 1 && node &&
+                                    node->type == Node::Type::Glyph && node->glyph().font;
+                const std::size_t found = turned ? pairs.find(static_cast<char32_t>(node->glyph().point))
+                                                 : std::u32string_view::npos;
+                const std::uint32_t code =
+                    found != std::u32string_view::npos ? node->glyph().font->index(pairs[found ^ 1]) : 0;
+                if (code != 0) {
+                    Node::Glyph mirrored = node->glyph();
+                    mirrored.code = code;
+                    mirrored.width = node->glyph().font->advance(code);
+                    node = arena.compose<Node>(Node::Type::Glyph);
+                    node->glyph(mirrored);
+                }
+                drawn[filled++] = node;
             }
         }
         Node::Box shape = line->box();

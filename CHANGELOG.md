@@ -314,6 +314,13 @@ sees, newest work last within each group.
   a word at a time (`Line::reorder`), so a number or a Latin phrase keeps its
   own order, and a run of Arabic inside an English paragraph reads correctly.
   bidi's `\setRTL`/`\setLTR` set the direction directly.
+- **A word in two faces reads right to left whole**: `والفلسفة.`, its
+  letters the Arabic face's and its stop the text face's, ended a sentence
+  with the stop at the word's right, where the face's run left it; the stop
+  now stands at its left, and a bracket the text face set is drawn facing
+  the other way when it reads right to left, so `(كلمة)` looks as it is
+  written. A word in two faces with nothing right to left in it, `x²`,
+  is kept whole.
 - **TrueType faces are embedded** as `CIDFontType2`/`FontFile2`, which a
   system face — Times New Roman for Arabic — needs.
 

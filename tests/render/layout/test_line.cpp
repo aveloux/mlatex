@@ -1,5 +1,9 @@
+#include "latex.hpp"
 #include "layout/line.hpp"
 #include "memory/arena.hpp"
+#include "typography/collection.hpp"
+#include "typography/font.hpp"
+#include "typography/registry.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -154,6 +158,54 @@ int main() {
         layout::Node* empty = Line::horizontal(arena, list(arena, {}));
         Line::reorder(arena, empty, true);
         assert((empty->box().list.empty()) && "an empty line read right to left");
+    }
+
+    // --- A word in two faces, read right to left ----------------------------------------
+    {
+        memory::Arena faces(1u << 24);
+        render::typography::Collection collection(faces);
+        render::typography::Registry registry(faces, collection);
+        collection.post((latex::locate(__FILE__) / "fonts").string());
+        collection.set("text", "lmroman10-regular");
+        const render::typography::Font* roman = registry.get({.family = "text", .size = 10.0f});
+        const render::typography::Font* naskh = registry.get({.family = "notonaskharabic-regular", .size = 10.0f});
+        assert((roman && naskh) && "the text face and the Arabic one open");
+
+        const auto letter = [&arena](const render::typography::Font* font, const std::uint32_t point) {
+            auto* node = arena.compose<layout::Node>(layout::Node::Type::Glyph);
+            node->glyph({.width = 5.0f, .code = font->index(point), .point = point, .font = font});
+            return node;
+        };
+        constexpr std::uint32_t alef = 0x0627, beh = 0x0628;
+
+        // `با.` as the shaper hands it in: the Arabic face's letters in the
+        // order they are drawn, then the text face's stop. Read right to
+        // left, the stop ends the sentence at its left.
+        layout::Node* stopped = Line::horizontal(arena, list(arena, {letter(naskh, alef), letter(naskh, beh),
+                                                                     letter(roman, '.')}));
+        Line::reorder(arena, stopped, true);
+        const memory::Slice<layout::Node*> ended = stopped->box().list;
+        assert((ended[0]->glyph().point == '.' && ended[1]->glyph().point == alef && ended[2]->glyph().point == beh) &&
+               "a stop in the text face goes to the left of the Arabic word it ends");
+
+        // `(با)`: each bracket the text face's, so neither was mirrored by
+        // the shaper; read right to left, each is drawn facing the other way.
+        layout::Node* bracketed = Line::horizontal(arena, list(arena, {letter(roman, '('), letter(naskh, alef),
+                                                                       letter(naskh, beh), letter(roman, ')')}));
+        Line::reorder(arena, bracketed, true);
+        const memory::Slice<layout::Node*> faced = bracketed->box().list;
+        assert((faced[0]->glyph().point == ')' && faced[0]->glyph().code == roman->index('(') &&
+                faced[3]->glyph().point == '(' && faced[3]->glyph().code == roman->index(')')) &&
+               "a bracket read right to left is drawn facing the other way, and still stands for itself");
+
+        // Read left to right, the same word in the same faces is kept.
+        layout::Node* forward = Line::horizontal(arena, list(arena, {letter(roman, '('), letter(naskh, alef),
+                                                                     letter(naskh, beh), letter(roman, ')')}));
+        Line::reorder(arena, forward, false);
+        const memory::Slice<layout::Node*> straight = forward->box().list;
+        assert((straight[0]->glyph().point == '(' && straight[0]->glyph().code == roman->index('(') &&
+                straight[3]->glyph().point == ')') &&
+               "and in a line read left to right, the brackets stand as they were");
     }
 
     return 0;
