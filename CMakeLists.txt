@@ -1,4 +1,71 @@
 cmake_minimum_required(VERSION 3.25)
+
+# The libraries -- HarfBuzz, FreeType, the image libraries -- come from
+# vcpkg. Its toolchain is taken from whichever vcpkg has libraries installed,
+# VCPKG_ROOT's or the one at C:/vcpkg where it usually lives on Windows,
+# whenever the command line names none: so a preset, an IDE's own profile
+# and a bare `cmake -B build` all find them. Installed, because a Visual
+# Studio shell points VCPKG_ROOT at the copy Visual Studio ships, which holds
+# no libraries of its own.
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    foreach(root "$ENV{VCPKG_ROOT}" "C:/vcpkg")
+        if(NOT root STREQUAL "" AND EXISTS "${root}/scripts/buildsystems/vcpkg.cmake" AND IS_DIRECTORY "${root}/installed")
+            set(CMAKE_TOOLCHAIN_FILE "${root}/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "vcpkg's toolchain")
+            break()
+        endif()
+    endforeach()
+endif()
+
+# On Windows the engine is built with the clang-cl Visual Studio installs
+# beside cl, under VC/Tools/Llvm, whatever compiler an IDE's profile names.
+# cl has no C++26 and no #embed; a MinGW GCC has neither before GCC 15, and
+# none can link vcpkg's x64-windows libraries, which are built for the MSVC
+# ABI. So a profile naming cl or a GCC -- CLion's "Visual Studio" and
+# "MinGW" toolchains -- or naming no compiler at all is given clang-cl
+# instead, found through vswhere in the newest Visual Studio that has it,
+# previews included; a Clang it names is kept. Decided here, before
+# project(), the one place a compiler can still be chosen.
+if(CMAKE_HOST_WIN32)
+    get_filename_component(named "${CMAKE_CXX_COMPILER}" NAME_WE)
+    string(TOLOWER "${named}" named)
+    if(named STREQUAL "" OR named STREQUAL "cl" OR named MATCHES "^(g\\+\\+|gcc|c\\+\\+|cc)(-[0-9.]+)?$")
+        set(programs "ProgramFiles(x86)")
+        find_program(vswhere vswhere HINTS "$ENV{${programs}}/Microsoft Visual Studio/Installer" NO_CACHE)
+        set(studio "")
+        if(vswhere)
+            execute_process(COMMAND "${vswhere}" -latest -prerelease -products *
+                                    -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+                            OUTPUT_VARIABLE studio OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        endif()
+        find_program(clang clang-cl HINTS "${studio}/VC/Tools/Llvm/x64/bin" NO_CACHE)
+        if(clang)
+            if(NOT named STREQUAL "")
+                message(STATUS "${named} cannot build this project (C++26, #embed, vcpkg's x64-windows); "
+                               "compiling with ${clang} instead")
+            endif()
+            set(CMAKE_C_COMPILER "${clang}" CACHE FILEPATH "C compiler" FORCE)
+            set(CMAKE_CXX_COMPILER "${clang}" CACHE FILEPATH "C++ compiler" FORCE)
+            # The MinGW toolchain's windres, if one was named, reads no
+            # manifest clang-cl's linker hands it.
+            unset(CMAKE_RC_COMPILER CACHE)
+            if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+                set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "vcpkg's triplet")
+            endif()
+        endif()
+    endif()
+
+    # clang-cl's own resource compiler, which links every program's manifest
+    # in: the SDK's `rc` is on the path only inside a Visual Studio shell, and
+    # neither a MinGW profile nor a preset run outside one is.
+    if(CMAKE_CXX_COMPILER MATCHES "clang-cl" AND NOT DEFINED CMAKE_RC_COMPILER)
+        get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        find_program(resources llvm-rc HINTS "${tools}" NO_CACHE)
+        if(resources)
+            set(CMAKE_RC_COMPILER "${resources}" CACHE FILEPATH "Resource compiler")
+        endif()
+    endif()
+endif()
+
 project(latex VERSION 0.1.0 LANGUAGES C CXX)
 
 # C++26, for #embed above all: the prelude, its packages and the hyphenation
@@ -381,7 +448,7 @@ else()
     if(WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
         foreach(target latex ffi)
             target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
-                                                  /DELAYLOAD:winhttp.dll)
+                    /DELAYLOAD:winhttp.dll)
             target_link_libraries(${target} PRIVATE delayimp)
         endforeach()
     endif()

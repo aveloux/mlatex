@@ -518,6 +518,22 @@ The logger's `--debug`, `--trace`, `--log-level`, `--log-file` and
 `--no-color` are listed with them. `engine::compose` takes where its report
 and its errors go, and an empty destination for a draft.
 
+### Building
+
+- **Any profile builds on Windows.** cl has no C++26 and no `#embed`, and
+  neither has a MinGW GCC before 15 -- CLion's bundled one is 13 -- nor can
+  either link vcpkg's `x64-windows` libraries. A configure that names cl, a
+  GCC or no compiler at all now takes the clang-cl of the newest Visual
+  Studio that has one (found through vswhere, previews included) before
+  `project()`, so CLion's own "Visual Studio" and "MinGW" profiles build
+  as the presets do. A clang-cl build links its manifests with `llvm-rc`
+  beside it, so no Visual Studio shell is needed.
+- vcpkg's toolchain is found when no command line names one: VCPKG_ROOT's,
+  or `C:/vcpkg`, whichever has libraries installed -- not the empty copy a
+  Visual Studio shell points VCPKG_ROOT at.
+- The presets name clang-cl by its full path and tell CLion to run them in
+  its Visual Studio toolchain (`vendor` › `jetbrains.com/clion`).
+
 ### For programs
 
 - `engine::Session`: values, commands, packages and pictures handed in once

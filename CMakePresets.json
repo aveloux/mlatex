@@ -4,7 +4,7 @@
     {
       "name": "windows-clang",
       "displayName": "Windows (clang-cl)",
-      "description": "The clang-cl Visual Studio installs beside cl, under VC/Tools/Llvm: it compiles C++26 and #embed, which cl does not yet. Run from a Developer shell -- or, in CLion, with the Visual Studio toolchain -- so the Windows SDK, the MSVC library and clang-cl itself are found.",
+      "description": "Visual Studio 2026 Insiders Clang 22.1.3 (clang-cl): compiles C++26 and #embed. Uses the MSVC ABI, Windows SDK and vcpkg x64-windows.",
       "generator": "Ninja",
       "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "condition": {
@@ -13,9 +13,14 @@
         "rhs": "Windows"
       },
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_C_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/Llvm/x64/bin/clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/Llvm/x64/bin/clang-cl.exe",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
+      },
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "Visual Studio"
+        }
       }
     },
     {
@@ -65,7 +70,9 @@
     {
       "name": "wasm",
       "configurePreset": "wasm",
-      "targets": ["wasm"]
+      "targets": [
+        "wasm"
+      ]
     }
   ]
 }
