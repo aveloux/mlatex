@@ -322,6 +322,22 @@ int main() {
         assert((near(worked[1], centimetre, 0.0f)) && "a centimetre towards a point");
         assert((near(worked[2], 0.0f, centimetre)) && "halfway to a point turned a quarter round");
         assert((near(worked[3], 4 * centimetre, -centimetre)) && "twice a point, less another");
+
+        // TikZ's let: point and number registers, read up to `in` and
+        // written out in the rest of the path.
+        const Result let = article("\\usepackage{tikz}\\usetikzlibrary{calc}",
+                                   "\\begin{tikzpicture}\\coordinate (a) at (0,0);\\coordinate (b) at (3,4);"
+                                   "\\draw let \\p1 = (a), \\p2 = (b), \\n1 = {veclen(\\x2-\\x1,\\y2-\\y1)} in (a) -- (\\n1, 0);"
+                                   "\\draw let \\p1 = ($(b)-(a)$), \\n{angle} = {atan2(\\y1,\\x1)} in (a) -- (\\n{angle}:1cm);"
+                                   "\\draw let \\p{top} = (b) in (a) -- (\\x{top}, 0);\\end{tikzpicture}");
+        const std::vector<std::pair<float, float>> set = strokes(let.pdf);
+        assert((let.clean && let.errors.empty() && set.size() == 3) && "three paths with registers, each read");
+        assert((near(set[0], 5 * centimetre, 0.0f)) && "a length worked out of two points' registers");
+        assert((near(set[1], 0.6f * centimetre, 0.8f * centimetre)) && "an angle, a register named in braces");
+        assert((near(set[2], 3 * centimetre, 0.0f)) && "a point register's x");
+        const Result unread = article("\\usepackage{tikz}", "\\begin{tikzpicture}\\draw let \\p1 = (1,0) (0,0) -- (1,1);"
+                                                            "\\end{tikzpicture}");
+        assert((holds(unread.errors, "up to 'in'")) && "a let without its 'in' is named");
     }
 
     return 0;

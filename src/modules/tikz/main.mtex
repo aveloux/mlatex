@@ -19,8 +19,10 @@
 % or an ellipse, named, and placed beside another as the positioning
 % library says -- right=of init -- and a later path meets a named node at its
 % outline, or at an anchor, (init.east). \tikzset's styles, a picture's own,
-% every node's, and \foreach are read; `let`, `plot` and the libraries'
-% shapes are not drawn, and said so.
+% every node's, and \foreach are read; `plot` draws a function or a list of
+% points, `let` sets registers for the rest of its path, and calc's ($...$)
+% works a point out of others. The libraries' shapes are not drawn, and
+% said so.
 
 % A picture in one line, with its options or not: \tikz{\draw (0,0) -- (1,0);},
 % \tikz[baseline=-0.5ex]{...}, or a single path to its semicolon,

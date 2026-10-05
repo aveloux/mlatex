@@ -488,6 +488,11 @@ sees, newest work last within each group.
   added and taken away, `($(a)+(0,1)$)`, times a factor, `($2*(b)$)`,
   partway along, `($(a)!0.5!(b)$)`, turned first, `($(a)!0.5!90:(b)$)`, or
   a length along, `($(a)!1cm!(b)$)`.
+- **TikZ's `let`**: `\draw let \p1 = (a), \p2 = (b), \n1 =
+  {veclen(\x2-\x1,\y2-\y1)} in (a) circle (\n1);` -- point registers and
+  each one's `\x` and `\y`, number registers, names in braces, `\p{top}`,
+  and each register using those set before it -- written out in the rest
+  of the path. It used to be a warning and nothing drawn.
 - **pgfplots axes are drawn**: `axis`, `semilogxaxis`, `semilogyaxis` and
   `loglogaxis`; ticks at round numbers no more than about 35 points apart,
   powers of ten on a logarithmic axis, or the ones `xtick` lists; labels,
@@ -823,8 +828,7 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn; TikZ's `let` is a warning;
-pgfplots' 3D plots, error bars and `fill between` are not drawn; a tree's
+EPS and SVG are placeholders, not drawn; pgfplots' 3D plots, error bars and `fill between` are not drawn; a tree's
 labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,

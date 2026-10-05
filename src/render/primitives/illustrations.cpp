@@ -172,7 +172,7 @@ namespace render::primitives {
         return written;
     }
 
-    void Illustrations::draw(syntax::Parser& parser, const std::string_view options, const std::string_view text,
+    void Illustrations::draw(syntax::Parser& parser, const std::string_view options, const std::string_view path,
                              const memory::Location origin, Context& context, const bool stroked,
                              const bool filled) const {
         graphics::Canvas& canvas = canvases.back();
@@ -348,9 +348,12 @@ namespace render::primitives {
             }
         }
 
-        // The path, read left to right. `current` is where the pen is, `base`
-        // what a `+` point is measured from, `start` where the path began, for
-        // `cycle`; all in points, already scaled.
+        // The path, read left to right -- from a `let` on, the rest of it
+        // with its registers written out, kept in `rewritten`. `current` is
+        // where the pen is, `base` what a `+` point is measured from, `start`
+        // where the path began, for `cycle`; all in points, already scaled.
+        std::string rewritten;
+        std::string_view text = path;
         graphics::Point2 current{};
         graphics::Point2 base{};
         graphics::Point2 start{};
@@ -1275,6 +1278,125 @@ namespace render::primitives {
                     point = *read;
                 }
                 if (!label.empty()) landmarks[label] = Landmark{.centre = point};
+            } else if (text.substr(at).starts_with("let") &&
+                       (at + 3 >= text.size() || text[at + 3] == ' ' || text[at + 3] == '\\' || text[at + 3] == '\n')) {
+                // TikZ's `let`: point registers, `\p1 = (a)` -- and each
+                // one's `\x1` and `\y1` -- and number registers, `\n1 =
+                // {veclen(\x2-\x1,\y2-\y1)}`, up to `in`, each written out
+                // in the rest of the path wherever it is named: a point and
+                // a length in points, a number as it is. A register may be
+                // named by a letter or in braces, `\p{top}`, and use those
+                // set before it.
+                at += 3;
+                std::vector<std::pair<std::string, std::string>> registers;
+                const auto substitute = [&registers](const std::string_view written) {
+                    std::string out;
+                    for (std::size_t index = 0; index < written.size();) {
+                        const bool named = written[index] == '\\' && index + 2 <= written.size() &&
+                                           std::string_view{"pxyn"}.find(written[index + 1]) != std::string_view::npos &&
+                                           (index + 2 == written.size() ||
+                                            !((written[index + 2] >= 'a' && written[index + 2] <= 'z') ||
+                                              (written[index + 2] >= 'A' && written[index + 2] <= 'Z')));
+                        if (named) {
+                            std::size_t after = index + 2;
+                            while (after < written.size() && written[after] == ' ') ++after;
+                            std::string name;
+                            if (after < written.size() && written[after] == '{') {
+                                const std::size_t shut = written.find('}', after);
+                                if (shut != std::string_view::npos) {
+                                    name = std::string(written.substr(after + 1, shut - after - 1));
+                                    after = shut + 1;
+                                }
+                            } else if (after < written.size()) {
+                                name = written[after++];
+                            }
+                            const std::string key = written[index + 1] + name;
+                            const auto found = std::ranges::find(registers, key, &std::pair<std::string, std::string>::first);
+                            if (found != registers.end()) {
+                                out += found->second;
+                                index = after;
+                                continue;
+                            }
+                        }
+                        out += written[index++];
+                    }
+                    return out;
+                };
+                bool closed = false;
+                for (skip(); at < text.size(); skip()) {
+                    if (text.substr(at).starts_with("in") &&
+                        (at + 2 >= text.size() || text[at + 2] == ' ' || text[at + 2] == '(' || text[at + 2] == '\n')) {
+                        at += 2;
+                        closed = true;
+                        break;
+                    }
+                    if (text[at] == ',') {
+                        ++at;
+                        continue;
+                    }
+                    const char kind = at + 1 < text.size() && text[at] == '\\' ? text[at + 1] : '\0';
+                    if (kind != 'p' && kind != 'n') break;
+                    at += 2;
+                    skip();
+                    std::string name;
+                    if (at < text.size() && text[at] == '{') {
+                        const std::size_t shut = closing(text, at);
+                        if (shut == std::string_view::npos) break;
+                        name = std::string(text.substr(at + 1, shut - at - 1));
+                        at = shut + 1;
+                    } else if (at < text.size()) {
+                        name = text[at++];
+                    }
+                    skip();
+                    if (!next("=")) break;
+                    skip();
+                    if (kind == 'p') {
+                        const std::size_t shut = at < text.size() && text[at] == '(' ? closing(text, at) : std::string_view::npos;
+                        if (shut == std::string_view::npos) break;
+                        const auto point = resolve(substitute(text.substr(at + 1, shut - at - 1)));
+                        at = shut + 1;
+                        if (!point) {
+                            miss("\\draw: let's \\p" + name + " is not a point this engine reads");
+                            return;
+                        }
+                        const float x = point->x / scale;
+                        const float y = point->y / scale;
+                        registers.emplace_back("p" + name, std::format("{:.4f}pt,{:.4f}pt", x, y));
+                        registers.emplace_back("x" + name, std::format("{:.4f}pt", x));
+                        registers.emplace_back("y" + name, std::format("{:.4f}pt", y));
+                    } else {
+                        std::string_view formula;
+                        if (at < text.size() && text[at] == '{') {
+                            const std::size_t shut = closing(text, at);
+                            if (shut == std::string_view::npos) break;
+                            formula = text.substr(at + 1, shut - at - 1);
+                            at = shut + 1;
+                        } else {
+                            const std::size_t begin = at;
+                            for (int depth = 0; at < text.size(); ++at) {
+                                if (text[at] == '(' || text[at] == '{') ++depth;
+                                if ((text[at] == ')' || text[at] == '}') && depth > 0) --depth;
+                                if (depth == 0 && (text[at] == ',' || text.substr(at).starts_with(" in"))) break;
+                            }
+                            formula = text.substr(begin, at - begin);
+                        }
+                        bool measured = false;
+                        const auto value = Plots::calculate(substitute(formula), std::numeric_limits<double>::quiet_NaN(), &measured);
+                        if (!value) {
+                            miss("\\draw: let's \\n" + name + " = {" + std::string(trim(formula)) +
+                                 "} is not a formula this engine works out");
+                            return;
+                        }
+                        registers.emplace_back("n" + name, std::format("{:.4f}", *value) + (measured ? "pt" : ""));
+                    }
+                }
+                if (!closed) {
+                    fail("\\draw: a let's registers are \\p and \\n, each set with '=', up to 'in'");
+                    return;
+                }
+                rewritten = substitute(text.substr(at));
+                text = rewritten;
+                at = 0;
             } else if (next("node")) {
                 if (waiting == Step::None || !placed) {
                     if (!node(false)) return;

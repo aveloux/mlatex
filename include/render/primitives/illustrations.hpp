@@ -164,14 +164,14 @@ namespace render::primitives {
         ///
         /// @param parser  Parser a node's text is read with.
         /// @param options The bracketed options, as written; may be empty.
-        /// @param text    The path, up to its semicolon.
+        /// @param path    The path, up to its semicolon.
         /// @param origin  Where it was written, for a report.
         /// @param context Engine services: the variables a named color is kept in.
         /// @param stroked False for `\path` and `\fill`, which draw no outline.
         /// @param filled  True for `\fill` and `\filldraw`, which fill the inside.
         /// @complexity O(n) in the path's length, plus the segments a curve
         ///             or a grid is drawn with.
-        void draw(syntax::Parser& parser, std::string_view options, std::string_view text, memory::Location origin,
+        void draw(syntax::Parser& parser, std::string_view options, std::string_view path, memory::Location origin,
                   Context& context, bool stroked, bool filled) const;
 
         /// @brief A TikZ node or coordinate given a name: where its outline's
