@@ -158,6 +158,20 @@ int main() {
         layout::Node* empty = Line::horizontal(arena, list(arena, {}));
         Line::reorder(arena, empty, true);
         assert((empty->box().list.empty()) && "an empty line read right to left");
+
+        // An Arabic word's kashida -- glue behind a penalty of ten thousand
+        // -- is part of the word, not a space between two.
+        auto* hold = arena.compose<layout::Node>(layout::Node::Type::Penalty);
+        hold->penalty({.value = 10000});
+        layout::Node* kashida = glue(arena, 0.0f, 5.0f, 0.0f);
+        layout::Node* stretched = Line::horizontal(arena, list(arena, {word(alef), hold, kashida, word(beh), space(),
+                                                                       word(a)}));
+        Line::reorder(arena, stretched, true);
+        const memory::Slice<layout::Node*> kept = stretched->box().list;
+        assert((kept.count == 6 && kept[0]->type == layout::Node::Type::Glyph && kept[0]->glyph().point == a &&
+                kept[2]->glyph().point == alef && kept[3] == hold && kept[4] == kashida &&
+                kept[5]->glyph().point == beh) &&
+               "the kashida stays between the letters it joins");
     }
 
     // --- A word in two faces, read right to left ----------------------------------------

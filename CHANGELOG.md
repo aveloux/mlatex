@@ -268,6 +268,14 @@ sees, newest work last within each group.
   but before no closing mark, small kana or long vowel and after no opening
   bracket, the kinsoku rules; a Latin run among them is kept whole. A line
   of them used to run on to the next space.
+- **Arabic is justified with kashida**: where a justified line has room to
+  spare, one join in each Arabic word is drawn longer -- after seen, sheen,
+  sad or dad, else before a closing heh, teh marbuta, dal, reh, waw or alef,
+  else at the word's last join -- as a stroke of the face's own tatweel,
+  rather than its spaces alone widened. No line ends there, a word read
+  right to left keeps it between the letters it joins, a word in a color
+  draws it in that color, and a word written with its vowels is left as it
+  is.
 - **A box reads the way its text does.** A minipage, a `\parbox` and a
   framed block begun in Arabic or Hebrew set their paragraphs right to left,
   each line in the order it is drawn in, and a direction changed inside one
@@ -809,6 +817,5 @@ labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
-Languages: Arabic's kashida is not done. Coverage figures above count packages that
-load and whose common commands set text — not that every feature of each is
-drawn.
+Coverage figures above count packages that load and whose common commands set
+text — not that every feature of each is drawn.

@@ -249,8 +249,10 @@ namespace render::layout {
         if (!mixed) return;
 
         // The line cut into pieces: a word -- the glyphs and the breaks
-        // between them that no space parts -- and each space, kern or box
-        // on its own. Each piece keeps its nodes' order.
+        // between them that no space parts, and an Arabic word's kashida,
+        // the glue no line may end at behind a penalty of ten thousand --
+        // and each space, kern or box on its own. Each piece keeps its
+        // nodes' order.
         //
         // A word set in two faces, right-to-left letters in one, is a piece
         // for each face: `والفلسفة.` is the Arabic face's letters, drawn in
@@ -263,6 +265,10 @@ namespace render::layout {
             std::size_t end = at + 1;
             const auto inside = [&](const std::size_t index) {
                 const Node* node = list[index];
+                if (node && node->type == Node::Type::Glue && index > 0 && list[index - 1] &&
+                    list[index - 1]->type == Node::Type::Penalty && list[index - 1]->penalty().value >= 10000) {
+                    return true;
+                }
                 return node && (node->type == Node::Type::Glyph || node->type == Node::Type::Penalty);
             };
             if (inside(at)) {

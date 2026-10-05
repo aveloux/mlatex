@@ -63,13 +63,28 @@ namespace render::layout {
         if (text.empty()) return;
 
         // In a color: set as any text is, then each glyph that came out
-        // copied with the color on it, the shared one left as it was.
+        // copied with the color on it, the shared one left as it was -- and
+        // a kashida's stroke, which is drawn as its letters are.
         if (color) {
             const std::size_t first = pending.size();
             append(text, font, size, nullptr);
             for (std::size_t index = first; index < pending.size(); ++index) {
-                if (pending[index]->type != Node::Type::Glyph) continue;
-                Node::Glyph mark = pending[index]->glyph();
+                const Node* node = pending[index];
+                if (node->type == Node::Type::Glue && node->glue().leader &&
+                    node->glue().leader->type == Node::Type::Rule) {
+                    Node::Rule stroke = node->glue().leader->rule();
+                    stroke.color = *color;
+                    auto* drawn = arena.compose<Node>(Node::Type::Rule);
+                    drawn->rule(stroke);
+                    Node::Glue joined = node->glue();
+                    joined.leader = drawn;
+                    auto* copy = arena.compose<Node>(Node::Type::Glue);
+                    copy->glue(joined);
+                    pending[index] = copy;
+                    continue;
+                }
+                if (node->type != Node::Type::Glyph) continue;
+                Node::Glyph mark = node->glyph();
                 mark.color = *color;
                 auto* copy = arena.compose<Node>(Node::Type::Glyph);
                 copy->glyph(mark);
@@ -122,12 +137,28 @@ namespace render::layout {
         factor = kept;
 
         // The words are shared with every other place they were set, so a
-        // color goes on copies of their glyphs, as append() puts it.
+        // color goes on copies of their glyphs and kashida strokes, as
+        // append() puts it.
         const memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
         for (std::size_t index = 0; index < nodes.size(); ++index) {
+            const Node* node = nodes[index];
             slice[index] = nodes[index];
-            if (!color || nodes[index]->type != Node::Type::Glyph) continue;
-            Node::Glyph mark = nodes[index]->glyph();
+            if (!color) continue;
+            if (node->type == Node::Type::Glue && node->glue().leader &&
+                node->glue().leader->type == Node::Type::Rule) {
+                Node::Rule stroke = node->glue().leader->rule();
+                stroke.color = *color;
+                auto* drawn = arena.compose<Node>(Node::Type::Rule);
+                drawn->rule(stroke);
+                Node::Glue joined = node->glue();
+                joined.leader = drawn;
+                auto* copy = arena.compose<Node>(Node::Type::Glue);
+                copy->glue(joined);
+                slice[index] = copy;
+                continue;
+            }
+            if (node->type != Node::Type::Glyph) continue;
+            Node::Glyph mark = node->glyph();
             mark.color = *color;
             auto* copy = arena.compose<Node>(Node::Type::Glyph);
             copy->glyph(mark);
@@ -301,6 +332,104 @@ namespace render::layout {
                         penalty->penalty({.value = 50, .flag = true});
                         nodes[filled++] = penalty;
                     }
+                }
+            }
+
+            // An Arabic word's kashida: where a justified line has room to
+            // spare, the stroke that joins two of its letters is drawn
+            // longer, as Arabic is justified, rather than only its spaces
+            // widened. One place a word: after seen, sheen, sad or dad,
+            // else before a closing heh, teh marbuta, dal, reh, waw or
+            // alef, else at its last join -- each a glue of no width, no
+            // line ending at it, drawn as the face's own tatweel, its
+            // stroke stretched. A word that carries its vowels is left as
+            // it is, its marks standing over the letters they belong to.
+            if (breakable && nodes.count >= 2) {
+                // How an Arabic letter joins its neighbours, after Unicode's
+                // ArabicShaping: 'D' on both sides, 'R' to the one before it
+                // alone, 'U' to neither.
+                const auto joins = [](const std::uint32_t code) -> char {
+                    if ((code >= 0x0622 && code <= 0x0625) || code == 0x0627 || code == 0x0629 ||
+                        (code >= 0x062F && code <= 0x0632) || code == 0x0648 || (code >= 0x0671 && code <= 0x0673) ||
+                        (code >= 0x0675 && code <= 0x0677) || (code >= 0x0688 && code <= 0x0699) || code == 0x06C0 ||
+                        (code >= 0x06C3 && code <= 0x06CB) || code == 0x06CD || code == 0x06CF || code == 0x06D2 ||
+                        code == 0x06D3 || code == 0x06D5 || code == 0x06EE || code == 0x06EF) {
+                        return 'R';
+                    }
+                    if (code == 0x0626 || code == 0x0628 || (code >= 0x062A && code <= 0x062E) ||
+                        (code >= 0x0633 && code <= 0x063F) || (code >= 0x0640 && code <= 0x0647) || code == 0x0649 ||
+                        code == 0x064A || code == 0x066E || code == 0x066F || (code >= 0x0678 && code <= 0x0687) ||
+                        (code >= 0x069A && code <= 0x06BF) || code == 0x06C1 || code == 0x06C2 || code == 0x06CC ||
+                        code == 0x06CE || code == 0x06D0 || code == 0x06D1 || (code >= 0x06FA && code <= 0x06FC) ||
+                        code == 0x06FF) {
+                        return 'D';
+                    }
+                    return 'U';
+                };
+                // A glyph's first letter and its last: a ligature, lam with
+                // alef, joins on as its last letter does.
+                const auto ends = [](const Node* node) -> std::pair<std::uint32_t, std::uint32_t> {
+                    const Node::Glyph& mark = node->glyph();
+                    const std::string_view letters = mark.letters;
+                    if (letters.size() < 2) return {mark.point, mark.point};
+                    std::size_t at = letters.size() - 1;
+                    while (at > 0 && (static_cast<unsigned char>(letters[at]) & 0xC0) == 0x80) --at;
+                    const auto* data = reinterpret_cast<const std::uint8_t*>(letters.data() + at);
+                    std::uint32_t last = data[0];
+                    if ((data[0] & 0xE0) == 0xC0 && letters.size() - at >= 2) last = ((data[0] & 0x1Fu) << 6) | (data[1] & 0x3Fu);
+                    return {mark.point, last};
+                };
+                // A mark is shaped into its letter's cluster, so it is read
+                // from the word as written: 064B to 065F and 0670 are two
+                // bytes from D9, 06D6 to 06ED two from DB.
+                bool arabic = true;
+                for (const Node* node : nodes) {
+                    const std::uint32_t code = node->type == Node::Type::Glyph ? node->glyph().point : 0;
+                    arabic = arabic && node->type == Node::Type::Glyph && code >= 0x0600 && code <= 0x06FF;
+                }
+                for (std::size_t at = 0; arabic && at + 1 < part.size(); ++at) {
+                    const auto lead = static_cast<unsigned char>(part[at]);
+                    const auto trail = static_cast<unsigned char>(part[at + 1]);
+                    arabic = !((lead == 0xD9 && ((trail >= 0x8B && trail <= 0x9F) || trail == 0xB0)) ||
+                               (lead == 0xDB && trail >= 0x96 && trail <= 0xAD));
+                }
+                // The glyphs stand in the order they are drawn, right to
+                // left: of two side by side, the right one is read first.
+                std::size_t best = 0;
+                int score = 0;
+                for (std::size_t index = 0; arabic && index + 1 < nodes.count; ++index) {
+                    const std::uint32_t prior = ends(nodes[index + 1]).second;
+                    const std::uint32_t latter = ends(nodes[index]).first;
+                    if (joins(prior) != 'D' || joins(latter) == 'U') continue;
+                    const bool wide = prior >= 0x0633 && prior <= 0x0636;
+                    const bool closing = index == 0 && (latter == 0x0647 || latter == 0x0629 || latter == 0x062F ||
+                                                        latter == 0x0631 || latter == 0x0648 || latter == 0x0627);
+                    const int worth = wide ? 3 : closing ? 2 : 1;
+                    if (worth > score) {
+                        score = worth;
+                        best = index;
+                    }
+                }
+                const typography::Font* face = score > 0 ? nodes[best]->glyph().font : nullptr;
+                const std::uint32_t tatweel = face ? face->index(0x0640) : 0;
+                if (tatweel != 0) {
+                    const typography::Font::Box ink = face->bounds(tatweel);
+                    auto* stroke = arena.compose<Node>(Node::Type::Rule);
+                    stroke->rule({.height = ink.y, .depth = ink.height - ink.y});
+                    auto* hold = arena.compose<Node>(Node::Type::Penalty);
+                    hold->penalty({.value = 10000});
+                    auto* kashida = arena.compose<Node>(Node::Type::Glue);
+                    kashida->glue({.width = 0.0f, .stretch = face->size() * 0.5f, .leader = stroke});
+                    const memory::Slice<Node*> drawn = arena.allocate<Node*>(nodes.count + 2);
+                    std::size_t filled = 0;
+                    for (std::size_t index = 0; index < nodes.count; ++index) {
+                        drawn[filled++] = nodes[index];
+                        if (index == best) {
+                            drawn[filled++] = hold;
+                            drawn[filled++] = kashida;
+                        }
+                    }
+                    nodes = drawn;
                 }
             }
 

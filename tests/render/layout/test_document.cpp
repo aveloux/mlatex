@@ -234,6 +234,34 @@ int main() {
         assert((shape(document.set("語。", font, true)) == "gg") && "never before a stop");
         assert((shape(document.set("「日」", font, true)) == "ggg") && "nor after an opening bracket, nor before a closing one");
         assert((shape(document.set("日abc", font, true)) == "g_ggg") && "a Latin run in it kept whole");
+
+        // Arabic: one kashida a word, a stroke the length a justified line
+        // gives it, and no line ending at it -- in `سلام`, after its seen.
+        const memory::Slice<layout::Node*> peace = document.set("سلام", font, true);
+        std::size_t hold = 0;
+        while (hold < peace.count && peace[hold]->type != layout::Node::Type::Penalty) ++hold;
+        assert((hold + 2 < peace.count && peace[hold]->penalty().value == 10000) && "a kashida no line ends at");
+        const layout::Node* kashida = peace[hold + 1];
+        assert((kashida->type == layout::Node::Type::Glue && kashida->glue().width == 0.0f &&
+                kashida->glue().stretch > 0.0f && kashida->glue().leader &&
+                kashida->glue().leader->type == layout::Node::Type::Rule) &&
+               "of no width until the line stretches, drawn as a stroke");
+        const layout::Node::Rule stroke = kashida->glue().leader->rule();
+        assert((stroke.height > 0.0f && stroke.height + stroke.depth > 0.0f && stroke.height + stroke.depth < 2.0f) &&
+               "the tatweel's own stroke, on the baseline and a hair's breadth thick");
+        assert((peace[hold + 2]->type == layout::Node::Type::Glyph && peace[hold + 2]->glyph().point == 0x0633) &&
+               "drawn out of the seen, to its right");
+        const layout::Node::Color red{.r = 1.0f};
+        const memory::Slice<layout::Node*> colored = document.set("سلام", font, true, &red);
+        assert((colored[hold + 1]->glue().leader->rule().color == red &&
+                kashida->glue().leader->rule().color != red) &&
+               "a kashida in a color is drawn in it, the word shared with black text left black");
+        assert((std::ranges::none_of(document.set("سَلام", font, true),
+                                     [](const layout::Node* node) { return node->type == layout::Node::Type::Penalty; })) &&
+               "a word that carries its vowels is left as it is");
+        assert((std::ranges::none_of(document.set("word", font, true),
+                                     [](const layout::Node* node) { return node->type == layout::Node::Type::Penalty; })) &&
+               "and a word in another script has none");
     }
 
     return 0;
