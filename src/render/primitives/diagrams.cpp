@@ -3,7 +3,9 @@
 ///        quantikz and Qcircuit circuits, and forest and qtree trees, each
 ///        written out as the TikZ picture it draws.
 #include "render/primitives/diagrams.hpp"
+#include "layout/line.hpp"
 #include "logger.hpp"
+#include "syntax/semantics/scope.hpp"
 
 #include <algorithm>
 #include <array>
@@ -139,21 +141,6 @@ namespace render::primitives {
     }
 
     Diagrams::Branch Diagrams::branch(const std::string_view text, std::size_t& at) {
-        // How wide a label stands, near enough: half an em a letter, a
-        // command one letter, and its node's inner sep either side.
-        const auto wide = [](const std::string_view label) {
-            int letters = 0;
-            for (std::size_t index = 0; index < label.size(); ++index) {
-                const char letter = label[index];
-                if (letter == '\\') {
-                    ++letters;
-                    while (index + 1 < label.size() && std::isalpha(static_cast<unsigned char>(label[index + 1]))) ++index;
-                } else if (letter != '{' && letter != '}' && letter != '$' && letter != '^' && letter != '_' && letter != ' ') {
-                    ++letters;
-                }
-            }
-            return static_cast<float>(letters) * 5.2f + 6.6f;
-        };
         Branch node;
         ++at;
         const bool dotted = at < text.size() && text[at] == '.';
@@ -218,15 +205,8 @@ namespace render::primitives {
             }
             std::string_view word = trim(text.substr(begin, std::min(at, text.size()) - begin));
             if (word.size() > 1 && word.front() == '{' && word.back() == '}') word = word.substr(1, word.size() - 2);
-            if (!word.empty() && dotted) node.children.push_back(Branch{.label = std::string(word), .width = wide(word)});
+            if (!word.empty() && dotted) node.children.push_back(Branch{.label = std::string(word)});
         }
-
-        node.width = wide(node.label);
-        // Or its children's, side by side and an em apart, when wider.
-        float under = 0.0f;
-        for (const Branch& child : node.children) under += child.width;
-        if (!node.children.empty()) under += 10.0f * static_cast<float>(node.children.size() - 1);
-        node.width = std::max(node.width, under);
         return node;
     }
 
@@ -835,25 +815,19 @@ namespace render::primitives {
             mouth.ingest(context.arena.copy(circuit(text, columns, rows, true)));
         });
 
-        // Trees: forest's block, and qtree's and tikz-qtree's `\Tree` -- in
-        // a TikZ picture of its own, or the one it is written in.
-        const auto tree = [](const std::string_view text, const bool inside) {
-            const std::size_t open = text.find('[');
-            if (open == std::string_view::npos) return std::string{};
-            std::size_t at = open;
-            Branch root = branch(text, at);
-            std::string out = inside ? "" : "\\begin{tikzpicture}";
-            int count = 0;
-            static_cast<void>(plant(root, 0.0f, 0, count, out));
-            return inside ? out : out + "\\end{tikzpicture}";
-        };
+        // Trees: forest's block, and qtree's and tikz-qtree's `\Tree`, each
+        // handed on as `\@tree{...}`. There every label is set first, as the
+        // node it will be -- a third of an em of inner sep either side -- so
+        // a subtree stands as wide as its widest row of text really is, then
+        // the tree is placed and written out as a TikZ picture of its own,
+        // or into the one it is written in.
         context.blocks.watch(
             "forest",
-            [&context, tree](syntax::Mouth& mouth) {
-                mouth.ingest(context.arena.copy(tree(body(mouth, "forest"), false)));
+            [&context](syntax::Mouth& mouth) {
+                mouth.ingest(context.arena.copy("\\@tree{" + body(mouth, "forest") + "}"));
             },
             [](syntax::Mouth&) {});
-        parser.mouth.bind("\\Tree", [&context, tree](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\Tree", [&context](syntax::Mouth& mouth) {
             std::string text;
             int depth = 0;
             for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
@@ -862,7 +836,53 @@ namespace render::primitives {
                 if (token.is('[')) ++depth;
                 if (token.is(']') && --depth == 0) break;
             }
-            mouth.ingest(context.arena.copy(tree(text, context.blocks.innermost() == "tikzpicture")));
+            mouth.ingest(context.arena.copy("\\@tree{" + text + "}"));
+        });
+        parser.bind("\\@tree", [&context](syntax::Parser& parser) -> syntax::Node* {
+            syntax::Mouth& mouth = parser.mouth;
+            std::string text;
+            for (const syntax::Token& token : mouth.argument({}, 0)) {
+                text += token.text;
+                if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
+            }
+            const std::size_t open = text.find('[');
+            if (open == std::string::npos) return nullptr;
+            std::size_t at = open;
+            Branch root = branch(text, at);
+
+            // Each label's width, set; then each subtree's, its label's or
+            // its children's side by side and an em apart, whichever is wider.
+            const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
+            const auto size = [&](this const auto& self, Branch& node) -> void {
+                for (Branch& child : node.children) self(child);
+
+                mouth.ingest(context.arena.copy("{" + node.label + "}"));
+                mouth.read();
+                mouth.push(syntax::semantics::Scope::Type::Group);
+                const typography::Font* restore = context.selection.text();
+                const memory::Slice<syntax::Node*> read = parser.parse('}');
+                stamp(read, context);
+                context.selection.text(restore);
+                mouth.pop(syntax::semantics::Scope::Type::Group);
+                std::vector<layout::Node*> set;
+                for (const syntax::Node* child : read) compose(set, child, context);
+                float wide = 2.0f * em / 3.0f;
+                for (const layout::Node* piece : set) wide += layout::Line::advance(piece);
+
+                float under = 0.0f;
+                for (const Branch& child : node.children) under += child.width;
+                if (!node.children.empty()) under += 10.0f * static_cast<float>(node.children.size() - 1);
+                node.width = std::max(wide, under);
+            };
+            size(root);
+
+            const bool inside = context.blocks.innermost() == "tikzpicture";
+            std::string out = inside ? "" : "\\begin{tikzpicture}";
+            int count = 0;
+            static_cast<void>(plant(root, 0.0f, 0, count, out));
+            if (!inside) out += "\\end{tikzpicture}";
+            mouth.ingest(context.arena.copy(out));
+            return nullptr;
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound diagram primitives");

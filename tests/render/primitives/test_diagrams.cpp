@@ -152,6 +152,21 @@ int main() {
         const Result qtree = article("qtree", "\\Tree [.S [.NP the cat ] [.VP sat ] ]");
         assert((qtree.clean && holds(qtree.text, "the") && holds(qtree.text, "cat")) && "a qtree tree, bare words leaves");
         assert((count(qtree.pdf, " l S") == 5) && "each joined");
+
+        // Each label is set before the tree is placed: two huge words side
+        // by side stand apart by more than the first one's own width, some
+        // seventy points, where counting their letters made them overlap.
+        const Result wide = article("forest", "\\begin{forest} [S [{\\Huge WIDE}] [{\\Huge WORDS}]] \\end{forest}");
+        std::vector<float> lefts;
+        for (std::size_t at = wide.pdf.find(" Tm"); at != std::string::npos; at = wide.pdf.find(" Tm", at + 1)) {
+            const std::size_t y = wide.pdf.rfind(' ', at - 1);
+            const std::size_t x = wide.pdf.rfind(' ', y - 1) + 1;
+            float value = 0.0f;
+            std::from_chars(wide.pdf.data() + x, wide.pdf.data() + y, value);
+            lefts.push_back(value);
+        }
+        assert((wide.clean && lefts.size() >= 2 && lefts[1] - lefts[0] > 70.0f) &&
+               "two wide labels side by side, each as wide as it is set");
     }
     return 0;
 }

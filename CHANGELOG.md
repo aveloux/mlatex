@@ -518,7 +518,9 @@ sees, newest work last within each group.
   meters, classical wires doubled, `\lstick` and `\rstick`.
 - **Trees**: forest's `[S [NP] [VP]]`, and qtree's and tikz-qtree's
   `\Tree [.S the cat ]` with bare words as leaves, each parent centred over
-  its children.
+  its children. Every label is set before the tree is placed, so a subtree
+  stands as wide as its text is -- a formula, a `\Huge` word -- where its
+  letters were counted and wide labels ran into each other.
 - **TikZ's `\matrix`**: `matrix of nodes` and `matrix of math nodes`, or a
   `\node` a cell; cells named `m-1-2`, each column as wide as its widest and
   each row as high as its highest, `row sep`, `column sep`, `\\[4pt]`,
@@ -828,9 +830,9 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn; pgfplots' 3D plots, error bars and `fill between` are not drawn; a tree's
-labels are measured by their letters, not set first; xy-pic's objects
-written with `*+[F]` keep that text. beamer's overlays are one slide and
+EPS and SVG are placeholders, not drawn; pgfplots' 3D plots, error bars and
+`fill between` are not drawn; xy-pic's objects written with `*+[F]` keep that
+text. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
