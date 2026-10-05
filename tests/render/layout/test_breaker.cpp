@@ -75,6 +75,25 @@ int main() {
         const layout::Breaker breaker(arena, scratch, {.target = 100.0f});
         assert((breaker.compose({}).empty()) && "nothing breaks into no lines");
     }
+    {
+        // A penalty of ten thousand is no place to break, as TeX's \nobreak:
+        // a line too long to end anywhere else runs on past it.
+        std::vector<layout::Node*> nodes;
+        for (int index = 0; index < 3; ++index) {
+            if (index > 0) {
+                auto* hold = arena.compose<layout::Node>(layout::Node::Type::Penalty);
+                hold->penalty({.value = 10000});
+                nodes.push_back(hold);
+            }
+            auto* word = arena.compose<layout::Node>(layout::Node::Type::Box);
+            word->box({.width = 60.0f, .height = 7.0f});
+            nodes.push_back(word);
+        }
+        const memory::Slice<layout::Node*> slice = arena.allocate<layout::Node*>(nodes.size());
+        for (std::size_t index = 0; index < nodes.size(); ++index) slice[index] = nodes[index];
+        const layout::Breaker breaker(arena, scratch, {.target = 100.0f});
+        assert((breaker.compose(slice).size() == 1) && "a line ends at no penalty of ten thousand");
+    }
 
     return 0;
 }

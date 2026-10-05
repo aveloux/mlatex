@@ -644,6 +644,8 @@ font folders are listed only for a script the engine carries no face for.
   on a curve stood by its end.
 - A picture in a line hung below the baseline; `\tikz[baseline]{...}` read
   its bracket as the picture; a length in picas was none.
+- A line could end at a penalty of ten thousand -- `\nobreak`, a tie -- when
+  every other break cost more; as in TeX, none ever does now.
 - A binary operator with nothing after it before a formula's closing `$` or
   a group's `}` -- `$a+$`, `{x-}` -- took the closing token as its operand
   and read on past the formula.

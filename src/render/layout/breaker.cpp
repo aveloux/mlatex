@@ -104,8 +104,11 @@ namespace render::layout {
                 float cost = 0.0f;
                 bool hyphen = false;
 
+                // A penalty of ten thousand or more is no place to break at
+                // all, as TeX's: \nobreak's, a tie's, the one inside a word
+                // ahead of its kashida.
                 if (node->type == Node::Type::Penalty) {
-                    allowed = hyphenating || !node->penalty().flag;
+                    allowed = (hyphenating || !node->penalty().flag) && node->penalty().value < 10000;
                     cost = static_cast<float>(node->penalty().value);
                     const Node* prior = cursor > 0 ? input[cursor - 1] : nullptr;
                     hyphen = node->penalty().flag ||
