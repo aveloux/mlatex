@@ -91,5 +91,14 @@ int main() {
     assert((kind(missing, layout::Node::Type::Glyph) == 1 && missing[0]->glyph().code == 0) &&
            "without a registry, a character no face offered draws is the face's box for none");
 
+    // A number reads left to right in any script: Arabic's digits come back
+    // in the order written, an Arabic word in the order it is drawn.
+    const auto number = covering.shape(one, "\xD9\xA1\xD9\xA2\xD9\xA3", {});
+    assert((kind(number, layout::Node::Type::Glyph) == 3 && number[0]->glyph().point == 0x0661 &&
+            number[2]->glyph().point == 0x0663) && "Arabic's digits left to right");
+    const auto word = covering.shape(one, "\xD8\xA8\xD8\xA7\xD8\xAA", {});
+    assert((kind(word, layout::Node::Type::Glyph) == 3 && word[0]->glyph().point == 0x062A &&
+            word[2]->glyph().point == 0x0628) && "an Arabic word right to left, its last letter drawn first");
+
     return 0;
 }

@@ -75,6 +75,18 @@ namespace render::typography {
             hb_buffer_add_utf8(buffer, run.data(), static_cast<int>(run.size()), 0, static_cast<int>(run.size()));
             hb_buffer_guess_segment_properties(buffer);
 
+            // A number reads left to right in any script. Arabic's digits,
+            // ٢٠٢٤, are Arabic's by Unicode, and a run of them alone would
+            // otherwise come back turned round, as the script's words do.
+            bool numeric = !run.empty();
+            for (std::size_t at = 0; numeric && at < run.size();) {
+                const auto [code, size] = decode(run, at);
+                numeric = (code >= '0' && code <= '9') || (code >= 0x0660 && code <= 0x066C) ||
+                          (code >= 0x06F0 && code <= 0x06F9) || code == '.' || code == ',';
+                at += std::max<std::size_t>(size, 1);
+            }
+            if (numeric) hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
+
             // Without features, the plan comes from the few kept here, found
             // by face and by what the buffer is written in; with them,
             // HarfBuzz finds or makes its own.
