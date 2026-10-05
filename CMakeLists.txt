@@ -365,25 +365,26 @@ set_source_files_properties("${source}/src/syntax/glossary.cpp" PROPERTIES
         OBJECT_DEPENDS "${source}/assets/glossary.mtex"
         COMPILE_OPTIONS "${evaluation}")
 
-# The engine, compiled once. The command line, the foreign-function library,
-# the WebAssembly module and every test link this rather than each compiling
+# The engine, compiled once, as the target core: the command line -- the
+# target latex, the program an IDE runs -- the foreign-function library, the
+# WebAssembly module and every test link this rather than each compiling
 # all of it again, which is what used to make a full build take twenty
 # minutes for ten small tests. Position independent, because the
 # foreign-function library is a shared one and has to be able to carry it --
 # except under Emscripten, which links everything into one module.
-add_library(latex STATIC ${engine} ${headers} ${output})
-add_dependencies(latex lookup)
+add_library(core STATIC ${engine} ${headers} ${output})
+add_dependencies(core lookup)
 if(NOT EMSCRIPTEN)
-    set_target_properties(latex PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-target_include_directories(latex PUBLIC ${includes})
+target_include_directories(core PUBLIC ${includes})
 
 if(TARGET harfbuzz::harfbuzz)
-    target_link_libraries(latex PUBLIC harfbuzz::harfbuzz harfbuzz::harfbuzz-subset)
+    target_link_libraries(core PUBLIC harfbuzz::harfbuzz harfbuzz::harfbuzz-subset)
 else()
-    target_link_libraries(latex PUBLIC ${HARFBUZZ_LIBRARIES})
-    target_include_directories(latex PUBLIC ${HARFBUZZ_INCLUDE_DIRS})
+    target_link_libraries(core PUBLIC ${HARFBUZZ_LIBRARIES})
+    target_include_directories(core PUBLIC ${HARFBUZZ_INCLUDE_DIRS})
 endif()
 
 # PNG, JPEG and WebP decode an \includegraphics source into plain pixels;
@@ -392,19 +393,19 @@ endif()
 # Linux and macOS when it is installed. Without one, network/http.cpp reads
 # files alone -- which is also the case in a browser, where the page fetches
 # a picture and hands it in.
-target_link_libraries(latex PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
+target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
 
 # Whether this is a release build, told to everything that links the engine:
 # logger.hpp keys its floor on it, and the tests, which undefine NDEBUG so
 # their asserts run, must see the same floor the engine was compiled with.
-target_compile_definitions(latex PUBLIC $<$<NOT:$<CONFIG:Debug>>:LATEX_RELEASE>)
+target_compile_definitions(core PUBLIC $<$<NOT:$<CONFIG:Debug>>:LATEX_RELEASE>)
 if(WIN32)
-    target_link_libraries(latex PUBLIC winhttp)
+    target_link_libraries(core PUBLIC winhttp)
 elseif(NOT EMSCRIPTEN)
     find_package(CURL QUIET)
     if(CURL_FOUND)
-        target_link_libraries(latex PUBLIC CURL::libcurl)
-        target_compile_definitions(latex PRIVATE LATEX_CURL)
+        target_link_libraries(core PUBLIC CURL::libcurl)
+        target_compile_definitions(core PRIVATE LATEX_CURL)
     endif()
 endif()
 
@@ -417,7 +418,7 @@ if(EMSCRIPTEN)
     set(fonts "${source}/assets/fonts" CACHE PATH "The fonts packed into the WebAssembly module")
 
     add_executable(wasm "${source}/src/render/wasm.cpp" "${source}/include/render/wasm.hpp")
-    target_link_libraries(wasm PRIVATE latex)
+    target_link_libraries(wasm PRIVATE core)
     target_link_options(wasm PRIVATE
             -lembind
             -sMODULARIZE=1
@@ -427,11 +428,10 @@ if(EMSCRIPTEN)
             "SHELL:--preload-file ${fonts}@/assets/fonts")
     set_target_properties(wasm PROPERTIES OUTPUT_NAME latex)
 else()
-    add_executable(driver "${source}/src/main.cpp")
-    set_target_properties(driver PROPERTIES OUTPUT_NAME latex)
-    target_link_libraries(driver PRIVATE latex)
+    add_executable(latex "${source}/src/main.cpp")
+    target_link_libraries(latex PRIVATE core)
     # What `latex --version` prints.
-    target_compile_definitions(driver PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
+    target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
 
     # The engine as a C library, for a program that wants documents made
     # without running a second process: see include/network/ffi.hpp. Named
@@ -439,7 +439,7 @@ else()
     # executable leaves behind. It finds its assets from where it was loaded,
     # which on Linux and macOS takes dladdr and so the dynamic-loading library.
     add_library(ffi SHARED "${source}/src/network/ffi.cpp" "${source}/include/network/ffi.hpp")
-    target_link_libraries(ffi PRIVATE latex ${CMAKE_DL_LIBS})
+    target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
     target_compile_definitions(ffi PRIVATE LATEX_EXPORTS)
     set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
 
@@ -447,7 +447,7 @@ else()
     # starts: most documents draw no JPEG or WebP picture and fetch nothing
     # over HTTP, and every library loaded at start-up is paid for by all.
     if(WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-        foreach(target driver ffi)
+        foreach(target latex ffi)
             target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
                     /DELAYLOAD:winhttp.dll)
             target_link_libraries(${target} PRIVATE delayimp)
@@ -456,7 +456,7 @@ else()
 
     # After vcpkg's copy, not instead of it: see `dependencies` above.
     if(dependencies)
-        foreach(target driver ffi)
+        foreach(target latex ffi)
             add_custom_command(TARGET ${target} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dependencies} "$<TARGET_FILE_DIR:${target}>"
                     VERBATIM)

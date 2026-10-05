@@ -31,7 +31,7 @@ foreach(test ${tests})
     # The engine is linked, not recompiled per test: see the engine library in
     # the top-level CMakeLists.txt.
     add_executable(${name} ${test})
-    target_link_libraries(${name} PRIVATE latex)
+    target_link_libraries(${name} PRIVATE core)
 
     # A test checks with assert, which a release build compiles out: kept on
     # here, so a test built for speed still checks everything it says.
@@ -50,8 +50,8 @@ endforeach()
 # The command line's test runs the executable itself, so it is told where the
 # build put it, and waits for it to be built.
 if(TARGET test_main)
-    target_compile_definitions(test_main PRIVATE BINARY="$<TARGET_FILE:driver>")
-    add_dependencies(test_main driver)
+    target_compile_definitions(test_main PRIVATE BINARY="$<TARGET_FILE:latex>")
+    add_dependencies(test_main latex)
 endif()
 
 # The foreign-function test calls the engine the way a host program would,

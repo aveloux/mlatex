@@ -550,8 +550,9 @@ page's text goes.
   module (`render/wasm.hpp`).
 - **The engine is `namespace latex`**, in `latex.hpp` and `latex.cpp` (was
   `engine`, in `engine.hpp`): `latex::Session`, `latex::Host`,
-  `latex::compose`, `latex::locate`. Its CMake library is the target `latex`,
-  and the command line the target `driver`, its file still `latex`.
+  `latex::compose`, `latex::locate`. The command line is the CMake target
+  `latex`, the program an IDE runs, and the engine's library the target
+  `core`.
 
 ### Speed
 
