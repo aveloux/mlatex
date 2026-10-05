@@ -11,7 +11,7 @@
 ///   which the syntax Wrapper owns, so the Wrapper is built first.
 /// - render::primitives::Context holds a reference to the block module, which
 ///   the syntax Wrapper also owns, so the syntax layer is installed first.
-#include "engine.hpp"
+#include "latex.hpp"
 #include "layout/document.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
@@ -57,7 +57,7 @@
     #include <windows.h>
 #endif
 
-namespace engine {
+namespace latex {
 
     // The font tree as the build listed it, so a run need not walk it.
 #include "fonts.inc"
@@ -201,45 +201,43 @@ namespace engine {
         // Wrapper has to exist first. One Context is shared by every module,
         // which is how two modules end up reading the same register bank.
         // The files beside a document read from disk, each read the first
-        // time it is named and kept for the rest of the run. A name is read
-        // only from inside the document's own folder: one written from a
-        // root, or climbing out through `..`, is refused, and a document
-        // that came from memory has no folder to read from at all -- only
-        // the files it wrote for itself, which are kept here too.
+        // time it is named and kept for the rest of the run: from the
+        // document's own folder, then from each folder the host named, in
+        // order. A name is read only from inside one of them: one written
+        // from a root, or climbing out through `..`, is refused, and a
+        // document that came from memory reads only from the host's folders
+        // and the files it wrote for itself, which are kept here too.
         syntax::primitives::Files nearby;
-        const std::filesystem::path folder = source ? source->parent_path() : std::filesystem::path{};
+        std::vector<std::filesystem::path> folders;
+        if (source) folders.push_back(source->parent_path());
+        folders.insert(folders.end(), host.directories.begin(), host.directories.end());
         const syntax::primitives::Writer write = [&nearby](const std::string_view name, const std::string_view text) {
             nearby.insert_or_assign(std::string(name), std::string(text));
         };
-        syntax::primitives::Reader disk = [&nearby](const std::string_view name) -> const std::string* {
-            const auto kept = nearby.find(name);
-            return kept == nearby.end() || kept->second.empty() ? nullptr : &kept->second;
-        };
-        if (source) {
-            disk = [&nearby, &folder](const std::string_view name) -> const std::string* {
-                if (const auto kept = nearby.find(name); kept != nearby.end()) {
-                    return kept->second.empty() ? nullptr : &kept->second;
-                }
-                const std::filesystem::path relative(
-                    std::u8string_view(reinterpret_cast<const char8_t*>(name.data()), name.size()));
-                bool inside = !name.empty() && !relative.has_root_name() && !relative.has_root_directory();
-                for (const std::filesystem::path& part : relative) inside = inside && part != "..";
-
-                std::string bytes;
-                if (inside) {
-                    if (std::ifstream file(folder / relative, std::ios::binary | std::ios::ate); file) {
-                        const std::streamsize size = file.tellg();
-                        bytes.resize(static_cast<std::size_t>(std::max<std::streamsize>(size, 0)));
-                        file.seekg(0, std::ios::beg);
-                        if (size > 0 && !file.read(bytes.data(), size)) bytes.clear();
-                    }
-                }
-                // Kept whether it was found or not, so a name asked for twice
-                // looks at the disk once; an empty file reads as none.
-                const auto [kept, added] = nearby.emplace(std::string(name), std::move(bytes));
+        const syntax::primitives::Reader disk = [&nearby, &folders](const std::string_view name) -> const std::string* {
+            if (const auto kept = nearby.find(name); kept != nearby.end()) {
                 return kept->second.empty() ? nullptr : &kept->second;
-            };
-        }
+            }
+            const std::filesystem::path relative(
+                std::u8string_view(reinterpret_cast<const char8_t*>(name.data()), name.size()));
+            bool inside = !name.empty() && !relative.has_root_name() && !relative.has_root_directory();
+            for (const std::filesystem::path& part : relative) inside = inside && part != "..";
+
+            std::string bytes;
+            for (const std::filesystem::path& folder : folders) {
+                if (!inside || !bytes.empty()) break;
+                if (std::ifstream file(folder / relative, std::ios::binary | std::ios::ate); file) {
+                    const std::streamsize size = file.tellg();
+                    bytes.resize(static_cast<std::size_t>(std::max<std::streamsize>(size, 0)));
+                    file.seekg(0, std::ios::beg);
+                    if (size > 0 && !file.read(bytes.data(), size)) bytes.clear();
+                }
+            }
+            // Kept whether it was found or not, so a name asked for twice
+            // looks at the disk once; an empty file reads as none.
+            const auto [kept, added] = nearby.emplace(std::string(name), std::move(bytes));
+            return kept->second.empty() ? nullptr : &kept->second;
+        };
 
         syntax::primitives::Wrapper core(lexicon);
         syntax::primitives::Context expansion{state.registers, core.relay, core.variables};
@@ -601,7 +599,7 @@ namespace engine {
 
     bool Session::typeset(const std::string_view document) {
         std::ostringstream errors;
-        const bool made = engine::typeset(assets, document, pdf, host, errors, &pages);
+        const bool made = latex::typeset(assets, document, pdf, host, errors, &pages);
         error = errors.str();
         return made;
     }
@@ -625,9 +623,11 @@ namespace engine {
         const std::filesystem::path& destination,
         const Host& host,
         std::ostream* report,
-        std::ostream& errors
+        std::ostream& errors,
+        std::vector<std::string>* texts
     ) {
-        return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, nullptr, host,
+        if (texts) texts->clear();
+        return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, texts, host,
                    report, errors);
     }
 

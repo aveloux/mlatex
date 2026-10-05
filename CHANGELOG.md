@@ -507,16 +507,23 @@ as TeX does, so a script written for pdflatex runs it unchanged:
 `-h`/`--help`, `-v`/`--version`, `-o`/`--output-directory`, `-j`/`--jobname`,
 `-i`/`--interaction` (batchmode prints nothing but errors), `-q`/`--quiet`,
 `--halt-on-error` (no PDF from a document with an error), `--draftmode`
-(every error found, no PDF written) and `--file-line-error` (each error as
-`file:line:column: message`); a value after `=` or as the next argument, and
-`--` ending the options. `-s`/`--set=NAME=VALUE` hands the document a value.
-`--aot[=windows|macos|linux]` typesets ahead of time into a PDF, the
-default; `--jit` is taken and does nothing yet. A document named without an
-extension is found as `.mtex`, then `.tex`. The exit status is 0 for a clean
-document, 1 for one with an error and 2 for a mistake on the command line.
-The logger's `--debug`, `--trace`, `--log-level`, `--log-file` and
-`--no-color` are listed with them. `engine::compose` takes where its report
-and its errors go, and an empty destination for a draft.
+(every error found, no PDF written), `--file-line-error` (each error as
+`file:line:column: message`), MiKTeX's `-I`/`--include-directory` (another
+folder the document's inputs are read from, the engine's
+`latex::Host::directories`) and `--time-statistics` (the engine's own
+report); a value after `=` or as the next argument, and `--` ending the
+options. `-t`/`--target` says what the document is made into: `aot`, a PDF
+ahead of time, the default; `jit` and `wasm` are taken and do nothing yet.
+`--assets=DIR` names the engine's assets for a program installed away from
+them. A run says what it wrote as TeX does -- `Output written on paper.pdf
+(11 pages, 423495 bytes).` -- and a document named without an extension is
+found as `.mtex`, then `.tex`. The exit status is 0 for a clean document, 1
+for one with an error and 2 for a mistake on the command line. The logger's
+`--debug`, `--trace`, `--log-level`, `--log-file` and `--no-color` are listed
+with them. Values and commands a program hands a document are the bindings'
+alone: the command line has no `--set`. `latex::compose` takes where its
+report and its errors go, an empty destination for a draft, and where each
+page's text goes.
 
 ### Building
 
@@ -536,12 +543,15 @@ and its errors go, and an empty destination for a draft.
 
 ### For programs
 
-- `engine::Session`: values, commands, packages and pictures handed in once
+- `latex::Session`: values, commands, packages and pictures handed in once
   and kept across documents; `set`, `define`, `provide`, their undoing verbs,
   `typeset`, `pdf`, `error`, and `pages()` for each page's text.
 - The same interface as a C library (`network/ffi.hpp`) and as a WebAssembly
   module (`render/wasm.hpp`).
-- The command line takes `--set=name=value`.
+- **The engine is `namespace latex`**, in `latex.hpp` and `latex.cpp` (was
+  `engine`, in `engine.hpp`): `latex::Session`, `latex::Host`,
+  `latex::compose`, `latex::locate`. Its CMake library is the target `latex`,
+  and the command line the target `driver`, its file still `latex`.
 
 ### Speed
 
@@ -653,7 +663,7 @@ font folders are listed only for a script the engine carries no face for.
   one's number at its middle, circuits, trees; and a picture on the
   baseline, `\matrix`, a label halfway along its line, edges and loops.
 - Then: `test_strings` and `test_records`; numbers in words; a font's wide
-  variants; `\the\value`; category changes in a row; and in `test_engine`
+  variants; `\the\value`; category changes in a row; and in `test_latex`
   every one of the 523 documents in `build/packages`. 85 tests pass in Debug
   and Release, with no warning in either build.
 - `build/main.mtex` has a third appendix, **Kernel checks**, setting what

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine.hpp"
+#include "latex.hpp"
 
 #include <cstddef>
 #include <string>
@@ -13,7 +13,7 @@
 namespace render {
 
     /// @brief The engine compiled to WebAssembly, for a web page, a worker or
-    ///        Node: engine::Session, bound for JavaScript under its own names.
+    ///        Node: latex::Session, bound for JavaScript under its own names.
     ///
     /// Built by the `wasm` target when CMake runs under Emscripten; see the
     /// top-level CMakeLists.txt. The build leaves `latex.js`, `latex.wasm`
@@ -34,7 +34,7 @@ namespace render {
     /// session.delete();                                  // as every bound object is
     /// @endcode
     ///
-    /// Every operation is engine::Session's, under the same name, and does
+    /// Every operation is latex::Session's, under the same name, and does
     /// the same thing: `set`/`unset`, `define`/`forget`, `provide`/`withdraw`,
     /// `typeset`, `pdf` and `error`. Only what JavaScript hands over differs:
     /// a command is a JavaScript function, called with the arguments' text
@@ -48,7 +48,7 @@ namespace render {
     /// runs anywhere WebAssembly does. `\\includegraphics` of a URL is not
     /// fetched from inside the module; the page fetches it and hands the
     /// bytes in with `provide`, under the name the document uses.
-    class Wasm : public ::engine::Session {
+    class Wasm : public ::latex::Session {
     public:
         /// Where the fonts are in the module's own file system: packed there
         /// when the module was built, and read from there like any disk.

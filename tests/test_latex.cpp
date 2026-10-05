@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "latex.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -11,8 +11,8 @@
 #include <string_view>
 #include <vector>
 
-// The engine: engine::typeset, a document in and a PDF out, and
-// engine::Session, the one interface every binding shares -- values,
+// The engine: latex::typeset, a document in and a PDF out, and
+// latex::Session, the one interface every binding shares -- values,
 // commands and files a program hands in -- two passes for what only pages
 // can say, what a document got wrong reported and a PDF made all the same,
 // and the research paper in build/, whole.
@@ -29,11 +29,11 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const engine::Host& host = {}) {
-    static const std::filesystem::path assets = engine::locate(__FILE__);
+static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+    static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = engine::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
     for (std::string& page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
@@ -71,8 +71,8 @@ static std::string dot() {
 int main() {
     // --- A session and what it holds -------------------------------------------------
     {
-        engine::Session session(engine::locate(__FILE__));
-        assert((session.assets == engine::locate(__FILE__)) && "a session reads the assets it was given");
+        latex::Session session(latex::locate(__FILE__));
+        assert((session.assets == latex::locate(__FILE__)) && "a session reads the assets it was given");
 
         session.set("customer", "Acme");
         session.set("customer", "Globex");
@@ -116,7 +116,7 @@ int main() {
                holds(session.error, "warning: File `house.sty' not found")) &&
                "and missed by name once they are, as a warning");
 
-        engine::Session lost(engine::locate(__FILE__).parent_path() / "no-such-assets");
+        latex::Session lost(latex::locate(__FILE__).parent_path() / "no-such-assets");
         assert((!lost.typeset("\\begin{document}x\\end{document}") && lost.pdf.empty() && !lost.error.empty()) &&
                "a session with no fonts makes nothing, and says why");
     }
@@ -124,7 +124,7 @@ int main() {
     // --- A program's own command, package and picture ------------------------------------
     {
         std::string asked;
-        engine::Host host;
+        latex::Host host;
         host.variables.emplace_back("account", "A-1042");
         host.commands.push_back({.name = "balance", .arity = 1, .handler = [&asked](const auto arguments) {
             asked = arguments[0];
@@ -168,7 +168,7 @@ int main() {
     // reads, each using what it is loaded for; every one has to come out with
     // no error and no package or command the engine does not know.
     {
-        const std::filesystem::path folder = engine::locate(__FILE__).parent_path() / "build" / "packages";
+        const std::filesystem::path folder = latex::locate(__FILE__).parent_path() / "build" / "packages";
         std::size_t read = 0;
         std::string failed;
         for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder)) {
@@ -189,7 +189,7 @@ int main() {
 
     // --- The paper, whole -------------------------------------------------------------
     {
-        std::ifstream file(engine::locate(__FILE__).parent_path() / "build" / "main.mtex", std::ios::binary);
+        std::ifstream file(latex::locate(__FILE__).parent_path() / "build" / "main.mtex", std::ios::binary);
         const std::string source{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
         assert((!source.empty()) && "the paper is found");
 

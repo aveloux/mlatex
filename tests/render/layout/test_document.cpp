@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "latex.hpp"
 #include "layout/document.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
@@ -19,7 +19,7 @@
 
 /// The engine's assets directory, found from this file.
 static std::filesystem::path assets() {
-    return engine::locate(__FILE__);
+    return latex::locate(__FILE__);
 }
 
 /// The body face and the maths face at ten points, and what built them.

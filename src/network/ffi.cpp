@@ -1,12 +1,12 @@
 /// @file
 /// @brief The engine as a C library: see network/ffi.hpp.
 ///
-/// Each operation is engine::Session's own, given a C signature: strings
+/// Each operation is latex::Session's own, given a C signature: strings
 /// arrive as zero-terminated UTF-8, a command's handler is a C function and a
 /// pointer, and the PDF goes back as a pointer into the session. Nothing here
 /// decides anything the session does not; it only translates.
 #include "network/ffi.hpp"
-#include "engine.hpp"
+#include "latex.hpp"
 
 #include <filesystem>
 #include <new>
@@ -29,8 +29,8 @@
 namespace network {
 
     /// @brief The opaque handle the C side holds: the session itself.
-    struct Session : ::engine::Session {
-        using ::engine::Session::Session;
+    struct Session : ::latex::Session {
+        using ::latex::Session::Session;
     };
 
     /// @brief What one call of a command has written so far.
@@ -78,7 +78,7 @@ namespace network {
                 return std::filesystem::path{};
             #endif
             }();
-            root = ::engine::locate(library);
+            root = ::latex::locate(library);
         }
         std::error_code failure;
         if (root.empty() || !std::filesystem::is_directory(root / "fonts", failure) || failure) return nullptr;

@@ -4,7 +4,7 @@
 /// @brief The engine as a C library, for a program that makes documents.
 ///
 /// The library exports one function, latex(), and it returns a struct of
-/// every other: engine::Session's own operations, under engine::Session's own
+/// every other: latex::Session's own operations, under latex::Session's own
 /// names -- compose a session, set a value, define a command, provide a file,
 /// typeset a document, dispose of the session. A C program calls them through
 /// the struct the way a C++ one calls them on the class:
@@ -82,7 +82,7 @@ namespace network {
 extern "C" {
 #endif
 
-/// @brief One engine::Session: where the engine's assets are, and the
+/// @brief One latex::Session: where the engine's assets are, and the
 ///        values, commands and files every document it makes is handed.
 ///        Opaque; made by Latex::compose and ended by Latex::dispose.
 typedef struct Session Session;
@@ -101,7 +101,7 @@ typedef struct Output Output;
 ///                  nothing makes it stand for nothing.
 typedef void (*Handler)(void* data, const char* const* arguments, size_t count, Output* output);
 
-/// @brief Every operation the library offers: engine::Session's own, under
+/// @brief Every operation the library offers: latex::Session's own, under
 ///        its own names.
 typedef struct Latex {
     /// @brief Makes a session.

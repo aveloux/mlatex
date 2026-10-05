@@ -1,3 +1,5 @@
+#include "latex.hpp"
+
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -6,10 +8,10 @@
 #include <string_view>
 
 // The command line: the executable run as a person runs it -- a document in,
-// its PDF beside it out, `--set=name=value` handed to the document as a
-// variable -- and a mistake in either the arguments or the document ending
-// it with a failing status. BINARY is the built executable's path, which the
-// build hands this test.
+// its PDF beside it out, TeX's options with one dash or two, what it is made
+// into, where it reads from and where it writes to -- and a mistake in either
+// the arguments or the document ending it with a failing status. BINARY is
+// the built executable's path, which the build hands this test.
 
 /// Runs the executable on a document with some options; its exit status.
 static int run(const std::filesystem::path& document, const std::string_view options) {
@@ -23,47 +25,49 @@ static int run(const std::filesystem::path& document, const std::string_view opt
     return std::system(command.c_str());
 }
 
-/// Writes a document where the executable can read it.
-static std::filesystem::path write(const std::string_view name, const std::string_view text) {
-    const std::filesystem::path path = std::filesystem::temp_directory_path() / name;
+/// Writes a file where the executable can read it.
+static std::filesystem::path write(const std::filesystem::path& path, const std::string_view text) {
+    std::filesystem::create_directories(path.parent_path());
     std::ofstream(path, std::ios::binary) << text;
     return path;
 }
 
 int main() {
+    const std::filesystem::path temporary = std::filesystem::temp_directory_path();
     const std::filesystem::path document =
-        write("main-plain.mtex", "\\documentclass{article}\\begin{document}Hello.\\end{document}");
+        write(temporary / "main-plain.mtex", "\\documentclass{article}\\begin{document}Hello.\\end{document}");
     std::filesystem::path pdf = document;
     pdf.replace_extension(".pdf");
     std::filesystem::remove(pdf);
     assert((run(document, "") == 0) && "a document sets, and the run succeeds");
     assert((std::filesystem::file_size(pdf) > 0) && "its PDF beside it, named for it");
 
-    const std::filesystem::path valued =
-        write("main-valued.mtex", "\\documentclass{article}\\begin{document}\\variable{customer}\\end{document}");
-    assert((run(valued, "--set=customer=Acme") == 0) && "--set hands the document a variable");
-    assert((run(valued, "") != 0) && "and without it the variable is missing, and the run fails");
-    assert((run(valued, "--set=customer") != 0) && "a --set without a value is refused");
-
-    assert((run(std::filesystem::temp_directory_path() / "no-such-document.mtex", "") != 0) &&
-           "a document that is not there fails the run");
+    assert((run(temporary / "no-such-document.mtex", "") == 1) && "a document that is not there fails the run");
 
     const std::filesystem::path broken =
-        write("main-broken.mtex", "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
+        write(temporary / "main-broken.mtex", "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
     assert((run(broken, "") == 1) && "a document with a mistake fails the run");
 
     // TeX's options, with one dash or two, and the engine's own.
     assert((run(document, "--version") == 0 && run(document, "-v") == 0) && "--version");
     assert((run(document, "--help") == 0 && run(document, "-h") == 0) && "--help");
     assert((run(document, "--no-such-option") == 2) && "an option nothing knows is the command line's mistake");
+    assert((run(document, "--set=customer=Acme") == 2) && "values are the bindings', not the command line's");
     assert((run(document, "-interaction=batchmode") == 0 && run(document, "--interaction nonstopmode") == 0) &&
            "-interaction, written as TeX writes it or with its value after it");
     assert((run(document, "--interaction=sometimes") == 2) && "an interaction TeX has no name for");
-    assert((run(document, "--aot=windows -q") == 0 && run(document, "--aot=amiga") == 2) &&
-           "--aot for a system, and none it does not know");
+    assert((run(document, "--time-statistics -q") == 0) && "--time-statistics");
 
+    // What the document is made into: a PDF ahead of time, or a target not
+    // built yet, which is taken and does nothing.
     std::filesystem::remove(pdf);
-    assert((run(document, "--jit") == 0 && !std::filesystem::exists(pdf)) && "--jit is taken, and does nothing yet");
+    assert((run(document, "--target=aot -q") == 0 && std::filesystem::exists(pdf)) && "--target=aot makes the PDF");
+    std::filesystem::remove(pdf);
+    assert((run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) && "--target=jit is taken, and does nothing yet");
+    assert((run(document, "--target=wasm") == 0 && !std::filesystem::exists(pdf)) &&
+           "--target=wasm is taken, and does nothing yet");
+    assert((run(document, "--target=fortran") == 2) && "a target there is none of");
+
     assert((run(document, "--draftmode -q") == 0 && !std::filesystem::exists(pdf)) && "--draftmode writes no PDF");
 
     std::filesystem::path stray = broken;
@@ -72,7 +76,7 @@ int main() {
     assert((run(broken, "-halt-on-error -q") == 1 && !std::filesystem::exists(stray)) &&
            "-halt-on-error leaves no PDF from a document with a mistake");
 
-    const std::filesystem::path folder = std::filesystem::temp_directory_path() / "main-output";
+    const std::filesystem::path folder = temporary / "main-output";
     std::filesystem::remove_all(folder);
     assert((run(document, "-q --output-directory=\"" + folder.string() + "\" -jobname=final") == 0 &&
             std::filesystem::exists(folder / "final.pdf")) && "--output-directory and --jobname place and name the PDF");
@@ -80,6 +84,21 @@ int main() {
     std::filesystem::path bare = document;
     bare.replace_extension();
     assert((run(bare, "-q") == 0) && "a document named without its extension is found as .mtex");
+
+    // What a document inputs, from a folder of its own as well as its own.
+    const std::filesystem::path shared = temporary / "main-shared";
+    write(shared / "greeting.mtex", "Hello from a shared folder.");
+    const std::filesystem::path inputting = write(
+        temporary / "main-inputting.mtex", "\\documentclass{article}\\begin{document}\\input{greeting}\\end{document}");
+    assert((run(inputting, "-q") == 1) && "an input in no folder read is a mistake");
+    assert((run(inputting, "-q -I \"" + shared.string() + "\"") == 0) && "-I reads from the folder it names");
+    assert((run(inputting, "-q --include-directory=\"" + (temporary / "no-such-folder").string() + "\"") == 2) &&
+           "a folder that is not there is the command line's mistake");
+
+    // The assets named outright, as an installed program would be told.
+    const std::filesystem::path assets = latex::locate(__FILE__);
+    assert((run(document, "-q --assets=\"" + assets.string() + "\"") == 0) && "--assets names the engine's assets");
+    assert((run(document, "-q --assets=\"" + temporary.string() + "\"") == 2) && "and a folder of no fonts is refused");
 
     return 0;
 }

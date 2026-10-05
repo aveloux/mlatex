@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "latex.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -27,11 +27,11 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const engine::Host& host = {}) {
-    static const std::filesystem::path assets = engine::locate(__FILE__);
+static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+    static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = engine::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
     for (std::string& page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
@@ -78,7 +78,7 @@ static std::string dot() {
 int main() {
     // --- Pictures ------------------------------------------------------------------
     {
-        engine::Host host;
+        latex::Host host;
         host.files["dot.png"] = dot();
         const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                       "\\includegraphics[width=2cm]{dot.png}"
@@ -96,7 +96,7 @@ int main() {
         assert((wrong.clean && holds(wrong.errors, "warning: \\includegraphics: the 'angle' key is not supported")) &&
                "a key it cannot honour is a warning that names it");
 
-        engine::Host drawn;
+        latex::Host drawn;
         drawn.files["chart.eps"] = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n";
         const Result kept = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                     "\\includegraphics[width=4cm]{chart}\\end{document}",
@@ -190,7 +190,7 @@ int main() {
         // A PDF as a figure: a page the engine made itself, handed back in,
         // set as a form with its fonts, and the part of it asked for shown.
         const Result made = article("", "A figure made elsewhere, $x^2$.");
-        engine::Host handed;
+        latex::Host handed;
         handed.files["figure.pdf"] = made.pdf;
         const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                       "\\includegraphics[width=5cm,page=1,trim=100 600 100 100,clip]{figure}"

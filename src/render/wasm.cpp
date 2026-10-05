@@ -2,7 +2,7 @@
 /// @brief The engine bound for JavaScript: see render/wasm.hpp.
 ///
 /// Compiled into the `wasm` target alone, under Emscripten. Embind does the
-/// binding: engine::Session's operations are handed to JavaScript under their
+/// binding: latex::Session's operations are handed to JavaScript under their
 /// own names, each through a small adapter where JavaScript's types differ
 /// from C++'s -- embind has no string view, reads a Uint8Array or a string
 /// into a std::string, and would read a PDF's bytes back as UTF-8 text if
@@ -19,7 +19,7 @@
 
 namespace render {
 
-    Wasm::Wasm() : ::engine::Session(std::string(root)) {}
+    Wasm::Wasm() : ::latex::Session(std::string(root)) {}
 
 #if defined(__EMSCRIPTEN__)
 
@@ -48,7 +48,7 @@ namespace render {
         });
     }
 
-    /// @brief Hands engine::Session to JavaScript under its own names.
+    /// @brief Hands latex::Session to JavaScript under its own names.
     EMSCRIPTEN_BINDINGS(latex) {
         emscripten::class_<Wasm>("Session")
             .constructor<>()

@@ -1,20 +1,22 @@
 /// @file
 /// @brief The command line: `latex [options] [document]`.
 ///
-/// Everything the engine does is engine::compose(), in engine.cpp. What is
+/// Everything the engine does is latex::compose(), in latex.cpp. What is
 /// here is only what the command line owns: where the executable is and its
-/// assets with it, which document to set and where its PDF goes, and the
-/// options -- TeX's own where TeX has one, written with one dash or two as
-/// TeX takes them, so a script that runs pdflatex runs this the same way:
+/// assets with it, which document to set and where its PDF goes, what it is
+/// made into, and the options -- TeX's own where TeX has one, written with
+/// one dash or two as TeX takes them, so a script that runs pdflatex runs
+/// this the same way. Values and commands a program hands a document are
+/// the bindings' (latex::Session, the C library, latex.js), not this.
 ///
 /// @code
 /// latex paper                                  # paper.mtex, or paper.tex, into paper.pdf
 /// latex -interaction=batchmode -halt-on-error paper
 /// latex --output-directory=out --jobname=final paper.mtex
-/// latex --set=customer=Acme invoice            # \variable{customer} reads Acme
-/// latex --draftmode paper                      # every error found, no PDF written
+/// latex -I styles -I figures paper             # what it inputs, from there too
+/// latex --target=jit paper                     # just in time: not built yet
 /// @endcode
-#include "engine.hpp"
+#include "latex.hpp"
 #include "logger.hpp"
 
 #include <cstdint>
@@ -24,6 +26,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -38,36 +41,54 @@
 /// What `latex --help` prints.
 static constexpr std::string_view help = R"(Usage: latex [options] [document]
 
-Typesets a document into a PDF beside it. A document named without an
-extension is looked for as NAME.mtex, then NAME.tex; with none named, the
-engine's own sample, build/main.mtex, is set.
+Typesets a document into a PDF. A document named without an extension is
+looked for as NAME.mtex, then NAME.tex; with none named, the engine's own
+sample, build/main.mtex, is set.
 
-Options:
-  -h, --help                  Print this help and exit.
-  -v, --version               Print the version and exit.
-  -o, --output-directory=DIR  Write the PDF into DIR, made if it is not there.
-  -j, --jobname=NAME          Name the PDF NAME.pdf, not after the document.
-  -i, --interaction=MODE      batchmode prints nothing but errors; nonstopmode,
-                              scrollmode and errorstopmode print what was done.
-  -q, --quiet                 The same as --interaction=batchmode.
-      --halt-on-error         Leave no PDF when the document has an error.
-      --draftmode             Read and set the document; write no PDF.
-      --file-line-error       Print each error as file:line:column: message.
-  -s, --set=NAME=VALUE        Hand the document a value, read with \variable{NAME}.
-      --aot[=SYSTEM]          Typeset ahead of time, into a PDF: the default.
-                              SYSTEM is windows, macos or linux; the host's
-                              when it is left out.
-      --jit                   Typeset just in time. Not built yet: accepted,
-                              and nothing is done.
+Target:
+  -t, --target=TARGET          What the document is made into:
+                                 aot   ahead of time: a PDF, now. The default.
+                                 jit   just in time. Not built yet: accepted,
+                                       and nothing is done.
+                                 wasm  in WebAssembly. Not built into this
+                                       program yet: accepted, and nothing is
+                                       done.
+
+Output:
+  -o, --output-directory=DIR   Write the PDF into DIR, made if it is not there;
+                               beside the document otherwise.
+  -j, --jobname=NAME           Name the PDF NAME.pdf, not after the document.
+      --draftmode              Read and set the document; write no PDF.
+      --halt-on-error          Leave no PDF when the document has an error.
+
+Input:
+  -I, --include-directory=DIR  Look in DIR, after the document's own folder,
+                               for what it inputs: \input, \include,
+                               \usepackage, \includegraphics, a bibliography.
+                               Give it again for another folder.
+      --assets=DIR             Read the fonts and hyphenation patterns from
+                               DIR, not from the assets found above this
+                               program.
+
+Messages:
+  -i, --interaction=MODE       batchmode prints nothing but errors;
+                               nonstopmode, scrollmode and errorstopmode print
+                               what was done.
+  -q, --quiet                  The same as --interaction=batchmode.
+      --file-line-error        Print each error as file:line:column: message.
+      --time-statistics        Print what the engine did and how long each
+                               step took.
+  -h, --help                   Print this help and exit.
+  -v, --version                Print the version and exit.
 
 Diagnostics:
-  -d, --debug[=PARTS]         Log the engine's steps: every part, or those
-                              named -- lexer, mouth, parser, layout, memory,
-                              semantics.
-      --trace                 Log every step, in full.
-      --log-level=LEVEL       traceback, debug, info, warn, error or silent.
-      --log-file=FILE         Write the log to FILE.
-      --no-color              Log without colour.
+  -d, --debug[=PARTS]          Log the engine's steps: every part, or those
+                               named -- lexer, mouth, parser, layout, memory,
+                               semantics.
+      --trace                  Log every step, in full.
+      --log-level=LEVEL        traceback, debug, info, warn, error or silent.
+      --log-file=FILE          Write the log to FILE.
+      --no-color               Log without colour.
 
 Options start with one dash or two, as TeX's do: -interaction=batchmode is
 --interaction=batchmode. A value follows its option after `=` or as the next
@@ -88,26 +109,20 @@ int main(int count, char* arguments[]) {
         ~Ending() { Logger::dispose(); }
     } ending;
 
-    // The system an ahead-of-time build is for, unless the command line says.
-#if defined(_WIN32)
-    std::string_view system = "windows";
-#elif defined(__APPLE__)
-    std::string_view system = "macos";
-#else
-    std::string_view system = "linux";
-#endif
-
     // What the command line asks for.
+    std::string_view target = "aot";   // --target
     std::filesystem::path source;      // the document, when one is named
     std::filesystem::path directory;   // --output-directory
+    std::filesystem::path assets;      // --assets
     std::string jobname;               // --jobname
     bool quiet = false;                // --interaction=batchmode, --quiet
     bool halting = false;              // --halt-on-error
     bool draft = false;                // --draftmode
     bool placed = false;               // --file-line-error
-    bool ahead = true;                 // --aot, and not --jit
+    bool statistics = false;           // --time-statistics
     bool ended = false;                // past `--`
-    engine::Host host;
+    latex::Host host;
+    std::error_code failure;
 
     for (int index = 1; index < count; ++index) {
         const std::string_view argument = arguments[index] ? arguments[index] : "";
@@ -139,13 +154,14 @@ int main(int count, char* arguments[]) {
         }
         if (!doubled && name.size() == 1) {
             switch (name.front()) {
-                case 'h': name = "help"; break;
-                case 'v': name = "version"; break;
+                case 't': name = "target"; break;
                 case 'o': name = "output-directory"; break;
                 case 'j': name = "jobname"; break;
+                case 'I': name = "include-directory"; break;
                 case 'i': name = "interaction"; break;
                 case 'q': name = "quiet"; break;
-                case 's': name = "set"; break;
+                case 'h': name = "help"; break;
+                case 'v': name = "version"; break;
                 case 'd': name = "debug"; break;
                 default: break;
             }
@@ -173,6 +189,13 @@ int main(int count, char* arguments[]) {
 #else
             const std::string compiler = "an unknown compiler";
 #endif
+#if defined(_WIN32)
+            constexpr std::string_view system = "windows";
+#elif defined(__APPLE__)
+            constexpr std::string_view system = "macos";
+#else
+            constexpr std::string_view system = "linux";
+#endif
 #if defined(LATEX_RELEASE)
             constexpr std::string_view build = "release";
 #else
@@ -186,7 +209,15 @@ int main(int count, char* arguments[]) {
                       << ".\n";
             return 0;
         }
-        if (name == "output-directory") {
+        if (name == "target") {
+            const auto given = take();
+            if (!given) return 2;
+            if (*given != "aot" && *given != "jit" && *given != "wasm") {
+                std::cerr << "latex: --target is aot, jit or wasm, not " << *given << '\n';
+                return 2;
+            }
+            target = *given;
+        } else if (name == "output-directory") {
             const auto given = take();
             if (!given) return 2;
             directory = *given;
@@ -194,6 +225,23 @@ int main(int count, char* arguments[]) {
             const auto given = take();
             if (!given) return 2;
             jobname = *given;
+        } else if (name == "include-directory") {
+            const auto given = take();
+            if (!given) return 2;
+            if (!std::filesystem::is_directory(*given, failure)) {
+                std::cerr << "latex: no folder " << *given << " for --include-directory\n";
+                return 2;
+            }
+            host.directories.emplace_back(*given);
+        } else if (name == "assets") {
+            const auto given = take();
+            if (!given) return 2;
+            assets = *given;
+            if (!std::filesystem::is_directory(assets / "fonts", failure)) {
+                std::cerr << "latex: " << assets.string() << " holds no fonts folder; --assets names the engine's "
+                          << "assets, as the source tree's assets folder is\n";
+                return 2;
+            }
         } else if (name == "interaction") {
             const auto given = take();
             if (!given) return 2;
@@ -214,26 +262,8 @@ int main(int count, char* arguments[]) {
             draft = true;
         } else if (name == "file-line-error") {
             placed = true;
-        } else if (name == "set") {
-            const auto given = take();
-            if (!given) return 2;
-            const std::size_t equals = given->find('=');
-            if (equals == std::string_view::npos || equals == 0) {
-                std::cerr << "latex: --set takes NAME=VALUE, not " << *given << '\n';
-                return 2;
-            }
-            host.variables.emplace_back(std::string(given->substr(0, equals)), std::string(given->substr(equals + 1)));
-        } else if (name == "aot") {
-            ahead = true;
-            if (value) {
-                if (*value != "windows" && *value != "macos" && *value != "linux") {
-                    std::cerr << "latex: --aot is for windows, macos or linux, not " << *value << '\n';
-                    return 2;
-                }
-                system = *value;
-            }
-        } else if (name == "jit") {
-            ahead = false;
+        } else if (name == "time-statistics") {
+            statistics = true;
         } else if (name == "debug" || name == "trace" || name == "log-level" || name == "log-file" ||
                    name == "no-color") {
             // The logger's own, read already.
@@ -243,47 +273,49 @@ int main(int count, char* arguments[]) {
         }
     }
 
-    // Typesetting just in time is not built yet: the option is taken, and
-    // nothing is done.
-    if (!ahead) {
-        if (!quiet) std::cout << "latex: --jit is not built yet; nothing was typeset.\n";
+    // Just in time and WebAssembly are where those targets go once they are
+    // built: each is taken, and nothing is done yet.
+    if (target != "aot") {
+        if (!quiet) std::cout << "latex: --target=" << target << " is not built yet; nothing was typeset.\n";
         return 0;
     }
 
-    // Where this executable is on disk: the assets are found relative to the
-    // engine, not to whatever directory it happened to be started from.
-    // Asking the operating system is exact; `argv[0]` is a fallback for the
-    // platforms that will not say, and the working directory the last resort.
-    std::filesystem::path binary;
-    std::error_code failure;
-#if defined(_WIN32)
-    for (std::wstring buffer(MAX_PATH, L'\0'); binary.empty();) {
-        const DWORD written = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
-        if (written == 0) break;
-        if (written < buffer.size()) {
-            buffer.resize(written);
-            binary = std::filesystem::path(buffer);
-        } else {
-            buffer.resize(buffer.size() * 2);
-        }
-    }
-#elif defined(__APPLE__)
-    std::uint32_t size = 0;
-    _NSGetExecutablePath(nullptr, &size);
-    if (std::string buffer(size, '\0'); _NSGetExecutablePath(buffer.data(), &size) == 0) {
-        if (auto resolved = std::filesystem::canonical(buffer.c_str(), failure); !failure) binary = resolved;
-    }
-#else
-    if (auto resolved = std::filesystem::read_symlink("/proc/self/exe", failure); !failure) binary = resolved;
-#endif
-    if (binary.empty() && count > 0 && arguments[0] && *arguments[0]) {
-        if (auto resolved = std::filesystem::absolute(arguments[0], failure); !failure) binary = resolved;
-    }
-    if (binary.empty()) binary = std::filesystem::current_path();
-    const std::filesystem::path assets = engine::locate(binary);
+    // Where the engine's assets are: as the command line says, or found from
+    // where this executable is on disk -- relative to the engine, not to
+    // whatever directory it happened to be started from. Asking the
+    // operating system is exact; `argv[0]` is a fallback for the platforms
+    // that will not say, and the working directory the last resort.
     if (assets.empty()) {
-        std::cerr << "latex: no assets directory found above " << binary.string() << '\n';
-        return 1;
+        std::filesystem::path binary;
+#if defined(_WIN32)
+        for (std::wstring buffer(MAX_PATH, L'\0'); binary.empty();) {
+            const DWORD written = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+            if (written == 0) break;
+            if (written < buffer.size()) {
+                buffer.resize(written);
+                binary = std::filesystem::path(buffer);
+            } else {
+                buffer.resize(buffer.size() * 2);
+            }
+        }
+#elif defined(__APPLE__)
+        std::uint32_t size = 0;
+        _NSGetExecutablePath(nullptr, &size);
+        if (std::string buffer(size, '\0'); _NSGetExecutablePath(buffer.data(), &size) == 0) {
+            if (auto resolved = std::filesystem::canonical(buffer.c_str(), failure); !failure) binary = resolved;
+        }
+#else
+        if (auto resolved = std::filesystem::read_symlink("/proc/self/exe", failure); !failure) binary = resolved;
+#endif
+        if (binary.empty() && count > 0 && arguments[0] && *arguments[0]) {
+            if (auto resolved = std::filesystem::absolute(arguments[0], failure); !failure) binary = resolved;
+        }
+        if (binary.empty()) binary = std::filesystem::current_path();
+        assets = latex::locate(binary);
+        if (assets.empty()) {
+            std::cerr << "latex: no assets directory found above " << binary.string() << "; name one with --assets\n";
+            return 1;
+        }
     }
 
     // The document: as named, or with .mtex or .tex after a name given
@@ -314,16 +346,14 @@ int main(int count, char* arguments[]) {
         destination = folder / ((jobname.empty() ? source.stem().string() : jobname) + ".pdf");
     }
 
-    if (!quiet) {
-        std::cout << "This is latex " << LATEX_VERSION << ", ahead of time for " << system << ".\n"
-                  << "Setting " << source.string() << '\n';
-    }
+    if (!quiet) std::cout << "This is latex " << LATEX_VERSION << " (" << target << ").\n" << source.string() << '\n';
 
     // Each error with its file before it, as TeX's -file-line-error writes
     // it, when that was asked for: the engine's own say only line and column.
     std::ostringstream held;
-    const bool ok = engine::compose(assets, source, destination, host, quiet ? nullptr : &std::cout,
-                                    placed ? static_cast<std::ostream&>(held) : std::cerr);
+    std::vector<std::string> pages;
+    const bool ok = latex::compose(assets, source, destination, host, statistics ? &std::cout : nullptr,
+                                   placed ? static_cast<std::ostream&>(held) : std::cerr, &pages);
     if (placed) {
         std::istringstream lines(held.str());
         for (std::string line; std::getline(lines, line);) {
@@ -332,10 +362,18 @@ int main(int count, char* arguments[]) {
         }
     }
 
-    // A document with an error leaves no PDF behind it, when that was asked.
+    // A document with an error leaves no PDF behind it, when that was asked;
+    // otherwise what was written is said as TeX says it.
     if (!ok && halting && !destination.empty()) {
         std::filesystem::remove(destination, failure);
         std::cerr << "latex: no PDF written: the document has an error, and --halt-on-error was given\n";
+    } else if (!quiet) {
+        if (destination.empty()) {
+            std::cout << "No PDF written: --draftmode.\n";
+        } else if (const std::uintmax_t bytes = std::filesystem::file_size(destination, failure); !failure) {
+            std::cout << "Output written on " << destination.string() << " (" << pages.size()
+                      << (pages.size() == 1 ? " page, " : " pages, ") << bytes << " bytes).\n";
+        }
     }
 
     return ok ? 0 : 1;

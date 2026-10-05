@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "latex.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -26,11 +26,11 @@ struct Result {
 
 /// Typesets a whole document, as written.
 static Result typeset(const std::string_view document) {
-    static const std::filesystem::path assets = engine::locate(__FILE__);
+    static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     std::vector<std::string> pages;
-    result.clean = engine::typeset(assets, document, result.pdf, {}, errors, &pages);
+    result.clean = latex::typeset(assets, document, result.pdf, {}, errors, &pages);
     result.errors = errors.str();
     for (std::string& page : pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });

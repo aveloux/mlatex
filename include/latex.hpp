@@ -19,7 +19,7 @@
 /// argument parsing and self-location left to `main.cpp`. The foreign-function
 /// library in `network/ffi.hpp` calls the same path, which is why it can make
 /// the same PDF from the same document without running a second program.
-namespace engine {
+namespace latex {
 
     /// @brief Values handed to a document before it runs, name then text, as
     ///        `\\variable{name}` reads them.
@@ -51,6 +51,11 @@ namespace engine {
         Variables variables{};                    ///< Read with `\\variable`.
         std::vector<Command> commands{};          ///< Implemented by the program.
         syntax::primitives::Files files{};        ///< Packages, inputs and pictures, from memory.
+
+        /// Folders read after the document's own for what it inputs --
+        /// `\\input`, `\\include`, `\\usepackage`, `\\includegraphics`, a
+        /// bibliography -- in order: TeX's `-include-directory`.
+        std::vector<std::filesystem::path> directories{};
     };
 
     /// @brief The engine as a program keeps it: where its assets are, what it
@@ -63,7 +68,7 @@ namespace engine {
     /// handed from one language, it can be handed from all three.
     ///
     /// @code
-    /// engine::Session session(engine::locate(program));
+    /// latex::Session session(latex::locate(program));
     /// session.set("customer", "Acme Ltd.");
     /// session.define({.name = "balance", .arity = 1, .handler = [&](auto arguments) {
     ///     return ledger.balance(arguments[0]);
@@ -156,6 +161,8 @@ namespace engine {
     /// @param report      Where what it did and how long each step took is
     ///                    written, or null for nowhere.
     /// @param errors      Where every error is written, one per line.
+    /// @param texts       Receives each page's text, or null for none; empty
+    ///                    for a draft, which draws no page.
     /// @return True when the document compiled with nothing left broken.
     [[nodiscard]] bool compose(
         const std::filesystem::path& assets,
@@ -163,7 +170,8 @@ namespace engine {
         const std::filesystem::path& destination,
         const Host& host,
         std::ostream* report,
-        std::ostream& errors
+        std::ostream& errors,
+        std::vector<std::string>* texts = nullptr
     );
 
     /// @brief Composes a document held in memory into a PDF held in memory,
