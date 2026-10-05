@@ -127,6 +127,9 @@ sees, newest work last within each group.
 
 ### TeX's own rules
 
+- **A `\chardef`'d name is its character** where text is written --
+  `\chardef\x=65 a\x b` sets aAb -- and its number wherever one is read,
+  as TeX's is. It was a number everywhere, and an assignment in text.
 - **`\catcode` reaches what is not yet read.** The document is lexed ahead,
   so a category change now rewrites the part of it not yet read, as TeX
   meets characters it has not reached: `\catcode`\!=13` makes every `!` to
@@ -760,8 +763,7 @@ EPS and SVG are placeholders, not drawn; TikZ's `let` is a warning;
 pgfplots' 3D plots, error bars and `fill between` are not drawn; a tree's
 labels are measured by their letters, not set first; xy-pic's objects
 written with `*+[F]` keep that text. beamer's overlays are one slide and
-its themes are read, not drawn. A `\chardef`'d character is a number, not a
-glyph. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
+its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
 Languages: no face for Arabic ships with the engine, so it needs one
 on the system (Windows and the Mac have one; a Linux without Noto or Amiri
