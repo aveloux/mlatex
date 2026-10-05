@@ -1,0 +1,12 @@
+% glossaries: terms and acronyms.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{glossaries}
+\begin{document}
+\newglossaryentry{latex}{name={LaTeX}, description={a document preparation system}}
+\newacronym{gcd}{GCD}{greatest common divisor}
+\makeglossaries
+\gls{latex}, \Gls{latex}, \glspl{latex}, \acrshort{gcd}, \acrlong{gcd}, \acrfull{gcd}, \gls{gcd}.
+\printglossaries
+\end{document}

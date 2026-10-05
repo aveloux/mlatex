@@ -198,13 +198,14 @@ namespace syntax {
 
                 // Text read as it stands, as TeX reads it once \verb or a
                 // verbatim block has made every character an ordinary one:
-                // `\verb|a_b $x$|`, and `\lstinline` the same way or in
-                // braces -- `\mintinline{python}{f(x)}` after its language.
+                // `\verb|a_b $x$|`, fancyvrb's `\Verb` the same way after its
+                // options, and `\lstinline` the same way or in braces --
+                // `\mintinline{python}{f(x)}` after its language.
                 // The text is one token after the command's own, viewing the
                 // buffer, which outlives every token lexed from it.
-                if (slice == "\\verb" || slice == "\\lstinline" || slice == "\\mintinline") {
+                if (slice == "\\verb" || slice == "\\Verb" || slice == "\\lstinline" || slice == "\\mintinline") {
                     std::size_t at = offset;
-                    if (at < size && text[at] == '*' && slice == "\\verb") ++at;
+                    if (at < size && text[at] == '*' && (slice == "\\verb" || slice == "\\Verb")) ++at;
                     if (at < size && text[at] == '[' && slice != "\\verb") {
                         while (at < size && text[at] != ']' && !ending(text[at])) ++at;
                         if (at < size && text[at] == ']') ++at;
@@ -230,15 +231,18 @@ namespace syntax {
 
                 // A block whose body is read as it stands -- verbatim,
                 // listings' lstlisting, the verbatim package's comment,
-                // acmart's CCSXML, the file a filecontents block writes -- is
-                // marked here, where the text is still text: the body begins
-                // after its name and any options in brackets, and runs to the
-                // `\end` that closes it. Everything up to the body is lexed
-                // as usual, so \begin reads its name and the block its options.
+                // fancyvrb's, spverbatim's and moreverb's verbatim blocks,
+                // acmart's CCSXML, luacode's Lua, the file a filecontents
+                // block writes -- is marked here, where the text is still
+                // text: the body begins after its name and any options in
+                // brackets, and runs to the `\end` that closes it. Everything
+                // up to the body is lexed as usual, so \begin reads its name
+                // and the block its options.
                 if (slice == "\\begin") {
-                    static constexpr std::array<std::string_view, 9> blocks{
-                        "{verbatim}", "{verbatim*}", "{lstlisting}", "{Verbatim}", "{comment}", "{minted}",
-                        "{filecontents}", "{filecontents*}", "{CCSXML}",
+                    static constexpr std::array<std::string_view, 15> blocks{
+                        "{verbatim}", "{verbatim*}", "{lstlisting}", "{Verbatim}", "{Verbatim*}", "{BVerbatim}",
+                        "{spverbatim}", "{boxedverbatim}", "{comment}", "{minted}", "{filecontents}",
+                        "{filecontents*}", "{CCSXML}", "{luacode}", "{luacode*}",
                     };
                     const std::string_view rest = sources.substr(offset);
                     for (const std::string_view name : blocks) {

@@ -12,9 +12,12 @@
 #include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
 
+#include <algorithm>
 #include <array>
+#include <ranges>
 #include <span>
 #include <string_view>
+#include <vector>
 
 namespace render::primitives {
 
@@ -26,6 +29,7 @@ namespace render::primitives {
         lexicon.intern("\\Cref");
         // No document can write this name: a colon ends a control word.
         place = lexicon.intern("\\label:place");
+        audit = lexicon.intern("\\label:audit");
     }
 
     std::string References::write(const Mark& mark, const Form form, const Context& context) {
@@ -203,6 +207,60 @@ namespace render::primitives {
                 const bool unlinked = mouth.lookahead().is('*');
                 if (unlinked) mouth.read();
                 const std::string label = syntax::Argument::text(mouth);
+
+                // cleveref's list, `\\cref{sec:a,sec:b,eq:c}`: labels of one
+                // kind, every one known already, share their kind's plural --
+                // `sections 1 and 2` -- and otherwise each is named in turn;
+                // the last is joined by `and`, the rest by commas.
+                if ((form == Form::Named || form == Form::Capital) && label.contains(',')) {
+                    std::vector<std::string> labels;
+                    for (const auto piece : std::views::split(std::string_view{label}, ',')) {
+                        std::string_view one(piece.begin(), piece.end());
+                        while (!one.empty() && one.front() == ' ') one.remove_prefix(1);
+                        while (!one.empty() && one.back() == ' ') one.remove_suffix(1);
+                        if (!one.empty()) labels.emplace_back(one);
+                    }
+                    const std::string& kind = marks[labels.front()].kind;
+                    const bool alike = !kind.empty() && std::ranges::all_of(labels, [this, &kind](const std::string& one) {
+                        return marks[one].defined && marks[one].kind == kind;
+                    });
+                    std::string plural;
+                    if (alike) {
+                        const std::string* named = context.variables.get((form == Form::Capital ? "Crefs." : "crefs.") + kind);
+                        plural = named ? *named : kind + "s";
+                        if (!named && form == Form::Capital && plural[0] >= 'a' && plural[0] <= 'z') {
+                            plural[0] = static_cast<char>(plural[0] - 'a' + 'A');
+                        }
+                    }
+                    std::vector<syntax::Node*> parts;
+                    for (std::size_t index = 0; index < labels.size(); ++index) {
+                        if (index > 0) {
+                            parts.push_back(arena.compose<syntax::Node>(
+                                syntax::Node::Type::Text,
+                                std::string_view{index + 1 == labels.size() ? " and " : ", "}, origin));
+                        }
+                        Mark& each = marks[labels[index]];
+                        const Form spelled = index == 0 ? form : Form::Named;
+                        std::string written = "??";
+                        if (alike) {
+                            written = (index == 0 ? plural + " " : std::string{}) + write(each, Form::Number, context);
+                        } else if (each.defined) {
+                            written = write(each, spelled, context);
+                        }
+                        auto* number = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(written), origin);
+                        if (!each.defined) {
+                            awaited.emplace_back(labels[index], origin);
+                            each.references.emplace_back(number, spelled);
+                        }
+                        const Hyperlink link = unlinked ? Hyperlink{} : hyperlink(context, {}, each.anchor, "link");
+                        if (link.open && !each.defined) each.links.push_back(link.open);
+                        parts.push_back(wrapped(arena, number, link, origin));
+                    }
+                    const memory::Slice<syntax::Node*> list = arena.allocate<syntax::Node*>(parts.size());
+                    std::ranges::copy(parts, list.begin());
+                    return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, list);
+                }
+
                 Mark& mark = marks[label];
                 if (form == Form::Page) context.paged = true;
                 if (!mark.defined) awaited.emplace_back(label, origin);
@@ -263,7 +321,15 @@ namespace render::primitives {
         }
 
         // A reference whose label never came, named as LaTeX names it, once.
-        context.blocks.watch("document", {}, [this](syntax::Mouth&) {
+        // Asked once what the document's end runs has been read: this closing
+        // runs before the core's, whose hooks then stand in front of the mark,
+        // so a label \\AtEndDocument places -- lastpage's -- is in by then.
+        context.blocks.watch("document", {}, [this](syntax::Mouth& mouth) {
+            const syntax::Token mark{.symbol = audit, .category = syntax::Catcodes::Category::Escape,
+                                     .text = mouth.lexicon.resolve(audit)};
+            mouth.stream().inject(std::span{&mark, 1});
+        });
+        parser.mouth.bind(audit, [this](syntax::Mouth&) {
             std::vector<std::string> said;
             for (const auto& [label, origin] : awaited) {
                 if (marks[label].defined || std::ranges::contains(said, label)) continue;

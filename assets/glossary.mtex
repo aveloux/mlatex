@@ -145,7 +145,7 @@
 \lapbox[2][]{#2}
 \maxsizebox[3]{#3}
 \epsfbox[1]{\includegraphics{#1}}
-\includepdf[2][]{\warning{includepdf #2: pages of a PDF are not set here, and are left out}}
+\includepdf[2][]{\clearpage\noindent\includegraphics[page=1,width=\textwidth]{#2}\clearpage}
 \includepdfmerge[2][]{\warning{includepdfmerge #2: pages of a PDF are not set here, and are left out}}
 \includepdfset[1]{}
 
@@ -356,9 +356,39 @@
 \runningtitle[1]{}
 
 % ---------------------------------------------------------------------------
+% A picture or a window beside a paragraph, and a paragraph in a shape --
+% picins, cutwin, shapepar: the picture and the text kept, set in the column.
+
+\piccaption[2][]{}
+\picskip[1]{}
+\cutout[4]{}
+\window[1][]{}
+\opencutleft{}
+\opencutright{}
+\opencutcenter[1]{}
+\shapepar[2][]{}
+\Shapepar[2][]{}
+\heartpar[1]{#1}
+\squarepar[1]{#1}
+\diamondpar[1]{#1}
+\circlepar[1]{#1}
+
+% ---------------------------------------------------------------------------
+% xargs' commands of several optional arguments, as LaTeX's of one; and
+% sidenotes' notes, numbered with the footnotes, in the margin.
+
+\newcommandx{\newcommand}
+\renewcommandx{\renewcommand}
+\providecommandx{\providecommand}
+\DeclareRobustCommandx{\DeclareRobustCommand}
+\sidenote[2][]{\stepcounter{footnote}\textsuperscript{\thefootnote}\marginpar{\footnotesize\textsuperscript{\thefootnote}\,#2}}
+\sidenotemark[1][]{\stepcounter{footnote}\textsuperscript{\thefootnote}}
+\sidenotetext[2][]{\marginpar{\footnotesize\textsuperscript{\thefootnote}\,#2}}
+\sidecite[2][]{\cite{#2}}
+
+% ---------------------------------------------------------------------------
 % Theorems and algorithms by the names other packages give them.
 
-\declaretheorem[2][]{\newtheorem{#2}{#2}}
 \declaretheoremstyle[2][]{}
 \SetKwFunction[2]{\@define#1[1]{\textsc{#2}(##1)}}
 \acused[1]{}
@@ -419,6 +449,113 @@
 \textPhi{Φ}
 \textPsi{Ψ}
 \textOmega{Ω}
+\Mobilefone{☏}
+\Telefon{☎}
+\Faxmachine{℻}
+\Lightning{↯}
+\Ankh{☥}
+\Yinyang{☯}
+\Writinghand{✍}
+\Cross{✝}
+\Info{ℹ}
+\Biohazard{☣}
+\Radioactivity{☢}
+\Heart{♥}
+\Sun{☉}
+\Moon{☾}
+\Mercury{☿}
+\Venus{♀}
+\Mars{♂}
+\Jupiter{♃}
+\Saturn{♄}
+\Male{♂}
+\Female{♀}
+\Smiley{☺}
+\Frowny{☹}
+\male{♂}
+\female{♀}
+\checked{✓}
+\sun{☼}
+\leftmoon{☾}
+\rightmoon{☽}
+\fullmoon{○}
+\newmoon{●}
+\mercury{☿}
+\venus{♀}
+\earth{♁}
+\mars{♂}
+\jupiter{♃}
+\saturn{♄}
+\uranus{♅}
+\neptune{♆}
+\pluto{♇}
+\aries{♈}
+\taurus{♉}
+\gemini{♊}
+\cancer{♋}
+\leo{♌}
+\virgo{♍}
+\libra{♎}
+\scorpio{♏}
+\sagittarius{♐}
+\capricornus{♑}
+\aquarius{♒}
+\pisces{♓}
+\diameter{⌀}
+\currency{¤}
+\cent{¢}
+\lightning{↯}
+\pointer{➪}
+\kreuz{✠}
+\hexagon{⬡}
+\pentagon{⬠}
+\Circle{○}
+\CIRCLE{●}
+\LEFTcircle{◐}
+\RIGHTcircle{◑}
+\blacksmiley{☻}
+\Envelope{✉}
+\Phone{☎}
+\Pencil{✎}
+\PencilRight{✎}
+\FiveStar{★}
+\FiveStarOpen{☆}
+\Peace{☮}
+\Plane{✈}
+\ScissorRight{✂}
+\ScissorLeft{✂}
+\Snowflake{❄}
+\Asterisk{✱}
+\OrnamentDiamondSolid{◆}
+\SquareSolid{■}
+\CircleSolid{●}
+\aiOrcid{\textsf{iD}}
+\aiOrcidSquare{\textsf{iD}}
+\aiGoogleScholar{\textsf{GS}}
+\aiResearchGate{\textsf{RG}}
+\aiArxiv{\textsf{arXiv}}
+\aiDblp{\textsf{dblp}}
+\aiScopus{\textsf{Sc}}
+\aiPubmed{\textsf{PM}}
+\aiZotero{\textsf{Z}}
+\aiMendeley{\textsf{M}}
+\aiOpenAccess{\textsf{OA}}
+\aiOverleaf{\textsf{Ov}}
+\aiDoi{\textsf{doi}}
+\aiSemanticScholar{\textsf{S2}}
+\aiIeee{\textsf{IEEE}}
+\aiAcm{\textsf{ACM}}
+\aiSpringer{\textsf{Sp}}
+\Sadey{☹}
+\Coffeecup{☕}
+\Cooley{☺}
+\Winkey{☺}
+\Laughey{☺}
+\Nerdy{☺}
+\Innocey{☺}
+\Neutrey{☺}
+\Tongey{☺}
+\columnbreak{}
 
 % ---------------------------------------------------------------------------
 % References by other packages' names: zref, varioref, prettyref, refcount,
@@ -440,8 +577,6 @@
 \setcounterref[2]{}
 \addtocounterref[2]{}
 \refused[1]{}
-\newtotcounter[2][]{\newcounter{#2}}
-\total[1]{\arabic{#1}}
 \fref[2][]{\cref{#2}}
 \Fref[2][]{\Cref{#2}}
 
@@ -543,7 +678,7 @@
 \slashed[1]{#1\!\!\!/}
 \iddots{⋰}
 \accentset[2]{\overset{#1}{#2}}
-\underaccent[2]{\underset{#1}{#2}}
+\underaccent[2]{\underset{#1{}}{#2}}
 \wideparen[1]{\overset{\frown}{#1}}
 \widering[1]{\mathring{#1}}
 \widetriangle[1]{\overset{\triangle}{#1}}
@@ -602,9 +737,7 @@
 \attachfile[2][]{}
 \textattachfile[3][]{#3}
 \embedfile[2][]{}
-\includesvg[2][]{\includegraphics[#1]{#2}}
-\svgsetup[1]{}
-\svgpath[1]{}
+\includesvg[2][]{\includegraphics[#1]{#2.svg}}
 
 % ---------------------------------------------------------------------------
 % Running heads by KOMA-Script's names, and the layouts of sections, pages,
@@ -651,10 +784,6 @@
 \ffigbox[3][]{#2#3}
 \ttabbox[3][]{#3#2}
 \RawFloats{}
-\makesavenoteenv[2][]{}
-\savenotes{}
-\spewnotes{}
-\DeclareNewFootnote[2][]{\@gobbleoption}
 \endnote[1]{\footnote{#1}}
 \endnotetext[1]{}
 \theendnotes{}
@@ -679,7 +808,6 @@
 
 \WarningFilter[3][]{}
 \WarningsOff{\@ifstar{\@gobbleoption}{\@gobbleoption}}
-\ErrorFilter[3][]{}
 \LetLtxMacro[2]{\let#1#2}
 \xpatchcmd[5]{}
 \xapptocmd[4]{}
@@ -705,11 +833,7 @@
 \AtEndAfterFileList[1]{}
 \EveryShipout[1]{}
 \AtNextShipout[1]{}
-\CatchFileDef[3]{\@define#1{}}
 \ShellEscape[1]{}
-\directlua[1]{}
-\luaexec[1]{}
-\luadirect[1]{}
 \CJKfamily[1]{}
 \ctexset[1]{}
 \BeginAccSupp[1]{}
@@ -722,13 +846,453 @@
 
 \bibentry[1]{\cite{#1}}
 \nobibliography[1]{}
-\newcites[2]{}
+\newcites[2]{\@namedef{cite#1}{\cite}\@namedef{nocite#1}{\nocite}\@namedef{bibliography#1}[1]{}\@namedef{bibliographystyle#1}[1]{}}
 \backslashbox[3][]{\diagbox{#2}{#3}}
 \chemfig[1]{\texttt{#1}}
 \NiceMatrixOptions[1]{}
 \SetTblrInner[1]{}
 \SetTblrOuter[1]{}
 \UseTblrLibrary[1]{}
+
+% ---------------------------------------------------------------------------
+% textcomp's rarer signs, as the characters they are.
+
+\textohm{Ω}
+\textmho{℧}
+\textcent{¢}
+\textyen{¥}
+\textlira{₤}
+\textwon{₩}
+\textnaira{₦}
+\textpeso{₱}
+\textflorin{ƒ}
+\textnumero{№}
+\textsurd{√}
+\textlnot{¬}
+\textpm{±}
+\texttimes{×}
+\textdiv{÷}
+\textfractionsolidus{⁄}
+\textminus{−}
+\textonequarter{¼}
+\textthreequarters{¾}
+\textonesuperior{¹}
+\texttwosuperior{²}
+\textthreesuperior{³}
+\textordfeminine{ª}
+\textordmasculine{º}
+\textbrokenbar{¦}
+\textcurrency{¤}
+\textservicemark{℠}
+\textleftarrow{←}
+\textrightarrow{→}
+\textuparrow{↑}
+\textdownarrow{↓}
+
+% ---------------------------------------------------------------------------
+% Blocks other packages define, run as LaTeX runs a block -- \name on the
+% way in, \endname on the way out -- each set as the column around it sets
+% text: a landscape page upright, a rotated box level, a strip across two
+% columns as one, notes saved in a table as footnotes.
+
+\landscape{}
+\endlandscape{}
+\turn[1]{}
+\endturn{}
+\rotate[1]{}
+\endrotate{}
+\turnbox[2]{\rotatebox{#1}{#2}}
+\strip{\par\@columns1 }
+\endstrip{\par\@columns0 }
+\savenotes{}
+\endsavenotes{}
+\makesavenoteenv[2][]{}
+\spewnotes{}
+\savequote[1][]{\begin{flushright}\itshape}
+\endsavequote{\end{flushright}}
+\qauthor[1]{\par\upshape --- #1}
+\IEEEeqnarray[2][]{\begin{align*}}
+\endIEEEeqnarray{\end{align*}}
+\IEEEyesnumber{}
+\IEEEnonumber{}
+\IEEEeqnarraynumspace{}
+\circuitikz[1][]{\begin{tikzpicture}[#1]}
+\endcircuitikz{\end{tikzpicture}}
+\overpic[2][]{\includegraphics[#1]{#2}\begin{picture}(0,0)}
+\endoverpic{\end{picture}}
+\addmargin[2][]{\par\@ifempty{#1}\leftskip=#2\relax\else\leftskip=#1\relax\fi\rightskip=#2\relax}
+\endaddmargin{\par}
+
+% ---------------------------------------------------------------------------
+% The PDF's outline by bookmark's commands, and what a driver, an engine or
+% a package's internals ask of LaTeX: read, and let go or answered as
+% pdfTeX answers.
+
+\bookmark[2][]{}
+\bookmarksetup[1]{}
+\bookmarkdefinestyle[2]{}
+\bookmarkget[1]{}
+\BookmarkAtEnd[1]{}
+\epstopdfsetup[1]{}
+\epstopdfDeclareGraphicsRule[4]{}
+\AppendGraphicsExtensions[1]{}
+\OutputFile{}
+\RequirePDFTeX{}
+\RequireXeTeX{}
+\RequireLuaTeX{}
+\RequireTUTeX{}
+\RequireLuaHBTeX{}
+\CatchFileDef[3]{\@define#1{\input{#2}}}
+\CatchFileEdef[3]{\@define#1{\input{#2}}}
+\CatchFileSet[3]{}
+\ErrorsOff[1][]{}
+\ErrorsOn[1][]{}
+\WarningsOn[1][]{}
+\ErrorFilter[3][]{}
+\DeclareOptionX{\@ifstar{\@gobble}{\@gobbleoptionone}}
+\ProcessOptionsX{\@ifstar{}{}}
+\ExecuteOptionsX[2][]{}
+\presetkeys[3][]{}
+\setrmkeys[2][]{}
+\define@cmdkey[4][]{}
+\define@boolkey[4][]{}
+\define@choicekey{\@ifstar{\@gobbleoptionthree}{\@gobbleoptionthree}}
+\pgfkeysvalueof[1]{}
+\pgfkeysgetvalue[2]{\@define#2{}}
+\pgfkeyssetvalue[2]{}
+\pgfqkeys[2]{}
+\pgfkeysalso[1]{}
+\pgfkeysdef[2]{}
+\trim@spaces[1]{#1}
+\trim@spaces@noexp[1]{#1}
+\trim@spaces@in[1]{}
+\ltx@ifpackageloaded[3]{\@ifpackageloaded{#1}{#2}{#3}}
+\ltx@ifclassloaded[3]{#3}
+\ltx@IfUndefined[3]{\@ifundefined{#1}{#2}{#3}}
+\ltx@empty{}
+\ltx@firstoftwo[2]{#1}
+\ltx@secondoftwo[2]{#2}
+\kvsetkeys[2]{}
+\kvsetkeys@expandafter[2]{}
+\kv@define@key[3]{}
+\GetTitleString[1]{\@define\GetTitleStringResult{#1}}
+\GetTitleStringSetup[1]{}
+\intcalcAdd[2]{\@evaluate{#1+#2}}
+\intcalcSub[2]{\@evaluate{#1-#2}}
+\intcalcMul[2]{\@evaluate{#1*#2}}
+\intcalcDiv[2]{\@evaluate{#1/#2}}
+\intcalcMod[2]{\@evaluate{#1-(#1/#2)*#2}}
+\intcalcInc[1]{\@evaluate{#1+1}}
+\intcalcDec[1]{\@evaluate{#1-1}}
+\intcalcNeg[1]{\@evaluate{-(#1)}}
+\intcalcAbs[1]{\ifnum#1<0 \@evaluate{-(#1)}\else\@evaluate{#1}\fi}
+\intcalcMax[2]{\ifnum#1>#2 \@evaluate{#1}\else\@evaluate{#2}\fi}
+\intcalcMin[2]{\ifnum#1<#2 \@evaluate{#1}\else\@evaluate{#2}\fi}
+\intcalcNum[1]{\@evaluate{#1}}
+\intcalcSgn[1]{\ifnum#1<0 -1\else\ifnum#1>0 1\else 0\fi\fi}
+\bigintcalcAdd[2]{\@calculate{#1+#2}}
+\bigintcalcSub[2]{\@calculate{#1-#2}}
+\bigintcalcMul[2]{\@calculate{#1*#2}}
+\bigintcalcNum[1]{#1}
+\bitsetReset[1]{}
+\bitsetSet[2]{}
+\bitsetClear[2]{}
+\bitsetFlip[2]{}
+\bitsetGet[2]{0}
+\bitsetGetDec[1]{0}
+\bitsetIsEmpty[3]{#2}
+\UniqueCounterNew[1]{}
+\UniqueCounterCall[2]{}
+\UniqueCounterIncr[1]{}
+\AddLineBeginAux[1]{}
+\AddLineBeginMainAux[1]{}
+\AddLineBeginPartAux[1]{}
+\pdf@strcmp[2]{\@ifstrequal{#1}{#2}{0}{1}}
+\pdf@escapehex[1]{#1}
+\pdf@unescapehex[1]{#1}
+\pdf@escapestring[1]{#1}
+\pdf@filesize[1]{0}
+\pdf@filemoddate[1]{}
+\pdf@mdfivesum[1]{}
+\pdf@shellescape{0}
+\pdf@draftmode{0}
+\pdf@isprimitive[3]{}
+\pdf@primitive{}
+\@PackageInfo[2]{}
+\@PackageInfoNoLine[2]{}
+\@PackageWarning[2]{\PackageWarning{#1}{#2}}
+\@PackageWarningNoLine[2]{\PackageWarning{#1}{#2}}
+\@PackageError[3]{\PackageError{#1}{#2}{#3}}
+\@ClassInfo[2]{}
+\@ClassWarning[2]{\ClassWarning{#1}{#2}}
+\@ClassError[3]{\ClassError{#1}{#2}{#3}}
+\capstart{}
+\hypcapredef[1]{}
+\ProcessKeysOptions[1]{}
+\ProcessKeyOptions[1][]{}
+\currfilename{\jobname.tex}
+\currfilebase{\jobname}
+\currfileext{tex}
+\currfiledir{}
+\currfilepath{\jobname.tex}
+\currfileabspath{\jobname.tex}
+\import[2]{\IfStrEq{#1}{./}{\input{#2}}{\input{#1#2}}}
+\subimport[2]{\IfStrEq{#1}{./}{\input{#2}}{\input{#1#2}}}
+\inputfrom[2]{\input{#1#2}}
+\subinputfrom[2]{\input{#1#2}}
+\includefrom[2]{\include{#1#2}}
+\subincludefrom[2]{\include{#1#2}}
+\subfile[1]{\input{#1}}
+\subfileinclude[1]{\input{#1}}
+\MakePerPage[2][]{}
+\MakeSorted[1]{}
+\captiondelim[1]{}
+\captionnamefont[1]{}
+\captiontitlefont[1]{}
+\captionstyle[1]{}
+\hangcaption{}
+\normalcaption{}
+\precaption[1]{}
+\postcaption[1]{}
+\legend[1]{\par{\small #1}\par}
+\DeclareNewFootnote[2][]{\@namedef{footnote#2}{\footnote}\@namedef{Footnote#2}{\footnote}\@namedef{footnotemark#2}{\footnotemark}\@namedef{footnotetext#2}{\footnotetext}}
+\SelectFootnoteRule[2][]{}
+\regtotcounter[1]{}
+\newtotcounter[1]{\newcounter{#1}}
+\total[1]{\arabic{#1}}
+\totvalue[1]{\value{#1}}
+\isodate{\@define\today{\@evaluate{\year}-\ifnum\month<10 0\fi\@evaluate{\month}-\ifnum\day<10 0\fi\@evaluate{\day}}}
+\origdate{}
+\numdate{}
+\printdate[1]{#1}
+\printdateTeX[1]{#1}
+\nohyphens[1]{\mbox{#1}}
+\bshyp{\textbackslash}
+\fshyp{/}
+\dothyp{.}
+\colonhyp{:}
+\tablehead[1]{}
+\tabletail[1]{}
+\tablefirsthead[1]{}
+\tablelasttail[1]{}
+\topcaption[1]{\caption{#1}}
+\bottomcaption[1]{\caption{#1}}
+\tablecaption[1]{\caption{#1}}
+\shrinkheight[1]{}
+\tabbedShortstack[2][]{\begin{tabular}{@{}c@{\ }c@{\ }c@{\ }c@{\ }c@{}}#2\end{tabular}}
+\tabbedCenterstack[2][]{\begin{tabular}{@{}c@{\ }c@{\ }c@{\ }c@{\ }c@{}}#2\end{tabular}}
+\tabularShortstack[3][]{\begin{tabular}{@{}#2@{}}#3\end{tabular}}
+\fb{\ensuremath{\mathrm{fb}}}
+\pb{\ensuremath{\mathrm{pb}}}
+\nb{\ensuremath{\mathrm{nb}}}
+\mub{\ensuremath{\mu\mathrm{b}}}
+\PeV{\ensuremath{\mathrm{PeV}}}
+\ox[2][]{\@ox#2\@nil}
+\@ox#1,#2\@nil{\ensuremath{\overset{\mathrm{\@numberwordsroman{#1}}}{\mathrm{#2}}}}
+\@numberwordsroman[1]{\uppercase\expandafter{\romannumeral#1}}
+\luaexec[1]{}
+\directlua[1]{}
+\luadirect[1]{}
+\luastring[1]{"#1"}
+\svgpath[1]{}
+\svgsetup[1]{}
+\unitvalue[2]{#1\,#2}
+\newunit[2]{\@define#1{#2}}
+\renewunit[2]{\@define#1{#2}}
+\Pproton{\ensuremath{\mathrm{p}}}
+\Pantiproton{\ensuremath{\bar{\mathrm{p}}}}
+\Pneutron{\ensuremath{\mathrm{n}}}
+\Pelectron{\ensuremath{\mathrm{e}^-}}
+\Ppositron{\ensuremath{\mathrm{e}^+}}
+\Pmuon{\ensuremath{\mu^-}}
+\Ptau{\ensuremath{\tau^-}}
+\Pnu{\ensuremath{\nu}}
+\Pphoton{\ensuremath{\gamma}}
+\Pgluon{\ensuremath{\mathrm{g}}}
+\PW{\ensuremath{\mathrm{W}}}
+\PWpm{\ensuremath{\mathrm{W}^\pm}}
+\PZ{\ensuremath{\mathrm{Z}}}
+\PHiggs{\ensuremath{\mathrm{H}}}
+\Ppi{\ensuremath{\pi}}
+\Pquark{\ensuremath{\mathrm{q}}}
+\HepParticle[3]{\ensuremath{\mathrm{#1}_{#2}^{#3}}}
+\HepAntiParticle[3]{\ensuremath{\bar{\mathrm{#1}}_{#2}^{#3}}}
+\HepGenParticle[3]{\ensuremath{\mathrm{#1}_{#2}^{#3}}}
+\HepSusyParticle[3]{\ensuremath{\tilde{\mathrm{#1}}_{#2}^{#3}}}
+\HepProcess[1]{\ensuremath{#1}}
+\HepTo{\ensuremath{\to}}
+\duckument{\usepackage{lipsum}\lipsum[1-3]}
+\duck[1][]{\filldraw[fill=yellow] (0,0) circle (0.5) (0.45,0.35) circle (0.3);}
+\coloremoji[1]{#1}
+\epsfig[1]{\@epsfig#1,\@nil}
+\@epsfig file=#1,#2\@nil{\includegraphics{#1}}
+\psfig[1]{\@epsfig#1,\@nil}
+\parpic[2][]{#2}
+\newabbreviation[3][]{\newacronym{#2}{#3}}
+\printunsrtglossaries{\printglossaries}
+\printunsrtglossary[1][]{\printglossaries}
+\glsxtrfull[1]{\acrfull{#1}}
+\glsxtrshort[1]{\acrshort{#1}}
+\glsxtrlong[1]{\acrlong{#1}}
+\setabbreviationstyle[2][]{}
+\glssetcategoryattribute[3]{}
+\glsxtrnewsymbol[3][]{\newglossaryentry{#2}{name={#3}, description={#3}}}
+\showkeyslabelformat[1]{}
+
+% ---------------------------------------------------------------------------
+% Packages beyond the commonest: maths' and text's smaller extras, logos,
+% citations by other names, boxes of other shapes -- each the nearest thing
+% the engine sets, or read and let go.
+
+\alltt{\par\ttfamily}
+\endalltt{\par}
+\empheq[1][]{\@empheq}
+\@empheq#1{\@define\@empheqend{\end{#1}}\begin{#1}}
+\endempheq{\@empheqend}
+\numcases[1]{\begin{equation}#1\begin{cases}}
+\endnumcases{\end{cases}\end{equation}}
+\subnumcases[1]{\begin{equation}#1\begin{cases}}
+\endsubnumcases{\end{cases}\end{equation}}
+\medmath[1]{#1}
+\mfrac[2]{\frac{#1}{#2}}
+\mbinom[2]{\binom{#1}{#2}}
+\medop[1]{#1}
+\medint{\int}
+\vv[1]{\overrightarrow{#1}}
+\faktor[2]{{#1}/{#2}}
+\tensor[3][]{{#2}#3}
+\indices[1]{{}#1}
+\centernot[1]{\not#1}
+\xLongrightarrow[2][]{\xRightarrow[#1]{#2}}
+\xLongleftarrow[2][]{\xLeftarrow[#1]{#2}}
+\xLongleftrightarrow[2][]{\xleftrightarrow[#1]{#2}}
+\xlongequal[2][]{\overset{#2}{=}}
+\xlongrightarrow[2][]{\xrightarrow[#1]{#2}}
+\xlongleftarrow[2][]{\xleftarrow[#1]{#2}}
+\ldelim[3]{}
+\rdelim[3]{}
+\setmarginsrb[8]{}
+\setmargins[8]{}
+\setmarginnotes[4]{}
+\setpapersize[2][]{}
+\marginsize[4]{}
+\papersize[2]{}
+\layout{}
+\hologo[1]{\@ifundefined{#1}{#1}{\@nameuse{#1}}}
+\XeTeX{X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.1667em\TeX}
+\XeLaTeX{X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.1667em\LaTeX}
+\LuaTeX{Lua\TeX}
+\LuaLaTeX{Lua\LaTeX}
+\pdfLaTeX{pdf\LaTeX}
+\pdfTeX{pdf\TeX}
+\BibTeX{Bib\TeX}
+\ConTeXt{Con\TeX t}
+\say[1]{“#1”}
+\kant[1][]{\usepackage{lipsum}\lipsum[#1]}
+\citeA[1]{\citet{#1}}
+\citeNP[1]{\citealp{#1}}
+\citeyearNP[1]{\citeyear{#1}}
+\citeauthorNP[1]{\citeauthor{#1}}
+\citeasnoun[1]{\citet{#1}}
+\possessivecite[1]{\citeauthor{#1}'s (\citeyear{#1})}
+\backref[1]{}
+\backrefalt[4]{}
+\FPeval[2]{\edef#1{\@calculate{#2}}}
+\FPadd[3]{\edef#1{\@calculate{#2+#3}}}
+\FPsub[3]{\edef#1{\@calculate{#2-#3}}}
+\FPmul[3]{\edef#1{\@calculate{#2*#3}}}
+\FPdiv[3]{\edef#1{\@calculate{#2/#3}}}
+\FPset[2]{\edef#1{#2}}
+\FPprint[1]{#1}
+\FPround[3]{\edef#1{\@calculate{round(#2, #3)}}}
+\newindex[2][]{}
+\sindex[2][]{\index{#2}}
+\printsubindex{\printindex}
+\printindices{\printindex}
+\MakeTextUppercase[1]{\MakeUppercase{#1}}
+\MakeTextLowercase[1]{\MakeLowercase{#1}}
+\NoCaseChange[1]{#1}
+\CenterWallPaper[2]{}
+\TileWallPaper[3]{}
+\ULCornerWallPaper[2]{}
+\LLCornerWallPaper[2]{}
+\URCornerWallPaper[2]{}
+\LRCornerWallPaper[2]{}
+\ThisCenterWallPaper[2]{}
+\ClearWallPaper{}
+\bicaption[3][]{\caption{#2}}
+\bicaptionbox[3]{\caption{#1}}
+\floatingfigure[2][]{\begin{figure}[htbp]}
+\endfloatingfigure{\end{figure}}
+\floatingtable[1][]{\begin{table}[htbp]}
+\endfloatingtable{\end{table}}
+\pgfornament[2][]{❦}
+\tdplotsetmaincoords[2]{}
+\tdplotsetrotatedcoords[3]{}
+\tdplotdrawarc[5][]{}
+\bclogo[2][]{\begin{framed}\noindent\textbf{#2}\par}
+\endbclogo{\end{framed}}
+\bcattention{!}
+\bcinfo{i}
+\bccrayon{}
+\bcbombe{}
+\bclampe{}
+\bcplume{}
+\notebox[1]{\begin{framed}\noindent\textbf{Note:} #1\end{framed}}
+\tipbox[1]{\begin{framed}\noindent\textbf{Tip:} #1\end{framed}}
+\warningbox[1]{\begin{framed}\noindent\textbf{Warning:} #1\end{framed}}
+\cautionbox[1]{\begin{framed}\noindent\textbf{Caution:} #1\end{framed}}
+\importantbox[1]{\begin{framed}\noindent\textbf{Important:} #1\end{framed}}
+\censor[1]{\colorbox{black}{\textcolor{black}{#1}}}
+\blackout[1]{\colorbox{black}{\textcolor{black}{#1}}}
+\censorbox[1]{\colorbox{black}{\textcolor{black}{#1}}}
+\menu[2][]{\textsf{#2}}
+\keys[1]{\fbox{\textsf{#1}}}
+\directory[2][]{\texttt{#2}}
+\ctrl{Ctrl}
+\shift{Shift}
+\Alt{Alt}
+\cmd{Cmd}
+\keystroke[1]{\fbox{\textsf{#1}}}
+\Enter{\fbox{\textsf{Enter}}}
+\Ctrl{\fbox{\textsf{Ctrl}}}
+\Shift{\fbox{\textsf{Shift}}}
+\Esc{\fbox{\textsf{Esc}}}
+\Tab{\fbox{\textsf{Tab}}}
+\boxedminipage[2][]{\begin{framed}}
+\endboxedminipage{\end{framed}}
+\shabox[1]{\fbox{#1}}
+\multienumerate{\begin{enumerate}}
+\endmultienumerate{\end{enumerate}}
+\mitemx[1]{\item #1}
+\mitemxx[2]{\item #1 \item #2}
+\mitemxxx[3]{\item #1 \item #2 \item #3}
+\mitemxxxx[4]{\item #1 \item #2 \item #3 \item #4}
+\question[1][]{\par\noindent\textbf{Question.} }
+\endquestion{\par}
+\solution[1][]{\par\noindent\textbf{Solution.} }
+\endsolution{\par}
+\printsolutions[1][]{}
+\shorttableofcontents[2]{\tableofcontents}
+\shorttoc[2]{\tableofcontents}
+\AdvanceDate[1][1]{}
+\SetDate[1][]{}
+\DayAfter[1]{}
+\thistime{\usepackage{datetime}\currenttime}
+\watermark[1]{}
+\thiswatermark[1]{}
+\leftwatermark[1]{}
+\rightwatermark[1]{}
+\bibunit[1][]{}
+\endbibunit{}
+\putbib[1][]{}
+\defaultbibliography[1]{}
+\defaultbibliographystyle[1]{}
+\tcohm{\ensuremath{\Omega}}
+\tcmu{\ensuremath{\mu}}
+\tcdegree{\ensuremath{^\circ}}
+\tccelsius{\ensuremath{^\circ}C}
+\tcperthousand{‰}
 
 % ---------------------------------------------------------------------------
 % What the lines above read and let go with, each ending in the one command

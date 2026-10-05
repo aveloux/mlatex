@@ -25,7 +25,8 @@ namespace syntax::primitives {
         forms = {lexicon.intern("\\ifstar"), lexicon.intern("\\ifnextchar"), lexicon.intern("\\ifstrequal"),
                  lexicon.intern("\\ifvariable"), lexicon.intern("\\ifpackageloaded"), lexicon.intern("\\@ifstar"),
                  lexicon.intern("\\@ifnextchar"), lexicon.intern("\\@ifstrequal"), lexicon.intern("\\@ifvariable"),
-                 lexicon.intern("\\@ifpackageloaded"), lexicon.intern("\\iffile"), lexicon.intern("\\@iffile")};
+                 lexicon.intern("\\@ifpackageloaded"), lexicon.intern("\\iffile"), lexicon.intern("\\@iffile"),
+                 lexicon.intern("\\iftest"), lexicon.intern("\\@iftest")};
     }
 
     bool Relay::opens(const Mouth& mouth, const Token& token) const noexcept {

@@ -1,0 +1,13 @@
+% acronym: abbreviations spelled out once.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{acronym}
+\begin{document}
+First \ac{nasa}, then \ac{nasa} again, and \acl{esa} in full, \acs{esa} short, \acf{who} in full with its short form.
+\begin{acronym}
+\acro{nasa}[NASA]{National Aeronautics and Space Administration}
+\acro{esa}[ESA]{European Space Agency}
+\acro{who}[WHO]{World Health Organization}
+\end{acronym}
+\end{document}

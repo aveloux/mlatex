@@ -1,0 +1,8 @@
+% soulutf8: soul in UTF-8.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{soulutf8}
+\begin{document}
+\hl{highlighted} café.
+\end{document}

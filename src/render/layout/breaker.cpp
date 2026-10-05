@@ -73,9 +73,11 @@ namespace render::layout {
         // the tolerance weighed by Knuth's demerits, each line's badness and
         // its break's penalty squared -- more for two hyphenated lines in a
         // row, for a hyphen ending the line before the last, and for a line
-        // much looser or tighter than the one before it. Whether it had to
+        // much looser or tighter than the one before it. `extra` is stretch
+        // every line is credited with, for judging it only. Whether it had to
         // let a line run into the margin is said in `strained`.
-        const auto pass = [&](const float tolerance, const bool hyphenating, bool& strained) -> const Candidate* {
+        const auto pass = [&](const float tolerance, const bool hyphenating, const float extra,
+                              bool& strained) -> const Candidate* {
             // One candidate per position at most, plus the start. Nothing
             // here grows, so the pass allocates once.
             const memory::Slice<Candidate> pool = scratch.allocate<Candidate>(count + 2);
@@ -143,7 +145,7 @@ namespace render::layout {
                     const Candidate& entry = pool[active[slot]];
 
                     const float span = width[reach] - width[entry.index];
-                    const float give = stretch[reach] - stretch[entry.index];
+                    const float give = stretch[reach] - stretch[entry.index] + extra;
                     const float take = shrink[reach] - shrink[entry.index];
                     const float gap = rules.target - span;
 
@@ -240,16 +242,18 @@ namespace render::layout {
         // As TeX sets a paragraph: first without hyphenating, taking lines
         // no worse than \\pretolerance; then hyphenating, up to \\tolerance;
         // and only when neither finds a way that keeps every line inside the
-        // column, the looser lines the engine prefers to an overfull one.
+        // column, again with \\emergencystretch credited to every line -- the
+        // looser lines TeX prefers to an overfull one, in a narrow column
+        // above all.
         bool strained = false;
-        const Candidate* last = pass(rules.pretolerance, false, strained);
+        const Candidate* last = pass(rules.pretolerance, false, 0.0f, strained);
         if (!last || strained) {
             strained = false;
-            last = pass(rules.tolerance, true, strained);
+            last = pass(rules.tolerance, true, 0.0f, strained);
         }
         if (!last || strained) {
             strained = false;
-            last = pass(rules.emergency, true, strained);
+            last = pass(rules.tolerance, true, rules.emergency, strained);
         }
 
         if (!last || last->line == 0) return {};

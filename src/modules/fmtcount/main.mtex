@@ -1,0 +1,23 @@
+% fmtcount: numbers and counters written in words and as ordinals.
+%
+%   \numberstringnum{12}     % twelve        \Numberstringnum{5}   % Five
+%   \ordinalstringnum{2}     % second        \ordinalnum{3}        % 3rd
+%   \numberstring{section}   % the section counter's value in words
+%
+% The words are the engine's own \@numberwords, in English.
+
+\@define\numberstringnum[1]{\@numberwords{number}{#1}}
+\@define\Numberstringnum[1]{\@numberwords{Number}{#1}}
+\@define\NUMBERstringnum[1]{\@numberwords{NUMBER}{#1}}
+\@define\ordinalstringnum[1]{\@numberwords{ordinal}{#1}}
+\@define\Ordinalstringnum[1]{\@numberwords{Ordinal}{#1}}
+\@define\ORDINALstringnum[1]{\@numberwords{ORDINAL}{#1}}
+\@define\numberstring[1]{\@numberwords{number}{\value{#1}}}
+\@define\Numberstring[1]{\@numberwords{Number}{\value{#1}}}
+\@define\NUMBERstring[1]{\@numberwords{NUMBER}{\value{#1}}}
+\@define\ordinalstring[1]{\@numberwords{ordinal}{\value{#1}}}
+\@define\Ordinalstring[1]{\@numberwords{Ordinal}{\value{#1}}}
+\@define\ORDINALstring[1]{\@numberwords{ORDINAL}{\value{#1}}}
+\@define\ordinal[1]{\ordinalnum{\value{#1}}}
+\@define\fmtcountsetoptions[1]{}
+\@define\FCordinal[1]{\ordinalnum{\value{#1}}}

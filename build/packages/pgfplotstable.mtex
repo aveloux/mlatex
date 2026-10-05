@@ -1,0 +1,8 @@
+% pgfplotstable: tables from data.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pgfplotstable}
+\begin{document}
+\pgfplotstabletypeset{x y\\1 2\\3 4\\}
+\end{document}

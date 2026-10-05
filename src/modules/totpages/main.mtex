@@ -1,0 +1,4 @@
+% totpages: the document's number of pages, as the label TotPages on its
+% last.
+
+\AtEndDocument{\label{TotPages}}

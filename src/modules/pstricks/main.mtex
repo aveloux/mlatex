@@ -1,0 +1,59 @@
+% pstricks: PostScript pictures, drawn here with TikZ's own commands -- a
+% pspicture is a picture, its lines, circles, frames, dots and labels the
+% TikZ paths they are, in centimetres as PSTricks measures.
+%
+%   \begin{pspicture}(0,0)(4,3)
+%     \psline{->}(0,0)(4,3) \pscircle(2,1){0.5} \rput(2,2){label}
+%   \end{pspicture}
+
+\@requirepackage{tikz}
+
+\@define\pspicture{\@ifstar{\@pspicture}{\@pspicture}}
+\@define\@pspicture{\@ifnextchar[{\@pspicturebase}{\@pspicturecorner}}
+\@define\@pspicturebase[#1]{\@pspicturecorner}
+\@define\@pspicturecorner(#1){\@ifnextchar({\@pspicturebox}{\begin{tikzpicture}}}
+\@define\@pspicturebox(#1){\begin{tikzpicture}}
+\@define\endpspicture{\end{tikzpicture}}
+\expandafter\@define\csname pspicture*\endcsname{\@pspicture}
+\expandafter\@define\csname endpspicture*\endcsname{\end{tikzpicture}}
+\@define\psset[1]{}
+% A command's options in brackets and its arrows in braces, read, and then
+% what comes after them: the continuation is the argument, so the peeking
+% is at the document.
+\@define\@psoptions#1{\@ifnextchar[{\@psbracket{#1}}{\@ifnextchar\bgroup{\@psarrows{#1}}{#1}}}
+\@define\@psbracket#1[#2]{\@ifnextchar\bgroup{\@psarrows{#1}}{#1}}
+\@define\@psarrows#1#2{#1}
+\@define\psline{\@psoptions{\@pslinefirst}}
+\@define\@pslinefirst(#1){\draw (#1)\@pslinemore}
+\@define\@pslinemore{\@ifnextchar({\@pslinenext}{;}}
+\@define\@pslinenext(#1){ -- (#1)\@pslinemore}
+\@define\pspolygon{\@psoptions{\@pspolygonfirst}}
+\@define\@pspolygonfirst(#1){\draw (#1)\@pspolygonmore}
+\@define\@pspolygonmore{\@ifnextchar({\@pspolygonnext}{ -- cycle;}}
+\@define\@pspolygonnext(#1){ -- (#1)\@pspolygonmore}
+\@define\pscircle{\@psoptions{\@pscircle}}
+\@define\@pscircle(#1)#2{\draw (#1) circle (#2);}
+\@define\psframe{\@psoptions{\@psframe}}
+\@define\@psframe(#1)(#2){\draw (#1) rectangle (#2);}
+\@define\psdot{\@psoptions{\@psdot}}
+\@define\@psdot(#1){\fill (#1) circle (0.05);}
+\@define\psdots{\@psoptions{\@psdotsfirst}}
+\@define\@psdotsfirst(#1){\fill (#1) circle (0.05);\@ifnextchar({\@psdotsfirst}{}}
+\@define\psarc{\@psoptions{\@psarc}}
+\@define\@psarc(#1)#2#3#4{\draw (#1) ++(#3:#2) arc (#3:#4:#2);}
+\@define\rput{\@ifstar{\@rput}{\@rput}}
+\@define\@rput{\@ifnextchar[{\@rputanchor}{\@rputat}}
+\@define\@rputanchor[#1]{\@rputat}
+\@define\@rputat(#1)#2{\node at (#1) {#2};}
+\@define\uput[1]{\@uput}
+\@define\@uput[#1](#2)#3{\node at (#2) {#3};}
+\@define\psaxes{\@psoptions{\@psaxes}}
+\@define\@psaxes(#1,#2){\@ifnextchar({\@psaxesto}{\draw[->] (0,0) -- (#1,0); \draw[->] (0,0) -- (0,#2);}}
+\@define\@psaxesto(#1,#2){\draw[->] (0,0) -- (#1,0); \draw[->] (0,0) -- (0,#2);}
+\@define\pscurve{\@psoptions{\@pslinefirst}}
+\@define\psgrid{\@ifnextchar({\@psgrid}{}}
+\@define\@psgrid(#1)(#2){\draw[very thin, gray] (#1) grid (#2);}
+\@define\psellipse{\@psoptions{\@psellipse}}
+\@define\@psellipse(#1)(#2){\draw (#1) ellipse (#2);}
+\@define\newpsstyle[2]{}
+\@define\newrgbcolor[4]{\definecolor{#1}{rgb}{#2,#3,#4}}

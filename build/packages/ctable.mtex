@@ -1,0 +1,9 @@
+% ctable: a table and its float in one.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{ctable}
+\begin{document}
+\ctable[caption = Results, label = tab:r, pos = htbp]{lr}{\tnote{a note}}{
+\FL Item & Value \ML Tea & 2\tmark \LL}
+\end{document}

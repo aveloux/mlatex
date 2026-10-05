@@ -1,0 +1,8 @@
+% uniquecounter: unique counters.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{uniquecounter}
+\begin{document}
+\UniqueCounterNew{u} Text.
+\end{document}

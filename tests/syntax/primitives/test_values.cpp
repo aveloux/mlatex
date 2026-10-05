@@ -185,6 +185,8 @@ int main() {
          "a character made active is read so from where \\catcode says, and ordinary again after");
     sets("{\\catcode`\\|=0 |define|a{A}|a}|", "{A}|", "a new escape character, as far as its group reaches");
     sets("\\catcode`\\_=11 \\define\\my_name{N}\\my_name", "N", "a letter now carries the control word on");
+    sets("\\catcode95=11 \\catcode58=11 \\define\\tl_set:Nn{T}\\tl_set:Nn", "T",
+         "and carries on a word an earlier change already made, as expl3's names need");
     sets("\\count255=7 \\the\\count255", "7", "the last of the 256 registers");
 
     return 0;

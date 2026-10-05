@@ -1,0 +1,21 @@
+% class-llncs: Springer's Lecture Notes in Computer Science.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{llncs}
+\begin{document}
+\title{A Springer LNCS Paper}
+\author{Kurt G\"odel\inst{1}}
+\institute{Institute for Advanced Study, Princeton\\\email{goedel@example.org}}
+\maketitle
+\begin{abstract}
+Incompleteness.
+\keywords{logic \and arithmetic}
+\end{abstract}
+\section{Introduction}
+\begin{theorem}
+Every consistent system is incomplete.
+\end{theorem}
+\begin{proof}
+By diagonalisation.
+\end{proof}
+\end{document}

@@ -1,0 +1,8 @@
+% nicefrac: small fractions.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{nicefrac}
+\begin{document}
+$\nicefrac{1}{2}$ and \nicefrac{3}{4} of it.
+\end{document}

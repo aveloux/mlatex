@@ -24,8 +24,9 @@
 #include <ranges>
 #include <span>
 #include <string>
-#include <utility>
 #include <system_error>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace render::primitives {
@@ -1361,6 +1362,56 @@ namespace render::primitives {
         context.blocks.watch(
             "picture",
             [this, &context](syntax::Mouth& mouth) {
+                // LaTeX's own picture, `(width,height)` and after it the
+                // `(x,y)` of its lower left corner, all in \unitlength: a
+                // canvas that size, every TikZ coordinate on it in
+                // \unitlength too, and LaTeX's picture commands -- \put,
+                // \line, \circle and the rest -- drawing on it for as long
+                // as the block is open.
+                if (mouth.lookahead().is('(')) {
+                    const auto pair = [&mouth] {
+                        std::array<std::string, 2> parts{};
+                        std::size_t at = 0;
+                        mouth.read();
+                        for (syntax::Token token = mouth.read(); !token.empty() && !token.is(')'); token = mouth.read()) {
+                            if (token.is(',') && at == 0) {
+                                at = 1;
+                            } else if (token.category != syntax::Catcodes::Category::Space) {
+                                parts[at] += token.text;
+                            }
+                        }
+                        return parts;
+                    };
+                    const auto number = [](const std::string& text) {
+                        float value = 0.0f;
+                        std::from_chars(text.data(), text.data() + text.size(), value);
+                        return value;
+                    };
+                    const std::array<std::string, 2> size = pair();
+                    std::array<std::string, 2> corner{"0", "0"};
+                    if (mouth.lookahead().is('(')) corner = pair();
+                    float unit = 1.0f;
+                    if (const auto target = context.registers.target(mouth.lexicon.intern("\\unitlength"))) {
+                        unit = static_cast<float>(context.registers.get(target->type, target->slot)) /
+                               static_cast<float>(syntax::Number::scale);
+                    }
+                    // A TikZ coordinate written without a unit is in
+                    // centimetres, scaled: here the scale makes it \unitlength.
+                    canvases.emplace_back(number(size[0]) * unit, number(size[1]) * unit);
+                    rooms.push_back(graphics::Canvas::Room::Grown);
+                    anchors.push_back({});
+                    scales.push_back(unit / (72.27f / 2.54f));
+                    baselines.emplace_back();
+                    distances.push_back(72.27f / 2.54f);
+                    color = graphics::black;
+                    weight = 1.0f;
+                    dashed = false;
+                    view = graphics::Projection::isometric();
+                    mouth.ingest(context.arena.copy("\\@picturemode{" + corner[0] + "}{" + corner[1] + "}"),
+                                 memory::Location{});
+                    return;
+                }
+
                 std::array<float, 2> size{};
                 measure(mouth, context.registers, size);
 
@@ -1403,10 +1454,11 @@ namespace render::primitives {
         // `block/.style={...}` -- holds from there on.
         context.blocks.watch(
             "tikzpicture",
-            [this](syntax::Mouth& mouth) {
+            [this, &context](syntax::Mouth& mouth) {
                 float scale = 1.0f;
                 float apart = 72.27f / 2.54f;
                 std::string base;
+                bool overlay = false;
                 std::string options;
                 for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     options += token.text;
@@ -1429,12 +1481,31 @@ namespace render::primitives {
                         option.remove_prefix(9);
                         if (option.starts_with('{') && option.ends_with('}')) option = option.substr(1, option.size() - 2);
                         base = option;
+                    } else if (option == "overlay") {
+                        overlay = true;
                     }
                 }
 
-                canvases.emplace_back(0.0f, 0.0f);
-                rooms.push_back(graphics::Canvas::Room::Drawn);
-                anchors.push_back({});
+                // An overlay is drawn over the page itself, pinned to it --
+                // a title page's frame, a background -- its coordinates the
+                // page's from its lower left corner, and the page and its
+                // text area there as nodes: `current page.north east`,
+                // `current page text area.center`.
+                if (overlay) {
+                    const layout::Document::Configuration& page = context.document.configuration;
+                    const float wide = page.width - page.left - page.right;
+                    const float tall = page.height - page.top - page.bottom;
+                    canvases.emplace_back(page.width, page.height);
+                    rooms.push_back(graphics::Canvas::Room::Declared);
+                    anchors.push_back({});
+                    landmarks["current page"] = {{page.width / 2.0f, page.height / 2.0f}, page.width / 2.0f, page.height / 2.0f};
+                    landmarks["current page text area"] = {{page.left + wide / 2.0f, page.bottom + tall / 2.0f}, wide / 2.0f,
+                                                           tall / 2.0f};
+                } else {
+                    canvases.emplace_back(0.0f, 0.0f);
+                    rooms.push_back(graphics::Canvas::Room::Drawn);
+                    anchors.push_back({});
+                }
                 scales.push_back(scale);
                 baselines.push_back(std::move(base));
                 distances.push_back(apart);
@@ -1475,6 +1546,26 @@ namespace render::primitives {
             parser.bind(name, [this, &context, path, stroked, filled, name](syntax::Parser& parser) -> syntax::Node* {
                 syntax::Mouth& mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
+
+                // Outside a picture, url's \path: a file's path set as an
+                // address is, `\path{C:/files}` or `\path|C:/files|`.
+                if (canvases.empty() && name == std::string_view{"\\path"}) {
+                    syntax::Token open = mouth.read();
+                    while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+                    std::string written;
+                    if (open.is(syntax::Catcodes::Category::Group, '{')) {
+                        mouth.stream().inject(std::span{&open, 1});
+                        written = syntax::Argument::text(mouth);
+                    } else if (!open.empty()) {
+                        for (syntax::Token token = mouth.read(); !token.empty() && token.text != open.text;
+                             token = mouth.read()) {
+                            written += token.text;
+                        }
+                    }
+                    mouth.ingest(parser.arena.copy("\\texttt{" + written + "}"), memory::Location{});
+                    return nullptr;
+                }
+
                 std::string options;
                 const std::string text = path(mouth, options);
                 if (canvases.empty()) {
@@ -1877,6 +1968,13 @@ namespace render::primitives {
             const bool given = mouth.lookahead().is(syntax::Catcodes::Category::Group, '{');
             if (given) measure(mouth, context.registers, size);
 
+            // A drawing written as TikZ, as tikzscale reads one: the file
+            // read in where the picture stands.
+            if (source.ends_with(".tikz") || source.ends_with(".pgf")) {
+                mouth.ingest(arena.copy("\\input{" + source + "}"), memory::Location{});
+                return nullptr;
+            }
+
             // `plot.png`, or the name with the extensions LaTeX tries for a
             // name written without one. A picture handed in from memory comes
             // before one on disk or on the network: a chart the calling
@@ -1911,7 +2009,11 @@ namespace render::primitives {
                 received = network::get(source, "");
                 if (received) encoded = std::as_bytes(std::span{*received});
             }
-            if (encoded.empty()) {
+            // mwe's example pictures, which an example document names without
+            // carrying them: each a frame of its picture's own shape.
+            const std::string base = source.substr(source.find_last_of('/') + 1);
+            const bool example = encoded.empty() && base.starts_with("example-image");
+            if (encoded.empty() && !example) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\includegraphics could not read '" + source + "'");
                 return directive(arena, nullptr, origin, true);
@@ -1982,11 +2084,32 @@ namespace render::primitives {
             } else {
                 // A picture in a form this engine does not draw --
                 // PostScript, SVG -- leaves its place framed and empty, as
-                // wide and as tall as its keys ask, and says so.
-                tracebacks.emplace_back(
-                    syntax::Traceback::Type::Warning, origin,
-                    "\\includegraphics: '" + source + "' is in a form this engine does not draw; its place is kept");
-                std::string width = given ? std::format("{:.2f}pt", size[0]) : std::string("0.5\\linewidth");
+                // wide and as tall as its keys ask, and says so. An example
+                // picture is framed the same way, in its own proportions --
+                // 4:3 unless its name says otherwise, each in small whole
+                // numbers so a length scaled by one stays in range -- and
+                // says nothing.
+                int across = 4;
+                int down = 3;
+                if (example) {
+                    static constexpr std::array<std::tuple<std::string_view, int, int>, 7> shapes{{
+                        {"-1x1", 1, 1}, {"-golden", 89, 55}, {"-16x9", 16, 9}, {"-9x16", 9, 16},
+                        {"-10x16", 5, 8}, {"-3x4", 3, 4}, {"-a4", 70, 99},
+                    }};
+                    for (const auto& [suffix, wide, tall] : shapes) {
+                        if (base.contains(suffix)) {
+                            across = wide;
+                            down = tall;
+                        }
+                    }
+                } else {
+                    tracebacks.emplace_back(
+                        syntax::Traceback::Type::Warning, origin,
+                        "\\includegraphics: '" + source + "' is in a form this engine does not draw; its place is kept");
+                }
+                std::string width = given     ? std::format("{:.2f}pt", size[0])
+                                    : example ? std::string(across >= down ? "320bp" : "240bp")
+                                              : std::string("0.5\\linewidth");
                 std::string height = given ? std::format("{:.2f}pt", size[1]) : std::string{};
                 for (std::size_t start = 0; start <= keys.size();) {
                     std::size_t stop = keys.find(',', start);
@@ -2000,7 +2123,7 @@ namespace render::primitives {
                     if (key == "width") width = item.substr(equals + 1);
                     if (key == "height" || key == "totalheight") height = item.substr(equals + 1);
                 }
-                if (height.empty()) height = "\\dimexpr(" + width + ")*3/4\\relax";
+                if (height.empty()) height = std::format("\\dimexpr({})*{}/{}\\relax", width, down, across);
                 mouth.ingest(arena.copy("\\fbox{\\makebox[" + width + "]{\\rule{0pt}{" + height + "}}}"));
                 return directive(arena, nullptr, origin, true);
             }

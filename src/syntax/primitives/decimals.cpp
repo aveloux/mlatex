@@ -8,9 +8,12 @@
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <vector>
 
 namespace syntax::primitives {
 
@@ -195,6 +198,59 @@ namespace syntax::primitives {
             const std::size_t opening = pass.cursor;
             while (pass.cursor < pass.text.size() && naming(pass.text[pass.cursor], false)) ++pass.cursor;
             const std::string_view name = pass.text.substr(opening, pass.cursor - opening);
+
+            // A function of its arguments, as xfp's \fpeval knows them --
+            // `sqrt(2)`, `round(x, 2)`, `max(a, b, c)` -- each worked out to
+            // the six places every value keeps; and the two constants.
+            std::size_t after = pass.cursor;
+            while (after < pass.text.size() && pass.text[after] == ' ') ++after;
+            if (after < pass.text.size() && pass.text[after] == '(') {
+                pass.cursor = after + 1;
+                ++pass.level;
+                std::vector<std::int64_t> arguments;
+                while (true) {
+                    const std::optional<std::int64_t> argument = expression(pass);
+                    if (!argument) return std::nullopt;
+                    arguments.push_back(*argument);
+                    while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+                    if (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ',') {
+                        ++pass.cursor;
+                        continue;
+                    }
+                    break;
+                }
+                --pass.level;
+                if (pass.cursor >= pass.text.size() || pass.text[pass.cursor] != ')') {
+                    pass.error = std::format("{}( is never closed", name);
+                    return std::nullopt;
+                }
+                ++pass.cursor;
+
+                const std::int64_t first = arguments.front();
+                const long double real = static_cast<long double>(first) / scale;
+                // Places to round to, from a second argument: `round(x, 2)`.
+                const std::int64_t places = arguments.size() > 1 ? std::clamp<std::int64_t>(arguments[1] / scale, 0, precision) : 0;
+                std::int64_t step = scale;
+                for (std::int64_t place = 0; place < places; ++place) step /= 10;
+                if (name == "sqrt") {
+                    if (first < 0) {
+                        pass.error = "the square root of a negative number";
+                        return std::nullopt;
+                    }
+                    return static_cast<std::int64_t>(std::llround(std::sqrt(real) * scale));
+                }
+                if (name == "abs") return first < 0 ? -first : first;
+                if (name == "round") return static_cast<std::int64_t>(std::llround(static_cast<long double>(first) / step)) * step;
+                if (name == "floor") return static_cast<std::int64_t>(std::floor(static_cast<long double>(first) / step)) * step;
+                if (name == "ceil") return static_cast<std::int64_t>(std::ceil(static_cast<long double>(first) / step)) * step;
+                if (name == "trunc") return first / step * step;
+                if (name == "min") return std::ranges::min(arguments);
+                if (name == "max") return std::ranges::max(arguments);
+                pass.error = std::format("'{}' is no function", name);
+                return std::nullopt;
+            }
+            if (name == "pi") return 3'141'593;
+            if (name == "e" && !pass.variables.get(name)) return 2'718'282;
 
             const std::string* value = pass.variables.get(name);
             if (!value) {

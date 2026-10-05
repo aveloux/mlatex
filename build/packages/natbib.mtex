@@ -1,0 +1,12 @@
+% natbib: author-year citations.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[round,authoryear]{natbib}
+\begin{document}
+\citet{knuth} wrote it \citep{knuth}; \citeauthor{knuth} in \citeyear{knuth}, \citep[p.~2]{knuth}, \citealp{knuth}.
+\bibliographystyle{plainnat}
+\begin{thebibliography}{1}
+\bibitem[Knuth(1984)]{knuth} D. Knuth. The TeXbook. 1984.
+\end{thebibliography}
+\end{document}

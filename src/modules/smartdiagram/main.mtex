@@ -1,0 +1,10 @@
+% smartdiagram: a diagram drawn from a list -- a flow, a cycle, a set of
+% bubbles -- set as the list's items joined by arrows.
+%
+%   \smartdiagram[flow diagram:horizontal]{Plan, Build, Test, Ship}
+
+\@define\smartdiagram[2][]{\StrSubstitute{#2}{,}{ \ensuremath{\rightarrow}}}
+\@define\smartdiagramset[1]{}
+\@define\smartdiagramadd[3][]{}
+\@define\smartdiagramconnect[2]{}
+\@define\smartdiagramanimated[2][]{\smartdiagram[#1]{#2}}

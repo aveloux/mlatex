@@ -1,0 +1,8 @@
+% floatrow: floats in rows.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{floatrow}
+\begin{document}
+\floatsetup[table]{capposition=top}\begin{figure}[htbp]\ffigbox{\rule{1cm}{1cm}}{\caption{Boxed}}\end{figure}
+\end{document}

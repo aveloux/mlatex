@@ -1,0 +1,9 @@
+% xifthen: ifthen's tests and more of them -- whether a text is empty, holds
+% another, or names a command.
+
+\@requirepackage{ifthen}
+
+\@define\isempty[3]{\@ifempty{#1}#2\else #3\fi}
+\@define\isin[4]{\IfSubStr{#2}{#1}{#3}{#4}}
+\@define\isnamedefined[3]{\@ifundefined{#1}{#3}{#2}}
+\@define\isequivalentto[4]{\ifx#1#2#3\else #4\fi}

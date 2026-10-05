@@ -1,0 +1,23 @@
+% class-acmart: the ACM's proceedings format.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[sigconf]{acmart}
+\begin{document}
+\title{An ACM Paper}
+\author{Grace Hopper}
+\affiliation{\institution{Harvard University}\city{Cambridge}\country{USA}}
+\email{grace@example.org}
+\begin{abstract}
+Compilers, explained.
+\end{abstract}
+\keywords{compilers, languages}
+\maketitle
+\section{Introduction}
+Some text~\cite{knuth}.
+\begin{acks}
+We thank the referees.
+\end{acks}
+\begin{thebibliography}{1}
+\bibitem{knuth} D. Knuth. \emph{The Art of Computer Programming}. 1968.
+\end{thebibliography}
+\end{document}

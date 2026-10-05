@@ -1,0 +1,18 @@
+% listings: source code.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{listings}
+\begin{filecontents}{nothing.c}
+int main(void) { return 0; }
+\end{filecontents}
+\begin{document}
+\lstset{language=Python, basicstyle=\ttfamily\small, numbers=left, frame=single}
+\begin{lstlisting}[caption={A function}, label=lst:f]
+def f(x):
+    return x * 2
+\end{lstlisting}
+Inline \lstinline|x = 1| and \lstinline[language=C]{int y;}.
+\lstinputlisting[language=C]{nothing.c}
+\lstdefinestyle{mine}{basicstyle=\small}
+\end{document}

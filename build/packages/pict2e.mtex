@@ -1,0 +1,14 @@
+% pict2e: LaTeX's picture, extended.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pict2e}
+\begin{document}
+\setlength{\unitlength}{1mm}
+\begin{picture}(40,20)
+\put(0,0){\line(3,1){30}}
+\put(20,10){\circle{8}}
+\put(0,15){\vector(1,0){20}}
+\qbezier(0,0)(20,20)(40,0)
+\end{picture}
+\end{document}

@@ -1,0 +1,18 @@
+% float: [H] and new floats.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{float}
+\begin{document}
+\floatstyle{ruled}
+\newfloat{program}{htbp}{lop}
+\floatname{program}{Program}
+\begin{figure}[H]
+\centering\rule{1cm}{1cm}
+\caption{Here, exactly.}
+\end{figure}
+\begin{program}[H]
+\caption{A new float}
+Code.
+\end{program}
+\end{document}

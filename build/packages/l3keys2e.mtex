@@ -1,0 +1,8 @@
+% l3keys2e: LaTeX3 keys as options.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{l3keys2e}
+\begin{document}
+\ProcessKeysOptions{x} Text.
+\end{document}

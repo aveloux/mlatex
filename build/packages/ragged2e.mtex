@@ -1,0 +1,12 @@
+% ragged2e: ragged text that hyphenates.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{ragged2e}
+\begin{document}
+\RaggedRight Ragged right text that still hyphenates.
+\begin{Center} Centred. \end{Center}
+\begin{FlushLeft} Left. \end{FlushLeft}
+\begin{FlushRight} Right. \end{FlushRight}
+\justifying Justified again.
+\end{document}

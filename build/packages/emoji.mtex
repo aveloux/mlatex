@@ -1,0 +1,8 @@
+% emoji: emoji by name.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{emoji}
+\begin{document}
+\emoji{smile} \emoji{thumbs-up} \emoji{heart} \emoji{rocket} \emoji{star}
+\end{document}

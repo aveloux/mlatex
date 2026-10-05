@@ -1,0 +1,8 @@
+% tocbibind: contents lists in the contents.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[nottoc]{tocbibind}
+\begin{document}
+\tableofcontents\section{One}\begin{thebibliography}{1}\bibitem{a} A.\end{thebibliography}
+\end{document}

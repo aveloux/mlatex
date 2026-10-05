@@ -1,0 +1,33 @@
+% amsthm: theorems and proofs.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\newtheoremstyle{note}{3pt}{3pt}{}{}{\itshape}{:}{.5em}{}
+\begin{document}
+\begin{theorem}[Pythagoras]\label{thm:p}
+$a^2 + b^2 = c^2$.
+\end{theorem}
+\begin{proof}
+By rearrangement. \qedhere
+\end{proof}
+\begin{lemma}
+A lemma.
+\end{lemma}
+\begin{definition}
+A definition.
+\end{definition}
+\begin{remark}
+A remark.
+\end{remark}
+\begin{proof}[Proof of the lemma]
+Obvious.
+\end{proof}
+Theorem~\ref{thm:p}.
+\end{document}

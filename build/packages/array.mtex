@@ -1,0 +1,11 @@
+% array: more column types.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{array}
+\begin{document}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\begin{tabular}{>{\bfseries}l|C{2cm}|m{2cm}|b{2cm}<{\,!}}
+bold & centred & middle & bottom \\
+\end{tabular}
+\end{document}

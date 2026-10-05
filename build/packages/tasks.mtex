@@ -1,0 +1,12 @@
+% tasks: exercises in columns.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tasks}
+\begin{document}
+\begin{tasks}(2)
+\task First
+\task Second
+\task Third
+\end{tasks}
+\end{document}

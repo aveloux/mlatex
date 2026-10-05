@@ -11,6 +11,5 @@
 \@define\usepgfplotslibrary[1]{}
 \@define\nextgroupplot{\@gobbleoption}
 \@define\pgfplotstableread[2]{}
-\@define\pgfplotstabletypeset[2][]{}
 \@define\pgfplotscreateplotcyclelist[2]{}
 \@define\pgfplotsforeachungrouped#1\in#2#3{}

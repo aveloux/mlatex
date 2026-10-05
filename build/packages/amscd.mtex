@@ -1,0 +1,8 @@
+% amscd: commutative diagrams, AMS.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{amscd}
+\begin{document}
+$\begin{CD} A @>f>> B \\ @VgVV @VVhV \\ C @>>k> D \end{CD}$
+\end{document}

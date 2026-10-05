@@ -1,0 +1,8 @@
+% menukeys: menus and keys.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{menukeys}
+\begin{document}
+Choose \menu{File > Save}, press \keys{\ctrl + S}, and look in \directory{home/user}.
+\end{document}

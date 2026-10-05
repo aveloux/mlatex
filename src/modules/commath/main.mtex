@@ -1,0 +1,24 @@
+% commath: the notations of calculus and analysis written short. \set is
+% commath's here, a set in braces, as it is once commath is loaded; the
+% engine's own register word stays \@set.
+
+\@define\dif{\mathrm{d}}
+\@define\Dif{\mathrm{D}}
+\@define\od[3][]{\frac{\mathrm{d}#2}{\mathrm{d}#3}}
+\@define\pd[3][]{\frac{\partial #2}{\partial #3}}
+\@define\md[6]{\frac{\partial^{#2} #1}{\partial #3^{#4} \partial #5^{#6}}}
+\@define\abs[1]{\left|#1\right|}
+\@define\norm[1]{\left\|#1\right\|}
+\@define\set[1]{\left\{#1\right\}}
+\@define\sbr[1]{\left[#1\right]}
+\@define\cbr[1]{\left\{#1\right\}}
+\@define\del[1]{\left(#1\right)}
+\@define\pbr[1]{\left(#1\right)}
+\@define\eval[1]{\left.#1\right|}
+\@define\envert[1]{\left|#1\right|}
+\@define\enVert[1]{\left\|#1\right\|}
+\@define\intoo[1]{\left(#1\right)}
+\@define\intcc[1]{\left[#1\right]}
+\@define\intoc[1]{\left(#1\right]}
+\@define\intco[1]{\left[#1\right)}
+\@define\fullfunction[5]{#1\colon #2 \to #3, \quad #4 \mapsto #5}

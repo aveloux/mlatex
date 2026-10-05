@@ -1,0 +1,9 @@
+% tikzpagenodes: page nodes.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tikzpagenodes}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}[remember picture,overlay]\node at (current page text area.center) {x};\end{tikzpicture}
+\end{document}

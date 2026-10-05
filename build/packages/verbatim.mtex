@@ -1,0 +1,20 @@
+% verbatim: verbatim text.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{verbatim}
+\begin{filecontents}{nothing.txt}
+read verbatim
+\end{filecontents}
+\begin{document}
+\begin{verbatim}
+  kept exactly as typed & $ % #
+\end{verbatim}
+\begin{verbatim*}
+spaces shown
+\end{verbatim*}
+\verbatiminput{nothing.txt}
+\begin{comment}
+Left out.
+\end{comment}
+\end{document}

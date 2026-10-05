@@ -1,0 +1,15 @@
+% comment: text left out.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{comment}
+\begin{document}
+Kept.
+\begin{comment}
+Left out entirely.
+\end{comment}
+\excludecomment{draft}
+\includecomment{final}
+\begin{draft} gone \end{draft}
+\begin{final} kept too \end{final}
+\end{document}

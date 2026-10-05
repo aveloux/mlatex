@@ -1,0 +1,19 @@
+% pdfpages: PDF pages included.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pdfpages}
+\begin{filecontents*}{page.pdf}
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 4 0 R /Resources << >> >> endobj
+4 0 obj << /Length 22 >> stream
+0 0 m 200 100 l S
+endstream endobj
+trailer << /Root 1 0 R /Size 5 >>
+%%EOF
+\end{filecontents*}
+\begin{document}
+Before. \includepdf[pages=1]{page.pdf} After.
+\end{document}

@@ -1,0 +1,20 @@
+% etoolbox: tests and switches.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{etoolbox}
+\begin{document}
+\newtoggle{draft}
+\toggletrue{draft}
+\iftoggle{draft}{Draft.}{Final.}
+\newbool{flag}\booltrue{flag}\ifbool{flag}{Flag set.}{}
+\ifstrequal{a}{a}{Equal.}{Different.}
+\ifnumcomp{3}{>}{2}{Greater.}{}
+\ifblank{}{Blank.}{}
+\ifdef{\foo}{}{No foo.}
+\newcommand{\list}{a}
+\appto\list{b}\preto\list{c}
+\list
+\AtEndPreamble{}
+\AtBeginEnvironment{quote}{}
+\end{document}

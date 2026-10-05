@@ -1,0 +1,8 @@
+% csquotes: quotation marks.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[autostyle]{csquotes}
+\begin{document}
+\enquote{A quotation with \enquote{a nested one} inside}, \textquote{another}, and \blockquote{A block quotation.}
+\end{document}

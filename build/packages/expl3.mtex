@@ -1,0 +1,18 @@
+% expl3: LaTeX3.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{expl3}
+\ExplSyntaxOn
+\tl_new:N \l_title_tl
+\tl_set:Nn \l_title_tl {Report}
+\int_new:N \l_count_int
+\int_set:Nn \l_count_int {6 * 7}
+\cs_new:Npn \my_greet:n #1 {Hello,~#1}
+\NewDocumentCommand{\greet}{m}{\my_greet:n{#1}}
+\NewDocumentCommand{\answer}{}{\int_use:N \l_count_int}
+\NewDocumentCommand{\thetitle}{}{\tl_use:N \l_title_tl}
+\ExplSyntaxOff
+\begin{document}
+\greet{world}: the answer is \answer, and the title is \thetitle.
+\end{document}

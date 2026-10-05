@@ -1,0 +1,13 @@
+% authblk: authors and affiliations.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{authblk}
+\begin{document}
+\title{A Paper}
+\author[1]{Ada Lovelace}
+\author[2]{Charles Babbage}
+\affil[1]{London}
+\affil[2]{Cambridge}
+\maketitle
+\end{document}

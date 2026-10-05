@@ -25,7 +25,18 @@ sees, newest work last within each group.
 - **Unknown packages are warnings.** `\usepackage{anything}` never stops a
   document: an unknown package is marked loaded, named in a warning, and its
   commands found in the glossary when they are used.
-- **About 360 of the 394 most-used CTAN packages load cleanly** (was 121):
+- **509 packages and 14 classes, each proven by a document of its own**
+  (was about 360, and 121 before that): `build/packages/<name>.mtex` uses
+  what its package is loaded for, and the engine's test sets all 523 and fails
+  on any error, any unknown package and any command nothing defines. New
+  folders this round: `CJK`, `SIunits`, `acro`, `axodraw2`, `bohr`,
+  `changepage`, `commath`, `dirac`, `elements`, `emoji`, `environ`, `feynmp`,
+  `fmtcount`, `modiagram`, `newfloat`, `ntheorem`, `outlines`, `paracol`,
+  `pgf`, `pgfgantt`, `pst-node`, `pstricks`, `scrlayer-scrpage`, `sidenotes`,
+  `smartdiagram`, `tabu`, `tasks`, `textpos`, `thmtools`, `threeparttablex`,
+  `tikz-feynman`, `tipa`, `titleps`, `tkz-euclide`, `totpages` and `xifthen`;
+  the rest are glossary lines, aliases or provided names. Before that, about
+  360 of the 394 most-used CTAN packages loaded:
   font, driver and internal packages are marked provided, grouped by why, in
   `core/compatibility.mtex`; a package that is another under a newer or older
   name is an alias there (`xurl`→`url`, `soulutf8`→`soul`, `subfigure`→`subfig`,
@@ -135,6 +146,13 @@ sees, newest work last within each group.
 - `\ifvoid`, `\ifhbox` and `\ifvbox` ask after a box register.
 - `\count255` and the rest of the 256 registers are there.
 - `\@ifnextchar\bgroup` asks after a brace group.
+- An internal integer or length -- a register's name, a `\newbox`'s, a
+  `\chardef`'s -- takes no optional space after it, as in TeX: only digits
+  and a unit do. `\usebox{\held} and` kept no space before its word.
+- Each of several category changes in a row carries on the control word
+  before the characters it makes letters, not only the first.
+- `\the\value{counter}` prints the counter, LaTeX's `\value` being the
+  register it names.
 - `@` is an ordinary character in a document, as LaTeX has it: a name
   nothing defines that runs on past an `@` -- `\xymatrix@C=1em`,
   `\ar@{-->}` -- is the name before it and then its characters. The engine's
@@ -179,6 +197,51 @@ sees, newest work last within each group.
 - `quantikz`, `forest`, `tikz-qtree`, `qtree`, `xy` (`xypic`), `amscd` and
   `qcircuit` load, drawn as above; tikz-cd, quantikz and forest load TikZ, as
   they do in LaTeX, and quantikz braket's kets.
+- **xstring** is native (`syntax::primitives::Strings`): `\IfSubStr`,
+  `\IfBeginWith`, `\IfEndWith`, `\IfStrEq`, `\IfEq`, `\IfInteger`,
+  `\IfDecimal`, `\StrLen`, `\StrLeft`, `\StrRight`, `\StrMid`, `\StrChar`,
+  `\StrGobbleLeft` and `Right`, `\StrBefore`, `\StrBehind`, `\StrBetween`,
+  `\StrSubstitute`, `\StrDel`, `\StrCount` and `\StrPosition`, each worked out
+  in one pass on the expanded text, UTF-8 characters counted whole, a result
+  set where it stands or kept in the macro named after it.
+- **csvsimple and datatool** are one native module
+  (`syntax::primitives::Records`): `\csvreader` with `head to column names`,
+  `tabular=` and `table head=`, `\csvautotabular`, `\csvautobooktabular`;
+  `\DTLnewdb`, `\DTLnewrow`, `\DTLnewdbentry`, `\DTLloaddb`, `\DTLforeach`,
+  `\DTLdisplaydb`, `\DTLrowcount`, `\DTLcolumncount`, `\DTLgetvalue`,
+  `\DTLfetch`, `\DTLsort` and `\DTLsumcolumn`; quoted fields, and commas,
+  semicolons or tabs between them.
+- ifthen's tests are native (`\@iftest`): numbers compared, `\equal`,
+  `\boolean`, `\isodd` and `\lengthtest`, joined by `\AND` and `\OR`, turned
+  by `\NOT` and grouped by `\(` and `\)`; `\ifthenelse` and `\whiledo` are
+  made of it, and xifthen adds `\isempty`, `\isin` and `\isnamedefined`.
+- Numbers in words: fmtcount's `\numberstringnum`, `\ordinalstringnum`,
+  `\numberstring{counter}` and their capitalised kin, from a native
+  `\@numberwords` (`Numeral::words`).
+- **expl3, the basics** (`core/expl3.mtex`): `\ExplSyntaxOn` and `Off`;
+  `\cs_new:Npn`, `\cs_set:Npn` and their protected, `nopar` and `_eq`
+  forms; token lists (`\tl_new:N`, `\tl_set:Nn`, `\tl_put_right:Nn`,
+  `\tl_if_empty:nTF`, …), integers (`\int_set:Nn`, `\int_incr:N`,
+  `\int_compare:nTF`, `\int_to_roman:n`, …), booleans, `\str_if_eq:nnTF`,
+  `\str_case:nn`, `\fp_eval:n`, `\keys_define:nn` and messages -- enough for
+  a preamble's own LaTeX3 macros.
+- cleveref's lists: `\cref{sec:a,sec:b}` reads `sections 1 and 2`, labels of
+  different kinds each named in turn, as cleveref has them. A reference
+  nothing defines is reported once the document's end code has run, so
+  lastpage's `\pageref{LastPage}` resolves.
+- fancyvrb's `Verbatim*` and `BVerbatim`, `spverbatim`, `boxedverbatim`, and
+  luacode's `luacode` and `luacode*` (read and not run) are verbatim blocks;
+  `\Verb` is `\verb`. url's `\path` outside a picture.
+- newfloat's `\DeclareFloatingEnvironment` and the float package's
+  `\newfloat` make a float kind of the document's own, its caption named.
+- xfp and l3fp's `sqrt`, `abs`, `round`, `floor`, `ceil`, `trunc`, `min`,
+  `max`, `pi` and `e`; pgfplotstable's `\pgfplotstabletypeset` sets a table
+  from its file; tabularray's `colspec=`; `xltabular`.
+- An unknown `\pagestyle{name}` runs `\ps@name`, as LaTeX's does, so a
+  package's own page styles work; `\parindent` is a real register.
+- An environment nothing else defines is read from the glossary's `\name` and
+  `\endname` lines; iftex's `\ifluatex`, `\ifxetex` and `\ifpdftex` are false
+  as pdfTeX's would be in this engine; `\smash` in text; `\-`.
 
 ### Languages
 
@@ -288,11 +351,31 @@ sees, newest work last within each group.
   `build/main.mtex` checks them on the page.
 - A math argument may be empty: `\frac{}{2}`, `\underset{}{=}`.
 - Wide accents and arrows over a symbol (`\widehat`, `\widetilde`,
-  `\overrightarrow`) now draw their marks.
+  `\overrightarrow`) draw their marks in the font's first width that spans
+  what they cover (`typography::Expression::widen`, the MATH table's
+  horizontal variants); every accent is centred over its letter by the mark's
+  ink, not its advance, so a combining mark no longer leans onto the letter
+  before it.
+- **Braces over and under**: `\overbrace` and `\underbrace`, and
+  `\overbracket`, `\underbracket`, `\overparen` and `\underparen`, drawn the
+  width of what they span, tapering as a pen's stroke does, with the label
+  written as a script set over or under them as a limit, in a line as in a
+  display.
 - **Paragraphs break as TeX breaks them**: a pass without hyphenating up to
-  `\pretolerance` (100), then one hyphenating up to `\tolerance` (200), then
-  an emergency pass; Knuth's demerits with `\doublehyphendemerits`,
-  `\finalhyphendemerits` and `\adjdemerits` across fitness classes.
+  `\pretolerance` (100), then one hyphenating up to `\tolerance` (200), then,
+  when neither keeps every line inside the column, one with
+  `\emergencystretch` (3em) credited to every line; Knuth's demerits with
+  `\doublehyphendemerits`, `\finalhyphendemerits` and `\adjdemerits` across
+  fitness classes. The last pass used to take any line up to badness 2000,
+  so a narrow column -- a `p{3cm}` cell -- ran a word into its rule rather
+  than set a looser line.
+- `\parbox[t]` and `[b]`, and a minipage's, stand on their first or last
+  line's baseline: the line was taken to be the paragraph, so a box hung by
+  its first paragraph's whole height.
+- tabbing's stops stand past the space typed before `\=`, as LaTeX's do, and
+  a line `\kill` ends is measured and not drawn -- in a tabbing, a tabular or
+  a longtable alike. It used to be printed, its columns glued together.
+- `\` ending a source line is a word space in a formula too, as `\ ` is.
 - **Space after a sentence** is TeX's: the space factor of `.`, `?` and `!`
   (3000), `:` (2000), `;` (1500) and `,` (1250) widens and loosens the space
   after it, and a capital before the full stop keeps it an abbreviation's;
@@ -385,6 +468,18 @@ sees, newest work last within each group.
   top or bottom, `([yshift=-.5ex]a.center)`. It used to hang below the line.
   `\tikz[options]{...}` and `\tikz \draw ...;` both read.
 - Lengths in picas, `dd` and `cc`, in a picture's options.
+- **LaTeX's own picture**: `\begin{picture}(w,h)(x,y)` is a canvas in
+  `\unitlength`, and `\put`, `\multiput`, `\line`, `\vector`, `\circle`,
+  `\circle*`, `\oval`, `\qbezier`, `\bezier`, `\makebox`, `\framebox` and
+  `\dashbox` of a size, `\thicklines`, `\thinlines` and `\linethickness`
+  draw on it (`core/picture.mtex`, over the TikZ paths). Outside a picture
+  `\makebox` and `\framebox` are what they always are.
+- TikZ's `overlay` and `remember picture`: the picture takes no room, and
+  `current page` and `current page text area` are nodes, so a picture can
+  stand at a page's corner.
+- `\includegraphics{figure.tikz}` (or `.pgf`) reads the file as the picture
+  it writes; mwe's `example-image`, `-a`, `-b`, `-c` and their kin are framed
+  boxes of their size with their name in them.
 
 ### The file
 
@@ -471,6 +566,9 @@ font folders are listed only for a script the engine carries no face for.
   on a curve stood by its end.
 - A picture in a line hung below the baseline; `\tikz[baseline]{...}` read
   its bracket as the picture; a length in picas was none.
+- A binary operator with nothing after it before a formula's closing `$` or
+  a group's `}` -- `$a+$`, `{x-}` -- took the closing token as its operand
+  and read on past the formula.
 
 ### Tests
 
@@ -497,6 +595,19 @@ font folders are listed only for a script the engine carries no face for.
 - Then: `test_diagrams` -- tikz-cd, xy-pic and amscd diagrams, a numbered
   one's number at its middle, circuits, trees; and a picture on the
   baseline, `\matrix`, a label halfway along its line, edges and loops.
+- Then: `test_strings` and `test_records`; numbers in words; a font's wide
+  variants; `\the\value`; category changes in a row; and in `test_engine`
+  every one of the 523 documents in `build/packages`. 85 tests pass in Debug
+  and Release, with no warning in either build.
+- `build/main.mtex` has a third appendix, **Kernel checks**, setting what
+  LaTeX's own kernel gives a document with no package at all: every face,
+  series, shape and size; accented and foreign letters and the specials;
+  every space and fill; the text blocks, tabbing and `list`; lists four deep
+  in every kind; notes, counters and lengths; `\def`, `\csname` and the `\if`
+  family; every box; a tabular with every rule; LaTeX's picture; maths --
+  Greek, alphabets, accents, relations, arrows, dots, matrices, braces,
+  radicals, delimiters, operators and limits; and every kind of reference.
+  The paper runs to eleven pages, and the test reads the appendix's text.
 
 ### Documentation
 
@@ -505,6 +616,11 @@ font folders are listed only for a script the engine carries no face for.
   `\@bibkind`), long definitions, characters and category changes, links and
   text given later, and environments as native blocks. The Doxygen reference
   builds with no warnings.
+- Then: ifthen's test language, `\@ifempty` as the TeX test it is, a body
+  that must end in the `\@ifnextchar` deciding it, xstring and the data
+  tables, environments from the glossary, what a category change in a
+  package's own file reaches, and a package's sample document in
+  `build/packages`.
 
 ### Names
 

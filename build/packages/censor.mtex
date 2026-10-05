@@ -1,0 +1,8 @@
+% censor: blacked out text.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{censor}
+\begin{document}
+The password is \censor{secret} and \blackout{this too}.
+\end{document}

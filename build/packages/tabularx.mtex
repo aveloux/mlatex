@@ -1,0 +1,10 @@
+% tabularx: a table stretched to a width.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tabularx}
+\begin{document}
+\begin{tabularx}{\textwidth}{lX>{\raggedleft\arraybackslash}X}
+Term & A description long enough to wrap within its column and then some more words. & Right \\
+\end{tabularx}
+\end{document}

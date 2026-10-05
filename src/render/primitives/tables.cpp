@@ -336,15 +336,17 @@ namespace render::primitives {
         };
         // nicematrix's and tabularray's tables are read as the tabular they
         // write out, their own keys aside.
-        static constexpr std::array<Kind, 13> kinds{{
+        static constexpr std::array<Kind, 14> kinds{{
             {"tabular", false}, {"tabular*", true}, {"tabularx", true}, {"longtable", false}, {"supertabular", false},
             {"tabulary", true}, {"xtabular", false}, {"longtable*", false}, {"NiceTabular", false},
             {"NiceTabular*", true}, {"NiceTabularX", true}, {"tblr", false}, {"longtblr", false},
+            {"xltabular", true},
         }};
         for (const auto& [name, sized] : kinds) {
+            const bool keyed = name.ends_with("tblr");
             context.blocks.watch(
                 name,
-                [this, sized](syntax::Mouth& mouth) {
+                [this, sized, keyed](syntax::Mouth& mouth) {
                     Opening opening;
                     if (sized) opening.width = syntax::Argument::text(mouth);
                     // A vertical position, `[t]`: which of its rows the table
@@ -352,7 +354,28 @@ namespace render::primitives {
                     for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                         if (!token.text.empty()) opening.position = token.text.front();
                     }
-                    opening.columns = preamble(mouth.argument({}, 0), &customs);
+                    std::vector<syntax::Token> columns = mouth.argument({}, 0);
+                    // tabularray's keys, `colspec={lcr}, hlines`: the preamble
+                    // is what its colspec holds, the rest of its keys read.
+                    std::string spelled;
+                    std::vector<std::size_t> starts;
+                    for (const syntax::Token& token : columns) {
+                        starts.push_back(spelled.size());
+                        spelled += token.text;
+                    }
+                    if (const std::size_t found = spelled.find("colspec"); keyed && found != std::string::npos) {
+                        std::size_t at = static_cast<std::size_t>(std::ranges::lower_bound(starts, found) - starts.begin());
+                        while (at < columns.size() && !columns[at].is(syntax::Catcodes::Category::Group, '{')) ++at;
+                        std::vector<syntax::Token> inside;
+                        int depth = 0;
+                        for (++at; at < columns.size(); ++at) {
+                            if (columns[at].is(syntax::Catcodes::Category::Group, '{')) ++depth;
+                            if (columns[at].is(syntax::Catcodes::Category::Group, '}') && depth-- == 0) break;
+                            inside.push_back(columns[at]);
+                        }
+                        columns = std::move(inside);
+                    }
+                    opening.columns = preamble(columns, &customs);
                     openings.push_back(std::move(opening));
                     mouth.ingest("\\tabular ");
                 },
@@ -363,8 +386,9 @@ namespace render::primitives {
         // moving to the next. Read as a table of left-aligned columns with
         // nothing between them -- each as wide as its widest entry, where
         // tabbing takes the first line's -- and inside it, undone when it
-        // closes, the two are the table's `&`. A line \\kill ends is set as
-        // the others are.
+        // closes, the two are a word space and the table's `&`: a stop stands
+        // past the space typed before it. A line \\kill ends is measured and
+        // not drawn, as a table's is.
         context.blocks.watch(
             "tabbing",
             [this](syntax::Mouth& mouth) {
@@ -372,8 +396,8 @@ namespace render::primitives {
                 Opening opening;
                 opening.columns = preamble(mouth.argument({}, 0), &customs);
                 openings.push_back(std::move(opening));
-                mouth.ingest("\\@define\\={&}\\@define\\>{&}\\@define\\+{}\\@define\\-{}\\@define\\<{}"
-                             "\\@define\\kill{\\\\}\\par\\noindent\\tabular ");
+                mouth.ingest("\\@define\\={\\ &}\\@define\\>{\\ &}\\@define\\+{}\\@define\\-{}\\@define\\<{}"
+                             "\\par\\noindent\\tabular ");
             },
             [](syntax::Mouth& mouth) { mouth.ingest("\\endtabular\\par "); });
 
@@ -427,9 +451,10 @@ namespace render::primitives {
             const syntax::Symbol rowcolor = lexicon.intern("\\rowcolor");
             const syntax::Symbol cellcolor = lexicon.intern("\\cellcolor");
             const syntax::Symbol columncolor = lexicon.intern("\\columncolor");
-            const std::array<syntax::Symbol, 15> stops{
+            const syntax::Symbol kill = lexicon.intern("\\kill");
+            const std::array<syntax::Symbol, 16> stops{
                 ampersand, newline, alternative, end, hline, toprule, midrule, bottomrule,
-                cmidrule, cline, addlinespace, multicolumn, rowcolor, cellcolor, columncolor,
+                cmidrule, cline, addlinespace, multicolumn, rowcolor, cellcolor, columncolor, kill,
             };
 
             const typography::Font* body = context.selection.text();
@@ -477,6 +502,7 @@ namespace render::primitives {
                 std::vector<Stroke> strokes{};   ///< Rules between it and the row above.
                 float gap{0.0f};                 ///< Extra space below it, from `\\[length]`.
                 std::optional<layout::Node::Color> fill{};   ///< Painted behind it: `\\rowcolor`.
+                bool hidden{false};              ///< Ended by `\\kill`: measured, and not drawn.
             };
 
             std::vector<Line> lines;
@@ -648,9 +674,10 @@ namespace render::primitives {
                     continue;
                 }
 
-                if (matched == newline || matched == alternative) {
+                if (matched == newline || matched == alternative || matched == kill) {
                     current.cells.push_back(std::move(cell));
                     cell = Cell{};
+                    current.hidden = matched == kill;
 
                     // `\\*` forbids a page break nothing would take here, and
                     // `\\[4pt]` asks for more room below this row.
@@ -884,6 +911,7 @@ namespace render::primitives {
             std::vector<layout::Node*> stack;
             for (std::size_t line = 0; line < lines.size(); ++line) {
                 for (const Stroke& rule : lines[line].strokes) stroke(rule, stack);
+                if (lines[line].hidden) continue;
 
                 // How tall and deep the row stands: its tallest cell, and never
                 // less than a strut.

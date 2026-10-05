@@ -1,0 +1,8 @@
+% totpages: the number of pages.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{totpages}
+\begin{document}
+Page \thepage{} of \ref{TotPages}.
+\end{document}

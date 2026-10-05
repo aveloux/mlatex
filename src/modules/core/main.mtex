@@ -23,3 +23,5 @@
 \include{headings}    % \paragraph and \subparagraph, run in
 \include{shorthand}   % \eg, \ie, \etc and the other Latin abbreviations
 \include{text}        % \bf, \it, \rm and TeX's other one-word styles
+\include{picture}     % LaTeX's picture: \put, \line, \circle, \multiput
+\include{expl3}       % \ExplSyntaxOn and LaTeX3's commonest functions

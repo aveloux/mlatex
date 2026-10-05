@@ -1,0 +1,16 @@
+% class-scrbook: KOMA-Script's book.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{scrbook}
+\begin{document}
+\frontmatter
+\title{A KOMA Book}
+\author{Ada Lovelace}
+\maketitle
+\mainmatter
+\chapter{Engines}
+Text.
+\backmatter
+\chapter{Afterword}
+Fin.
+\end{document}

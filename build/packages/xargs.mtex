@@ -1,0 +1,8 @@
+% xargs: several optional arguments.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{xargs}
+\begin{document}
+\newcommandx{\range}[3][1=0, 3=1]{#1 to #2 by #3}\range{10} \range[2]{8}[2]
+\end{document}

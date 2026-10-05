@@ -1,0 +1,8 @@
+% amssymb: the AMS symbols.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{amssymb}
+\begin{document}
+$\mathbb{R} \mathfrak{g} \therefore \because \varnothing \leqslant \geqslant \nleq \subsetneq \square \blacksquare \lozenge \checkmark \mho \beth \gimel \circledR \curlyvee \rightleftharpoons \twoheadrightarrow \lesssim \gtrsim \approxeq \triangleq$
+\end{document}

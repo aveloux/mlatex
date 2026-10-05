@@ -1,0 +1,13 @@
+% pgfgantt: Gantt charts.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pgfgantt}
+\begin{document}
+\begin{ganttchart}{1}{6}
+\gantttitle{Weeks}{6} \\
+\ganttbar{Design}{1}{2} \\
+\ganttbar{Build}{3}{5} \\
+\ganttmilestone{Ship}{6}
+\end{ganttchart}
+\end{document}

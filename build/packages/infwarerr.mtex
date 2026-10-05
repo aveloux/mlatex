@@ -1,0 +1,8 @@
+% infwarerr: info, warnings and errors.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{infwarerr}
+\begin{document}
+\@PackageInfo{x}{information} Text.
+\end{document}

@@ -1,6 +1,14 @@
-% comment: text left out. The comment block is the engine's own; a block of
-% another name made one with \excludecomment is set as written here.
+% comment: text left out. The comment block is the engine's own, its body
+% never read. \excludecomment{name} makes a block of another name that
+% leaves out what it holds -- read up to its \end and let go --
+% \includecomment{name} one that keeps it, and \specialcomment{name}{before}{after}
+% one that keeps it between the two.
 
-\@define\includecomment[1]{}
-\@define\excludecomment[1]{}
-\@define\specialcomment[3]{}
+\@define\includecomment[1]{\@namedef{#1}{}\@namedef{end#1}{}}
+\@define\excludecomment[1]{\@namedef{#1}{\@commentskip{#1}}\@namedef{end#1}{}}
+\@define\specialcomment[3]{\@namedef{#1}{#2}\@namedef{end#1}{#3}}
+\@define\processcomment[4]{\@namedef{#1}{#2}\@namedef{end#1}{#3}}
+
+% Everything up to an \end, and again until the \end is the block's own.
+\@spanning\@define\@commentskip#1{\@define\@commentname{#1}\@commentgobble}
+\@spanning\@define\@commentgobble#1\end#2{\@ifstrequal{#2}{\@commentname}{\end{#2}}{\@commentgobble}}

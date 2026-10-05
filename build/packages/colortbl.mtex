@@ -1,0 +1,12 @@
+% colortbl: tables in colour.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\begin{document}
+\begin{tabular}{>{\columncolor{yellow}}lc}
+\rowcolor{gray!20} a & b \\
+c & \cellcolor{red!30} d \\
+\end{tabular}
+\end{document}

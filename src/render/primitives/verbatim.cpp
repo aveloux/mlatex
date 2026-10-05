@@ -101,8 +101,8 @@ namespace render::primitives {
             return context.selection.text() ? context.selection.text()->size() : context.document.configuration.size;
         };
 
-        // Inline: the text after \verb, \lstinline or \mintinline, one box.
-        for (const std::string_view name : {"\\verb", "\\lstinline", "\\mintinline"}) {
+        // Inline: the text after \verb, \Verb, \lstinline or \mintinline, one box.
+        for (const std::string_view name : {"\\verb", "\\Verb", "\\lstinline", "\\mintinline"}) {
             parser.bind(name, [this, typed, current, name](syntax::Parser& parser) -> syntax::Node* {
                 syntax::Mouth& mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
@@ -121,12 +121,14 @@ namespace render::primitives {
         // lexer made one token of.
         // minted's block is a listing too, its language read after its
         // options and let go: a listing here is not highlighted.
-        for (const std::string_view name : {"verbatim", "verbatim*", "Verbatim", "lstlisting", "comment", "minted", "CCSXML"}) {
+        for (const std::string_view name : {"verbatim", "verbatim*", "Verbatim", "Verbatim*", "BVerbatim", "spverbatim",
+                                            "boxedverbatim", "lstlisting", "comment", "minted", "CCSXML", "luacode",
+                                            "luacode*"}) {
             context.blocks.watch(
                 name,
                 [this, name](syntax::Mouth& mouth) {
                     std::string options;
-                    if (name == "lstlisting" || name == "Verbatim" || name == "minted") {
+                    if (name == "lstlisting" || name.contains("Verbatim") || name == "minted") {
                         for (const syntax::Token& token :
                              mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                             options += token.text;
@@ -134,7 +136,8 @@ namespace render::primitives {
                     }
                     if (name == "minted") static_cast<void>(mouth.argument({}, 0));
                     const bool listing = name == "lstlisting" || name == "minted";
-                    openings.push_back({listing ? "lstlisting" : name == "comment" || name == "CCSXML" ? "comment" : "verbatim",
+                    const bool unread = name == "comment" || name == "CCSXML" || name.starts_with("luacode");
+                    openings.push_back({listing ? "lstlisting" : unread ? "comment" : "verbatim",
                                         std::move(options)});
                     const syntax::Token mark{.symbol = start, .category = syntax::Catcodes::Category::Escape,
                                              .text = mouth.lexicon.resolve(start)};

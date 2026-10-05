@@ -1,0 +1,14 @@
+% biblatex: bibliographies from .bib files.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[style=authoryear,backend=biber]{biblatex}
+\begin{filecontents}{refs.bib}
+@book{knuth, author = {Donald Knuth}, title = {The TeXbook}, year = {1984}, publisher = {Addison-Wesley}}
+@book{lamport, author = {Leslie Lamport}, title = {LaTeX: A Document Preparation System}, year = {1994}, publisher = {Addison-Wesley}}
+\end{filecontents}
+\addbibresource{refs.bib}
+\begin{document}
+As \textcite{knuth} shows \parencite{knuth}; see also \cite{lamport} and \autocite{knuth}.
+\printbibliography
+\end{document}

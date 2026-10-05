@@ -61,6 +61,13 @@ int main() {
     const render::typography::Expression::Variant tallest = table.stretch(radical, 1000.0f);
     assert((tallest.advance < 1000.0f && tallest.advance >= tall.advance) && "past every size, the tallest");
 
+    const std::uint32_t hat = maths.index(0x0302);
+    const render::typography::Expression::Variant narrow = table.widen(hat, 1.0f);
+    const render::typography::Expression::Variant wide = table.widen(hat, 3.0f * narrow.advance);
+    assert((narrow.glyph == hat) && "a narrow body takes the mark as it is");
+    assert((wide.glyph != hat && wide.advance > narrow.advance) && "a wide one takes a wider mark");
+    assert((table.widen(hat, 1000.0f).advance >= wide.advance) && "past every width, the widest");
+
     const render::typography::Expression::Assembly built = table.assemble(radical, 120.0f);
     assert((built.pieces.size() >= 3) && "a height past every size is built from parts");
     assert((built.span >= 119.9f) && "and reaches it");

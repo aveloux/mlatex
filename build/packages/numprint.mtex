@@ -1,0 +1,8 @@
+% numprint: numbers with separators.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{numprint}
+\begin{document}
+\numprint{1234567.891} and \np{1000}.
+\end{document}

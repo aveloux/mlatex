@@ -1,0 +1,8 @@
+% silence: silencing warnings.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{silence}
+\begin{document}
+\WarningsOff[latex]\WarningFilter{latex}{Text}\ErrorsOff Text.
+\end{document}

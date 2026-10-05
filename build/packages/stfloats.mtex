@@ -1,0 +1,8 @@
+% stfloats: floats at the foot.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[twocolumn]{article}
+\usepackage{stfloats}
+\begin{document}
+\begin{figure*}[b]\centering\rule{3cm}{1cm}\caption{At the bottom}\end{figure*}Text.
+\end{document}

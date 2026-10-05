@@ -74,7 +74,7 @@ namespace render::primitives {
     private:
         /// @brief One float being read.
         struct Open {
-            std::string kind{};   ///< Its counter: `figure`, `table` or `algorithm`.
+            std::string kind{};   ///< Its counter: `figure`, `table`, `algorithm` or a kind of the document's own.
             bool ruled{false};    ///< Set between rules, its caption at the head, as an algorithm is.
             bool captioned{false};   ///< Its own caption has been read, and its counter stepped.
             std::uint8_t place{0};   ///< Where it may go, as layout::Node::Directive::Place bits.

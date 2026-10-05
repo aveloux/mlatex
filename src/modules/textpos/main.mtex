@@ -1,0 +1,18 @@
+% textpos: a block of text at a place on the page. The block is set where it
+% stands in the text; its place and its width are read.
+%
+%   \begin{textblock}{3}(1,1) text \end{textblock}
+%   \begin{textblock*}{3cm}(2cm,2cm) text \end{textblock*}
+
+\@define\textblock[1]{\@textblockat}
+\@define\@textblockat(#1){}
+\@define\endtextblock{\par}
+\expandafter\@define\csname textblock*\endcsname[1]{\@textblockat}
+\expandafter\@define\csname endtextblock*\endcsname{\par}
+\@define\textblockorigin[2]{}
+\@define\TPGrid[3][]{}
+\@define\TPshowboxestrue{}
+\@define\TPshowboxesfalse{}
+\@define\textblockcolour[1]{}
+\@define\textblockcolor[1]{}
+\@define\textblockrulecolour[1]{}

@@ -1,0 +1,11 @@
+% import: importing files.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{import}
+\begin{filecontents}{part.mtex}
+Imported text.
+\end{filecontents}
+\begin{document}
+\import{./}{part.mtex}
+\end{document}

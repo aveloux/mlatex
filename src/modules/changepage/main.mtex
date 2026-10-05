@@ -1,0 +1,17 @@
+% changepage: a stretch of text wider or narrower than the column, and
+% whether the page being set is an odd one -- which, the page being made
+% after its text is read, is taken to be so: a right-hand page.
+%
+%   \begin{adjustwidth}{1cm}{-1cm} ... \end{adjustwidth}
+%   \checkoddpage\ifoddpage right-hand\else left-hand\fi
+
+\newif\ifoddpage
+\@define\checkoddpage{\oddpagetrue}
+\@define\adjustwidth[2]{\par\leftskip=#1\relax\rightskip=#2\relax}
+\@define\endadjustwidth{\par}
+\expandafter\@define\csname adjustwidth*\endcsname[2]{\par\leftskip=#1\relax\rightskip=#2\relax}
+\expandafter\@define\csname endadjustwidth*\endcsname{\par}
+\@define\changetext[5]{}
+\@define\changepage[9]{}
+\@define\strictpagecheck{}
+\@define\easypagecheck{}

@@ -1,0 +1,18 @@
+% longtable: tables over pages.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{longtable}
+\begin{document}
+\begin{longtable}{lr}
+\caption{A long table}\\
+\hline Item & Value \\ \hline
+\endfirsthead
+\hline Item & Value \\ \hline
+\endhead
+\hline \endfoot
+\endlastfoot
+a & 1 \\
+b & 2 \\
+\end{longtable}
+\end{document}

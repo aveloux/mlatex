@@ -1,0 +1,8 @@
+% keyval: keys and values.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{keyval}
+\begin{document}
+\define@key{fam}{size}{\def\size{#1}}\setkeys{fam}{size=10} Text.
+\end{document}

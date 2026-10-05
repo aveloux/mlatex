@@ -148,6 +148,7 @@ namespace render::primitives {
         mutable std::vector<syntax::Traceback> tracebacks{};    ///< Errors this module found.
 
         syntax::Symbol place{};   ///< The mark a label leaves in the text; no document can write it.
+        syntax::Symbol audit{};   ///< The mark the document's end leaves, read after its hooks: no document can write it.
     };
 
 }

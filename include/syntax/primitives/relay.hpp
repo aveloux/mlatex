@@ -86,9 +86,9 @@ namespace syntax::primitives {
 
         /// The tests named `\\if...` that take their branches as arguments
         /// -- `\\ifstar`, `\\ifnextchar`, `\\ifstrequal`, `\\ifvariable`,
-        /// `\\ifpackageloaded`, `\\iffile`, each under its `@` name as well --
-        /// and so have no `\\fi` for a skip to count.
-        std::array<Symbol, 12> forms{};
+        /// `\\ifpackageloaded`, `\\iffile`, `\\iftest`, each under its `@` name
+        /// as well -- and so have no `\\fi` for a skip to count.
+        std::array<Symbol, 14> forms{};
 
         /// @brief Whether a token opens a conditional a skip has to count
         ///        past: a primitive `\\if...` closed by `\\fi`, or another

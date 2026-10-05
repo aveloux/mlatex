@@ -1,0 +1,8 @@
+% xfrac: slashed fractions.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{xfrac}
+\begin{document}
+$\sfrac{1}{2}$ and \sfrac{3}{4} cup.
+\end{document}

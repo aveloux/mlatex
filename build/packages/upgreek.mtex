@@ -1,0 +1,8 @@
+% upgreek: upright Greek.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{upgreek}
+\begin{document}
+$\upalpha \upbeta \upgamma \Updelta \upmu \uppi$
+\end{document}

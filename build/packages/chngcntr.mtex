@@ -1,0 +1,8 @@
+% chngcntr: counters within counters.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{chngcntr}
+\begin{document}
+\counterwithin{figure}{section}\counterwithout{equation}{section}\section{S}\begin{figure}[h]\caption{F}\end{figure}
+\end{document}

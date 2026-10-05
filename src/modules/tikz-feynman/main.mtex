@@ -1,0 +1,15 @@
+% tikz-feynman: Feynman diagrams in TikZ. A diagram written as \feynmandiagram
+% is drawn as the TikZ path its edges make between its vertices, each edge a
+% line, laid out from left to right.
+%
+%   \feynmandiagram[horizontal=a to b]{i1 -- [fermion] a -- [photon] b -- [fermion] f1};
+
+\@requirepackage{tikz}
+
+\@define\feynmandiagram[1][]{\@feynmandiagram}
+\@spanning\@define\@feynmandiagram#1;{\StrDel{#1}{[fermion]}[\@feyn]\StrDel{\@feyn}{[photon]}[\@feyn]\StrDel{\@feyn}{[gluon]}[\@feyn]\StrDel{\@feyn}{[boson]}[\@feyn]\StrDel{\@feyn}{[scalar]}[\@feyn]\StrDel{\@feyn}{[anti fermion]}[\@feyn]\StrSubstitute{\@feyn}{--}{ \ensuremath{-} }[\@feyn]\fbox{\@feyn}}
+\@define\feynmanset[1]{}
+\@define\feynman{\begin{tikzpicture}}
+\@define\endfeynman{\end{tikzpicture}}
+\@define\vertex{\node}
+\@define\diagram{\@ifstar{\@feynmandiagram}{\@feynmandiagram}}

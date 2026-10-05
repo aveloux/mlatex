@@ -1,0 +1,8 @@
+% stmaryrd: St Mary's Road symbols.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{stmaryrd}
+\begin{document}
+$\llbracket x \rrbracket \quad \mapsfrom \quad \shortrightarrow$
+\end{document}

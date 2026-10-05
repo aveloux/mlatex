@@ -1,0 +1,9 @@
+% roboto: a family of faces, set in the faces the engine carries.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{roboto}
+\begin{document}
+Body text in \textbf{bold}, \textit{italic}, \textsc{small capitals} and \texttt{typewriter},
+with a formula $\int_0^1 x^2\,dx = \frac{1}{3}$ and $\alpha + \beta = \gamma$.
+\end{document}

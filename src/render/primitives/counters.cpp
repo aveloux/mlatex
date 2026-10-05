@@ -9,9 +9,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
+#include <charconv>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 
 namespace render::primitives {
@@ -292,6 +295,32 @@ namespace render::primitives {
                 if (!text.empty()) mouth.ingest(mouth.arena.copy(text));
             });
         }
+
+        // A number in words, as fmtcount writes one: `\@numberwords{style}{n}`,
+        // the style `number`, `Number` or `NUMBER` for the cardinal in lower
+        // case, capitalised or in capitals, and `ordinal`, `Ordinal` or
+        // `ORDINAL` for the ordinal the same three ways.
+        parser.mouth.bind("\\@numberwords", [this](syntax::Mouth& mouth) {
+            const memory::Location origin = mouth.lookahead().location;
+            const std::string style = syntax::Argument::text(mouth);
+            const std::string written = syntax::Argument::expanded(mouth);
+            int value = 0;
+            const auto [end, fault] = std::from_chars(written.data(), written.data() + written.size(), value);
+            if (fault != std::errc{} || end != written.data() + written.size()) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                         "A number is wanted in words, not '" + written + "'");
+                return;
+            }
+            const bool ordinal = style == "ordinal" || style == "Ordinal" || style == "ORDINAL";
+            std::string text = Numeral::words(value, ordinal);
+            if (style == "Number" || style == "Ordinal") {
+                text[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(text[0])));
+            } else if (style == "NUMBER" || style == "ORDINAL") {
+                std::ranges::transform(text, text.begin(),
+                                       [](const char letter) { return static_cast<char>(std::toupper(static_cast<unsigned char>(letter))); });
+            }
+            mouth.ingest(mouth.arena.copy(text));
+        });
 
         // LaTeX's own counters, which the other modules step: equations,
         // floats and footnotes, each printed in Arabic numerals.

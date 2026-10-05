@@ -1,0 +1,15 @@
+% ifthen: LaTeX's older conditionals.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{ifthen}
+\begin{document}
+\newboolean{final}
+\setboolean{final}{true}
+\ifthenelse{\boolean{final}}{Final.}{Draft.}
+\ifthenelse{\equal{a}{a}}{Equal.}{}
+\ifthenelse{\isodd{3}}{Odd.}{Even.}
+\ifthenelse{1 < 2 \AND \NOT 2 < 1}{Both.}{}
+\newcounter{n}\setcounter{n}{3}
+\whiledo{\value{n} > 0}{\arabic{n} \addtocounter{n}{-1}}
+\end{document}

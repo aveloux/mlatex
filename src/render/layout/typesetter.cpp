@@ -65,7 +65,8 @@ namespace render::layout {
         if (name == ":") return 4.0f;     // medium
         if (name == ";") return 5.0f;     // thick
         if (name == "!") return -3.0f;    // negative thin
-        if (name == " " || name == "~") return 6.0f;   // a word space: `\ ` and a tie
+        // A word space: `\ `, a tie, and a backslash ending its line.
+        if (name == " " || name == "~" || name == "\n" || name == "\r" || name == "\r\n") return 6.0f;
         if (name == "quad") return 18.0f;
         if (name == "qquad") return 36.0f;
         return 0.0f;
@@ -1074,7 +1075,13 @@ namespace render::layout {
                       (named == "lim" || named == "max" || named == "min" || named == "sup" || named == "inf" ||
                        named == "det" || named == "gcd" || named == "Pr")));
 
-                if (displayed && bounded) {
+                // A brace's label goes over or under it in a line as well,
+                // as TeX sets one: the brace is an operator with \\limits.
+                const std::string_view stretched = limited && limited->type == Expression::Type::Accent ? limited->value : "";
+                const bool braced = stretched.ends_with("brace") || stretched.ends_with("bracket") ||
+                                    stretched.ends_with("paren");
+
+                if ((displayed && bounded) || braced) {
                     Node* middle = enclose(base);
 
                     std::array<Node*, 5> parts{};
@@ -1539,6 +1546,100 @@ namespace render::layout {
                 // The wide marks are the narrow ones, drawn the same.
                 if (name.starts_with("wide")) name.remove_prefix(4);
 
+                // A brace, a bracket or a parenthesis the body's width, over
+                // or under it, drawn as an outline: a font's own wide forms
+                // run out long before a formula does. The outline is a line
+                // through the shape and the same line moved down by the
+                // stroke, so it tapers wherever the line runs upright -- a
+                // brace's tip and ends, a parenthesis's -- as a pen's does.
+                const bool over = name.starts_with("over");
+                const std::string_view shape = name.substr(over ? 4 : name.starts_with("under") ? 5 : 0);
+                if (name != shape && (shape == "brace" || shape == "bracket" || shape == "paren")) {
+                    const float width = body->box().width;
+                    const float stroke = scope.thickness * 1.5f;
+                    const float height = std::min(scope.quad * 0.4f, std::max(width * 0.5f, stroke * 2.0f));
+                    const float middle = width * 0.5f;
+                    const float level = height * 0.5f;
+                    const float turn = std::min(height, width * 0.25f);
+
+                    std::vector<Node::Point> line{{0.0f, height}};
+                    const auto curve = [&line](const Node::Point control, const Node::Point to) {
+                        const Node::Point from = line.back();
+                        for (int step = 1; step <= 8; ++step) {
+                            const float t = static_cast<float>(step) / 8.0f;
+                            const float u = 1.0f - t;
+                            line.push_back({u * u * from.x + 2.0f * u * t * control.x + t * t * to.x,
+                                            u * u * from.y + 2.0f * u * t * control.y + t * t * to.y});
+                        }
+                    };
+                    if (shape == "brace") {
+                        curve({0.0f, level}, {turn, level});
+                        line.push_back({middle - turn, level});
+                        curve({middle, level}, {middle, 0.0f});
+                        curve({middle, level}, {middle + turn, level});
+                        line.push_back({width - turn, level});
+                        curve({width, level}, {width, height});
+                    } else if (shape == "paren") {
+                        curve({middle, -height}, {width, height});
+                    }
+
+                    // A bracket's sides run upright the whole way, so it is
+                    // its outer edge and its inner one instead.
+                    memory::Slice<Node::Point> area;
+                    if (shape == "bracket") {
+                        area = arena.allocate<Node::Point>(8);
+                        const std::array<Node::Point, 8> corners{{
+                            {0.0f, height}, {0.0f, 0.0f}, {width, 0.0f}, {width, height},
+                            {width - stroke, height}, {width - stroke, stroke}, {stroke, stroke}, {stroke, height},
+                        }};
+                        std::ranges::copy(corners, area.begin());
+                    } else {
+                        area = arena.allocate<Node::Point>(line.size() * 2);
+                        for (std::size_t index = 0; index < line.size(); ++index) {
+                            area[index] = line[index];
+                            area[area.size() - 1 - index] = {line[index].x, line[index].y + stroke};
+                        }
+                    }
+                    // Under the body the shape is turned over, its tip down.
+                    const float extent = shape == "bracket" ? height : height + stroke;
+                    if (!over) {
+                        for (Node::Point& corner : area) corner.y = extent - corner.y;
+                    }
+
+                    auto* outline = arena.compose<Node>();
+                    outline->path({.area = area});
+                    const memory::Slice<Node*> drawn = arena.allocate<Node*>(1);
+                    drawn[0] = outline;
+
+                    // Hung from its top edge, as a canvas is, every point
+                    // measured down from it.
+                    auto* mark = arena.compose<Node>();
+                    mark->box({
+                        .width = width,
+                        .height = 0.0f,
+                        .depth = extent,
+                        .alignment = Node::Alignment::Horizontal,
+                        .list = drawn,
+                        .absolute = true,
+                    });
+
+                    auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                    clearance->kern({.width = scope.gap});
+
+                    const memory::Slice<Node*> column = arena.allocate<Node*>(3);
+                    column[0] = over ? mark : body;
+                    column[1] = clearance;
+                    column[2] = over ? body : mark;
+
+                    // A column hangs from its top edge, so it is raised until
+                    // the body keeps the baseline it had.
+                    Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                    Node::Box placed = stacked->box();
+                    placed.shift = over ? -(extent + scope.gap + body->box().height) : -body->box().height;
+                    stacked->box(placed);
+                    return stacked;
+                }
+
                 std::uint32_t code = 0;
                 if (name == "hat") code = 0x0302;
                 else if (name == "mathring") code = 0x030A;
@@ -1557,8 +1658,14 @@ namespace render::layout {
                 else if (name == "grave") code = 0x0300;
                 else if (name == "vec") code = 0x20D7;
 
-                const std::uint32_t glyph = code != 0 ? font.index(code) : 0;
+                std::uint32_t glyph = code != 0 ? font.index(code) : 0;
                 if (glyph == 0) return body;
+
+                // A wide mark, and an arrow over, in the font's first width
+                // that spans the body.
+                if (node->value.starts_with("\\wide") || name.starts_with("over")) {
+                    glyph = typography::Expression(font).widen(glyph, body->box().width).glyph;
+                }
 
                 auto* mark = arena.compose<Node>(Node::Type::Glyph);
                 mark->glyph({
@@ -1570,13 +1677,18 @@ namespace render::layout {
                     .font = &font
                 });
 
-                // Centred over the body, then the pen put back where the body
-                // left it so the mark costs no width of its own.
+                // The mark's ink centred over the body, then the pen put back
+                // where the body left it so the mark costs no width of its
+                // own. By its ink, not its advance: most marks are combining
+                // characters, which advance nothing and draw to the left of
+                // where they stand, onto the letter before them.
+                const typography::Font::Box ink = font.bounds(glyph);
+                const float centre = ink.x + ink.width * 0.5f;
                 auto* lead = arena.compose<Node>(Node::Type::Kern);
-                lead->kern({.width = -(body->box().width + mark->glyph().width) * 0.5f});
+                lead->kern({.width = -body->box().width * 0.5f - centre});
 
                 auto* trail = arena.compose<Node>(Node::Type::Kern);
-                trail->kern({.width = (body->box().width - mark->glyph().width) * 0.5f});
+                trail->kern({.width = body->box().width * 0.5f + centre - mark->glyph().width});
 
                 const memory::Slice<Node*> row = arena.allocate<Node*>(4);
                 row[0] = body;

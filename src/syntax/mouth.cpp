@@ -521,10 +521,12 @@ namespace syntax {
                 continue;
             }
             // A control word the character, a letter now, carries on:
-            // `\my_name` once `_` is one.
+            // `\my_name` once `_` is one -- and `\tl_set:Nn` once `:` is one
+            // too, its name already holding a character an earlier change
+            // made a letter.
             const bool worded = token.category == Category::Escape && token.text.size() > 1 &&
-                                std::ranges::all_of(token.text.substr(1), [](const char letter) {
-                                    return (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') || letter == '@';
+                                std::ranges::all_of(token.text.substr(1), [this](const char letter) {
+                                    return letter == '@' || this->state.catcodes.get(letter) == Category::Letter;
                                 });
             const auto column = static_cast<std::uint32_t>(token.location.column + token.text.size());
             if (category == Category::Letter && worded && at + 1 < reach && mine(unread[at + 1]) &&

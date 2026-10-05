@@ -1,4 +1,24 @@
 % csquotes: quotation marks around a quotation, curled the right way round
-% whichever keys the document was typed with.
+% whichever keys the document was typed with; a quotation inside another
+% set in single marks.
 
-\@define\enquote[1]{“#1”}
+\@define\enquote{\@ifstar{\@enquotesingle}{\@enquotedouble}}
+\@define\@enquotedouble[1]{\@ifvariable{csquotes.inner}{‘#1’}{\@setvariable{csquotes.inner}{1}“#1”\@unsetvariable{csquotes.inner}}}
+\@define\@enquotesingle[1]{‘#1’}
+
+% A quotation with its source: \textquote[cite][punctuation]{text} in the
+% line, \blockquote[cite]{text} set apart; the source in parentheses after.
+\@define\textquote[2][]{\enquote{#2}\@ifempty{#1}\else\ (#1)\fi}
+\@define\blockquote[2][]{\begin{quote}#2\@ifempty{#1}\else\ (#1)\fi\end{quote}}
+\@define\textcquote[3][]{\enquote{#3}~\cite{#2}}
+\@define\blockcquote[3][]{\begin{quote}#3~\cite{#2}\end{quote}}
+\@define\foreignquote[2]{\enquote{#2}}
+\@define\hyphenquote[2]{\enquote{#2}}
+\@define\foreigntextquote[3][]{\enquote{#3}}
+\@define\foreignblockquote[3][]{\begin{quote}#3\end{quote}}
+\@define\MakeOuterQuote[1]{}
+\@define\MakeInnerQuote[1]{}
+\@define\MakeAutoQuote[2]{}
+\@define\SetBlockThreshold[1]{}
+\@define\SetBlockEnvironment[1]{}
+\@define\setquotestyle[2][]{}

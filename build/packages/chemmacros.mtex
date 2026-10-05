@@ -1,0 +1,8 @@
+% chemmacros: chemistry macros.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{chemmacros}
+\begin{document}
+\ch{NaCl} \iupac{chloro\-methane} \ox{2,Fe}
+\end{document}

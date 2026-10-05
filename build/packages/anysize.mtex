@@ -1,0 +1,8 @@
+% anysize: margins.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{anysize}
+\begin{document}
+\marginsize{2cm}{2cm}{1cm}{1cm}Text.
+\end{document}

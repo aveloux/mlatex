@@ -1,0 +1,13 @@
+% multicol: several columns.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{multicol}
+\begin{document}
+\begin{multicols}{3}[\section{Three columns}]
+Text set in three columns balanced against each other at the end of the block. \columnbreak
+More text after a column break.
+\end{multicols}
+\begin{multicols*}{2}Unbalanced columns.\end{multicols*}
+\setlength{\columnseprule}{0.4pt}
+\end{document}

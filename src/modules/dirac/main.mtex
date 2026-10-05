@@ -1,0 +1,9 @@
+% dirac: Dirac's notation as dirac writes it -- a bra and a ket, their
+% product of two arguments, the operator between them, and an expectation.
+
+\@define\bra[1]{\left\langle #1 \right|}
+\@define\ket[1]{\left| #1 \right\rangle}
+\@define\braket[2]{\left\langle #1 \middle| #2 \right\rangle}
+\@define\ketbra[2]{\left| #1 \right\rangle\!\left\langle #2 \right|}
+\@define\bramket[3]{\left\langle #1 \middle| #2 \middle| #3 \right\rangle}
+\@define\expval[1]{\left\langle #1 \right\rangle}

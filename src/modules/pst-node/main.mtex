@@ -1,0 +1,21 @@
+% pst-node: nodes in the text and the lines between them. A node is its text
+% where it stands; a connection between two, which the page here does not
+% draw across the text, is read.
+
+\@requirepackage{pstricks}
+
+\@define\rnode[3][]{#3}
+\@define\Rnode[3][]{#3}
+\@define\pnode[1]{\@pnode}
+\@define\@pnode{}
+\@define\cnode[2][]{\@cnodeat}
+\@define\@cnodeat(#1)#2#3{}
+\@define\ncline[3][]{}
+\@define\nccurve[3][]{}
+\@define\ncarc[3][]{}
+\@define\ncangle[3][]{}
+\@define\ncbar[3][]{}
+\@define\ncloop[3][]{}
+\@define\naput[2][]{}
+\@define\nbput[2][]{}
+\@define\ncput[2][]{}

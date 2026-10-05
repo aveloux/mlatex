@@ -1,0 +1,10 @@
+% rotating: rotated floats and boxes.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{rotating}
+\begin{document}
+\begin{sidewaysfigure}\centering\rule{3cm}{2cm}\caption{Sideways}\end{sidewaysfigure}
+\begin{sidewaystable}\centering\begin{tabular}{cc}a&b\end{tabular}\caption{Turned}\end{sidewaystable}
+\begin{turn}{30}turned\end{turn} \begin{rotate}{20}rotated\end{rotate} \turnbox{10}{box}
+\end{document}

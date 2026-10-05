@@ -1,7 +1,18 @@
-% datetime2: today's date and the time, in the document's own style.
+% datetime2: today's date and the time, in the document's own style; a date
+% written out from its parts, and one kept under a name to be used again.
 
 \@requirepackage{datetime}
-\@define\DTMnow{\today}
+\@define\DTMnow{\today\ \currenttime}
 \@define\DTMtoday{\today}
+\@define\DTMcurrenttime{\currenttime}
 \@define\DTMsetstyle[1]{}
-\@define\DTMsavedate[2]{}
+\@define\DTMsetdatestyle[1]{}
+\@define\DTMsettimestyle[1]{}
+\@define\DTMlangsetup[2][]{}
+\@define\DTMdisplaydate[4]{\@evaluate{#3}~\monthname{#2} \@evaluate{#1}}
+\@define\DTMdate[1]{\@DTMdate#1\@nil}
+\@define\@DTMdate#1-#2-#3\@nil{\DTMdisplaydate{#1}{#2}{#3}{-1}}
+\@define\DTMsavedate[2]{\@namedef{DTMsaved#1}{\DTMdate{#2}}}
+\@define\DTMusedate[1]{\@nameuse{DTMsaved#1}}
+\@define\DTMsavenow[1]{\@namedef{DTMsaved#1}{\today}}
+\@define\DTMfetchyear[1]{\@evaluate{\year}}

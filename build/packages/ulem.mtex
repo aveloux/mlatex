@@ -1,0 +1,8 @@
+% ulem: underlines.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[normalem]{ulem}
+\begin{document}
+\uline{under}, \uuline{double}, \uwave{wavy}, \sout{struck}, \xout{crossed}, \dashuline{dashed}, \dotuline{dotted}, \emph{still italic}.
+\end{document}

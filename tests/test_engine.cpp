@@ -163,6 +163,30 @@ int main() {
                "a document with a mistake still makes a PDF of what it could");
     }
 
+    // --- Every package's own document --------------------------------------------------
+    // build/packages holds one document for every package and class the engine
+    // reads, each using what it is loaded for; every one has to come out with
+    // no error and no package or command the engine does not know.
+    {
+        const std::filesystem::path folder = engine::locate(__FILE__).parent_path() / "build" / "packages";
+        std::size_t read = 0;
+        std::string failed;
+        for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder)) {
+            if (entry.path().extension() != ".mtex") continue;
+            std::ifstream file(entry.path(), std::ios::binary);
+            const std::string source{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+            const Result result = typeset(source);
+            ++read;
+            const bool unknown = holds(result.errors, "not found") || holds(result.errors, "undefined");
+            if (!result.clean || unknown || result.pdf.empty()) {
+                failed += entry.path().filename().string() + ":\n" + result.errors;
+            }
+        }
+        if (!failed.empty()) std::fprintf(stderr, "%s", failed.c_str());
+        assert((read > 500) && "every package and class has its document");
+        assert((failed.empty()) && "and every one comes out clean");
+    }
+
     // --- The paper, whole -------------------------------------------------------------
     {
         std::ifstream file(engine::locate(__FILE__).parent_path() / "build" / "main.mtex", std::ios::binary);
@@ -172,7 +196,7 @@ int main() {
         const Result result = typeset(source);
         assert((result.clean) && "the paper typesets without a report");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
-        assert((result.pages.size() == 8) && "and runs to eight pages, its appendix of checks with it");
+        assert((result.pages.size() == 11) && "and runs to eleven pages, its appendices of checks with it");
         assert((std::ranges::none_of(result.pages, [](const std::string& page) { return page.size() < 40; })) &&
                "no page left all but empty");
         assert((holds(result.text, "EnergyEstimatesandNumericalEvidence")) && "its title");
@@ -206,6 +230,15 @@ int main() {
         assert((holds(result.text, "321,alengthmultipliedgives6.0pt,atokenlistgiveskepttokens")) &&
                "TeX's loops, registers and token lists");
         assert((holds(result.text, "give9and3.5pt")) && "e-TeX's expressions");
+
+        // The appendix of the kernel's own commands.
+        assert((holds(result.text, "CKernelchecks")) && "the third appendix, lettered");
+        assert((holds(result.text, "Adaengines1843") && !holds(result.text, "NameRoleSince")) &&
+               "tabbing's stops, the line \\kill ends measured and not drawn");
+        assert((holds(result.text, "itsvalue8,and8asprinted")) && "a counter's value, printed");
+        assert((holds(result.text, "keptandkept.")) && "a saved box, used twice");
+        assert((holds(result.text, "table3atable,fig.3apicture,item2anitem")) &&
+               "every kind of reference, each resolved");
     }
 
     return 0;

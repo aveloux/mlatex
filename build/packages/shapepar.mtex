@@ -1,0 +1,8 @@
+% shapepar: shaped paragraphs.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{shapepar}
+\begin{document}
+\heartpar{A paragraph set in the shape of a heart, which is long enough to show the shape.} \shapepar{\squareshape}{A square paragraph.}
+\end{document}

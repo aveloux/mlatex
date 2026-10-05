@@ -1,0 +1,8 @@
+% color: colours, the older package.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{color}
+\begin{document}
+\definecolor{mine}{rgb}{0.2,0.4,0.6}\textcolor{mine}{coloured} \color{black}text.
+\end{document}

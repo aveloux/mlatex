@@ -1,0 +1,8 @@
+% lettrine: drop capitals.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{lettrine}
+\begin{document}
+\lettrine{O}{nce} upon a time there was a drop cap at the start of a paragraph long enough to wrap.
+\end{document}

@@ -107,6 +107,13 @@
 \newif\ifluatex
 \newif\ifLuaTeX
 \newif\iftutex
+\newif\ifpdftex     \pdftextrue
+\newif\ifetex       \etextrue
+\newif\ifvtex
+\newif\ifptex
+\newif\ifuptex
+\newif\ifluahbtex
+\newif\ifalephtex
 
 % Plain TeX's boxes of no width, which lap over what is beside them, and its
 % lines set whole: \centerline{a title} is a line to itself, centred.
@@ -117,6 +124,14 @@
 \@define\leftline[1]{\par\noindent\makebox[\linewidth][l]{#1}\par}
 \@define\rightline[1]{\par\noindent\makebox[\linewidth][r]{#1}\par}
 \@define\underbar[1]{\underline{#1}}
+
+% A box whose height and depth count for nothing: in text, raised by
+% nothing in a box of no height or depth; in a formula, the formula itself.
+\@define\smash[2][]{\ifmmode #2\else\raisebox{0pt}[0pt][0pt]{#2}\fi}
+
+% Where a word may break, \- marks it; the line breaker finds the breaks
+% itself, so the mark sets nothing.
+\@define\-{}
 
 % LaTeX's short stack: lines one above the other, as a table of one column.
 \@define\shortstack[2][c]{\begin{tabular}[b]{@{}#1@{}}#2\end{tabular}}

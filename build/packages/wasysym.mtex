@@ -1,0 +1,8 @@
+% wasysym: Waldi's symbols.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{wasysym}
+\begin{document}
+\smiley{} \frownie{} \male{} \female{} \Square{} \XBox{} \checked{} \phone{} \sun{} \leftmoon{}
+\end{document}

@@ -1,0 +1,8 @@
+% inputenc: input encodings.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\begin{document}
+Accented text typed as it is: café, naïve, Zürich, Ελλάδα.
+\end{document}

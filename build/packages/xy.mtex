@@ -1,0 +1,8 @@
+% xy: xy-pic's diagrams.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[all]{xy}
+\begin{document}
+\xymatrix{A \ar[r]^f \ar[d]_g & B \ar[d]^h \\ C \ar[r]_k & D}
+\end{document}

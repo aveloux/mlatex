@@ -1,0 +1,8 @@
+% iftex: which TeX engine.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{iftex}
+\begin{document}
+\ifpdftex pdfTeX\fi \ifxetex XeTeX\fi \ifluatex LuaTeX\fi \iftutex Unicode\fi; \RequirePDFTeX
+\end{document}

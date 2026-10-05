@@ -1,0 +1,13 @@
+% algpseudocodex: pseudocode, extended.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{algpseudocodex}
+\begin{document}
+\begin{algorithmic}
+\State $x \gets 0$
+\While{$x < 3$}
+\State $x \gets x + 1$
+\EndWhile
+\end{algorithmic}
+\end{document}

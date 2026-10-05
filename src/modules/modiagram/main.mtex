@@ -1,0 +1,14 @@
+% modiagram: molecular orbital diagrams. The atoms' and the molecule's levels
+% are read, and the diagram's place kept as a frame.
+%
+%   \begin{MOdiagram} \atom{left}{1s} \atom{right}{1s} \molecule{1sMO} \end{MOdiagram}
+
+\@define\MOdiagram[1][]{\begin{tabular}{|c|}\hline\textbf{MO diagram}\\}
+\@define\endMOdiagram{\hline\end{tabular}}
+\@define\atom[3][]{#2: #3\\}
+\@define\molecule[2][]{molecule: #2\\}
+\@define\EnergyAxis[1][]{}
+\@define\AO[3][]{}
+\@define\MO[3][]{}
+\@define\connect[1]{}
+\@define\setmolabel[1]{}

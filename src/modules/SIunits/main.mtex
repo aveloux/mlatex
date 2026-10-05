@@ -1,0 +1,43 @@
+% SIunits: values and units, the units as commands of their own -- the
+% package siunitx replaced, still found in older documents.
+%
+%   \unit{9.81}{\metre\per\second\squared}
+
+\@define\unit[2]{#1\,#2}
+\@define\unitfrac[3][]{#1\,\ensuremath{\frac{#2}{#3}}}
+\@define\metre{m}
+\@define\meter{m}
+\@define\gram{g}
+\@define\kilogram{kg}
+\@define\second{s}
+\@define\ampere{A}
+\@define\kelvin{K}
+\@define\mole{mol}
+\@define\candela{cd}
+\@define\newton{N}
+\@define\joule{J}
+\@define\watt{W}
+\@define\pascal{Pa}
+\@define\hertz{Hz}
+\@define\volt{V}
+\@define\ohm{\ensuremath{\Omega}}
+\@define\coulomb{C}
+\@define\farad{F}
+\@define\tesla{T}
+\@define\henry{H}
+\@define\litre{L}
+\@define\celsius{\ensuremath{^\circ}C}
+\@define\degree{\ensuremath{^\circ}}
+\@define\kilo{k}
+\@define\mega{M}
+\@define\giga{G}
+\@define\centi{c}
+\@define\milli{m}
+\@define\micro{\ensuremath{\mu}}
+\@define\nano{n}
+\@define\pico{p}
+\@define\per{/}
+\@define\usk{\,}
+\@define\squared{\ensuremath{^2}}
+\@define\cubed{\ensuremath{^3}}
+\@define\reciprocal{\ensuremath{^{-1}}}

@@ -1,0 +1,18 @@
+% mathtools: amsmath's additions.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{mathtools}
+\begin{document}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\[ a \coloneqq b \quad \abs{x} \quad \norm{v} \quad \xleftrightarrow{a} \quad \mathclap{x} \quad \prescript{a}{b}{X} \quad \underbracket{abc} \quad \smashoperator{\sum_{i=1}^n} \]
+$\ceil{x}$ and $\ceil*{\frac{a}{b}}$.
+\[ \begin{dcases} a & b \\ c & d \end{dcases} \]
+\begin{align}
+x &= y \\
+\intertext{and} z &= w
+\end{align}
+\mathtoolsset{showonlyrefs}
+\end{document}

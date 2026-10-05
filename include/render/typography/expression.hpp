@@ -113,6 +113,19 @@ namespace render::typography {
         /// @complexity O(1) -- the candidate list is read once and is short.
         [[nodiscard]] Variant stretch(std::uint32_t glyph, float height) const noexcept;
 
+        /// @brief The smallest horizontal variant of a glyph that reaches a width.
+        ///
+        /// This is how a wide hat or tilde spans what it covers: the font
+        /// ships each mark in a run of widths, and the engine picks the first
+        /// one wide enough.
+        ///
+        /// @param glyph Glyph index of the mark at its base size.
+        /// @param width Width to reach, in points.
+        /// @return The variant to draw, its advance its width; the widest when
+        ///         none reaches, and the base glyph when the font has none.
+        /// @complexity O(1) -- the candidate list is read once and is short.
+        [[nodiscard]] Variant widen(std::uint32_t glyph, float width) const noexcept;
+
         /// @brief A glyph built from the font's parts to reach any height.
         ///
         /// What a radical or a parenthesis becomes once the tallest size the

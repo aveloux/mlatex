@@ -1,0 +1,23 @@
+% feynmp: Feynman diagrams written for MetaPost to draw. The engine draws no
+% MetaPost: each diagram's place is kept, and its commands are read.
+
+\@define\fmffile[1]{}
+\@define\endfmffile{}
+\@define\fmfgraph{\@ifstar{\@fmfgraph}{\@fmfgraph}}
+\@define\@fmfgraph(#1,#2){\fbox{\rule{0pt}{#2\unitlength}\hspace{#1\unitlength}}\@fmfgobble}
+\@spanning\@define\@fmfgobble#1\end#2{\@ifstrequal{#2}{fmfgraph}{\end{#2}}{\@ifstrequal{#2}{fmfgraph*}{\end{#2}}{\@fmfgobble}}}
+\@define\endfmfgraph{}
+\expandafter\@define\csname fmfgraph*\endcsname{\@fmfgraph}
+\expandafter\@define\csname endfmfgraph*\endcsname{}
+\@define\fmfleft[1]{}
+\@define\fmfright[1]{}
+\@define\fmftop[1]{}
+\@define\fmfbottom[1]{}
+\@define\fmf[2]{}
+\@define\fmfv[2]{}
+\@define\fmfdot[1]{}
+\@define\fmflabel[2]{}
+\@define\fmfset[2]{}
+\@define\fmfpen[1]{}
+\@define\fmfstraight{}
+\@define\fmffreeze{}

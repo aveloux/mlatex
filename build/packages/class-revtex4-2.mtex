@@ -1,0 +1,19 @@
+% class-revtex4-2: the APS's and AIP's papers.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[aps,prl,reprint]{revtex4-2}
+\begin{document}
+\title{A Physical Review Letter}
+\author{Paul Dirac}
+\affiliation{University of Cambridge}
+\date{\today}
+\begin{abstract}
+Antimatter.
+\end{abstract}
+\maketitle
+\section{Introduction}
+Text.
+\begin{acknowledgments}
+We thank everyone.
+\end{acknowledgments}
+\end{document}

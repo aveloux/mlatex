@@ -82,10 +82,9 @@ namespace render::primitives {
             floats.back().captioned = true;
         }
 
-        const std::string macro = kind == "table"        ? "\\tablename"
-                                  : kind == "algorithm"  ? "\\algorithmname"
-                                  : kind == "lstlisting" ? "\\lstlistingname"
-                                                         : "\\figurename";
+        // Named by `\\<kind>name`, as LaTeX names its own -- \\figurename,
+        // \\tablename -- and the float package a float of a new kind.
+        const std::string macro = "\\" + kind + "name";
         std::string name;
         if (!sub) {
             mouth.ingest(context.arena.copy("{" + macro + "}"));
@@ -220,10 +219,13 @@ namespace render::primitives {
             {"figwindow", "figure"}, {"tabwindow", "table"}, {"teaserfigure", "figure"},
         }};
 
-        for (const auto& [name, kind] : kinds) {
+        // One float's block: where it may go read on the way in, its marks
+        // for the pager left either side of what it holds. A float of a new
+        // kind is installed the same way as LaTeX's own.
+        const auto install = [this, &context](const std::string& name, const std::string& kind, const bool ruled) {
             context.blocks.watch(
                 name,
-                [this, kind, name](syntax::Mouth& mouth) {
+                [this, kind, name, ruled](syntax::Mouth& mouth) {
                     // Where LaTeX may place it -- `[htbp!]`, a letter each --
                     // and `tbp` when it does not say, as the classes give
                     // their figures and tables. `H` is the float package's:
@@ -258,7 +260,6 @@ namespace render::primitives {
                         static_cast<void>(mouth.argument({}, 0));
                         here = true;
                     }
-                    const bool ruled = kind == "algorithm";
                     floats.push_back(
                         Open{.kind = std::string(kind), .ruled = ruled, .place = place, .across = name.ends_with('*')});
 
@@ -294,7 +295,20 @@ namespace render::primitives {
                                        : "\\par\\vskip 12pt plus 2pt minus 2pt"
                                          "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
                 });
-        }
+        };
+        for (const auto& [name, kind] : kinds) install(std::string(name), std::string(kind), kind == "algorithm");
+
+        // A float of the document's own kind -- the float package's
+        // \\newfloat, newfloat's \\DeclareFloatingEnvironment -- numbered by
+        // the counter of its name and captioned by `\\<name>name`, which the
+        // package defines first; `\\@newfloat*` sets it between rules, as the
+        // float package's ruled style does.
+        parser.mouth.bind("\\@newfloat", [install](syntax::Mouth& mouth) {
+            const bool ruled = mouth.lookahead().is('*');
+            if (ruled) mouth.read();
+            const std::string name = syntax::Argument::text(mouth);
+            if (!name.empty()) install(name, name, ruled);
+        });
 
         // subcaption's blocks, which the box module sets as minipages: here
         // only what a caption inside one numbers by.

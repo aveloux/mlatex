@@ -1,0 +1,8 @@
+% fp: fixed-point arithmetic.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fp}
+\begin{document}
+\FPeval{\result}{2*(3+4)}\result, \FPadd{\sum}{1.5}{2.25}\sum.
+\end{document}

@@ -1,0 +1,17 @@
+% class-svjour3: Springer's journals.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[twocolumn]{svjour3}
+\begin{document}
+\title{A Springer Journal Article}
+\author{Niels Bohr \and Werner Heisenberg}
+\institute{N. Bohr \at Copenhagen \\ \email{bohr@example.org} \and W. Heisenberg \at Leipzig}
+\date{Received: date / Accepted: date}
+\maketitle
+\begin{abstract}
+Complementarity.
+\keywords{quantum \and measurement}
+\end{abstract}
+\section{Introduction}
+Text.
+\end{document}

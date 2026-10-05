@@ -1,0 +1,25 @@
+% axodraw2: Feynman diagrams -- lines, photons, gluons and the rest -- in an
+% axopicture, drawn as TikZ paths in points: a photon as a dashed line, a
+% gluon as a dotted one.
+%
+%   \begin{axopicture}(100,50) \Line(0,0)(100,50) \Photon(0,50)(100,0){3}{5} \end{axopicture}
+
+\@requirepackage{tikz}
+
+\@define\axopicture{\@ifnextchar({\@axopicture}{\begin{tikzpicture}[x=1pt,y=1pt]}}
+\@define\@axopicture(#1){\begin{tikzpicture}[x=1pt,y=1pt]}
+\@define\endaxopicture{\end{tikzpicture}}
+\@define\Line{\@ifnextchar[{\@axoline}{\@axoline[]}}
+\@define\@axoline[#1](#2)(#3){\draw (#2) -- (#3);}
+\@define\ArrowLine(#1)(#2){\draw[->] (#1) -- (#2);}
+\@define\DashLine(#1)(#2)#3{\draw[dashed] (#1) -- (#2);}
+\@define\Photon(#1)(#2)#3#4{\draw[densely dashed] (#1) -- (#2);}
+\@define\Gluon(#1)(#2)#3#4{\draw[densely dotted, thick] (#1) -- (#2);}
+\@define\ZigZag(#1)(#2)#3#4{\draw[dashed] (#1) -- (#2);}
+\@define\Vertex(#1)#2{\fill (#1) circle (#2);}
+\@define\GCirc(#1)#2#3{\draw (#1) circle (#2);}
+\@define\CArc(#1)(#2,#3,#4){\draw (#1) ++(#3:#2) arc (#3:#4:#2);}
+\@define\Text(#1)[#2]#3{\node at (#1) {#3};}
+\@define\SetColor[1]{}
+\@define\SetWidth[1]{}
+\@define\SetScale[1]{}

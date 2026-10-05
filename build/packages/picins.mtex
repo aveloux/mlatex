@@ -1,0 +1,8 @@
+% picins: pictures in paragraphs.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{picins}
+\begin{document}
+\parpic[r]{\rule{2cm}{2cm}}\piccaption{A picture} Text beside the picture that wraps around it for a while.
+\end{document}

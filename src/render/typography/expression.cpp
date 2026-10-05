@@ -110,6 +110,29 @@ namespace render::typography {
         return Variant{.glyph = glyph, .advance = parent.bounds(glyph).height};
     }
 
+    Expression::Variant Expression::widen(const std::uint32_t glyph, const float width) const noexcept {
+        if (!parent.handle()) return Variant{.glyph = glyph, .advance = width};
+
+        // Latin Modern ships a wide accent in seven widths; twelve takes in
+        // every font's list whole.
+        hb_ot_math_glyph_variant_t variants[12];
+        unsigned int count = 12;
+        hb_ot_math_get_glyph_variants(parent.handle(), glyph, HB_DIRECTION_LTR, 0, &count, variants);
+
+        for (unsigned int index = 0; index < count; ++index) {
+            if (const float reach = static_cast<float>(variants[index].advance) * grain; reach >= width) {
+                return Variant{.glyph = variants[index].glyph, .advance = reach};
+            }
+        }
+        if (count > 0) {
+            return Variant{
+                .glyph = variants[count - 1].glyph,
+                .advance = static_cast<float>(variants[count - 1].advance) * grain
+            };
+        }
+        return Variant{.glyph = glyph, .advance = parent.advance(glyph)};
+    }
+
     Expression::Assembly Expression::assemble(const std::uint32_t glyph, const float height) const {
         Assembly built;
         hb_font_t* handle = parent.handle();

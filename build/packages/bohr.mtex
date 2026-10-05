@@ -1,0 +1,8 @@
+% bohr: Bohr's atoms.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{bohr}
+\begin{document}
+\bohr{3}{Li} \bohr{6}{C}
+\end{document}

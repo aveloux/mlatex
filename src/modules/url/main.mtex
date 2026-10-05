@@ -5,3 +5,7 @@
 % Every other character an address uses sets as itself.
 
 \@define\url[1]{\texttt{#1}}
+
+% breakurl's spellings of the same: an address, and one shown as other text.
+\@define\burl[1]{\url{#1}}
+\@define\burlalt[2]{\url{#2}}

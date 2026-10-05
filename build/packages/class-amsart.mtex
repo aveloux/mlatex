@@ -1,0 +1,20 @@
+% class-amsart: the AMS's article class.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{amsart}
+\begin{document}
+\title{On Numbers}
+\author{Emmy Noether}
+\address{University of G\"ottingen}
+\email{noether@example.org}
+\subjclass[2020]{11A41}
+\keywords{primes}
+\begin{abstract}
+A short note.
+\end{abstract}
+\maketitle
+\section{Primes}
+\begin{equation}
+\pi(x) \sim \frac{x}{\ln x}.
+\end{equation}
+\end{document}

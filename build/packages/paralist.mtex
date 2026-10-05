@@ -1,0 +1,11 @@
+% paralist: compact and inline lists.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{paralist}
+\begin{document}
+\begin{compactitem}\item one\item two\end{compactitem}
+\begin{compactenum}[(a)]\item first\item second\end{compactenum}
+\begin{asparaitem}\item run in\end{asparaitem}
+\begin{inparaenum}[(i)]\item a \item b\end{inparaenum}
+\end{document}

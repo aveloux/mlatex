@@ -1,0 +1,14 @@
+% newfloat: floats of new kinds, by keys.
+%
+%   \DeclareFloatingEnvironment[fileext=los, name=Scheme]{scheme}
+%   \begin{scheme}[htbp] ... \caption{...} \end{scheme}
+%
+% Each is numbered by a counter of its name and captioned by its name= --
+% the name as written when it gives none -- through the float package's
+% own native float.
+
+\@define\DeclareFloatingEnvironment[2][]{\@unsetvariable{newfloat.name}\setkeys{newfloat}{#1}\newcounter{#2}\@ifvariable{newfloat.name}{\expandafter\edef\csname #2name\endcsname{\variable{newfloat.name}}}{\@namedef{#2name}{#2}}\@newfloat{#2}}
+\@define\SetupFloatingEnvironment[2]{}
+\@define\ForEachFloatingEnvironment[1]{}
+\@define\PrepareListOf[2]{}
+\@define\newfloatsetup[1]{}

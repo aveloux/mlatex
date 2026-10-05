@@ -1,0 +1,8 @@
+% xr: references to other documents.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{xr}
+\begin{document}
+\externaldocument{other} See \ref{sec:x}.\section{X}\label{sec:x}
+\end{document}

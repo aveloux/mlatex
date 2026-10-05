@@ -1,0 +1,97 @@
+% LaTeX3's programming layer, as far as a preamble commonly writes it: the
+% syntax switch, and its commonest functions over TeX's own primitives.
+%
+%   \ExplSyntaxOn
+%   \tl_new:N \l_title_tl
+%   \tl_set:Nn \l_title_tl {Report}
+%   \int_new:N \l_count_int
+%   \int_set:Nn \l_count_int {6 * 7}
+%   \cs_new:Npn \my_greet:n #1 { Hello,~#1 }
+%   \ExplSyntaxOff
+%
+% \ExplSyntaxOn makes `_` and `:` letters, as LaTeX's own does, and `~` a
+% space; \ExplSyntaxOff puts them back. Spaces are not ignored between the
+% two, as they are in LaTeX's: code written across lines still reads, and a
+% space it sets is a space.
+
+% By their codes: `_` is 95, `:` 58 and `~` 126, each written as a number
+% so that no meaning of \: or \~ is in the way.
+\@define\ExplSyntaxOn{\catcode95=11 \catcode58=11 \catcode126=10 }
+\@define\ExplSyntaxOff{\catcode95=8 \catcode58=12 \catcode126=13 }
+
+% Each name below is made through \csname, which takes `_` and `:` as they
+% are: this file is lexed whole before a category change in it would take
+% effect.
+\@define\@expl#1{\expandafter\@define\csname #1\endcsname}
+
+\@expl{cs_new:Npn}{\long\def}
+\@expl{cs_set:Npn}{\long\def}
+\@expl{cs_gset:Npn}{\long\gdef}
+\@expl{cs_new_protected:Npn}{\protected\long\def}
+\@expl{cs_set_protected:Npn}{\protected\long\def}
+\@expl{cs_new_nopar:Npn}{\def}
+\@expl{cs_set_nopar:Npn}{\def}
+\@expl{cs_set_eq:NN}{\let}
+\@expl{cs_new_eq:NN}{\let}
+\@expl{cs_gset_eq:NN}{\global\let}
+\@expl{cs_if_exist:NTF}#1#2#3{\ifdefined#1#2\else#3\fi}
+\@expl{cs_if_exist:NT}#1#2{\ifdefined#1#2\fi}
+\@expl{cs_if_exist:NF}#1#2{\ifdefined#1\else#2\fi}
+
+\@expl{use:n}#1{#1}
+\@expl{use_none:n}#1{}
+\@expl{use_none:nn}#1#2{}
+\@expl{use_i:nn}#1#2{#1}
+\@expl{use_ii:nn}#1#2{#2}
+
+\@expl{tl_new:N}#1{\def#1{}}
+\@expl{tl_const:Nn}#1#2{\def#1{#2}}
+\@expl{tl_set:Nn}#1#2{\def#1{#2}}
+\@expl{tl_gset:Nn}#1#2{\gdef#1{#2}}
+\@expl{tl_set:Nx}#1#2{\edef#1{#2}}
+\@expl{tl_clear:N}#1{\def#1{}}
+\@expl{tl_put_right:Nn}#1#2{\expandafter\def\expandafter#1\expandafter{#1#2}}
+\@expl{tl_put_left:Nn}#1#2{\edef#1{\unexpanded{#2}\unexpanded\expandafter{#1}}}
+\@expl{tl_use:N}#1{#1}
+\@expl{tl_if_empty:nTF}#1#2#3{\@ifempty{#1}#2\else#3\fi}
+\@expl{tl_if_empty:NTF}#1#2#3{\expandafter\@ifempty\expandafter{#1}#2\else#3\fi}
+\@expl{tl_if_eq:nnTF}#1#2#3#4{\@ifstrequal{#1}{#2}{#3}{#4}}
+\@expl{tl_to_str:n}#1{#1}
+
+\@expl{str_if_eq:nnTF}#1#2#3#4{\@ifstrequal{#1}{#2}{#3}{#4}}
+\@expl{str_if_eq:nnT}#1#2#3{\@ifstrequal{#1}{#2}{#3}{}}
+\@expl{str_if_eq:nnF}#1#2#3{\@ifstrequal{#1}{#2}{}{#3}}
+\@expl{str_case:nn}#1#2{}
+
+\@expl{int_new:N}#1{\newcount#1}
+\@expl{int_set:Nn}#1#2{#1=\numexpr#2\relax}
+\@expl{int_gset:Nn}#1#2{\global#1=\numexpr#2\relax}
+\@expl{int_zero:N}#1{#1=0 }
+\@expl{int_incr:N}#1{\advance#1 by 1 }
+\@expl{int_decr:N}#1{\advance#1 by -1 }
+\@expl{int_add:Nn}#1#2{\advance#1 by \numexpr#2\relax}
+\@expl{int_use:N}#1{\the#1}
+\@expl{int_eval:n}#1{\the\numexpr#1\relax}
+\@expl{int_compare:nTF}#1#2#3{\ifnum\numexpr#1\relax#2\else#3\fi}
+\@expl{int_compare_p:n}#1{\ifnum#1 1\else 0\fi}
+\@expl{int_to_roman:n}#1{\romannumeral#1}
+\@expl{int_to_Roman:n}#1{\uppercase\expandafter{\romannumeral#1}}
+
+\@expl{fp_eval:n}#1{\@calculate{#1}}
+\@expl{fp_to_decimal:n}#1{\@calculate{#1}}
+
+\@expl{bool_new:N}#1{\def#1{0}}
+\@expl{bool_set_true:N}#1{\def#1{1}}
+\@expl{bool_set_false:N}#1{\def#1{0}}
+\@expl{bool_if:NTF}#1#2#3{\ifnum#1=1 #2\else#3\fi}
+
+\@expl{keys_define:nn}#1#2{}
+\@expl{keys_set:nn}#1#2{}
+\@expl{iow_term:n}#1{}
+\@expl{iow_log:n}#1{}
+\@expl{msg_new:nnn}#1#2#3{}
+\@expl{msg_error:nn}#1#2{}
+\@expl{msg_warning:nn}#1#2{}
+\@expl{c_space_tl}{ }
+\@expl{c_empty_tl}{}
+

@@ -1,0 +1,8 @@
+% listingsutf8: listings in UTF-8.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{listingsutf8}
+\begin{document}
+\begin{lstlisting}x = "café"\end{lstlisting}
+\end{document}

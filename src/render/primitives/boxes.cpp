@@ -319,14 +319,18 @@ namespace render::primitives {
         const auto hung = [&context](memory::Arena& arena, layout::Node* box, const char position) {
             layout::Node::Box shape = box->box();
             const float total = shape.height + shape.depth;
+            // Down through the column's blocks -- a paragraph is a column of
+            // its lines -- to the first line or the last, whose baseline it is.
             const auto baseline = [&](const bool first) {
-                if (shape.list.empty()) return 0.0f;
-                if (first) {
-                    const layout::Node* head = shape.list[0];
-                    return head && head->type == layout::Node::Type::Box ? head->box().height : 0.0f;
+                const layout::Node* edge = box;
+                while (edge->box().alignment == layout::Node::Alignment::Vertical && !edge->box().list.empty()) {
+                    const memory::Slice<layout::Node*>& list = edge->box().list;
+                    const layout::Node* next = first ? list[0] : list[list.size() - 1];
+                    if (!next || next->type != layout::Node::Type::Box) break;
+                    edge = next;
                 }
-                const layout::Node* tail = shape.list[shape.list.size() - 1];
-                return total - (tail && tail->type == layout::Node::Type::Box ? tail->box().depth : 0.0f);
+                if (edge == box) return first ? 0.0f : total;
+                return first ? edge->box().height : total - edge->box().depth;
             };
             const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
             shape.shift = position == 't' ? -baseline(true)

@@ -1,0 +1,19 @@
+% class-elsarticle: Elsevier's journals.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[preprint,12pt]{elsarticle}
+\begin{document}
+\begin{frontmatter}
+\title{An Elsevier Article}
+\author[a]{Marie Curie}
+\address[a]{Sorbonne, Paris}
+\begin{abstract}
+Radioactivity.
+\end{abstract}
+\begin{keyword}
+radium \sep polonium
+\end{keyword}
+\end{frontmatter}
+\section{Introduction}
+Text.
+\end{document}

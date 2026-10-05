@@ -1,0 +1,12 @@
+% outlines: an outline, each line's level its command -- \1 the first, \2
+% under it, down to \4 -- set as lists inside lists.
+%
+%   \begin{outline}
+%     \1 Top \2 Under it \1 Back at the top
+%   \end{outline}
+
+\@define\@outlinedepth{0}
+\@define\@outlinestep#1{\global\edef\@outlinedepth{\@evaluate{\@outlinedepth#1}}}
+\@define\@outlineto#1{\ifnum\@outlinedepth<#1 \begin{itemize}\@outlinestep{+1}\@outlineto{#1}\else\ifnum\@outlinedepth>#1 \end{itemize}\@outlinestep{-1}\@outlineto{#1}\else\ifnum#1>0 \item\fi\fi\fi}
+\@define\outline[1][]{\@define\@outlinedepth{0}\@define\0{\@outlineto{0}}\@define\1{\@outlineto{1}}\@define\2{\@outlineto{2}}\@define\3{\@outlineto{3}}\@define\4{\@outlineto{4}}}
+\@define\endoutline{\@outlineto{0}}

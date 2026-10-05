@@ -1,0 +1,14 @@
+% class-scrartcl: KOMA-Script's article.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[paper=a4,fontsize=11pt]{scrartcl}
+\begin{document}
+\title{A KOMA Article}
+\subtitle{With a subtitle}
+\author{Hedy Lamarr}
+\maketitle
+\addsec{Unnumbered section}
+\section{Numbered}
+\minisec{A mini heading}
+Text \textsubscript{low}.
+\end{document}

@@ -24,6 +24,14 @@ namespace render::primitives {
         /// @param value Clamped to 1-26, mapping onto a-z or A-Z.
         /// @param upper True for `\Alph`, false for `\alph`.
         [[nodiscard]] static std::string alphabetic(int value, bool upper);
+
+        /// @brief A number in English words, as fmtcount writes it:
+        ///        `twenty-three`, `one hundred and five`, or as an ordinal,
+        ///        `twenty-third`.
+        /// @param value   Any whole number; a negative one is `minus` it.
+        /// @param ordinal True for the ordinal, `first` rather than `one`.
+        /// @complexity O(log n) in the value.
+        [[nodiscard]] static std::string words(int value, bool ordinal);
     };
 
 }

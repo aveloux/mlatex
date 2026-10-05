@@ -1,0 +1,20 @@
+% acro: acronyms declared by keys, spelled out the first time each is used
+% and short after.
+%
+%   \DeclareAcronym{nasa}{short=NASA, long=National Aeronautics and Space Administration}
+%   \ac{nasa} ... \ac{nasa}     % in full the first time, then short
+
+\@define\DeclareAcronym[2]{\setkeys{acro.#1}{#2}}
+\@define\ac[1]{\@ifvariable{acro.#1.used}{\variable{acro.#1.short}}{\variable{acro.#1.long} (\variable{acro.#1.short})\@setvariable{acro.#1.used}{1}}}
+\@define\Ac[1]{\ac{#1}}
+\@define\acs[1]{\variable{acro.#1.short}}
+\@define\acl[1]{\variable{acro.#1.long}}
+\@define\Acl[1]{\variable{acro.#1.long}}
+\@define\acf[1]{\variable{acro.#1.long} (\variable{acro.#1.short})\@setvariable{acro.#1.used}{1}}
+\@define\acp[1]{\ac{#1}s}
+\@define\acsp[1]{\acs{#1}s}
+\@define\aclp[1]{\acl{#1}s}
+\@define\acreset[1]{\@unsetvariable{acro.#1.used}}
+\@define\acuse[1]{\@setvariable{acro.#1.used}{1}}
+\@define\acsetup[1]{}
+\@define\printacronyms[1][]{\section*{Acronyms}}

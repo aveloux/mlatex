@@ -1,0 +1,11 @@
+% cleveref: references that name what they point to.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[capitalise,noabbrev]{cleveref}
+\usepackage{hyperref}
+\begin{document}
+\section{Intro}\label{sec:intro}
+\begin{equation}\label{eq:one} x = 1 \end{equation}
+See \cref{sec:intro}, \Cref{eq:one}, \cref{sec:intro,eq:one}, \crefrange{eq:one}{eq:one} and page \cpageref{eq:one}.
+\end{document}

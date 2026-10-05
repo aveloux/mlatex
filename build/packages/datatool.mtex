@@ -1,0 +1,12 @@
+% datatool: databases in the document.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{datatool}
+\begin{document}
+\DTLnewdb{scores}
+\DTLnewrow{scores}\DTLnewdbentry{scores}{Name}{Ada}\DTLnewdbentry{scores}{Score}{90}
+\DTLnewrow{scores}\DTLnewdbentry{scores}{Name}{Alan}\DTLnewdbentry{scores}{Score}{85}
+\DTLdisplaydb{scores}
+\DTLforeach{scores}{\name=Name,\score=Score}{\name: \score. }
+\end{document}

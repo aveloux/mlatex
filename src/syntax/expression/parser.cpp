@@ -12,6 +12,7 @@
 #include <format>
 #include <span>
 #include <string>
+#include <utility>
 
 namespace syntax::expression {
 
@@ -216,6 +217,15 @@ namespace syntax::expression {
             explicit Guard(std::size_t& value) : counter(value) { ++counter; }
             ~Guard() { --counter; }
         } guard(depth);
+
+        // This run's ends, for a binary sign inside it; the enclosing run's
+        // put back however this one returns.
+        struct Restore {
+            Bound& bound;
+            const Bound saved;
+            Restore(Bound& value, const Bound replacement) : bound(value), saved(std::exchange(value, replacement)) {}
+            ~Restore() { bound = saved; }
+        } restore(bound, Bound{.closing = closing, .stop = stop, .alternate = alternate});
 
         std::array<Node*, 32> stack{};
         std::vector<Node*> heap{};
@@ -775,12 +785,18 @@ namespace syntax::expression {
                 }
 
                 // An operand is left out where the formula breaks off -- `a =`
-                // at the end of an `align` row, carried on in the next --
+                // at the end of an `align` row, carried on in the next, a
+                // charge's sign at the end of a superscript, `x^{3+}` --
                 // which TeX sets as written, and so is this.
                 const Token token = advance();
                 auto* binary = compose(found.type, token);
                 binary->left = left;
-                binary->right = step(found.weight);
+                const Token after = lookahead();
+                const bool ends = after.empty() || after.is(Catcodes::Category::Group, '}') ||
+                                  (bound.closing != 0 && after.is(bound.closing)) ||
+                                  (bound.stop != none && after.symbol == bound.stop) ||
+                                  (bound.alternate != none && after.symbol == bound.alternate);
+                binary->right = ends ? nullptr : step(found.weight);
                 left = script(binary);
                 continue;
             }

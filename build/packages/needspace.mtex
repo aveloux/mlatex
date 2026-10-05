@@ -1,0 +1,8 @@
+% needspace: a break unless room is left.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{needspace}
+\begin{document}
+Text. \needspace{5\baselineskip} A block kept together.
+\end{document}

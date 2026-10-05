@@ -1,0 +1,69 @@
+% LaTeX's picture: its commands, each drawing on the canvas a
+% \begin{picture}(width,height)(x,y) opens, with the TikZ paths the engine
+% draws, every coordinate in \unitlength.
+%
+%   \setlength{\unitlength}{1mm}
+%   \begin{picture}(60,40)
+%     \put(0,0){\line(1,1){20}}  \put(30,10){\vector(1,0){20}}
+%     \put(20,30){\circle{10}}   \put(40,30){\circle*{4}}
+%     \put(5,35){a label}        \put(0,0){\framebox(20,8){boxed}}
+%     \multiput(0,20)(10,0){5}{\line(0,1){3}}
+%     \qbezier(0,0)(30,40)(60,0)
+%   \end{picture}
+%
+% The block opens the canvas and runs \@picturemode, which gives the
+% commands their picture meanings for as long as the block is open; outside
+% it \makebox and \framebox are the ones they always are.
+
+\@define\@picturemode#1#2{%
+\@define\@picx{#1}\@define\@picy{#2}\@define\@px{0}\@define\@py{0}\@picturethin%
+\let\@picturemakeboxplain\makebox\let\@pictureframeboxplain\framebox%
+\let\put\@pictureput\let\multiput\@picturemultiput\let\line\@pictureline\let\vector\@picturevector%
+\let\circle\@picturecircle\let\oval\@pictureoval\let\qbezier\@pictureqbezier\let\bezier\@picturebezier%
+\let\makebox\@picturemakebox\let\framebox\@pictureframebox\let\dashbox\@picturedashbox%
+\let\thicklines\@picturethick\let\thinlines\@picturethin\let\linethickness\@picturethickness}
+
+% Where a \put stands, the object it puts: a line, a vector, a circle, an
+% oval, a box of a size or a curve drawn from that point; anything else is
+% text, standing on it.
+\@define\@pictureput(#1,#2)#3{\edef\@px{\@calculate{#1-\@picx}}\edef\@py{\@calculate{#2-\@picy}}\@pictureobject#3\@pictureend}
+\@define\@pictureobject{\@ifnextchar\line{\@picturedirect}{\@ifnextchar\vector{\@picturedirect}{\@ifnextchar\circle{\@picturedirect}{\@ifnextchar\oval{\@picturedirect}{\@ifnextchar\makebox{\@picturedirect}{\@ifnextchar\framebox{\@picturedirect}{\@ifnextchar\dashbox{\@picturedirect}{\@ifnextchar\qbezier{\@picturedirect}{\@picturetext}}}}}}}}}
+\@spanning\@define\@picturedirect#1\@pictureend{#1}
+\@spanning\@define\@picturetext#1\@pictureend{\node[anchor=base west, inner sep=0pt] at (\@px,\@py) {#1};}
+
+% The same object, put so many times, each a step further.
+\@define\@picturemultiput(#1,#2)(#3,#4)#5#6{\ifnum#5>0 \@pictureput(#1,#2){#6}\edef\@picturemx{\@calculate{#1+#3}}\edef\@picturemy{\@calculate{#2+#4}}\edef\@picturemn{\@evaluate{#5-1}}\@picturemultiput(\@picturemx,\@picturemy)(#3,#4){\@picturemn}{#6}\fi}
+
+% A line or a vector of slope y/x, its length its horizontal extent -- or,
+% upright, its height.
+\@define\@pictureline(#1,#2)#3{\ifnum#1=0 \@picturedraw (\@px,\@py) -- ++(0,\@calculate{#3*#2/abs(#2)});\else\@picturedraw (\@px,\@py) -- ++(\@calculate{#3*#1/abs(#1)},\@calculate{#3*#2/abs(#1)});\fi}
+\@define\@picturevector(#1,#2)#3{\ifnum#1=0 \@picturearrow (\@px,\@py) -- ++(0,\@calculate{#3*#2/abs(#2)});\else\@picturearrow (\@px,\@py) -- ++(\@calculate{#3*#1/abs(#1)},\@calculate{#3*#2/abs(#1)});\fi}
+
+% A circle of a diameter round the point, or a disc filled.
+\@define\@picturecircle{\@ifstar{\@picturedisc}{\@picturering}}
+\@define\@picturering#1{\@picturedraw (\@px,\@py) circle (\@calculate{#1/2});}
+\@define\@picturedisc#1{\fill (\@px,\@py) circle (\@calculate{#1/2});}
+
+% An oval of a width and a height centred on the point, its corners round.
+\@define\@pictureoval(#1,#2){\@ifnextchar[{\@pictureovalpart{#1}{#2}}{\@pictureovalpart{#1}{#2}[]}}
+\@define\@pictureovalpart#1#2[#3]{\@pictureround (\@calculate{\@px-#1/2},\@calculate{\@py-#2/2}) rectangle ++(#1,#2);}
+
+% A curve through three points, the middle one its control.
+\@define\@pictureqbezier{\@ifnextchar[{\@pictureqbezierpoints}{\@pictureqbezierdraw}}
+\@define\@pictureqbezierpoints[#1]{\@pictureqbezierdraw}
+\@define\@pictureqbezierdraw(#1)(#2)(#3){\@picturedraw (#1) .. controls (#2) .. (#3);}
+\@define\@picturebezier#1{\@pictureqbezierdraw}
+
+% A box of a width and a height, its text in the middle -- framed, dashed
+% or neither; one given no size is LaTeX's own.
+\@define\@picturemakebox{\@ifnextchar({\@picturesized{}}{\@picturemakeboxplain}}
+\@define\@pictureframebox{\@ifnextchar({\@picturesized{\@picturedraw (\@px,\@py) rectangle ++(\@picturew,\@pictureh);}}{\@pictureframeboxplain}}
+\@define\@picturedashbox#1{\@picturesized{\@picturedash (\@px,\@py) rectangle ++(\@picturew,\@pictureh);}}
+\@define\@picturesized#1(#2,#3){\@define\@picturew{#2}\@define\@pictureh{#3}#1\@ifnextchar[{\@pictureplaced}{\@pictureplaced[]}}
+\@define\@pictureplaced[#1]#2{\node at (\@calculate{\@px+\@picturew/2},\@calculate{\@py+\@pictureh/2}) {#2};}
+
+% How heavy the lines drawn from here are: each weight names whole \draw
+% commands, a \draw reading its options as they are written.
+\@define\@picturethick{\@define\@picturedraw{\draw[thick]}\@define\@picturearrow{\draw[->, thick]}\@define\@pictureround{\draw[rounded corners, thick]}\@define\@picturedash{\draw[dashed, thick]}}
+\@define\@picturethin{\@define\@picturedraw{\draw[thin]}\@define\@picturearrow{\draw[->, thin]}\@define\@pictureround{\draw[rounded corners, thin]}\@define\@picturedash{\draw[dashed, thin]}}
+\@define\@picturethickness#1{\@define\@picturedraw{\draw[line width=#1]}\@define\@picturearrow{\draw[->, line width=#1]}\@define\@pictureround{\draw[rounded corners, line width=#1]}\@define\@picturedash{\draw[dashed, line width=#1]}}

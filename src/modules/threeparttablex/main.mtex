@@ -1,0 +1,11 @@
+% threeparttablex: threeparttable's notes for a long table -- written before
+% it in a TableNotes block, set where \insertTableNotes stands.
+
+\@requirepackage{environ}
+\@requirepackage{threeparttable}
+
+\@define\ThreePartTable{}
+\@define\endThreePartTable{}
+\@define\@tablenotes{}
+\NewEnviron{TableNotes}{\global\let\@tablenotes\BODY}
+\@define\insertTableNotes{\begin{tablenotes}\@tablenotes\end{tablenotes}}

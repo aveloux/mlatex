@@ -1,0 +1,13 @@
+% titlesec: headings of a design of their own.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\begin{document}
+\titleformat{\section}{\Large\bfseries\color{blue}}{\thesection}{1em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titleformat{\subsection}[runin]{\bfseries}{\thesubsection}{0.5em}{}
+\section{A designed heading}
+\subsection{Run in} text follows.
+\end{document}

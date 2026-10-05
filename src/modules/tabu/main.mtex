@@ -1,0 +1,24 @@
+% tabu: tables written to a width -- `to \linewidth` -- with X columns that
+% share what the rest leave, tabularx's own, and an alignment in brackets
+% after each, X[l], X[c], X[r]. A table given no width is a tabular.
+%
+%   \begin{tabu} to \linewidth {X[l] X[c] X[r]} ... \end{tabu}
+
+\@requirepackage{tabularx}
+
+\@define\tabu{\@ifnextchar t{\@tabuto}{\@ifnextchar s{\@tabuspread}{\@tabunatural}}}
+\@define\@tabuto to#1#2{\@define\@tabuend{\end{tabularx}}\begin{tabularx}{#1}{#2}}
+\@define\@tabuspread spread#1#2{\@define\@tabuend{\end{tabularx}}\begin{tabularx}{\linewidth}{#2}}
+\@define\@tabunatural#1{\@define\@tabuend{\end{tabular}}\begin{tabular}{#1}}
+\@define\endtabu{\@tabuend}
+\@define\longtabu{\@ifnextchar t{\@tabuto}{\@ifnextchar s{\@tabuspread}{\@tabunatural}}}
+\@define\endlongtabu{\@tabuend}
+\@define\rowfont[2][]{}
+\@define\tabulinesep{}
+\@define\taburulecolor{\@ifnextchar|{\@tabucolors}{\@gobble}}
+\@define\@tabucolors|#1|#2{}
+\@define\taburowcolors[3][]{}
+\@define\tabucline[2][]{\cline{#2}}
+\@define\tabuphantomline{}
+\@define\tabulinestyle[1]{}
+\@define\everyrow[1]{}

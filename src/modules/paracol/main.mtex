@@ -1,0 +1,12 @@
+% paracol: text in parallel columns, \switchcolumn moving to the next --
+% set as balanced columns, each switch a break between them.
+
+\@define\paracol[2][]{\begin{multicols}{#2}}
+\@define\endparacol{\end{multicols}}
+\expandafter\@define\csname paracol*\endcsname[2][]{\begin{multicols}{#2}}
+\expandafter\@define\csname endparacol*\endcsname{\end{multicols}}
+\@define\switchcolumn{\@ifstar{\@switchcolumn}{\@switchcolumn}}
+\@define\@switchcolumn[1][]{\par}
+\@define\columnratio[2][]{}
+\@define\setcolumnwidth[1]{}
+\@define\globalcounter[1]{}

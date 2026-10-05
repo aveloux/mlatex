@@ -1,0 +1,8 @@
+% graphicx: pictures and transforms.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+\includegraphics[width=3cm]{example-image} \includegraphics[height=1cm]{example-image-1x1} \rotatebox{45}{turned} \scalebox{2}{big} \resizebox{2cm}{!}{fitted} \reflectbox{mirror} \graphicspath{{figures/}}
+\end{document}

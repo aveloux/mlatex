@@ -1,0 +1,8 @@
+% fixme: notes while writing.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[draft]{fixme}
+\begin{document}
+The text as it stands. \fixme{Check this.} \fxnote{A note.} \fxwarning{Careful.} \listoffixmes
+\end{document}

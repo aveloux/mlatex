@@ -71,6 +71,11 @@ namespace render::primitives {
             context.registers.bind(parser.mouth.lexicon.intern(extents[index]), Registers::Type::Dimension,
                                    Registers::reserved + index);
         }
+        // \\parindent as well, after the two \\fbox lengths that follow these:
+        // `\\the\\parindent`, `0.5\\parindent`. (\\parskip is a register of
+        // its own, which the core names.)
+        static constexpr std::size_t indent = Registers::reserved + 10;
+        context.registers.bind(parser.mouth.lexicon.intern("\\parindent"), Registers::Type::Dimension, indent);
         const auto publish = [&context] {
             const Configuration& page = context.document.configuration;
             const float column = context.document.column(page.columns);
@@ -82,6 +87,7 @@ namespace render::primitives {
                 context.registers.set(Registers::Type::Dimension, Registers::reserved + index,
                                       static_cast<std::int32_t>(values[index] * 65536.0f), true);
             }
+            context.registers.set(Registers::Type::Dimension, indent, static_cast<std::int32_t>(page.indent * 65536.0f), true);
         };
         publish();
 
@@ -578,14 +584,26 @@ namespace render::primitives {
                 const std::string name = syntax::Argument::text(parser.mouth);
 
                 const auto found = std::ranges::find(styles, name, &std::pair<std::string_view, Directive::Style>::first);
+                Directive::Style style = found == styles.end() ? Directive::Style::Fancy : found->second;
                 if (found == styles.end()) {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                             "Unknown page style '" + name + "'");
-                    return directive(arena, nullptr, origin);
+                    // A style a package defines, as LaTeX's \pagestyle has
+                    // it: `\ps@name`, run now -- titleps' styles, KOMA's
+                    // scrheadings -- setting the heads and feet a fancy page
+                    // draws.
+                    syntax::Mouth& mouth = parser.mouth;
+                    const syntax::Symbol defined = mouth.lexicon.intern("\\ps@" + name);
+                    if (!mouth.known(defined)) {
+                        tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                                 "Unknown page style '" + name + "'");
+                        return directive(arena, nullptr, origin);
+                    }
+                    const syntax::Token call{.symbol = defined, .category = syntax::Catcodes::Category::Escape,
+                                             .text = mouth.lexicon.resolve(defined)};
+                    mouth.stream().inject(std::span{&call, 1});
                 }
 
                 auto* node = arena.compose<layout::Node>();
-                node->directive({.command = Directive::Command::Page, .style = found->second, .local = local});
+                node->directive({.command = Directive::Command::Page, .style = style, .local = local});
                 return directive(arena, node, origin, true);
             });
         }

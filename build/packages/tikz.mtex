@@ -1,0 +1,20 @@
+% tikz: pictures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tikz}
+\begin{document}
+\usetikzlibrary{arrows.meta,positioning,shapes}
+\begin{tikzpicture}[scale=1, every node/.style={draw}]
+\draw[->, thick] (0,0) -- (2,0) node[right] {$x$};
+\draw[red] (0,0) circle (0.5);
+\fill[blue!20] (1,1) rectangle (2,2);
+\node (a) at (0,2) {A};
+\node[right=of a] (b) {B};
+\draw[-{Latex}] (a) -- (b);
+\foreach \x in {0,1,2} \draw (\x,-0.2) -- (\x,0.2);
+\draw (3,0) arc (0:90:1);
+\draw plot[domain=0:1] (\x, {\x*\x});
+\end{tikzpicture}
+\tikz \draw (0,0) -- (1,1);
+\end{document}

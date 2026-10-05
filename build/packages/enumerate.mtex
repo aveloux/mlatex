@@ -1,0 +1,8 @@
+% enumerate: list labels by example.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{enumerate}
+\begin{document}
+\begin{enumerate}[(a)]\item first\item second\end{enumerate}\begin{enumerate}[I.]\item Roman\end{enumerate}
+\end{document}

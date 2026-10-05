@@ -50,7 +50,8 @@ namespace render::layout {
             float target{400.0f};      ///< Column width in points.
             float pretolerance{100.0f};   ///< Worst badness on the first pass, which hyphenates nothing: `\\pretolerance`.
             float tolerance{200.0f};      ///< Worst badness on the second, which hyphenates: `\\tolerance`.
-            float emergency{2000.0f};     ///< Worst on a last pass, when neither finds lines that fit.
+            float emergency{30.0f};       ///< Stretch every line is granted on a last pass, when neither finds
+                                          ///< lines that fit: `\\emergencystretch`, three ems at ten points.
             float penalty{10.0f};      ///< Added to every break, to prefer fewer lines.
             Node::Justification justification{Node::Justification::Full};   ///< How lines sit in the column.
         };

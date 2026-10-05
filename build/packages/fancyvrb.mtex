@@ -1,0 +1,16 @@
+% fancyvrb: verbatim with options.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fancyvrb}
+\begin{filecontents}{nothing.txt}
+line one
+line two
+\end{filecontents}
+\begin{document}
+\begin{Verbatim}[frame=single, numbers=left, fontsize=\small]
+int main() { return 0; }
+\end{Verbatim}
+\VerbatimInput{nothing.txt}
+Inline \Verb|a_b|.
+\end{document}

@@ -1,0 +1,8 @@
+% textpos: text at a position.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[absolute]{textpos}
+\begin{document}
+\begin{textblock*}{3cm}(2cm,2cm)Placed text.\end{textblock*}\begin{textblock}{3}(1,1)More.\end{textblock}
+\end{document}

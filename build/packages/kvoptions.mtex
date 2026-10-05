@@ -1,0 +1,8 @@
+% kvoptions: key-value options.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{kvoptions}
+\begin{document}
+\SetupKeyvalOptions{family=my, prefix=my@}\DeclareStringOption{name} Text.
+\end{document}

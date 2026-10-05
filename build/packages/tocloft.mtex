@@ -1,0 +1,12 @@
+% tocloft: how the contents look.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tocloft}
+\begin{document}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftsecindent}{1em}
+\tableofcontents
+\listoffigures
+\section{One}
+\end{document}

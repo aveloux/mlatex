@@ -1,0 +1,8 @@
+% dblfloatfix: double-column floats fixed.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[twocolumn]{article}
+\usepackage{dblfloatfix}
+\begin{document}
+\begin{figure*}[t]\centering\rule{3cm}{1cm}\caption{Wide}\end{figure*}Text.
+\end{document}

@@ -1,0 +1,8 @@
+% chemfig: structural formulas.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{chemfig}
+\begin{document}
+\chemfig{H-C(-[2]H)(-[6]H)-H} and \chemfig{*6(=-=-=-)}
+\end{document}

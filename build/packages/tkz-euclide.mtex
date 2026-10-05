@@ -1,0 +1,17 @@
+% tkz-euclide: Euclidean geometry.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tkz-euclide}
+\begin{document}
+\begin{tikzpicture}
+\tkzDefPoint(0,0){A}
+\tkzDefPoint(3,0){B}
+\tkzDefPoint(1,2){C}
+\tkzDrawSegment(A,B)
+\tkzDrawSegment(B,C)
+\tkzDrawSegment(C,A)
+\tkzDrawPoint(A)
+\tkzLabelPoint(A){$A$}
+\end{tikzpicture}
+\end{document}

@@ -9,7 +9,9 @@
 #include "syntax/primitives/include.hpp"
 #include "syntax/primitives/loops.hpp"
 #include "syntax/primitives/macros.hpp"
+#include "syntax/primitives/records.hpp"
 #include "syntax/primitives/relay.hpp"
+#include "syntax/primitives/strings.hpp"
 #include "syntax/primitives/values.hpp"
 #include "syntax/primitives/variables.hpp"
 #include "syntax/traceback.hpp"
@@ -80,6 +82,8 @@ namespace syntax::primitives {
                                 ///< Context reads and a caller hands values in through before a run.
         Decimals decimals;      ///< `\\calculate`, `\\amount`, `\\separators`.
         Hooks hooks;            ///< `\\addtohook`, `\\usehook`.
+        Strings strings;        ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
+        Records records;        ///< csvsimple's CSV files and datatool's databases.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

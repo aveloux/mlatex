@@ -29,3 +29,16 @@
 \@define\zelleryear{\ifnum\month<3 \@evaluate{\year-1}\else\@evaluate{\year}\fi}
 \@define\weekday{\ifcase\@evaluate{(\day + (13*(\zellermonth+1))/5 + \zelleryear + \zelleryear/4 - \zelleryear/100 + \zelleryear/400) \mod 7}
 Saturday\or Sunday\or Monday\or Tuesday\or Wednesday\or Thursday\or Friday\fi}
+
+% The time, as \time counts it: minutes past midnight.
+\@define\currenttime{\twodigits{\@evaluate{\time/60}}:\twodigits{\@evaluate{\time-(\time/60)*60}}}
+\@define\xxivtime{\currenttime}
+\@define\ampmtime{\currenttime}
+\@define\oclock{\currenttime}
+\@define\settimeformat[1]{}
+\@define\formatdate[3]{\@evaluate{#1}~\monthname{#2} \@evaluate{#3}}
+\@define\formattime[3]{\twodigits{#1}:\twodigits{#2}}
+\@define\newdateformat[2]{\@define#1{#2}}
+\@define\THEDAY{\@evaluate{\day}}
+\@define\THEMONTH{\@evaluate{\month}}
+\@define\THEYEAR{\@evaluate{\year}}

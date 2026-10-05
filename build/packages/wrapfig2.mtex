@@ -1,0 +1,8 @@
+% wrapfig2: wrapfig, the second.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{wrapfig2}
+\begin{document}
+\begin{wrapfigure}{r}{3cm}\rule{2cm}{1cm}\end{wrapfigure}Wrapped text.
+\end{document}

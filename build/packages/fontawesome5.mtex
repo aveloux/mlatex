@@ -1,0 +1,8 @@
+% fontawesome5: Font Awesome's icons.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fontawesome5}
+\begin{document}
+\faGithub{} \faEnvelope{} \faPhone{} \faLinkedin{} \faHome{} \faIcon{star} \faCheck{} \faTwitter
+\end{document}

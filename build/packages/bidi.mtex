@@ -1,0 +1,10 @@
+% bidi: text in both directions.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{bidi}
+\begin{document}
+\setLTR Left to right text.
+\setRTL Right to left text.
+\setLTR Back again.
+\end{document}

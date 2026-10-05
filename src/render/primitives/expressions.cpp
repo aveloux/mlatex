@@ -66,7 +66,7 @@ namespace render::primitives {
 
         // Loosest first. A relation binds least tightly, so `a + b = c` reads
         // as `(a + b) = c` and not as `a + (b = c)`.
-        static constexpr std::array<Rule, 96> table{{
+        static constexpr std::array<Rule, 102> table{{
             // Relations, which everything else binds tighter than.
             {"=", Type::Binary, 1, false},
             {"<", Type::Binary, 1, false},
@@ -164,6 +164,15 @@ namespace render::primitives {
             {"\\overleftarrow", Type::Accent, 0, true},
             {"\\overleftrightarrow", Type::Accent, 0, true},
 
+            // A brace, a bracket or a parenthesis stretched over or under what
+            // it spans, its label written as a script and set as a limit.
+            {"\\overbrace", Type::Accent, 0, true},
+            {"\\underbrace", Type::Accent, 0, true},
+            {"\\overbracket", Type::Accent, 0, true},
+            {"\\underbracket", Type::Accent, 0, true},
+            {"\\overparen", Type::Accent, 0, true},
+            {"\\underparen", Type::Accent, 0, true},
+
             // Words inside a formula, read with their spaces and set upright
             // or in the style their name says.
             {"\\text", Type::Text, 0, true},
@@ -230,7 +239,7 @@ namespace render::primitives {
 
         // The spaces, which take nothing: `\\!{}_{2}` is a space taken back
         // and then an empty base with a subscript, never a space over `{}`.
-        for (const std::string_view name : {"\\,", "\\:", "\\;", "\\!", "\\ ", "\\quad", "\\qquad"}) {
+        for (const std::string_view name : {"\\,", "\\:", "\\;", "\\!", "\\ ", "\\\n", "\\\r\n", "\\quad", "\\qquad"}) {
             grammar.declare(lexicon.intern(name), 0);
         }
 

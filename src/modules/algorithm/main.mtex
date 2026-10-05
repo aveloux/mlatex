@@ -14,4 +14,4 @@
 \@define\algorithmname{Algorithm}
 \@define\listalgorithmname{List of Algorithms}
 \@define\listofalgorithms{}
-\@define\floatname[2]{\@ifstrequal{#1}{algorithm}{\@define\algorithmname{#2}}{}}
+\@define\floatname[2]{\@namedef{#1name}{#2}}

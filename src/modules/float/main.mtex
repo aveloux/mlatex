@@ -1,9 +1,21 @@
-% float: [H], a float set where it is written, is how every float is set
-% here. The package's ways of making floats of new kinds and styles are read
-% and set nothing.
+% float: [H], a float set where it is written, and floats of new kinds.
+%
+%   \floatstyle{ruled}
+%   \newfloat{program}{htbp}{lop}[section]
+%   \floatname{program}{Program}
+%   \begin{program} ... \caption{...} \end{program}
+%
+% A new float is numbered by a counter of its name, within the one the last
+% argument names, and captioned by \<name>name -- its name as written, until
+% \floatname gives it another. The ruled style sets it between rules, as the
+% algorithm package's float is set; every other style as a figure is.
 
-\@define\floatstyle[1]{}
+\@define\@floatstyle{plain}
+\@define\floatstyle[1]{\@define\@floatstyle{#1}}
 \@define\restylefloat{\@ifstar{\floatrestyled}{\floatrestyled}}
 \@define\floatrestyled[1]{}
-\@define\newfloat[4][]{}
+\@define\newfloat[3]{\newcounter{#1}\@ifundefined{#1name}{\@namedef{#1name}{#1}}{}\@ifstrequal{\@floatstyle}{ruled}{\@newfloat*{#1}}{\@newfloat{#1}}\@ifnextchar[{\@floatwithin{#1}}{}}
+\@define\@floatwithin#1[#2]{\@addtoreset{#1}{#2}\@namedef{the#1}{\csname the#2\endcsname.\arabic{#1}}}
+\@define\floatname[2]{\@namedef{#1name}{#2}}
 \@define\floatplacement[2]{}
+\@define\listof[2]{\section*{#2}}

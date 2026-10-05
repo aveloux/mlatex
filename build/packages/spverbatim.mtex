@@ -1,0 +1,10 @@
+% spverbatim: verbatim that breaks at spaces.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{spverbatim}
+\begin{document}
+\begin{spverbatim}
+verbatim text whose long lines may break at their spaces when they run past the edge of the column
+\end{spverbatim}
+\end{document}

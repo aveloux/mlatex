@@ -1,0 +1,17 @@
+% thmtools: theorems declared by keys.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{thmtools}
+\usepackage{amsthm}
+\begin{document}
+\declaretheorem[name=Theorem, numberwithin=section]{theorem}
+\declaretheorem[sibling=theorem]{lemma}
+\declaretheorem[numbered=no, style=remark]{note}
+\declaretheoremstyle[headfont=\bfseries]{mystyle}
+\section{S}
+\begin{theorem}A theorem.\end{theorem}
+\begin{lemma}A lemma.\end{lemma}
+\begin{note}A note.\end{note}
+\listoftheorems
+\end{document}

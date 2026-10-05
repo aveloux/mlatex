@@ -1,0 +1,11 @@
+% catchfile: a file into a macro.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{catchfile}
+\begin{filecontents}{data.txt}
+Caught text.
+\end{filecontents}
+\begin{document}
+\CatchFileDef{\content}{data.txt}{}The file holds: \content
+\end{document}

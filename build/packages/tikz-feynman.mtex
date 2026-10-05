@@ -1,0 +1,8 @@
+% tikz-feynman: Feynman diagrams, TikZ.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tikz-feynman}
+\begin{document}
+\feynmandiagram[horizontal=a to b]{i1 -- [fermion] a -- [photon] b -- [fermion] f1};
+\end{document}

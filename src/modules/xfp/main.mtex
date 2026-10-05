@@ -3,3 +3,7 @@
 % to the cent it should. A variable may be named in it by its name.
 
 \@alias\fpeval\@calculate
+
+% Whole numbers, as e-TeX's \numexpr reads them: \inteval{7*6} is 42.
+\@alias\inteval\@evaluate
+\@define\dimeval[1]{\the\dimexpr #1\relax}

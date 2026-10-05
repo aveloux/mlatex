@@ -1,0 +1,16 @@
+% threeparttable: a table with its notes.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{threeparttable}
+\begin{document}
+\begin{table}[htbp]
+\begin{threeparttable}
+\caption{Notes kept with the table}
+\begin{tabular}{lr} a & 1\tnote{a} \\ \end{tabular}
+\begin{tablenotes}
+\item[a] A note.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+\end{document}

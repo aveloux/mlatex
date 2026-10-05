@@ -1,0 +1,10 @@
+% ntheorem: theorems, the other package.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{ntheorem}
+\begin{document}
+\theoremstyle{break}
+\newtheorem{theorem}{Theorem}
+\begin{theorem}A theorem, its body under its head.\end{theorem}
+\end{document}

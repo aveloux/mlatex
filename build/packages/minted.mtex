@@ -1,0 +1,13 @@
+% minted: highlighted code.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{minted}
+\begin{document}
+\begin{minted}[linenos, frame=lines]{python}
+print("hello")
+\end{minted}
+Inline \mintinline{c}{int x = 1;}.
+\setminted{fontsize=\small}
+\newminted{python}{}
+\end{document}

@@ -1,0 +1,8 @@
+% fmtcount: numbers in words.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fmtcount}
+\begin{document}
+\ordinalnum{3}, \numberstringnum{12}, \Numberstringnum{5}, \ordinalstringnum{2}, \NUMBERstringnum{2026}; section \numberstring{section}.\section{One}
+\end{document}

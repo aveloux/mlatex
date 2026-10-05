@@ -1,0 +1,16 @@
+% class-letter: LaTeX's letter class.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{letter}
+\begin{document}
+\signature{Jane Austen}
+\address{Chawton\\ Hampshire}
+\begin{letter}{Mr.\ Darcy\\ Pemberley}
+\opening{Dear Sir,}
+Your letter arrived.
+\closing{Yours faithfully,}
+\ps{P.S. The weather is fine.}
+\encl{A map}
+\cc{Mr.\ Bingley}
+\end{letter}
+\end{document}

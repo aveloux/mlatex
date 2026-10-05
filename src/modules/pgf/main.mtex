@@ -1,0 +1,34 @@
+% pgf: the layer TikZ is built on. Its pictures are TikZ's, and its basic
+% layer's paths -- a point, a line to it, a circle, a rectangle -- the TikZ
+% paths they make.
+%
+%   \begin{pgfpicture}
+%     \pgfpathcircle{\pgfpoint{0cm}{0cm}}{1cm} \pgfusepath{stroke}
+%   \end{pgfpicture}
+
+\@requirepackage{tikz}
+
+\@define\pgfpicture{\begin{tikzpicture}\@define\@pgfpath{}}
+\@define\endpgfpicture{\end{tikzpicture}}
+\@define\pgfpoint[2]{(#1,#2)}
+\@define\pgfpointorigin{(0,0)}
+\@define\pgfpointpolar[2]{(#1:#2)}
+\@define\pgfpathmoveto[1]{\g@addto@macro\@pgfpath{#1}}
+\@define\pgfpathlineto[1]{\g@addto@macro\@pgfpath{ -- #1}}
+\@define\pgfpathclose{\g@addto@macro\@pgfpath{ -- cycle}}
+\@define\pgfpathcircle[2]{\g@addto@macro\@pgfpath{#1 circle (#2)}}
+\@define\pgfpathellipse[3]{\g@addto@macro\@pgfpath{#1 circle (#2)}}
+\@define\pgfpathrectangle[2]{\g@addto@macro\@pgfpath{#1 rectangle ++#2}}
+\@define\pgfpathrectanglecorners[2]{\g@addto@macro\@pgfpath{#1 rectangle #2}}
+\@define\pgfusepath[1]{\IfSubStr{#1}{fill}{\IfSubStr{#1}{stroke}{\filldraw}{\fill}}{\draw} \@pgfpath;\@define\@pgfpath{}}
+\@define\pgfsetlinewidth[1]{}
+\@define\pgfsetcolor[1]{}
+\@define\pgfsetstrokecolor[1]{}
+\@define\pgfsetfillcolor[1]{}
+\@define\pgftext[2][]{\node at (0,0) {#2};}
+\@define\pgfsetdash[2]{}
+\@define\pgfmathsetmacro[2]{\edef#1{\@calculate{#2}}}
+\@define\pgfmathparse[1]{\edef\pgfmathresult{\@calculate{#1}}}
+\@define\pgfmathtruncatemacro[2]{\edef#1{\@evaluate{#2}}}
+\@define\pgfdeclarelayer[1]{}
+\@define\pgfsetlayers[1]{}

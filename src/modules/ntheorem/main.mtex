@@ -1,0 +1,22 @@
+% ntheorem: theorems, the other package. Its \newtheorem is amsthm's, and its
+% styles are amsthm styles of its names: break, its head on a line of its
+% own; plain, change and margin; and the unnumbered ones.
+
+\@requirepackage{amsthm}
+
+\newtheoremstyle{break}{3pt}{3pt}{\itshape}{}{\bfseries}{}{\newline}{}
+\newtheoremstyle{change}{3pt}{3pt}{\itshape}{}{\bfseries}{}{.5em}{}
+\newtheoremstyle{margin}{3pt}{3pt}{\itshape}{}{\bfseries}{}{.5em}{}
+\newtheoremstyle{nonumberplain}{3pt}{3pt}{\itshape}{}{\bfseries}{}{.5em}{\thmname{#1}}
+\newtheoremstyle{nonumberbreak}{3pt}{3pt}{\itshape}{}{\bfseries}{}{\newline}{\thmname{#1}}
+\newtheoremstyle{empty}{3pt}{3pt}{}{}{}{}{0pt}{}
+\@define\theoremheaderfont[1]{}
+\@define\theorembodyfont[1]{}
+\@define\theoremseparator[1]{}
+\@define\theoremsymbol[1]{}
+\@define\theoremindent{}
+\@define\theoremnumbering[1]{}
+\@define\theoremprework[1]{}
+\@define\theorempostwork[1]{}
+\@define\theoremclass[1]{}
+\@define\qedsymbol{\ensuremath{\square}}

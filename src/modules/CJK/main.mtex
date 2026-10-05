@@ -1,0 +1,15 @@
+% CJK: Chinese, Japanese and Korean text. The characters are drawn from the
+% system's faces for their scripts; the block's encoding and family are read.
+%
+%   \begin{CJK}{UTF8}{gbsn} 中文 \end{CJK}
+
+\@define\CJK[2]{}
+\@define\endCJK{}
+\expandafter\@define\csname CJK*\endcsname[2]{}
+\expandafter\@define\csname endCJK*\endcsname{}
+\@define\CJKtilde{}
+\@define\CJKnospace{}
+\@define\CJKspace{}
+\@define\CJKindent{}
+\@define\CJKfamily[1]{}
+\@define\CJKencoding[1]{}

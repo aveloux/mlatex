@@ -1,0 +1,13 @@
+% wrapfig: text round figures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{wrapfig}
+\begin{document}
+\begin{wrapfigure}{r}{0.3\textwidth}
+\centering\rule{2cm}{2cm}
+\caption{Wrapped}
+\end{wrapfigure}
+Text that flows beside the figure for a while, and then continues below it as text does.
+\begin{wraptable}{l}{3cm}\centering\begin{tabular}{c}a\end{tabular}\caption{A wrapped table}\end{wraptable}
+\end{document}

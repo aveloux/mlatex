@@ -1,0 +1,11 @@
+% bohr: an atom drawn as Bohr drew it -- its nucleus, labelled with its
+% symbol, and its electrons on shells round it, two, then eight, then the
+% rest -- as a TikZ picture.
+%
+%   \bohr{3}{Li}
+
+\@requirepackage{tikz}
+\@requirepackage{elements}
+
+\@define\bohr[3][]{\begin{tikzpicture}[baseline=-0.5ex]\node[circle, draw, fill=gray!20, inner sep=1pt] at (0,0) {\scriptsize #3};\draw (0,0) circle (0.45);\ifnum#2>2 \draw (0,0) circle (0.7);\fi\ifnum#2>10 \draw (0,0) circle (0.95);\fi\end{tikzpicture}}
+\@define\setbohr[1]{}

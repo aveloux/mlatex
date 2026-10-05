@@ -1,0 +1,14 @@
+% tasks: exercises numbered a), b), c), set in so many columns.
+%
+%   \begin{tasks}(2)
+%     \task First \task Second
+%   \end{tasks}
+
+\@requirepackage{enumitem}
+
+\@define\tasks[1][]{\@ifnextchar({\@tasksopen}{\@tasksopen(1)}}
+\@define\@tasksopen(#1){\ifnum#1>1 \begin{multicols}{#1}\@define\@tasksend{\end{enumerate}\end{multicols}}\else\@define\@tasksend{\end{enumerate}}\fi\begin{enumerate}[label=\alph*)]\@define\task{\@ifstar{\item}{\item}}}
+\@define\endtasks{\@tasksend}
+\@define\settasks[1]{}
+\@define\NewTasksEnvironment[3][]{}
+\@define\RenewTasksEnvironment[3][]{}

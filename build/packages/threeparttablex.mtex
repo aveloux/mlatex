@@ -1,0 +1,9 @@
+% threeparttablex: notes in long tables.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{threeparttablex}
+\usepackage{longtable}
+\begin{document}
+\begin{ThreePartTable}\begin{TableNotes}\item a note\end{TableNotes}\begin{longtable}{c}a\\\insertTableNotes\end{longtable}\end{ThreePartTable}
+\end{document}

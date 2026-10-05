@@ -1,0 +1,14 @@
+% xparse: document commands.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{xparse}
+\begin{document}
+\NewDocumentCommand{\pair}{O{x} m}{(#1, #2)}
+\NewDocumentCommand{\maybe}{s m}{\IfBooleanTF{#1}{starred #2}{plain #2}}
+\NewDocumentEnvironment{boxed}{m}{[#1: }{]}
+\pair{y} \pair[a]{b} \maybe{one} \maybe*{two}
+\begin{boxed}{tag} inside \end{boxed}
+\RenewDocumentCommand{\pair}{m}{<#1>} \pair{z}
+\ProvideDocumentCommand{\fresh}{}{fresh}\fresh
+\end{document}

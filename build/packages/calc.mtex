@@ -1,0 +1,11 @@
+% calc: arithmetic in lengths.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{calc}
+\begin{document}
+\newlength{\half}
+\setlength{\half}{\textwidth/2 - 1cm}
+\setcounter{page}{2*3}
+\rule{\half}{1pt} \widthof{text} \settowidth{\half}{wide text}
+\end{document}

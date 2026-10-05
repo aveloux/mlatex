@@ -14,8 +14,9 @@
 namespace syntax::primitives {
 
     /// @brief Named values a document reads: `\\variable`, `\\setvariable`,
-    ///        `\\unsetvariable`, `\\ifvariable`, and `\\ifstrequal` to
-    ///        compare two pieces of text.
+    ///        `\\unsetvariable`, `\\ifvariable`, `\\ifstrequal` to compare
+    ///        two pieces of text, and `\\iftest` to weigh a test as ifthen
+    ///        writes one.
     ///
     /// This is how a number worked out somewhere else ends up on the page. A
     /// program that calls the engine -- through the foreign-function library
@@ -40,6 +41,7 @@ namespace syntax::primitives {
     /// \setkeys{geometry}{margin=1in,a4paper} % geometry.margin and geometry.a4paper
     ///
     /// \ifstrequal{\variable{plan}}{gold}{Welcome back.}{Upgrade today.}
+    /// \iftest{\value{page} > 1 \AND \NOT \boolean{draft}}{Continued.}{}
     /// @endcode
     ///
     /// `\\ifstrequal` expands both of its first two arguments before it
@@ -63,7 +65,7 @@ namespace syntax::primitives {
         explicit Variables(Lexicon& lexicon) noexcept;
 
         /// @brief Installs `\\variable`, `\\setvariable`, `\\unsetvariable`,
-        ///        `\\ifvariable`, `\\ifstrequal` and `\\setkeys`.
+        ///        `\\ifvariable`, `\\ifstrequal`, `\\iftest` and `\\setkeys`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; unused by this module.
         void operator()(Mouth& mouth, Context& context) const;

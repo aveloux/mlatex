@@ -1,0 +1,14 @@
+% tcolorbox: coloured boxes.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[most]{tcolorbox}
+\begin{document}
+\tcbset{colback=blue!5}
+\begin{tcolorbox}[title=A box, colframe=blue!50]
+Inside a coloured box.
+\end{tcolorbox}
+\newtcolorbox{note}[1][]{colback=yellow!10, title=Note, #1}
+\begin{note}A note.\end{note}
+\tcbox{inline}
+\end{document}

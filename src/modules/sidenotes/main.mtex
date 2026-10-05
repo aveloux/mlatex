@@ -1,0 +1,16 @@
+% sidenotes: notes, citations, figures and tables in the margin -- a note
+% numbered with the footnotes, its mark in the text and the note beside it.
+
+\@requirepackage{marginnote}
+
+\@define\sidenote[2][]{\stepcounter{footnote}\textsuperscript{\thefootnote}\marginpar{\footnotesize\textsuperscript{\thefootnote}\,#2}}
+\@define\sidenotemark[1][]{\stepcounter{footnote}\textsuperscript{\thefootnote}}
+\@define\sidenotetext[2][]{\marginpar{\footnotesize\textsuperscript{\thefootnote}\,#2}}
+\@define\sidecite[2][]{\cite{#2}}
+\@define\sidecaption[2][]{\caption{#2}}
+\@define\marginfigure[1][]{\begin{figure}[htbp]}
+\@define\endmarginfigure{\end{figure}}
+\@define\margintable[1][]{\begin{table}[htbp]}
+\@define\endmargintable{\end{table}}
+\@define\widefigure[1][]{\begin{figure*}[htbp]}
+\@define\endwidefigure{\end{figure*}}

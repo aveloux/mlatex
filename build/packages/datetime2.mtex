@@ -1,0 +1,8 @@
+% datetime2: today's date and the time.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[en-GB]{datetime2}
+\begin{document}
+Today is \DTMtoday; now is \DTMnow; a date \DTMdate{2026-09-29}.
+\end{document}

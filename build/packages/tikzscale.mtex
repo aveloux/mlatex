@@ -1,0 +1,12 @@
+% tikzscale: scaled TikZ files.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tikzscale}
+\usepackage{tikz}
+\begin{filecontents*}{drawing.tikz}
+\begin{tikzpicture}\draw (0,0) -- (1,1) circle (0.5);\end{tikzpicture}
+\end{filecontents*}
+\begin{document}
+\includegraphics[width=2cm]{drawing.tikz}
+\end{document}

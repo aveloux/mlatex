@@ -1,0 +1,16 @@
+% setspace: line spacing.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{setspace}
+\begin{document}
+\onehalfspacing
+One and a half.
+\doublespacing
+Double.
+\begin{singlespace}
+Single.
+\end{singlespace}
+\setstretch{1.2}
+\begin{spacing}{1.5} Spaced. \end{spacing}
+\end{document}

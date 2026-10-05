@@ -516,6 +516,11 @@ namespace syntax::primitives {
         mouth.bind("\\the", [this, &context, &mouth, calculate](Mouth&) {
             const Token lead = mouth.lookahead();
 
+            // A counter's value, `\\the\\value{page}`: LaTeX's \\value is a
+            // count register, here the digits it holds, which are what \\the
+            // would print.
+            if (lead.symbol == mouth.lexicon.intern("\\value")) return;
+
             // A token list: what it holds, as it was given.
             const bool indexed = lead.symbol == toks;
             if (indexed || (lead.symbol < listed.size() && listed[lead.symbol] != 0)) {

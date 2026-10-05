@@ -1,0 +1,8 @@
+% boxedminipage: a minipage in a frame.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{boxedminipage}
+\begin{document}
+\begin{boxedminipage}{0.5\textwidth}A boxed minipage.\end{boxedminipage}
+\end{document}

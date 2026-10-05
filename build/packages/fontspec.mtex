@@ -1,0 +1,12 @@
+% fontspec: system fonts by name.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fontspec}
+\begin{document}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Courier New}
+\newfontfamily\greek{GFS Didot}
+Main text, \textsf{sans}, \texttt{mono}, {\greek Greek}, \addfontfeature{Numbers=OldStyle}1234.
+\end{document}

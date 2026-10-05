@@ -1,0 +1,12 @@
+% glossaries-extra: glossaries, extended.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[abbreviations]{glossaries-extra}
+\begin{document}
+\newglossaryentry{api}{name={API}, description={an interface}}
+\newabbreviation{html}{HTML}{hypertext markup language}
+\makeglossaries
+\gls{api}, \gls{html}, \gls{html}.
+\printunsrtglossaries
+\end{document}

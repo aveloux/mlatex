@@ -1,0 +1,11 @@
+% makecell: cells of several lines.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{makecell}
+\begin{document}
+\begin{tabular}{|c|c|}\hline
+\thead{Head\\Two} & \makecell{a\\b} \\\hline
+\makecell[l]{left\\cell} & \makegapedcells x \\\hline
+\end{tabular}
+\end{document}

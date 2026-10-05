@@ -1,0 +1,37 @@
+% class-beamer: slides.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{beamer}
+\usetheme{Madrid}\usecolortheme{beaver}
+\begin{document}
+\title{Slides}
+\author{Alan Turing}
+\institute{Bletchley Park}
+\begin{frame}
+\titlepage
+\end{frame}
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+\section{Machines}
+\begin{frame}{A frame}
+\begin{itemize}
+\item<1-> first
+\item<2-> second \pause
+\item third
+\end{itemize}
+\begin{block}{Definition}
+A machine reads a tape.
+\end{block}
+\begin{alertblock}{Warning}
+It may not halt.
+\end{alertblock}
+\end{frame}
+\begin{frame}
+\frametitle{Columns}
+\begin{columns}
+\column{0.5\textwidth} Left \alert{side}.
+\column{0.5\textwidth} Right side.
+\end{columns}
+\end{frame}
+\end{document}

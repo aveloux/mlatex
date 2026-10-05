@@ -1,0 +1,8 @@
+% physics: a physicist's notation.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{physics}
+\begin{document}
+$\abs{x} \quad \norm{v} \quad \dv{f}{x} \quad \pdv{f}{x}{y} \quad \qty(\frac{a}{b}) \quad \bra{a}\ket{b} \quad \expval{H} \quad \tr{A} \quad \grad{f} \quad \curl{F} \quad \laplacian{\phi} \quad \order{x^2} \quad \eval{x}_0^1 \quad \vb{x} \quad \comm{A}{B}$
+\end{document}

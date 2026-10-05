@@ -69,6 +69,15 @@ namespace render::primitives {
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
 
+        /// @brief A table of data as pgfplots reads one: rows at line ends or
+        ///        `\\\\`, cells at blanks -- or at commas, for `col sep=comma`
+        ///        -- and a line opening with `#` or `%` a comment.
+        /// @param data   The table as written, inline or a file's text.
+        /// @param commas True when cells are parted by commas.
+        /// @return Its rows, each its cells, the first the names if written.
+        /// @complexity O(n) in the text.
+        [[nodiscard]] static std::vector<std::vector<std::string>> rows(std::string_view data, bool commas);
+
     private:
         /// @brief One plot, as `\\addplot` gave it.
         struct Plot {

@@ -16,13 +16,13 @@ namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon& lexicon) noexcept
         : relay(lexicon), blocks(lexicon), macros(lexicon), values(lexicon),
           compute(lexicon), loops(lexicon), include(lexicon),
-          variables(lexicon), decimals(lexicon), hooks(lexicon) {}
+          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {}
 
     void Wrapper::operator()(Mouth& mouth, Context& context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
         bind(mouth, context, relay, blocks, macros, values, compute, loops, include,
-             variables, decimals, hooks);
+             variables, decimals, hooks, strings, records);
 
         // Every word of the engine's own that is not LaTeX's, a second time
         // under an `@` name -- the way LaTeX's own internals are named, out of
@@ -32,13 +32,13 @@ namespace syntax::primitives {
         // does not change under it.
         // The register banks' own names are not among them: a register is
         // told by its name's symbol when a number is read, so each has one.
-        static constexpr std::array<std::string_view, 39> vocabulary{
+        static constexpr std::array<std::string_view, 40> vocabulary{
             "define", "forget", "alias", "shared", "spanning", "guarded", "set", "increase", "scale", "reduce",
             "name", "evaluate", "repeat", "group", "ungroup", "enter", "leave",
             "variable", "setvariable", "unsetvariable", "ifvariable", "setkeys", "calculate", "amount",
             "separators", "addtohook", "usehook", "requirepackage", "providepackage", "ifempty", "ifstar",
             "ifnextchar", "ifpackageloaded", "ifstrequal", "provided", "expanded", "declare", "switch",
-            "iffile",
+            "iffile", "iftest",
         };
         for (const std::string_view word : vocabulary) {
             const Symbol plain = mouth.lexicon.intern("\\" + std::string(word));
@@ -66,7 +66,7 @@ namespace syntax::primitives {
             &relay.traceback(), &blocks.traceback(), &macros.traceback(),
             &values.traceback(), &compute.traceback(), &loops.traceback(),
             &include.traceback(), &variables.traceback(), &decimals.traceback(),
-            &hooks.traceback(),
+            &hooks.traceback(), &strings.traceback(), &records.traceback(),
         };
 
         std::size_t total = 0uz;

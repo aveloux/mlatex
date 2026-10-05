@@ -1,0 +1,8 @@
+% bm: bold maths.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{bm}
+\begin{document}
+$\bm{x} \cdot \bm{\nabla} = \bm{0}$, $\boldsymbol{\alpha}$.
+\end{document}

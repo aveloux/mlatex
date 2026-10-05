@@ -1,0 +1,8 @@
+% subfigure: subfigures, the older package.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{subfigure}
+\begin{document}
+\begin{figure}[h]\subfigure[A]{\rule{1cm}{1cm}}\subfigure[B]{\rule{1cm}{1cm}}\caption{Two}\end{figure}
+\end{document}

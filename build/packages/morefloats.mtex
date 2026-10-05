@@ -1,0 +1,8 @@
+% morefloats: more floats waiting.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{morefloats}
+\begin{document}
+\begin{figure}[htbp]\centering\rule{1cm}{1cm}\caption{One of many}\end{figure}
+\end{document}

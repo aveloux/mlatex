@@ -1,0 +1,8 @@
+% bibtopic: bibliographies by topic.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{bibtopic}
+\begin{document}
+Text \cite{a}.\begin{thebibliography}{1}\bibitem{a} An entry.\end{thebibliography}
+\end{document}

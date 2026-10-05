@@ -1,0 +1,25 @@
+% class-IEEEtran: IEEE papers: two columns, Roman section numbers, run-in abstract.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass[conference]{IEEEtran}
+\begin{document}
+\title{A Conference Paper}
+\author{\IEEEauthorblockN{Ada Lovelace}\IEEEauthorblockA{Analytical Engines Ltd.\\ London}}
+\maketitle
+\begin{abstract}
+We describe a machine.
+\end{abstract}
+\begin{IEEEkeywords}
+engines, computation
+\end{IEEEkeywords}
+\section{Introduction}
+\IEEEPARstart{T}{his} paper opens with a large initial. As shown in Table~\ref{tab:a}.
+\begin{table}[htbp]
+\caption{Results}\label{tab:a}
+\centering
+\begin{tabular}{cc}\hline a & b\\\hline\end{tabular}
+\end{table}
+\section{Method}
+\subsection{Setup}
+Text in two columns.
+\end{document}

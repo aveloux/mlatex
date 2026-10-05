@@ -72,7 +72,10 @@ the `\@gobble`, not the document. The glossary's own `\@gobbleoptionone`,
 `\@gobbleoptiontwo` and `\@gobblefont` are written for that.
 
 A package that gives a name the glossary also holds wins wherever it is
-loaded; the glossary is only the fallback.
+loaded; the glossary is only the fallback. An environment is two lines,
+`\name` and `\endname`: `\begin{name}` nothing else defines reads both from
+the glossary, as LaTeX's `\begin` runs the two macros. When a name is on two
+lines, the first wins.
 
 ## Classes
 
@@ -240,9 +243,26 @@ assigning, `\advance`, `\multiply` and `\divide`. `\setlength` and
 
 The whole `\if` family: `\ifnum`, `\ifdim`, `\ifx`, `\ifcase`, `\ifodd`,
 `\ifdefined`, `\ifcsname`, `\ifmmode`, `\ifvmode`, `\iftrue` and `\iffalse`,
-each with `\else` and `\fi`, and `\unless` in front of any. `\@ifstar`,
+each with `\else` and `\fi`, and `\unless` in front of any.
+`\@iftest{test}{yes}{no}` (or `\iftest`) reads a test as ifthen writes one --
+`\value{page} > 1 \AND \NOT \equal{\x}{a}` -- which is how ifthen's and
+xifthen's `\ifthenelse` are made. `\@ifstar`,
 `\@ifnextchar` and `\@ifundefined` are there as LaTeX's kernel has them, and
-etoolbox's and ifthen's tests come with those packages.
+etoolbox's and ifthen's tests come with those packages. `\@ifempty` is a TeX
+test, not a choice between two groups: `\@ifempty{#1} none\else #1\fi`.
+
+A body that `\@ifnextchar` (or `\@ifstar`) decides in must end in it: what it
+looks at is the document's next token only when nothing of the body is left
+after it.
+
+### Text and data
+
+xstring's tests and functions (`\IfSubStr`, `\StrBefore`, `\StrLen`,
+`\StrSubstitute`, …) and csvsimple's and datatool's tables (`\csvreader`,
+`\csvautotabular`, `\DTLnewdb`, `\DTLloaddb`, `\DTLforeach`, …) are native
+commands under their packages' names, each worked out in one pass on the
+expanded text. A package that takes text apart or reads rows can use them
+rather than walking characters with macros.
 
 ### Repeating
 
@@ -292,9 +312,14 @@ is spelled out.
   look different should use the lengths, counters and names they read --
   `\parskip`, `\secnumdepth`, `\figurename`, fancyhdr's `\fancyhead` -- rather
   than rebuild them from boxes.
-- **Play with category codes.** `\makeatletter` and `\makeatother` are
-  accepted and change nothing: `@` is a letter everywhere here, in a document
-  as in a package.
+- **Play with category codes.** A package's names may hold `@` as LaTeX's
+  do; a document's `\makeatletter` names keep theirs whole too. A `\catcode`
+  change a package makes reaches the document, not the rest of the package's
+  own file, which was read whole before it ran: a package that needs names a
+  document cannot write -- expl3's `\c_true_bool` -- defines them through
+  `\csname`, as `core/expl3.mtex` does, and gives a category by number,
+  ``\catcode 58=11``, rather than as ``\catcode`\:``, which reads `\:` as a
+  command.
 
 ## Handing a package in from a program
 
@@ -321,3 +346,10 @@ back. A new package should add its name to the list there and its checks
 beside the others, and a line to the index in `src/modules/main.mtex`. A
 class's module is checked the same way from `tests/render/primitives/test_page.cpp`,
 and the glossary's lines from `tests/syntax/test_glossary.cpp`.
+
+`build/packages/` holds one small document for each package and class the
+engine reads -- 509 packages and 14 classes -- each using what its package is
+loaded for. `tests/test_engine.cpp` sets every one and fails on any error or
+any package or command the engine does not know, so a new package should come
+with its document there: `build/packages/<name>.mtex`, a whole document from
+`\documentclass` to `\end{document}`.

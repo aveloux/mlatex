@@ -1,0 +1,8 @@
+% elements: the chemical elements.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{elements}
+\begin{document}
+\elementsymbol{6} is \elementname{6}; \elementsymbol{79} is \elementname{79}; carbon is number \atomicnumber{C}.
+\end{document}

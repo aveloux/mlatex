@@ -738,35 +738,8 @@ namespace render::primitives {
                     }
                     data = file ? *file : std::string{};
                 }
-                // Rows at line ends or `\\`, cells at blanks, or at commas
-                // for `col sep=comma`; a first row of names is the header.
-                const bool commas = find(table, "col sep") == "comma";
-                std::vector<std::vector<std::string>> rows;
-                std::vector<std::string> cells;
-                std::string cell;
-                const auto stash = [&] {
-                    if (!cell.empty()) cells.push_back(std::move(cell));
-                    cell.clear();
-                };
-                const auto commit = [&] {
-                    stash();
-                    if (!cells.empty() && !cells.front().starts_with('#') && !cells.front().starts_with('%')) {
-                        rows.push_back(std::move(cells));
-                    }
-                    cells.clear();
-                };
-                for (std::size_t at = 0; at < data.size(); ++at) {
-                    const char letter = data[at];
-                    if (letter == '\n' || (letter == '\\' && at + 1 < data.size() && data[at + 1] == '\\')) {
-                        if (letter == '\\') ++at;
-                        commit();
-                    } else if (letter == ' ' || letter == '\t' || letter == '\r' || (commas && letter == ',')) {
-                        stash();
-                    } else {
-                        cell += letter;
-                    }
-                }
-                commit();
+                // A first row of names is the header.
+                std::vector<std::vector<std::string>> rows = Plots::rows(data, find(table, "col sep") == "comma");
                 // A whole table on one line -- written inline, its line ends
                 // read as blanks -- is its names, as many as stand before
                 // the first number, then rows as wide as they are, or of two
@@ -848,6 +821,49 @@ namespace render::primitives {
         });
 
         // A plot's entry in the legend, and every entry at once.
+        // pgfplotstable's \\pgfplotstabletypeset[options]{table or file}: the
+        // table set as a tabular, its names -- a first row holding any word
+        // -- as its head, each cell as written.
+        parser.mouth.bind("\\pgfplotstabletypeset", [this, &context](syntax::Mouth& mouth) {
+            const memory::Location origin = mouth.lookahead().location;
+            std::string options;
+            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                options += token.text;
+            }
+            std::string data;
+            for (const syntax::Token& token : mouth.argument({}, 0)) data += token.text;
+            if (!data.empty() && data.find_first_of(" \n\\") == std::string::npos) {
+                if (const std::string* file = context.disk ? context.disk(data) : nullptr) {
+                    data = *file;
+                } else if (context.files && context.files->contains(data)) {
+                    data = context.files->at(data);
+                } else {
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                                             std::format("\\pgfplotstabletypeset: no table file named '{}'", data));
+                    return;
+                }
+            }
+            const std::vector<std::vector<std::string>> table = rows(data, options.contains("col sep=comma"));
+            std::size_t across = 0;
+            for (const std::vector<std::string>& row : table) across = std::max(across, row.size());
+            if (across == 0) return;
+            std::string written = "\\begin{tabular}{" + std::string(across, 'c') + "}";
+            for (std::size_t index = 0; index < table.size(); ++index) {
+                for (std::size_t cell = 0; cell < table[index].size(); ++cell) {
+                    written += (cell == 0 ? "" : " & ") + table[index][cell];
+                }
+                written += "\\\\";
+                const bool named = index == 0 && std::ranges::any_of(table[index], [](const std::string& item) {
+                    double value = 0.0;
+                    const auto [end, fault] = std::from_chars(item.data(), item.data() + item.size(), value);
+                    return fault != std::errc{} || end != item.data() + item.size();
+                });
+                if (named) written += "\\hline ";
+            }
+            written += "\\end{tabular}";
+            mouth.ingest(mouth.arena.copy(written), memory::Location{});
+        });
+
         parser.mouth.bind("\\addlegendentry", [this, spelled](syntax::Mouth& mouth) {
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             const std::string entry = spelled(mouth.argument({}, 0));
@@ -861,6 +877,36 @@ namespace render::primitives {
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound plot primitives");
+    }
+
+    std::vector<std::vector<std::string>> Plots::rows(const std::string_view data, const bool commas) {
+        std::vector<std::vector<std::string>> table;
+        std::vector<std::string> cells;
+        std::string cell;
+        const auto stash = [&] {
+            if (!cell.empty()) cells.push_back(std::move(cell));
+            cell.clear();
+        };
+        const auto commit = [&] {
+            stash();
+            if (!cells.empty() && !cells.front().starts_with('#') && !cells.front().starts_with('%')) {
+                table.push_back(std::move(cells));
+            }
+            cells.clear();
+        };
+        for (std::size_t at = 0; at < data.size(); ++at) {
+            const char letter = data[at];
+            if (letter == '\n' || (letter == '\\' && at + 1 < data.size() && data[at + 1] == '\\')) {
+                if (letter == '\\') ++at;
+                commit();
+            } else if (letter == ' ' || letter == '\t' || letter == '\r' || (commas && letter == ',')) {
+                stash();
+            } else {
+                cell += letter;
+            }
+        }
+        commit();
+        return table;
     }
 
 }

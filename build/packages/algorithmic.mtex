@@ -1,0 +1,24 @@
+% algorithmic: the older pseudocode package.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{algorithmic}
+\begin{document}
+\begin{algorithmic}[1]
+\REQUIRE $n \geq 0$
+\ENSURE $y = x^n$
+\STATE $y \leftarrow 1$
+\FOR{$i = 1$ to $n$}
+\STATE $y \leftarrow y x$
+\ENDFOR
+\IF{$y > 10$}
+\STATE big
+\ELSE
+\STATE small
+\ENDIF
+\WHILE{false}
+\STATE nothing
+\ENDWHILE
+\RETURN $y$
+\end{algorithmic}
+\end{document}

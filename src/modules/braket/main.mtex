@@ -1,10 +1,15 @@
 % braket: Dirac's bras and kets, and set-builder braces that grow with what
-% they hold.
+% they hold. \set is braket's here, as it is in LaTeX once braket is loaded;
+% the engine's own register word stays \@set, which packages use.
 
+\@define\set[1]{\{ #1 \}}
 \@define\Set[1]{\left\{ #1 \right\}}
 
-\@define\bra[1]{\left\langle #1 \right|}
-\@define\ket[1]{\left| #1 \right\rangle}
+\@define\bra[1]{\langle #1 |}
+\@define\ket[1]{| #1 \rangle}
+\@define\Bra[1]{\left\langle #1 \right|}
+\@define\Ket[1]{\left| #1 \right\rangle}
 
 % One argument, as braket's own: the bar is written inside it, \braket{a|b}.
-\@define\braket[1]{\left\langle #1 \right\rangle}
+\@define\braket[1]{\langle #1 \rangle}
+\@define\Braket[1]{\left\langle #1 \right\rangle}

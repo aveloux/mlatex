@@ -1,0 +1,12 @@
+% titling: the title block's parts.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{titling}
+\begin{document}
+\pretitle{\begin{center}\LARGE}
+\posttitle{\end{center}}
+\title{A Title}\author{Author}\date{}
+\maketitle
+\thetitle{} by \theauthor.
+\end{document}

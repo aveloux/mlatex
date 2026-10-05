@@ -1,0 +1,11 @@
+% xcolor: colours.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[dvipsnames,table]{xcolor}
+\begin{document}
+\definecolor{brand}{RGB}{30,100,200}
+\colorlet{light}{brand!20}
+\textcolor{brand}{Brand}, \textcolor{red!50!blue}{mixed}, \colorbox{light}{boxed}, \fcolorbox{red}{yellow}{framed}, {\color{teal} teal}.
+\pagecolor{white}
+\end{document}

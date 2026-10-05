@@ -1,0 +1,8 @@
+% textcomp: text symbols.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{textcomp}
+\begin{document}
+\textdegree, \textcelsius, \texteuro, \textmu, \textohm, \textcopyright, \textregistered, \texttrademark, \textonehalf, \textbullet, \textperthousand, \textdagger.
+\end{document}

@@ -1,0 +1,11 @@
+% svg: SVG pictures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{svg}
+\begin{filecontents*}{drawing.svg}
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10"/></svg>
+\end{filecontents*}
+\begin{document}
+\includesvg[width=2cm]{drawing}
+\end{document}

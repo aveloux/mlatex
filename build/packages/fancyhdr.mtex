@@ -1,0 +1,17 @@
+% fancyhdr: running heads and feet.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{fancyhdr}
+\begin{document}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Left head}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Centre foot}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\lhead{Old left}\rhead{Old right}\cfoot{\thepage}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}}
+Body text.
+\end{document}

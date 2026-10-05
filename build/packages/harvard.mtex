@@ -1,0 +1,8 @@
+% harvard: Harvard citations.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{harvard}
+\begin{document}
+\citeasnoun{a} and \cite{a}.\begin{thebibliography}{1}\bibitem[Author(2020)]{a} An entry.\end{thebibliography}
+\end{document}

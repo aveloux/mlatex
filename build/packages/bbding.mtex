@@ -1,0 +1,8 @@
+% bbding: dingbats.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{bbding}
+\begin{document}
+\Checkmark{} \XSolidBrush{} \Envelope{} \Phone{} \Pencil{} \HandRight{} \FiveStar{}
+\end{document}

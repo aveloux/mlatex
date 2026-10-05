@@ -4,20 +4,24 @@
 %   \setboolean{final}{true}
 %   \ifthenelse{\boolean{final}}{Signed.}{Draft only.}
 %   \ifthenelse{\equal{\variable{currency}}{EUR}}{€}{\$}
-%   \ifthenelse{\isodd{\arabic{page}}}{right}{left}
+%   \ifthenelse{\value{page} > 1 \AND \NOT \isodd{\value{page}}}{left}{right}
+%   \whiledo{\value{n} < 5}{\stepcounter{n}\arabic{n} }
 %
-% A test is the first argument, and each test here is a command that takes
-% the two branches after it -- so \ifthenelse only has to hand them on.
-% Built on etoolbox, whose tests these are under ifthen's names.
+% A test is the engine's \@iftest: numbers compared by <, = and >, the
+% tests below -- each a command taking the two branches after it -- joined
+% by \AND and \OR, turned by \NOT and grouped by \( and \).
 
 \@requirepackage{etoolbox}
 
-\@define\ifthenelse[3]{#1{#2}{#3}}
+\@define\ifthenelse[3]{\@iftest{#1}{#2}{#3}}
+\@spanning\@define\whiledo[2]{\@iftest{#1}{#2\whiledo{#1}{#2}}{}}
 
 \@define\equal[4]{\@ifstrequal{#1}{#2}{#3}{#4}}
 \@define\boolean[3]{\iftoggle{#1}{#2}{#3}}
 \@define\isodd[3]{\ifodd#1 #2\else #3\fi}
 \@define\isundefined[3]{\ifdefined#1 #3\else #2\fi}
+\@define\cnttest[5]{\@iftest{#1 #2 #3}{#4}{#5}}
 
 \@define\newboolean[1]{\newtoggle{#1}}
+\@define\provideboolean[1]{\providetoggle{#1}}
 \@define\setboolean[2]{\settoggle{#1}{#2}}

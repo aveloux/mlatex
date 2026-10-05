@@ -1,0 +1,13 @@
+% mdframed: framed blocks over pages.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{mdframed}
+\usepackage{xcolor}
+\begin{document}
+\begin{mdframed}[linecolor=blue, linewidth=1pt, backgroundcolor=yellow!10]
+A framed block that may run over pages.
+\end{mdframed}
+\newmdenv[linecolor=red]{warning}
+\begin{warning}Careful.\end{warning}
+\end{document}

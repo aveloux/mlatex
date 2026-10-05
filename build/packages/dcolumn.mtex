@@ -1,0 +1,10 @@
+% dcolumn: numbers on their decimal point.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{dcolumn}
+\begin{document}
+\begin{tabular}{D{.}{.}{2}}
+1.25 \\ 10.5 \\ 100.75 \\
+\end{tabular}
+\end{document}

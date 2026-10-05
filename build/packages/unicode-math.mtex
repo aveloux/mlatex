@@ -1,0 +1,9 @@
+% unicode-math: OpenType maths.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{unicode-math}
+\begin{document}
+\setmathfont{STIX Two Math}
+$\symbf{x} + \symit{y} = \mathbb{R} \quad α + β = γ \quad \symsf{A}$
+\end{document}

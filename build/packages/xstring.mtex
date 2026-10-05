@@ -1,0 +1,8 @@
+% xstring: string tests.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{xstring}
+\begin{document}
+\IfSubStr{hello}{ell}{yes}{no}, \StrLen{hello}, \StrLeft{hello}{2}, \StrSubstitute{abc}{b}{B}, \IfStrEq{a}{a}{same}{diff}, \StrBefore{a-b}{-}.
+\end{document}

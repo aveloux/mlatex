@@ -1,0 +1,8 @@
+% commath: common maths.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{commath}
+\begin{document}
+$\dif x \quad \od{y}{x} \quad \pd{f}{x} \quad \abs{x} \quad \norm{v} \quad \set{1,2}$
+\end{document}

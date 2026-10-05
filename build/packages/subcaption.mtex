@@ -1,0 +1,15 @@
+% subcaption: lettered parts of a figure.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{subcaption}
+\begin{document}
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.45\textwidth}\centering\rule{1cm}{1cm}\caption{Left}\label{fig:l}\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\textwidth}\centering\rule{1cm}{1cm}\caption{Right}\end{subfigure}
+\caption{Both, \subref{fig:l}.}
+\end{figure}
+\begin{table}[htbp]\begin{subtable}{0.4\textwidth}\centering a\caption{A}\end{subtable}\end{table}
+\end{document}

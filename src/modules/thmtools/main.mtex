@@ -1,0 +1,16 @@
+% thmtools: theorems declared by keys, and a list of them. \declaretheorem is
+% the engine's own -- its title from name=, numberwithin=, sibling=,
+% numbered=no and style= -- over amsthm's \newtheorem.
+%
+%   \declaretheorem[name=Theorem, numberwithin=section]{theorem}
+
+\@requirepackage{amsthm}
+
+\@define\declaretheoremstyle[2][]{\newtheoremstyle{#2}{3pt}{3pt}{\itshape}{}{\bfseries}{.}{.5em}{}}
+\@define\listoftheorems[1][]{\section*{List of Theorems}}
+\@define\listtheoremname{List of Theorems}
+\@define\ignoretheorems[1]{}
+\@define\addtotheorempreheadhook[2][]{}
+\@define\addtotheorempostheadhook[2][]{}
+\@define\addtotheoremprefoothook[2][]{}
+\@define\addtotheorempostfoothook[2][]{}

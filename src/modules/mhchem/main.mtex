@@ -2,3 +2,6 @@
 % engine's own.
 
 \@define\cee{\ce}
+
+% \pu{123 kJ/mol}: a quantity and its unit, upright, as written.
+\@define\pu[1]{\textup{#1}}

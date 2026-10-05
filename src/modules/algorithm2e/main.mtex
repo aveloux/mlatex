@@ -28,3 +28,47 @@
 \@define\uElseIf[2]{\@algoblock{\textbf{else if} #1 \textbf{then}}{#2}}
 \@define\Else[1]{\@algoblock{\textbf{else}}{#1}}
 \@define\eIf[3]{\@algoblock{\textbf{if} #1 \textbf{then}}{#2}\@algoblock{\textbf{else}}{#3}}
+
+% The keywords a step is written with, and the rest of the package's blocks:
+% a line's own \lIf and \lFor, a switch and its cases, a function's name.
+\@define\KwTo{\textbf{to}}
+\@define\KwFrom{\textbf{from}}
+\@define\KwDownTo{\textbf{downto}}
+\@define\KwEnsure[1]{\par\noindent\textbf{Ensure:} #1\par\noindent}
+\@define\KwRequire[1]{\par\noindent\textbf{Require:} #1\par\noindent}
+\@define\KwInput[1]{\par\noindent\textbf{Input:} #1\par\noindent}
+\@define\KwOutput[1]{\par\noindent\textbf{Output:} #1\par\noindent}
+\@define\BlankLine{\par\vskip\baselineskip\noindent}
+\@define\SetAlgoVlined{}
+\@define\SetAlgoNoEnd{}
+\@define\SetAlgoNlRelativeSize[1]{}
+\@define\SetNlSty[3]{}
+\@define\SetKwComment[3]{}
+\@define\SetCommentSty[1]{}
+\@define\SetFuncSty[1]{}
+\@define\SetKwSty[1]{}
+\@define\SetArgSty[1]{}
+\@define\SetDataSty[1]{}
+\@define\SetKwData[2]{\@define#1{\textsf{#2}}}
+\@define\SetKwInput[2]{\@define#1[1]{\par\noindent\textbf{#2:} ##1\par\noindent}}
+\@define\SetKwProg[4]{\@define#1[3]{\@algoblock{\textbf{#2} ##1(##2)}{##3}}}
+\@define\SetKwBlock[3]{\@define#1[1]{\@algoblock{\textbf{#2}}{##1}\textbf{#3}\par\noindent}}
+\@define\ResetInOut[1]{}
+\@define\Indp{}
+\@define\Indm{}
+\@define\nl{}
+\@define\ForAll[2]{\@algoblock{\textbf{forall} #1 \textbf{do}}{#2}}
+\@define\uElse[1]{\@algoblock{\textbf{else}}{#1}}
+\@define\lIf[2]{\textbf{if} #1 \textbf{then} #2\par\noindent}
+\@define\lElseIf[2]{\textbf{else if} #1 \textbf{then} #2\par\noindent}
+\@define\lElse[1]{\textbf{else} #1\par\noindent}
+\@define\lFor[2]{\textbf{for} #1 \textbf{do} #2\par\noindent}
+\@define\lForEach[2]{\textbf{foreach} #1 \textbf{do} #2\par\noindent}
+\@define\lForAll[2]{\textbf{forall} #1 \textbf{do} #2\par\noindent}
+\@define\lWhile[2]{\textbf{while} #1 \textbf{do} #2\par\noindent}
+\@define\lRepeat[2]{\textbf{repeat} #2 \textbf{until} #1\par\noindent}
+\@define\Switch[2]{\@algoblock{\textbf{switch} #1 \textbf{do}}{#2}}
+\@define\Case[2]{\@algoblock{\textbf{case} #1 \textbf{do}}{#2}}
+\@define\uCase[2]{\@algoblock{\textbf{case} #1 \textbf{do}}{#2}}
+\@define\Other[1]{\@algoblock{\textbf{otherwise}}{#1}}
+\@define\Begin[1]{\@algoblock{\textbf{begin}}{#1}\textbf{end}\par\noindent}

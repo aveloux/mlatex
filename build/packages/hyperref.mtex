@@ -1,0 +1,12 @@
+% hyperref: links.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan, pdftitle={A Title}, pdfauthor={Me}}
+\section{Start}\label{sec:start}
+\href{https://example.org}{a link}, \url{https://example.org}, \nolinkurl{example.org},
+\autoref{sec:start}, \hyperref[sec:start]{back}, \hyperlink{here}{to here}, \hypertarget{here}{here},
+\texorpdfstring{$x$}{x}, \pdfbookmark[1]{Bookmark}{bm}, \phantomsection.
+\end{document}

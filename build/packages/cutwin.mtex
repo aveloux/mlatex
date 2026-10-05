@@ -1,0 +1,8 @@
+% cutwin: windows in paragraphs.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{cutwin}
+\begin{document}
+\begin{cutout}{1}{0.3\linewidth}{0.3\linewidth}{3}Text with a window cut out of it, long enough to wrap around the window for several lines of text.\end{cutout}
+\end{document}

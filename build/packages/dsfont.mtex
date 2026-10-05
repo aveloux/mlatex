@@ -1,0 +1,8 @@
+% dsfont: double-struck letters.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{dsfont}
+\begin{document}
+$\mathds{1} \quad \mathds{N}$
+\end{document}

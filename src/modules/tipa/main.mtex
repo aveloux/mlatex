@@ -1,0 +1,38 @@
+% tipa: the International Phonetic Alphabet. \textipa reads tipa's ASCII
+% shorthands for the commonest symbols -- @ the schwa, E the open e, I the
+% small capital i, S and Z, " and % for stress -- and every symbol has its
+% command, set as the character it is.
+%
+%   \textipa{[f@"nEtIks]}  \textschwa  \textesh
+
+\@define\textipa[1]{\@ipa#1\@nil}
+\@define\@ipa#1\@nil{\StrSubstitute{#1}{@}{ə}[\@ipatext]\StrSubstitute{\@ipatext}{E}{ɛ}[\@ipatext]\StrSubstitute{\@ipatext}{I}{ɪ}[\@ipatext]\StrSubstitute{\@ipatext}{S}{ʃ}[\@ipatext]\StrSubstitute{\@ipatext}{Z}{ʒ}[\@ipatext]\StrSubstitute{\@ipatext}{T}{θ}[\@ipatext]\StrSubstitute{\@ipatext}{D}{ð}[\@ipatext]\StrSubstitute{\@ipatext}{N}{ŋ}[\@ipatext]\StrSubstitute{\@ipatext}{A}{ɑ}[\@ipatext]\StrSubstitute{\@ipatext}{O}{ɔ}[\@ipatext]\StrSubstitute{\@ipatext}{U}{ʊ}[\@ipatext]\StrSubstitute{\@ipatext}{V}{ʌ}[\@ipatext]\StrSubstitute{\@ipatext}{"}{ˈ}[\@ipatext]\@ipatext}
+\@define\textschwa{ə}
+\@define\textepsilon{ɛ}
+\@define\textesh{ʃ}
+\@define\textyogh{ʒ}
+\@define\texttheta{θ}
+\@define\texteth{ð}
+\@define\textipaeng{ŋ}
+\@define\textscripta{ɑ}
+\@define\textopeno{ɔ}
+\@define\textupsilon{ʊ}
+\@define\textturnv{ʌ}
+\@define\textsci{ɪ}
+\@define\textscy{ʏ}
+\@define\textae{æ}
+\@define\textturna{ɐ}
+\@define\textrhookschwa{ɚ}
+\@define\textglotstop{ʔ}
+\@define\textprimstress{ˈ}
+\@define\textsecstress{ˌ}
+\@define\textlengthmark{ː}
+\@define\textbari{ɨ}
+\@define\textbaru{ʉ}
+\@define\textturnr{ɹ}
+\@define\textfishhookr{ɾ}
+\@define\textltailn{ɲ}
+\@define\textctc{ɕ}
+\@define\textbeta{β}
+\@define\textchi{χ}
+\@define\textgamma{ɣ}

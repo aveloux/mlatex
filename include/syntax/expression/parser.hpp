@@ -232,6 +232,17 @@ namespace syntax::expression {
         Hook hook{};              ///< Told about the outermost grid's rows; may be empty.
         std::size_t grids = 0;    ///< How many grids are open around the token being read.
 
+        /// @brief What ends the innermost run being read: the character it
+        ///        was opened to wait for, and the control sequences that stop
+        ///        it -- what sequence() was given. A binary sign written last
+        ///        in a run looks here, so it takes no operand from past it.
+        struct Bound {
+            char closing = 0;           ///< Group character that ends it, or 0.
+            Symbol stop = none;         ///< Control sequence that ends it, or none.
+            Symbol alternate = none;    ///< A second one, or none.
+        };
+        Bound bound{};   ///< The innermost run's ends.
+
         std::size_t depth = 0;
         std::size_t limit = 256;
     };

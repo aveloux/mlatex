@@ -1,0 +1,10 @@
+% geometry: the sheet and its margins.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[a4paper,margin=2cm,top=3cm,landscape]{geometry}
+\begin{document}
+\newgeometry{margin=1in}
+A page with other margins.
+\restoregeometry
+\end{document}

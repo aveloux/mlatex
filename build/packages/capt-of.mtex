@@ -1,0 +1,8 @@
+% capt-of: captions outside floats.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{capt-of}
+\begin{document}
+\begin{center}\rule{1cm}{1cm}\captionof{figure}{A caption outside a float}\end{center}
+\end{document}

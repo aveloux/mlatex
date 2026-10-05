@@ -1,0 +1,8 @@
+% vmargin: margins.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{vmargin}
+\begin{document}
+\setmarginsrb{2cm}{2cm}{2cm}{2cm}{0pt}{0mm}{0pt}{0mm}Text with set margins.
+\end{document}

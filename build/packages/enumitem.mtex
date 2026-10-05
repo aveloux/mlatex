@@ -1,0 +1,23 @@
+% enumitem: control over lists.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[inline]{enumitem}
+\begin{document}
+\setlist[itemize]{noitemsep}
+\begin{enumerate}[label=(\alph*), start=3]
+\item first
+\item second
+\end{enumerate}
+\begin{itemize}[leftmargin=*]
+\item a
+\end{itemize}
+\begin{description}[style=nextline]
+\item[Term] its description
+\end{description}
+\newlist{steps}{enumerate}{1}
+\setlist[steps]{label=Step \arabic*.}
+\begin{enumerate*}[label=(\roman*)]
+\item one \item two
+\end{enumerate*}
+\end{document}

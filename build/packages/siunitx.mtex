@@ -1,0 +1,14 @@
+% siunitx: numbers and units.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\begin{document}
+\sisetup{per-mode=symbol}
+\SI{9.81}{\metre\per\second\squared}, \qty{3}{\kilo\gram}, \si{\joule}, \num{12345.678}, \num{1e-3}, \ang{30}, \SIrange{1}{5}{\milli\metre}, \numlist{1;2;3}, \unit{\newton\metre}, \qtyrange{1}{2}{\hertz}.
+\begin{tabular}{S[table-format=2.2]}
+\toprule
+{Value} \\ \midrule 1.5 \\ 12.25 \\ \bottomrule
+\end{tabular}
+\end{document}

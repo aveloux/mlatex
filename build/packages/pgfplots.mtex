@@ -1,0 +1,15 @@
+% pgfplots: plots.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pgfplots}
+\begin{document}
+\pgfplotsset{compat=1.18}
+\begin{tikzpicture}
+\begin{axis}[xlabel=$x$, ylabel=$y$, title=Plot, grid=major, legend pos=north west]
+\addplot[blue, domain=0:2] {x^2};
+\addplot coordinates {(0,0) (1,1) (2,3)};
+\legend{$x^2$, data}
+\end{axis}
+\end{tikzpicture}
+\end{document}

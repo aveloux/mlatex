@@ -1,0 +1,10 @@
+% lineno: numbered lines.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[modulo]{lineno}
+\begin{document}
+\linenumbers
+Numbered lines for a draft.
+\nolinenumbers
+\end{document}

@@ -6,6 +6,7 @@
 /// under two names rather than two implementations to keep in step.
 #include "syntax/primitives/blocks.hpp"
 #include "syntax/argument.hpp"
+#include "syntax/glossary.hpp"
 #include "logger.hpp"
 
 #include <array>
@@ -105,10 +106,12 @@ namespace syntax::primitives {
             } else if (!(slot < hooks.size() && hooks[slot].leaving)) {
                 // LaTeX's own way with a block of no hooks: \begin{name} is
                 // \name -- a declaration, `\begin{small}`, or a command a
-                // document or a package defined -- and a name meaning nothing
+                // document, a package or the glossary defines, the glossary's
+                // read as the expander meets it -- and a name meaning nothing
                 // is reported, and set as a group.
                 const Token call = word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)));
-                if (mouth.known(call.symbol) || (mouth.reader.means && mouth.reader.means(call.symbol))) {
+                if (mouth.known(call.symbol) || (mouth.reader.means && mouth.reader.means(call.symbol)) ||
+                    Glossary::get(call.text)) {
                     mouth.stream().inject(std::span{&call, 1});
                 } else {
                     tracebacks.emplace_back(Traceback::Type::Warning, mouth.lookahead().location,
@@ -173,7 +176,8 @@ namespace syntax::primitives {
             }
             if (!(slot < hooks.size() && (hooks[slot].entering || hooks[slot].leaving))) {
                 const Token ending = word(mouth, "\\end" + std::string(mouth.lexicon.resolve(name)));
-                if (mouth.known(ending.symbol) || (mouth.reader.means && mouth.reader.means(ending.symbol))) {
+                if (mouth.known(ending.symbol) || (mouth.reader.means && mouth.reader.means(ending.symbol)) ||
+                    Glossary::get(ending.text)) {
                     closing.push_back(name);
                     const std::array<Token, 2> code{ending, word(mouth, "\\end:finish")};
                     mouth.stream().inject(std::span{code});

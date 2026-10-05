@@ -1,0 +1,12 @@
+% babel: languages.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[french,german,english]{babel}
+\begin{document}
+\selectlanguage{english}
+Text in English, and \foreignlanguage{french}{du texte en fran\c{c}ais}.
+\begin{otherlanguage}{german}
+Ein deutscher Absatz, \today.
+\end{otherlanguage}
+\end{document}

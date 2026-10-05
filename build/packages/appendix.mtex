@@ -1,0 +1,13 @@
+% appendix: the appendices block.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[toc,page]{appendix}
+\begin{document}
+\section{Main}
+Text.
+\begin{appendices}
+\section{First appendix}
+Details.
+\end{appendices}
+\end{document}

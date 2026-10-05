@@ -538,6 +538,297 @@ token list gives \note={kept tokens}\the\note, e-TeX's expressions give
 year is written \romannumeral\year{} in Roman numerals. The name
 \string\relax{} prints as itself and \uppercase{shouts} in capitals.
 
+\section{Kernel checks}\label{app:kernel}
+
+This appendix sets what LaTeX's own kernel gives a document, with no
+package asked for: every heading, face, size, accent and special character,
+the spacing commands, the text blocks, lists four deep, notes, counters,
+lengths, a document's own commands and blocks, boxes, tables, LaTeX's own
+picture, and mathematics of every kind.
+
+\subsection{Headings}\label{app:headings}
+
+\subsubsection{A subsubsection}
+Text under a subsubsection.
+
+\paragraph{A paragraph heading.} Run in, as LaTeX's are.
+
+\subparagraph{A subparagraph.} Run in and indented.
+
+\subsubsection*{An unnumbered subsubsection}
+Text under it.
+
+\subsection{Faces and sizes}
+
+Families: {\rmfamily roman}, {\sffamily sans serif}, {\ttfamily typewriter};
+series: {\bfseries bold}, {\mdseries medium}; shapes: {\itshape italic},
+{\slshape slanted}, {\scshape small capitals}, {\upshape upright}, and
+{\normalfont the normal face}. The same as commands: \textrm{roman},
+\textsf{sans}, \texttt{mono}, \textbf{bold}, \textmd{medium}, \textit{italic},
+\textsl{slanted}, \textsc{caps}, \textup{upright}, \textnormal{normal},
+\emph{emphasised} and {\em emphasised too}, and \underline{underlined}.
+Combined: \textbf{\textit{bold italic}} and \textsf{\textbf{bold sans}}.
+Sizes, every one: {\tiny tiny} {\scriptsize scriptsize} {\footnotesize
+footnotesize} {\small small} {\normalsize normalsize} {\large large}
+{\Large Large} {\LARGE LARGE} {\huge huge} {\Huge Huge}.
+
+\subsection{Characters}
+
+Accents on every vowel they take: \'a \'e \'{\i} \'o \'u, \`a \`e \`o,
+\^a \^e \^o, \"a \"e \"o \"u, \~a \~n \~o, \=a \=o, \.z, \u{a}, \v{c} \v{s}
+\v{z}, \H{o}, \c{c} \c{s}, \d{a}, \b{a}, \r{a} and \t{oo}. Letters of other
+alphabets: \ae{} \AE{} \oe{} \OE{} \aa{} \AA{} \o{} \O{} \l{} \L{} \ss{}
+\i{} \j. Specials written as text: \# \$ \% \& \_ \{ \} \textbackslash{}
+\textasciitilde{} \textasciicircum{} \textbar{} \textless{} \textgreater{}.
+Punctuation: ``double quotes'', `single quotes', a hyphen-ated word, an en
+dash 1--2, an em dash---so, an ellipsis\ldots{} and \dots, \S\,1, \P,
+\dag, \ddag, \textbullet, \textperiodcentered, \copyright, \textregistered,
+\texttrademark, \pounds, \guillemotleft{}guillemets\guillemotright, and
+\slash{} between words. The logos \TeX, \LaTeX{} and \LaTeXe, and today,
+\today.
+
+\subsection{Spacing}
+
+Horizontal space: a\,b (thin), a\:b (medium), a\;b (thick), a\ b
+(control space), a\quad b, a\qquad b, a\enspace b, a\hspace{1cm}b and a
+negative one, a\hspace{-0.5em}b; a~tie keeps words together. Lines filled:
+\noindent Left\hfill Right\par
+\noindent Dots\dotfill there\par
+\noindent Rule\hrulefill here\par
+Vertical space: a small skip,\smallskip\par a medium one,\medskip\par a big
+one,\bigskip\par and a set one.\vspace{6pt}\par Line breaks without a new
+paragraph:\\ a second line\newline and a third; \linebreak a break asked
+for, and a word that may break where marked: in\-con\-ceiv\-able.
+Invisible material keeps its room: [\phantom{hidden}], [\hphantom{wide}],
+[\vphantom{Tall}x] and \smash{smashed}.
+
+\subsection{Text blocks}
+
+\begin{center}
+Centred text, a line at a time.\\ A second centred line.
+\end{center}
+\begin{flushleft}
+Flush left, ragged right.
+\end{flushleft}
+\begin{flushright}
+Flush right, ragged left.
+\end{flushright}
+\begin{quote}
+A short quotation, indented on both sides.
+\end{quote}
+\begin{quotation}
+A longer quotation, its paragraphs indented as well as its margins.
+
+Its second paragraph.
+\end{quotation}
+\begin{verse}
+A verse, its lines as written,\\
+and turned over when too long\\
+for the measure it is set in.
+\end{verse}
+{\centering A centred paragraph by declaration.\par}
+{\raggedright A paragraph ragged right by declaration, long enough to
+show its right edge left uneven.\par}
+{\raggedleft A paragraph ragged left.\par}
+
+\begin{tabbing}
+Name \= Role \= Since \kill
+Ada \> engines \> 1843 \\
+Alan \> machines \> 1936
+\end{tabbing}
+
+\subsection{Lists, four deep}
+
+\begin{enumerate}
+\item First level, numbered.
+  \begin{enumerate}
+  \item Second level, lettered.
+    \begin{enumerate}
+    \item Third level, in Roman numerals.
+      \begin{enumerate}
+      \item Fourth level, in capitals.
+      \end{enumerate}
+    \end{enumerate}
+  \end{enumerate}
+\item[$\star$] An item with a label of its own.
+\item\label{item:last} An item referred to later.
+\end{enumerate}
+\begin{itemize}
+\item A bullet,
+  \begin{itemize}
+  \item a dash,
+    \begin{itemize}
+    \item an asterisk,
+      \begin{itemize}
+      \item and a dot.
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\begin{description}
+\item[Term] its description,
+\item[Another term] and another, long enough to run on to a second line
+  under the first.
+\end{description}
+
+\subsection{Notes}
+
+A footnote\footnote{A note at the foot of the page.}, a mark set
+apart\footnotemark{} with its text given after\footnotetext{The text of the
+mark.}, and a note in the margin\marginpar{A margin note.} beside its line.
+
+\subsection{Counters and lengths}
+
+\newcounter{tick}
+\setcounter{tick}{4}\addtocounter{tick}{3}\stepcounter{tick}
+The counter is \arabic{tick}, \roman{tick}, \Roman{tick}, \alph{tick},
+\Alph{tick} and \fnsymbol{footnote}; its value \the\value{tick}, and
+\thetick{} as printed.
+\newlength{\span}
+\setlength{\span}{2cm}\addtolength{\span}{5mm}
+\settowidth{\span}{a measured phrase}
+A length set to a phrase's width: \the\span. The page's own:
+\verb|\textwidth| is \the\textwidth, \verb|\parindent| \the\parindent, and
+\verb|\baselineskip| \the\baselineskip.
+
+\subsection{A document's own commands and blocks}
+
+\newcommand{\greeting}[2][Dear]{#1 #2,}
+\renewcommand{\greeting}[2][Dear]{#1~#2,}
+\providecommand{\greeting}{never}
+\newcommand*{\shout}[1]{\textbf{#1!}}
+\newenvironment{note}[1][Note]{\par\noindent\textbf{#1.}\itshape}{\par}
+\renewenvironment{note}[1][Note]{\par\noindent\textbf{#1:}\ \itshape}{\par}
+\greeting{reader} \greeting[Hello]{world} \shout{loud}.
+\begin{note}A block of the document's own.\end{note}
+\begin{note}[Remark]With its optional argument.\end{note}
+\def\pair#1#2{(#1,#2)}\let\couple\pair
+\edef\built{\pair{a}{b}}
+Definitions in TeX's own words: \pair{1}{2}, \couple{3}{4} and \built.
+\expandafter\def\csname made by name\endcsname{made by name}
+\csname made by name\endcsname, and
+\ifx\pair\couple the two are the same\else they differ\fi;
+\ifnum 3>2 three is more\fi; \ifdim 1cm>1mm a centimetre is longer\fi;
+\ifcase 2 zero\or one\or two\else many\fi.
+
+\subsection{Boxes}
+
+\mbox{an mbox}, \makebox[3cm][l]{left in 3cm}, \makebox[3cm][c]{centred},
+\fbox{an fbox}, \framebox[3cm][r]{right, framed}, \raisebox{1ex}{up} and
+\raisebox{-1ex}{down}, a rule \rule{1cm}{2pt} and a strut\rule{0pt}{12pt}.
+\parbox[t]{3cm}{A parbox, three centimetres wide, its text wrapped within
+it.} \parbox[b]{3cm}{Another, standing on its last line.}
+\newsavebox{\held}\savebox{\held}{kept}\usebox{\held} and \usebox{\held}.
+
+\subsection{Tables}
+
+\begin{table}[htbp]
+  \centering
+  \caption{LaTeX's own tabular, every rule it has.}\label{tab:kernel}
+  \begin{tabular}{|l|c|r|p{3cm}|}
+    \hline
+    \multicolumn{4}{|c|}{A heading over every column} \\
+    \hline
+    left & centre & right & a paragraph column wraps its text \\
+    \cline{2-3}
+    a & b & 1.5 & short \\
+    \hline\hline
+    \multicolumn{2}{|l|}{two columns} & 3 & last \\
+    \hline
+  \end{tabular}
+  \quad
+  \begin{tabular}{@{}ll@{}}
+    no & outer space \\
+    at & either side
+  \end{tabular}
+\end{table}
+
+\subsection{LaTeX's picture}
+
+\begin{figure}[htbp]
+  \centering
+  \setlength{\unitlength}{1mm}
+  \begin{picture}(60,30)
+    \put(0,0){\line(1,0){60}}
+    \put(0,0){\line(0,1){30}}
+    \put(0,0){\line(2,1){40}}
+    \put(10,25){\vector(1,0){20}}
+    \put(45,15){\circle{10}}
+    \put(45,15){\circle*{2}}
+    \put(5,10){a label}
+    \put(30,2){\framebox(20,8){framed}}
+    \multiput(0,28)(5,0){7}{\line(0,1){2}}
+    \qbezier(0,0)(30,30)(60,0)
+  \end{picture}
+  \caption{Lines, a vector, circles, a label, a framed box, a row of ticks and
+    a curve, in LaTeX's own picture.}\label{fig:picture}
+\end{figure}
+
+\subsection{Mathematics}
+
+In the line, $a^2 + b^2 = c^2$, \(x_i\), \begin{math}y\end{math}, and
+\ensuremath{z} outside a formula; displayed:
+\begin{displaymath}
+  \sum_{k=0}^{n} \binom{n}{k} = 2^n, \qquad \prod_{i=1}^{n} i = n!,
+  \qquad \lim_{x \to 0} \frac{\sin x}{x} = 1.
+\end{displaymath}
+LaTeX's own numbered and aligned equations:
+\begin{eqnarray}
+  f(x) & = & (x + 1)^2 \label{eq:square} \\
+       & = & x^2 + 2x + 1 \nonumber
+\end{eqnarray}
+Every Greek letter: $\alpha \beta \gamma \delta \epsilon \varepsilon \zeta
+\eta \theta \vartheta \iota \kappa \lambda \mu \nu \xi \pi \varpi \rho
+\varrho \sigma \varsigma \tau \upsilon \phi \varphi \chi \psi \omega$ and
+$\Gamma \Delta \Theta \Lambda \Xi \Pi \Sigma \Upsilon \Phi \Psi \Omega$.
+Alphabets: $\mathrm{rm}\ \mathit{it}\ \mathbf{bf}\ \mathsf{sf}\ \mathtt{tt}\
+\mathcal{CAL}\ \mathbb{BB}\ \mathfrak{Frak}$. Accents: $\hat{a}\ \check{a}\
+\tilde{a}\ \acute{a}\ \grave{a}\ \dot{a}\ \ddot{a}\ \breve{a}\ \bar{a}\
+\vec{a}\ \widehat{abc}\ \widetilde{abc}\ \overline{abc}\ \underline{abc}$.
+Relations and operators: $\leq \geq \neq \approx \equiv \sim \simeq \cong
+\propto \subset \supseteq \in \notin \ni \perp \parallel \mid \pm \mp
+\times \div \cdot \circ \bullet \oplus \otimes \cup \cap \wedge \vee
+\setminus$. Arrows: $\leftarrow \rightarrow \leftrightarrow \Leftarrow
+\Rightarrow \Leftrightarrow \mapsto \uparrow \downarrow \longrightarrow
+\hookrightarrow$. Dots: $1, \ldots, n$, $1 + \cdots + n$, and in a
+matrix:
+\[
+  \left( \begin{array}{ccc}
+    a_{11} & \cdots & a_{1n} \\
+    \vdots & \ddots & \vdots \\
+    a_{m1} & \cdots & a_{mn}
+  \end{array} \right)
+  \quad
+  \overbrace{a + b + c}^{\text{three}}
+  \quad
+  \underbrace{x + y}_{\text{two}}
+  \quad
+  \sqrt[3]{x} \quad \sqrt{\frac{a}{b}}
+\]
+\[
+  \stackrel{\text{def}}{=}
+  \quad
+  a \bmod b \quad a \equiv b \pmod{m}
+  \quad
+  \overbracket{p\,q}^{2} \quad \underparen{r\,s}_{2}
+\]
+\[
+  \left\langle \frac{x}{y} \right\rangle
+  \quad
+  \Big( \big( x \big) \Big)
+  \quad
+  \int_0^\infty \oint \iint
+  \quad
+  \sum\limits_{i} \sum\nolimits_{j}
+\]
+
+\subsection{References}
+
+Every kind of reference in one place: \cref{app:headings} is a heading,
+equation~\eqref{eq:square} LaTeX's own, \cref{tab:kernel} a table,
+\cref{fig:picture} a picture, item~\ref{item:last} an item, and
+\cref{app:kernel} starts on page~\pageref{app:kernel}.
+
 \bibliographystyle{plain}
 \begin{thebibliography}{9}
 \bibitem{bkm1984} J.~T. Beale, T.~Kato and A.~Majda. Remarks on the breakdown

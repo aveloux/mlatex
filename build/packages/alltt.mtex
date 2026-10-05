@@ -1,0 +1,10 @@
+% alltt: verbatim-like text with commands.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{alltt}
+\begin{document}
+\begin{alltt}
+Typewriter text where \textbf{commands} still work.
+\end{alltt}
+\end{document}

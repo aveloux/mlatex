@@ -1,0 +1,8 @@
+% overpic: text over pictures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{overpic}
+\begin{document}
+\begin{overpic}[width=3cm]{example-image}\put(10,10){label}\end{overpic}
+\end{document}

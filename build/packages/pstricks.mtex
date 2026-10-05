@@ -1,0 +1,8 @@
+% pstricks: PostScript pictures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pstricks}
+\begin{document}
+\begin{pspicture}(0,0)(2,2)\psline(0,0)(2,2)\pscircle(1,1){0.5}\end{pspicture}
+\end{document}

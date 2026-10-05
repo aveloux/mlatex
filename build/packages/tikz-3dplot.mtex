@@ -1,0 +1,12 @@
+% tikz-3dplot: three dimensions in TikZ.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{tikz-3dplot}
+\begin{document}
+\tdplotsetmaincoords{60}{120}
+\begin{tikzpicture}
+\draw[->] (0,0,0) -- (1,0,0) node[right] {$x$};
+\draw[->] (0,0,0) -- (0,1,0) node[above] {$y$};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,8 @@
+% mhchem: chemistry.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage[version=4]{mhchem}
+\begin{document}
+\ce{H2O}, \ce{2H2 + O2 -> 2H2O}, \ce{CO2 ^}, \ce{Fe^{3+}}, \ce{A <=> B}, \pu{123 kJ/mol}.
+\end{document}

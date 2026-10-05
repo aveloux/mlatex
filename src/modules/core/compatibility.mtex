@@ -56,43 +56,67 @@
 % What TeX's engines differ in, what a driver or LaTeX's own internals need,
 % and what the kernel does already: nothing a document sees.
 \@providepackage{epstopdf,iftex,ifluatex,shellesc,catchfile,letltxmacro,silence,xpatch,regexpatch}
-\@providepackage{kvoptions,keyval,xkeyval,pgfkeys,trimspaces,environ,atbegshi,atveryend,everyshi}
-\@providepackage{pdfsync,synctex,pdfcol,ltxcmds,kvsetkeys,gettitlestring,intcalc,bitset,bigintcalc}
+\@providepackage{kvoptions,keyval,xkeyval,pgfkeys,trimspaces,atbegshi,atveryend,everyshi}
+\@providepackage{pdfsync,pdfcol,ltxcmds,kvsetkeys,gettitlestring,intcalc,bitset,bigintcalc}
 \@providepackage{uniquecounter,auxhook,pdftexcmds,infwarerr,rerunfilecheck,hycolor,accsupp,hypcap}
-\@providepackage{expl3,l3keys2e,currfile,docmute,standalone,import,subfiles,amsbsy,amsopn,amstext}
+\@providepackage{expl3,l3keys2e,currfile,docmute,standalone,import,subfiles}
 \@providepackage{trig,fixmath,filecontents,morefloats,chngcntr,perpage,tex4ht,pdfx}
 %
 % What the page builder and the line breaker do themselves: floats kept in
 % their places and balanced columns, widows and empty pages, where a
 % section starts and how its heading and its contents entry look.
-\@providepackage{balance,flushend,cuted,stfloats,dblfloatfix,nowidow,emptypage,nextpage,changepage}
-\@providepackage{fncychap,sectsty,quotchap,titleps,titletoc,minitoc,etoc,tocbibind,typearea}
-\@providepackage{scrlayer-scrpage,scrextend,floatrow,ccaption,caption3,rotfloat,newfloat,hvfloat}
+\@providepackage{balance,flushend,cuted,stfloats,dblfloatfix,nowidow,emptypage,nextpage}
+\@providepackage{fncychap,sectsty,quotchap,titletoc,minitoc,etoc,tocbibind,typearea}
+\@providepackage{scrextend,floatrow,ccaption,caption3,rotfloat,hvfloat}
 \@providepackage{footnote,footnotehyper,manyfoot,bigfoot,endnotes,enotez,xr,xr-hyper,pagecolor}
-\@providepackage{eso-pic,background,draftwatermark,everypage,textpos,transparent,contour}
+\@providepackage{eso-pic,background,draftwatermark,everypage,transparent,contour}
 %
 % What a PDF reader does with the file, rather than what is on its pages.
 \@providepackage{pdfcomment,animate,media9,attachfile,embedfile}
 %
 % References, numbers and dates, whose commands the glossary gives in the
 % forms the engine writes.
-\@providepackage{nameref,zref,varioref,prettyref,refcount,totcount,fancyref,doi,xstring,xifthen}
-\@providepackage{isodate,fmtcount,nth,numprint,index,fixme,changes,mdwlist,overcite,hyphenat}
+\@providepackage{nameref,zref,varioref,prettyref,refcount,totcount,fancyref,doi}
+%
+% Text and tables of data, which the engine's own primitives take apart:
+% xstring's tests and functions, csvsimple's and datatool's tables.
+\@providepackage{xstring,csvsimple,datatool}
+\@providepackage{isodate,nth,numprint,fixme,changes,mdwlist,overcite,hyphenat}
 %
 % Tables, lists, text and science, set with what the engine has: dashed
 % rules as rules, striped rows plain, the physicists' and chemists'
 % notations by their commands.
-\@providepackage{arydshln,boldline,tablefootnote,threeparttablex,supertabular,xtab,tabto,adjustbox}
+\@providepackage{arydshln,boldline,tablefootnote,supertabular,xtab,tabto,adjustbox}
 \@providepackage{stackengine,tabstackengine,scalerel,relsize,moresize,underscore,lettrine}
-\@providepackage{isomath,derivative,diffcoef,esdiff,commath,mleftright,delimset,interval,slashed}
+\@providepackage{isomath,derivative,diffcoef,esdiff,mleftright,delimset,interval,slashed}
 \@providepackage{hepunits,chemformula,chemmacros,mathdots,amsxtra,accents,yhmath,qrcode,dirtree}
-\@providepackage{CJK,CJKutf8,xeCJK,ctex,luacode,svg,overpic,tikzpagenodes,tikzscale}
-\@providepackage{bibentry,chapterbib,multibib,chemfig,nicematrix,tabularray,unitsdef,SIunits,sistyle}
+\@providepackage{xeCJK,ctex,luacode,svg,overpic,tikzpagenodes,tikzscale}
+\@providepackage{bibentry,chapterbib,multibib,chemfig,nicematrix,tabularray,unitsdef}
 \@providepackage{hepnames,hepparticles,duckuments,tikzducks,bxcoloremoji}
 
 % Packages whose drawings the engine makes itself, as TikZ pictures: xy-pic's
 % \xymatrix, amscd's CD, Qcircuit's circuits and qtree's trees.
 \@providepackage{xy,amscd,qcircuit,qtree}
+%
+% Text and pictures set with what the engine has: a picture beside its
+% paragraph, a window cut into one, a paragraph in a shape, tab stops, the
+% quotes verbatim keeps straight already, a file's searchable text, keys
+% shown beside their labels, several optional arguments; and Feynman's
+% pictures as LaTeX's own picture blocks.
+\@providepackage{picins,cutwin,shapepar,tabbing,upquote,cmap,showkeys,xargs,feynman}
+%
+% And beyond the commonest packages: captions and pictures LaTeX's own
+% primitives draw, verbatim the engine reads, maths' and text's smaller
+% extras, logos, other citation styles, margins and frames the page sets
+% itself, wallpapers and watermarks it leaves off -- their commands, where a
+% document writes them, the glossary's.
+\@providepackage{capt-of,pict2e,alltt,moreverb,spverbatim,empheq,cases,nccmath,esvect,faktor,tensor}
+\@providepackage{centernot,extarrows,bigdelim,vmargin,anysize,savetrees,layout,showframe,hologo,metalogo}
+\@providepackage{dirtytalk,kantlipsum,apacite,harvard,backref,fp,marginfix,translator,textcase}
+\@providepackage{wallpaper,multitoc,lstautogobble,mathcomp,grffile,bicaption,floatflt,graphbox,trimclip}
+\@providepackage{pgfornament,tikz-3dplot,bclogo,awesomebox,censor,menukeys,keystroke,ellipsis,realscripts}
+\@providepackage{boxedminipage,shadow,multienum,exsheets,shorttoc,advdate,scrtime,showlabels,watermark}
+\@providepackage{bibunits,bibtopic}
 
 % Packages that are another under a newer or an older name, read as that one.
 \@setvariable{alias.xurl}{url}
@@ -115,6 +139,19 @@
 \@setvariable{alias.fontawesome}{fontawesome5}
 \@setvariable{alias.xypic}{xy}
 \@setvariable{alias.tikz-qtree}{tikz}
+\@setvariable{alias.amsopn}{amsmath}
+\@setvariable{alias.amsbsy}{amsmath}
+\@setvariable{alias.amstext}{amsmath}
+\@setvariable{alias.index}{makeidx}
+\@setvariable{alias.sistyle}{siunitx}
+\@setvariable{alias.CJKutf8}{CJK}
+\@setvariable{alias.glossaries-extra}{glossaries}
+\@setvariable{alias.ltablex}{tabularx}
+\@setvariable{alias.xltabular}{tabularx}
+\@setvariable{alias.listingsutf8}{listings}
+\@setvariable{alias.algpseudocodex}{algpseudocode}
+\@setvariable{alias.ifoddpage}{changepage}
+\@setvariable{alias.splitidx}{imakeidx}
 
 % \bibliographystyle names the style \bibliography sets a .bib file's entries
 % in -- plain, unsrt, abbrv, alpha, ieeetr, plainnat, unsrtnat, abbrvnat; a

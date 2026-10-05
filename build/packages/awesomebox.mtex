@@ -1,0 +1,8 @@
+% awesomebox: admonitions.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{awesomebox}
+\begin{document}
+\notebox{A note.} \tipbox{A tip.} \warningbox{A warning.} \cautionbox{Caution.} \importantbox{Important.}
+\end{document}

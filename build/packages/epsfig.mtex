@@ -1,0 +1,8 @@
+% epsfig: EPS figures.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{epsfig}
+\begin{document}
+\epsfig{file=example-image,width=2cm}
+\end{document}

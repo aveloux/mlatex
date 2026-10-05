@@ -1,0 +1,11 @@
+% acro: acronyms by keys.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{acro}
+\begin{document}
+\DeclareAcronym{nasa}{short=NASA, long=National Aeronautics and Space Administration}
+\DeclareAcronym{esa}{short=ESA, long=European Space Agency}
+First \ac{nasa}, then \ac{nasa}; \acl{esa}, \acs{esa}, \acf{esa}.
+\printacronyms
+\end{document}

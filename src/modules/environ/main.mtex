@@ -1,0 +1,14 @@
+% environ: a block that reads its body whole before its code runs, the body
+% kept in \BODY.
+%
+%   \NewEnviron{shout}{\textbf{\BODY}}
+%   \begin{shout}loud\end{shout}
+%
+% The body is read up to the block's own \end -- an \end of another block
+% inside it is part of it -- and the code then runs with \BODY meaning it.
+
+\@define\NewEnviron[2]{\@namedef{#1}{\@environ{#1}}\@namedef{end#1}{}\@namedef{@environ#1}{#2}}
+\@alias\RenewEnviron\NewEnviron
+\@define\environbodyname[1]{}
+\@spanning\@define\@environ#1{\@define\@environname{#1}\@define\@environbody{}\@environread}
+\@spanning\@define\@environread#1\end#2{\g@addto@macro\@environbody{#1}\@ifstrequal{#2}{\@environname}{\let\BODY\@environbody\@nameuse{@environ#2}\end{#2}}{\g@addto@macro\@environbody{\end{#2}}\@environread}}

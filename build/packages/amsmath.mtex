@@ -1,0 +1,29 @@
+% amsmath: amsmath displays and commands.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+\begin{align}
+a &= b + c \label{eq:a} \\
+d &= e \tag{*} \\
+f &= g \notag
+\end{align}
+\begin{gather}
+x = y \\ z = w
+\end{gather}
+\begin{multline}
+p = q + r + s \\ + t + u
+\end{multline}
+\begin{equation}
+\begin{split}
+a &= b \\ &= c
+\end{split}
+\end{equation}
+\begin{alignat}{2}
+x &= 1 &\quad y &= 2
+\end{alignat}
+\[ \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} \quad \binom{n}{k} \quad \dfrac{1}{2} \quad \tfrac{1}{2} \quad \text{text} \quad \operatorname{sgn} x \quad \overset{!}{=} \quad \underset{x}{\min} \quad \xrightarrow{f} \quad \iint \quad \idotsint \]
+\[ f(x) = \begin{cases} 1 & x > 0 \\ 0 & \text{otherwise} \end{cases} \]
+Equation~\eqref{eq:a}, and \numberwithin{equation}{section} is read.
+\end{document}

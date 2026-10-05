@@ -1,0 +1,8 @@
+% feynmp: Feynman diagrams, MetaPost.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{feynmp}
+\begin{document}
+\begin{fmffile}{diagram}\begin{fmfgraph}(40,25)\fmfleft{i}\fmfright{o}\fmf{fermion}{i,o}\end{fmfgraph}\end{fmffile}
+\end{document}

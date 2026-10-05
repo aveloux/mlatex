@@ -1,0 +1,8 @@
+% gensymb: units in text and maths.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{gensymb}
+\begin{document}
+20\,\degree C, 5\,\celsius, 10\,\ohm, 3\,\micro m, 5\,\perthousand; $90\degree$.
+\end{document}

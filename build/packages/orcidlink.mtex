@@ -1,0 +1,8 @@
+% orcidlink: an author's ORCID.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{orcidlink}
+\begin{document}
+Ada Lovelace \orcidlink{0000-0002-1825-0097}
+\end{document}

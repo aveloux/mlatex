@@ -1,0 +1,8 @@
+% overcite: superscript citations.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{overcite}
+\begin{document}
+Text\cite{a}.\begin{thebibliography}{1}\bibitem{a} A.\end{thebibliography}
+\end{document}

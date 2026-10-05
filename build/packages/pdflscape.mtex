@@ -1,0 +1,8 @@
+% pdflscape: landscape pages in PDF.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{pdflscape}
+\begin{document}
+\begin{landscape}A landscape page, turned in the PDF.\end{landscape}
+\end{document}

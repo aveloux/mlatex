@@ -91,9 +91,11 @@ namespace syntax {
                                 "'{}' is not a number and is not bound to a register", lead.text);
                     return std::nullopt;
                 }
+                // An internal integer ends where its name does: TeX takes the
+                // optional space only after digits, so `\\usebox{\\held} and`
+                // keeps its word space.
                 cursor.advance();
                 const auto value = static_cast<std::int64_t>(registers.get(target->type, target->slot));
-                space(cursor);
                 return saturate(sign * value);
             }
 
@@ -195,7 +197,6 @@ namespace syntax {
                 cursor.advance();
                 if (target->type != semantics::Registers::Type::Count) {
                     const auto value = static_cast<std::int64_t>(registers.get(target->type, target->slot));
-                    space(cursor);
                     return saturate(sign * value);
                 }
                 whole = registers.get(semantics::Registers::Type::Count, target->slot);

@@ -1,0 +1,8 @@
+% epigraph: a quotation at a head.
+% Set by tests/test_engine.cpp with every other document in this folder,
+% which wants each to come out with no error and no unknown package.
+\documentclass{article}
+\usepackage{epigraph}
+\begin{document}
+\epigraph{The purpose of computing is insight, not numbers.}{Richard Hamming}
+\end{document}

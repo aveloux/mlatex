@@ -13,3 +13,15 @@
 % The options stand for the switches of the same names.
 \@ifvariable{setspace.onehalfspacing}{\onehalfspacing}{}
 \@ifvariable{setspace.doublespacing}{\doublespacing}{}
+
+% The blocks of the same spacings, each ending where it ends.
+\@define\singlespace{\singlespacing}
+\@define\endsinglespace{\par}
+\@define\onehalfspace{\onehalfspacing}
+\@define\endonehalfspace{\par}
+\@define\doublespace{\doublespacing}
+\@define\enddoublespace{\par}
+\@define\spacing[1]{\setstretch{#1}}
+\@define\endspacing{\par}
+\@define\SingleSpacing{\singlespacing}
+\@define\baselinestretch{1}

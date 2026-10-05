@@ -1,0 +1,35 @@
+% scrlayer-scrpage: KOMA-Script's heads and feet -- inner, centre and outer
+% -- in the scrheadings style, drawn as fancyhdr draws its own.
+%
+%   \pagestyle{scrheadings}
+%   \ihead{\headmark} \ohead{\pagemark} \cfoot{}
+
+\@requirepackage{fancyhdr}
+
+\@define\ps@scrheadings{}
+\@define\ps@scrplain{\fancyhf{}\fancyfoot[C]{\thepage}}
+\@define\ihead[2][]{\fancyhead[L]{#2}}
+\@define\chead[2][]{\fancyhead[C]{#2}}
+\@define\ohead[2][]{\fancyhead[R]{#2}}
+\@define\ifoot[2][]{\fancyfoot[L]{#2}}
+\@define\cfoot[2][]{\fancyfoot[C]{#2}}
+\@define\ofoot[2][]{\fancyfoot[R]{#2}}
+\@define\lohead[2][]{\fancyhead[L]{#2}}
+\@define\cohead[2][]{\fancyhead[C]{#2}}
+\@define\rohead[2][]{\fancyhead[R]{#2}}
+\@define\lehead[2][]{}
+\@define\cehead[2][]{}
+\@define\rehead[2][]{}
+\@define\lofoot[2][]{\fancyfoot[L]{#2}}
+\@define\cofoot[2][]{\fancyfoot[C]{#2}}
+\@define\rofoot[2][]{\fancyfoot[R]{#2}}
+\@define\pagemark{\thepage}
+\@define\headmark{}
+\@define\automark[2][]{}
+\@define\manualmark{}
+\@define\clearpairofpagestyles{\fancyhf{}}
+\@define\clearscrheadfoot{\fancyhf{}}
+\@define\clearscrheadings{\fancyhf{}}
+\@define\setkomafont[2]{}
+\@define\addtokomafont[2]{}
+\@define\KOMAoptions[1]{}

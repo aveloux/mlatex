@@ -2,3 +2,10 @@
 % tablenotes block is the engine's own list; a note's mark is raised.
 
 \@define\tnote[1]{\textsuperscript{#1}}
+
+% The block that holds the table, its caption and its notes together, which
+% a page here keeps together already; and the measured figure beside it.
+\@define\threeparttable[1][]{}
+\@define\endthreeparttable{}
+\@define\measuredfigure{}
+\@define\endmeasuredfigure{}
