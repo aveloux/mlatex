@@ -9,8 +9,8 @@ cmake-build-*/
 # into its build tree.
 /bin/
 
-# Packages a release build leaves behind.
-/packages/
+# Packages a release build leaves behind, in release/
+/release/
 *.msi
 *.dmg
 *.deb

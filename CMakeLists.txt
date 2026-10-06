@@ -517,8 +517,10 @@ else()
     endif()
 
     # A release build packages itself: `cpack` in the build tree -- or the
-    # `package` target -- leaves an MSI on Windows, a disk image on macOS,
-    # and a .deb and an .rpm on Linux, each with an archive beside it. A
+    # `package` target -- leaves every package in the source tree's release/
+    # folder: an MSI and a .zip on Windows; a disk image, a .pkg installer,
+    # a .tar.gz and a .zip on macOS; a .deb, an .rpm, a .tar.gz and a .zip
+    # on Linux. A
     # build is for one architecture, and its packages are named for it --
     # mlatex-0.1.0-windows-arm64.msi, mlatex_0.1.0_amd64.deb -- so another is
     # another build: clang-cl for ARM64 with the arm64-windows triplet, an
@@ -563,6 +565,9 @@ else()
         set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
         set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
         set(CPACK_STRIP_FILES ON)
+        # The packages themselves in release/, beside the sources; what CPack
+        # stages to make them stays in the build tree.
+        set(CPACK_OUTPUT_FILE_PREFIX "${source}/release")
         # WiX takes a license as .txt or .rtf only.
         configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
         set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")
@@ -570,6 +575,8 @@ else()
         if(WIN32)
             # An MSI when WiX is installed -- the .NET tool `wix`, version 4
             # or later, or version 3's candle and light -- and a .zip always.
+            # WiX 7 runs only once its EULA is accepted, which is the
+            # person's to do, once per machine: `wix eula accept wix7`.
             # The upgrade code never changes, so a newer MSI replaces an
             # older one rather than installing beside it.
             set(CPACK_GENERATOR ZIP)
@@ -587,13 +594,15 @@ else()
             set(CPACK_WIX_ARCHITECTURE "${architecture}")
         elseif(APPLE)
             # A disk image holding an mLaTeX folder and a link to
-            # Applications to drag it onto.
-            set(CPACK_GENERATOR DragNDrop TGZ)
+            # Applications to drag it onto; a .pkg installer that puts the
+            # same folder in /Applications itself; and two archives.
+            set(CPACK_GENERATOR DragNDrop productbuild TGZ ZIP)
             set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
+            set(CPACK_PRODUCTBUILD_IDENTIFIER io.github.apaxphoenix.mlatex)
         else()
             # Debian's and Red Hat's packages, named as each names its own,
-            # and an archive for everything else. An .rpm needs rpmbuild.
-            set(CPACK_GENERATOR DEB TGZ)
+            # and two archives for everything else. An .rpm needs rpmbuild.
+            set(CPACK_GENERATOR DEB TGZ ZIP)
             find_program(builder rpmbuild)
             if(builder)
                 list(APPEND CPACK_GENERATOR RPM)
@@ -621,11 +630,14 @@ else()
         endif()
 
         # Where each package puts the tree: an mLaTeX folder in the disk
-        # image, and /opt/mlatex for Debian and Red Hat -- whose own `latex`
-        # is TeX Live's, in /usr/bin, and is left alone.
+        # image, /Applications/mLaTeX from the .pkg, and /opt/mlatex for
+        # Debian and Red Hat -- whose own `latex` is TeX Live's, in /usr/bin,
+        # and is left alone.
         file(CONFIGURE OUTPUT "${binary}/packaging.cmake" CONTENT [[
 if(CPACK_GENERATOR STREQUAL "DragNDrop")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/mLaTeX")
+elseif(CPACK_GENERATOR STREQUAL "productbuild")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/Applications/mLaTeX")
 elseif(CPACK_GENERATOR STREQUAL "DEB" OR CPACK_GENERATOR STREQUAL "RPM")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/mlatex")
 endif()

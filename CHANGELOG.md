@@ -752,11 +752,14 @@ page's text goes.
   (the program, the C library and on Windows every DLL it loads),
   `assets/` (fonts, hyphenation) beside it, `lib/` and `include/latex/`
   -- the shape `latex::locate` finds its assets in from anywhere. In a
-  Release tree, `cpack` (or the `package` target) makes an MSI with WiX
-  4's `wix` or WiX 3's tools, and a .zip, on Windows; a disk image holding
-  an `mLaTeX` folder to drag onto Applications, and a .tar.gz, on macOS;
-  a .deb, an .rpm when rpmbuild is there, and a .tar.gz on Linux, under
-  `/opt/mlatex` so TeX Live's own `latex` is left alone. Each is named for
+  Release tree, `cpack` (or the `package` target) writes them all into the
+  project's `release/` folder: an MSI with WiX 4 or later's `wix` (WiX 7
+  once its EULA is accepted) or WiX 3's tools, and a .zip, on Windows; a
+  disk image holding an `mLaTeX` folder to drag onto Applications, a .pkg
+  installer that puts it in `/Applications/mLaTeX`, a .tar.gz and a .zip
+  on macOS; a .deb, an .rpm when rpmbuild is there, a .tar.gz and a .zip
+  on Linux, the first two under `/opt/mlatex` so TeX Live's own `latex` is
+  left alone. The MSI was built with WiX 7 and run from its files. Each is named for
   its system and architecture -- `mlatex-0.1.0-windows-x64.msi`,
   `mlatex_0.1.0_arm64.deb`, `mlatex-0.1.0-macos-universal.dmg` when
   `CMAKE_OSX_ARCHITECTURES` names two -- and another architecture is
@@ -765,7 +768,9 @@ page's text goes.
   builds, tests and packages on six runners -- Windows, Linux and macOS,
   each on x64 and ARM64 -- with a C++26 compiler on each (Visual Studio's
   clang-cl, Clang 20, Homebrew's LLVM) and vcpkg's libraries cached
-  between runs; a pushed `v*` tag attaches every package to a release.
+  between runs. The Windows runners install WiX 7 and accept its EULA, so
+  each makes an MSI; every runner collects its packages from `release/`,
+  and a pushed `v*` tag attaches them all to a GitHub release.
   It replaces a workflow that installed Skia, which the engine has not
   used for months, and compiled with a GCC that has no `#embed`.
   Dependabot keeps the workflow's actions current.

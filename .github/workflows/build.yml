@@ -75,6 +75,19 @@ jobs:
           "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
           "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
 
+      # WiX 7 for the .msi, with its EULA accepted for this runner and the
+      # extensions CPack's installer uses. Accepting it is the project's
+      # choice, made here: see https://docs.firegiant.com/wix/osmf/.
+      - name: Set up WiX
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 7.0.0
+          "$env:USERPROFILE\.dotnet\tools" | Out-File $env:GITHUB_PATH -Append
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" eula accept wix7
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.UI.wixext/7.0.0
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.Util.wixext/7.0.0
+
       - name: Load the Visual Studio environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -130,20 +143,22 @@ jobs:
       - name: Test
         run: ctest --test-dir "${{ env.TREE }}" --output-on-failure --timeout 300
 
+      # Every package lands in release/, as it does on a person's machine.
       - name: Package
-        run: cpack --config "${{ env.TREE }}/CPackConfig.cmake" -B packages
+        run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
 
       - name: Keep the packages
         uses: actions/upload-artifact@v4
         with:
           name: mlatex-${{ runner.os }}-${{ matrix.architecture }}
           path: |
-            packages/*.msi
-            packages/*.zip
-            packages/*.dmg
-            packages/*.deb
-            packages/*.rpm
-            packages/*.tar.gz
+            release/*.msi
+            release/*.zip
+            release/*.dmg
+            release/*.pkg
+            release/*.deb
+            release/*.rpm
+            release/*.tar.gz
           if-no-files-found: error
 
   release:
@@ -156,10 +171,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: packages
+          path: release
           merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: packages/*
+          files: release/*
           generate_release_notes: true

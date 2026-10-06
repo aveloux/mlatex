@@ -89,8 +89,10 @@ will include:
 | Platform | Package | Installs to |
 | --- | --- | --- |
 | Windows | `.msi` installer, `.zip` | `C:\Program Files\mLaTeX` |
-| macOS | `.dmg` disk image, `.tar.gz` | wherever the `mLaTeX` folder is dragged |
-| Linux | `.deb`, `.rpm`, `.tar.gz` | `/opt/mlatex` |
+| macOS | `.pkg` installer | `/Applications/mLaTeX` |
+| macOS | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
+| Linux | `.deb`, `.rpm` | `/opt/mlatex` |
+| Linux | `.tar.gz`, `.zip` | wherever it is unpacked |
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
@@ -113,6 +115,10 @@ does not conflict with TeX Live's own `latex`.
 - Optional: libcurl on Linux and macOS for `\includegraphics` of `https://`
   sources (Windows uses WinHTTP); Doxygen for the API reference; WiX
   (version 3, or the `wix` .NET tool, version 4 or later) for an `.msi`.
+  WiX 7 needs its EULA accepted once per machine, `wix eula accept wix7`,
+  and the `WixToolset.UI.wixext` and `WixToolset.Util.wixext` extensions
+  (`wix extension add --global ...`); see
+  [WiX's maintenance fee](https://docs.firegiant.com/wix/osmf/).
 
 ```bash
 vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib
@@ -147,11 +153,12 @@ The build produces three targets: `latex` (the command-line program), `core`
 From a Release build tree:
 
 ```bash
-cpack --config cmake-build-release/CPackConfig.cmake -B packages
+cpack --config cmake-build-release/CPackConfig.cmake
 ```
 
-This produces the packages listed under [Installation](#installation) for
-the platform and architecture of the build. To package another
+This puts the packages listed under [Installation](#installation) for the
+platform and architecture of the build into the `release/` folder at the
+top of the project. To package another
 architecture, run a separate build for it, for example `clang-cl` targeting
 ARM64 with the `arm64-windows` triplet. On macOS,
 `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` with universal libraries
