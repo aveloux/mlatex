@@ -512,6 +512,12 @@ sees, newest work last within each group.
   share of each, `fixed relative`; across with `x dir`. Each is a line in
   the plot's colour with a bar across each end, and the axis's limits make
   room for them.
+- **pgfplots' `fill between`**: `\addplot[gray!30] fill between[of=f and
+  g];` fills the region between two plots named with `name path`, under
+  every line, kept to `soft clip={domain=a:b}` with each curve's end where
+  it crosses an edge; `fill opacity` pales it, a plot given none takes
+  pgfplots' next colour paled, and the legend shows a patch. A curve drawn
+  with `draw=none` is named for a fill to reach and not drawn.
 - **Commutative diagrams are drawn**, each as the TikZ picture it is: a
   matrix of its objects and an arrow for each, its labels on the side the
   package puts them. tikz-cd's `\arrow` -- `"f"`, `"f"'` swapped,
@@ -844,8 +850,7 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn; pgfplots' 3D plots, error bars and
-`fill between` are not drawn. beamer's overlays are one slide and
+EPS and SVG are placeholders, not drawn; pgfplots' 3D plots are not drawn. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set

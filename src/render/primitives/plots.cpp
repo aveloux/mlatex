@@ -537,6 +537,80 @@ namespace render::primitives {
                             out += std::format("{} {} circle (2pt);", how, point(x, y));
                         }
                     };
+                    // The regions `fill between` asks for, under every line:
+                    // the first plot's points along and the second's back,
+                    // within `soft clip`'s domain -- each curve's end where
+                    // it crosses an edge of it -- and inside the box. Its
+                    // colour is the one it names, pgfplots' next one paled
+                    // when it names none, and an opacity paler still.
+                    for (std::size_t index = 0; index < axis.plots.size(); ++index) {
+                        const Plot& region = axis.plots[index];
+                        if (region.between.empty()) continue;
+                        const Pairs asked = read(region.between);
+                        const std::string_view of = find(asked, "of").value_or("");
+                        const std::size_t also = of.find(" and ");
+                        if (also == std::string_view::npos) continue;
+                        const std::array<std::string_view, 2> names{trim(of.substr(0, also)), trim(of.substr(also + 5))};
+                        double from = -std::numeric_limits<double>::infinity();
+                        double to = std::numeric_limits<double>::infinity();
+                        if (const auto clip = find(asked, "soft clip")) {
+                            if (const auto domain = find(read(*clip), "domain")) {
+                                const std::size_t colon = domain->find(':');
+                                from = number(domain->substr(0, colon)).value_or(from);
+                                if (colon != std::string_view::npos) to = number(domain->substr(colon + 1)).value_or(to);
+                            }
+                        }
+                        std::vector<std::pair<double, double>> outline;
+                        bool whole = true;
+                        for (std::size_t side = 0; side < 2 && whole; ++side) {
+                            const auto named = std::ranges::find_if(axis.plots, [&](const Plot& plot) {
+                                const Pairs own = read(plot.options);
+                                return find(own, "name path") == names[side] || find(own, "name path global") == names[side];
+                            });
+                            if (named == axis.plots.end()) {
+                                tracebacks.emplace_back(syntax::Traceback::Type::Warning, memory::Location{},
+                                                         std::format("fill between: no plot named '{}'", names[side]));
+                                whole = false;
+                                break;
+                            }
+                            std::vector<std::pair<double, double>> kept;
+                            for (std::size_t at = 0; at < named->points.size(); ++at) {
+                                const auto [x, y] = named->points[at];
+                                if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
+                                if (at > 0) {
+                                    const auto [a, b] = named->points[at - 1];
+                                    for (const double edge : {from, to}) {
+                                        if (!std::isfinite(edge) || !std::isfinite(a) || !std::isfinite(b) || (a < edge) == (x < edge)) continue;
+                                        kept.emplace_back(edge, b + (y - b) * (edge - a) / (x - a));
+                                    }
+                                }
+                                if (x >= from && x <= to) kept.emplace_back(x, y);
+                            }
+                            if (side == 1) std::ranges::reverse(kept);
+                            outline.insert(outline.end(), kept.begin(), kept.end());
+                        }
+                        if (!whole || outline.size() < 3) continue;
+
+                        std::string paint = region.cycled ? std::string(cycle[index % cycle.size()].first) + "!40!white" : "";
+                        std::optional<double> shade;
+                        for (const auto& [key, value] : read(region.options)) {
+                            if (key == "fill" || key == "color") paint = value;
+                            else if (key == "opacity" || key == "fill opacity") shade = number(value);
+                            else if (value.empty() && !key.contains(' ') && !key.contains('/')) paint = key;
+                        }
+                        if (paint.empty()) paint = "black!20!white";
+                        if (shade) {
+                            // A mixture ending in its share, `blue!20`, is on white.
+                            if (std::ranges::count(paint, '!') % 2 == 1) paint += "!white";
+                            paint = std::format("{}!{}!white", paint, std::lround(std::clamp(*shade, 0.0, 1.0) * 100.0));
+                        }
+                        out += std::format("\\fill[{}] ", paint);
+                        for (const auto& [x, y] : outline) {
+                            out += point(std::clamp(px(x), 0.0, wide), std::clamp(py(y), 0.0, tall)) + " -- ";
+                        }
+                        out += "cycle;";
+                    }
+
                     for (std::size_t index = 0; index < axis.plots.size(); ++index) {
                         const Plot& plot = axis.plots[index];
                         std::string color = plot.cycled ? std::string(cycle[index % cycle.size()].first) : "black";
@@ -564,6 +638,16 @@ namespace render::primitives {
                             }
                         }
                         if (!plot.cycled && mark.empty() && !line) mark = "*";
+                        if (color == "none") {
+                            // `draw=none`: a curve named for a fill to reach, not drawn.
+                            line = false;
+                            mark.clear();
+                        }
+                        if (!plot.between.empty()) {
+                            // Filled already, under the lines; in the legend, a patch.
+                            if (!forgotten) samples.push_back({color, "", false, true});
+                            continue;
+                        }
                         const bool histogram = barred;
                         if (!forgotten) samples.push_back({color, mark, line && !histogram, histogram});
 
@@ -920,6 +1004,16 @@ namespace render::primitives {
                         if (erring[side] && *erring[side] < row.size()) error[side] = number(row[*erring[side]]).value_or(gap);
                     }
                     plot.errors.push_back(error);
+                }
+            } else if (spec.starts_with("fill between")) {
+                // The region between two named plots, worked out when the
+                // axis has them all.
+                spec = trim(spec.substr(12));
+                const std::size_t close = spec.starts_with('[') ? spec.rfind(']') : std::string_view::npos;
+                plot.between = close == std::string_view::npos ? std::string{} : std::string(spec.substr(1, close - 1));
+                if (!find(read(plot.between), "of")) {
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                             "\\addplot: fill between needs the plots it lies between, of=f and g");
                 }
             } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with("file")) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,

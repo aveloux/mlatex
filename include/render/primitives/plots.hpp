@@ -96,6 +96,11 @@ namespace render::primitives {
             /// table's `y error` column -- below and above across, then below
             /// and above up; NaN where none was given. Empty for a function.
             std::vector<std::array<double, 4>> errors{};
+
+            /// For `fill between[of=f and g]`, what its brackets hold: the
+            /// region between two plots named with `name path`. Empty for a
+            /// plot of points.
+            std::string between{};
         };
 
         /// @brief One axis being read: its kind, its options and its plots.

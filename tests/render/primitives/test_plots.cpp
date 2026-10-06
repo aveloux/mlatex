@@ -151,5 +151,20 @@ int main() {
         assert((count(tabled.pdf, " l S") == count(plain.pdf, " l S") + 6) && "from a table's column, upwards");
         assert((count(fixed.pdf, " l S") == count(plain.pdf, " l S") + 6) && "the same across for every point");
     }
+    {
+        // fill between: the region between two named plots -- one of them
+        // not drawn -- filled once, under the lines, within its soft clip.
+        const Result result = picture("\\begin{axis}[domain=0:2]"
+                                      "\\addplot[name path=f, blue] {x^2};"
+                                      "\\addplot[name path=g, draw=none] {0};"
+                                      "\\addplot[gray, fill opacity=0.3] fill between[of=f and g, soft clip={domain=0.5:1.5}];"
+                                      "\\end{axis}");
+        assert((result.clean && result.errors.empty()) && "a fill between two plots");
+        assert((count(result.pdf, "\nh f\n") == 1) && "filled once");
+        assert((result.pdf.find("h f\n") < result.pdf.find("0 0 1 RG")) && "under the blue line");
+        const Result lost = picture("\\begin{axis}\\addplot[name path=f] {x};"
+                                    "\\addplot fill between[of=f and nothing];\\end{axis}");
+        assert((holds(lost.errors, "fill between: no plot named 'nothing'")) && "a plot it cannot find is named");
+    }
     return 0;
 }
