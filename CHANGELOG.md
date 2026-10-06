@@ -131,6 +131,12 @@ sees, newest work last within each group.
   `\bibliography` names can be, as a paper sent to a journal or the arXiv
   ships; natbib-style `\bibitem[Knuth(1984)]{knuth}` entries cite by author
   and year.
+- **A `.bib` file imports as any file is input.** `\input{refs.bib}` (or
+  `\include`) makes it a source of the bibliography, as biblatex's
+  `\addbibresource` does, rather than reading BibTeX's `@entries` as TeX;
+  `\bibliography{}` and `\printbibliography` both set what it holds, and a
+  file `\bibliography` names as well is read once. One that is not there is
+  `File `refs.bib' not found`.
 - **`@preamble`** is kept, as BibTeX writes it into the `.bbl`: its text
   goes ahead of the list, so a command the entries use -- `\noopsort`, a
   logo -- is defined before they are set. It was read past.

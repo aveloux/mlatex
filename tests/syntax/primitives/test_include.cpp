@@ -101,6 +101,7 @@ int main() {
         assert((text == "yes" && errors.contains("warning: ")) && "and is marked loaded, as LaTeX has it");
     }
     reports("\\include{nosuch}", "File `nosuch.tex' not found", "an unknown file is named");
+    reports("\\input{nosuch.bib}", "File `nosuch.bib' not found", "and a .bib file, by its own name");
     sets("\\immediate\\write16{to the log}\\message{said}kept", "kept", "writes and messages set nothing");
     sets("\\iffile{nosuch.tex}{found}{absent}", "absent", "\\iffile of a file that is not there");
     return 0;

@@ -133,10 +133,24 @@ namespace syntax::primitives {
                 return;
             }
 
+            // A .bib file is not TeX to read but entries to cite: input, it is
+            // imported, a source of the bibliography as biblatex's
+            // \addbibresource makes one, and read by whichever of
+            // \bibliography and \printbibliography sets the list.
+            const std::string folder = folders.empty() ? std::string{} : folders.back();
+            if (name.ends_with(".bib")) {
+                for (const std::string& candidate : {folder.empty() ? name : folder + "/" + name, name}) {
+                    if (!get(context, candidate)) continue;
+                    mouth.ingest(mouth.arena.copy("\\addbibresource{" + candidate + "}"), memory::Location{});
+                    return;
+                }
+                tracebacks.emplace_back(Traceback::Type::Primitive, origin, std::format("File `{}' not found", name));
+                return;
+            }
+
             // Beside the file being read first, then from the top; each time
             // as written, then with an extension a bare name leaves off --
             // this engine's own, or LaTeX's, for a chapter written for it.
-            const std::string folder = folders.empty() ? std::string{} : folders.back();
             std::array<std::string, 6> candidates{};
             std::size_t count = 0;
             if (!folder.empty()) {

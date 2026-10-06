@@ -171,6 +171,28 @@ int main() {
                "a bibliography already made is set when the .bib it names is not there");
     }
 
+    // --- A .bib file imported, as any file is input -------------------------------
+    {
+        const Result result = typeset("\\documentclass{article}\\input{refs.bib}\\begin{document}\\cite{knuth84}."
+                                      "\\bibliography{}\\end{document}",
+                                      host);
+        assert((result.clean && holds(result.text, "[1].") && holds(result.text, "Literateprogramming")) &&
+               "\\input of a .bib makes it a source \\bibliography reads");
+        assert((!holds(result.text, "Addison-Wesley")) && "and only what is cited is listed");
+    }
+    {
+        const Result result = typeset("\\documentclass{article}\\begin{document}\\input{refs.bib}\\nocite{*}"
+                                      "\\bibliography{refs}\\printbibliography\\end{document}",
+                                      host);
+        const std::size_t first = result.text.find("Literateprogramming");
+        assert((result.clean && first != std::string::npos &&
+                result.text.find("Literateprogramming", first + 1) != std::string::npos) &&
+               "\\printbibliography reads it too");
+        assert((result.text.find("Literateprogramming", result.text.find("Literateprogramming", first + 1) + 1) ==
+                std::string::npos) &&
+               "and a file \\bibliography names as well is read once by it");
+    }
+
     // --- Mistakes -------------------------------------------------------------------
     {
         const Result result = typeset("\\documentclass{article}\\begin{document}\\cite{nosuch}"

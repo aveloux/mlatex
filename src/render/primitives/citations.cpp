@@ -1110,7 +1110,7 @@ namespace render::primitives {
             mouth.ingest(context.arena.copy(written));
         };
 
-        parser.bind("\\bibliography", [compile, &context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\bibliography", [this, compile, &context](syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             std::vector<std::string> files;
             for (const auto piece : std::views::split(syntax::Argument::text(mouth), ',')) {
@@ -1118,6 +1118,14 @@ namespace render::primitives {
                 while (!file.empty() && file.front() == ' ') file.erase(file.begin());
                 while (!file.empty() && file.back() == ' ') file.pop_back();
                 if (!file.empty()) files.push_back(std::move(file));
+            }
+            // And every file imported -- \input{refs.bib}, \addbibresource --
+            // that it does not name already, so `\bibliography{}` sets those.
+            for (const std::string& resource : resources) {
+                const auto same = [&resource](const std::string& file) {
+                    return (file.ends_with(".bib") ? file : file + ".bib") == resource;
+                };
+                if (std::ranges::none_of(files, same)) files.push_back(resource);
             }
 
             // A file handed in, or one beside the document.
