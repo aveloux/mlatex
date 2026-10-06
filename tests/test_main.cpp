@@ -55,8 +55,13 @@ int main() {
     assert((run(document, "--set=customer=Acme") == 2) && "values are the bindings', not the command line's");
     assert((run(document, "-interaction=batchmode") == 0 && run(document, "--interaction nonstopmode") == 0) &&
            "-interaction, written as TeX writes it or with its value after it");
+    assert((run(document, "--interaction=batch-mode") == 0 && run(document, "-i error-stop-mode") == 0) &&
+           "and in words, with dashes between");
     assert((run(document, "--interaction=sometimes") == 2) && "an interaction TeX has no name for");
     assert((run(document, "--time-statistics -q") == 0) && "--time-statistics");
+    assert((run(document, "--time -q") == 0 && run(document, "-T") == 0) && "--time");
+    assert((run(document, "--log-level warn") == 2) && "the logger's options take their value after =");
+    assert((run(document, "--log-level=warn -q") == 0) && "as they are written");
 
     // What the document is made into: a PDF ahead of time, or a target not
     // built yet, which is taken and does nothing.
@@ -69,6 +74,8 @@ int main() {
     assert((run(document, "--target=fortran") == 2) && "a target there is none of");
 
     assert((run(document, "--draftmode -q") == 0 && !std::filesystem::exists(pdf)) && "--draftmode writes no PDF");
+    assert((run(document, "--draft-mode -q") == 0 && run(document, "-n") == 0 && !std::filesystem::exists(pdf)) &&
+           "nor does --draft-mode");
 
     std::filesystem::path stray = broken;
     stray.replace_extension(".pdf");
@@ -80,6 +87,8 @@ int main() {
     std::filesystem::remove_all(folder);
     assert((run(document, "-q --output-directory=\"" + folder.string() + "\" -jobname=final") == 0 &&
             std::filesystem::exists(folder / "final.pdf")) && "--output-directory and --jobname place and name the PDF");
+    assert((run(document, "-q -o \"" + folder.string() + "\" --job-name=again") == 0 &&
+            std::filesystem::exists(folder / "again.pdf")) && "-o and --job-name the same");
 
     std::filesystem::path bare = document;
     bare.replace_extension();

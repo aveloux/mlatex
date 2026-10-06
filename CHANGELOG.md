@@ -696,6 +696,23 @@ alone: the command line has no `--set`. `latex::compose` takes where its
 report and its errors go, an empty destination for a draft, and where each
 page's text goes.
 
+- **Names in words, with dashes between.** `--job-name`, `--draft-mode`
+  (`-n`) and `--interaction=batch-mode`, `non-stop-mode`, `scroll-mode`,
+  `error-stop-mode`; TeX's run-together `-jobname`, `-draftmode` and
+  `batchmode` are still taken, so pdflatex's scripts run unchanged. Every
+  option is one row of a table -- letter, name, TeX's spelling, value,
+  heading, summary -- that both the parser and `--help` read, so adding one
+  is a row and a branch, and the help can never disagree with the parser.
+- **`-T`/`--time`** prints how long the run took: finding the document and
+  its assets, setting it and writing its PDF, and in all, in milliseconds.
+  `--time-statistics` still prints the engine's own report, step by step.
+- **`-w`/`--watch`** sets the document again each time it is saved, until
+  interrupted; **`-O`/`--open`** shows the PDF in the system's viewer once
+  written, through `ShellExecuteW`, `open` or `xdg-open`, never a shell.
+- The banner is `This is latex 0.1.0.`, without the target; the logger's
+  `--log-level` and `--log-file` say they take their value after `=` rather
+  than reading the next argument as the document.
+
 ### Building
 
 - **Any profile builds on Windows.** cl has no C++26 and no `#embed`, and
