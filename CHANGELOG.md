@@ -724,7 +724,7 @@ page's text goes.
   written, through `ShellExecuteW`, `open` or `xdg-open`, never a shell.
 - **`--offline`** keeps a run off the network: `\httpget`, `\httppost` and
   `\includegraphics{https://...}` are refused where they stand, each named
-  in an error (`\httpget of '...' refused: the run is offline`), and no
+  in an error (``\httpget of '...' refused: the run is offline``), and no
   request is made. `latex::Host::offline` is the same for a program, and
   the C library's `offline(session, on)` -- last in its struct, so a
   program built against the older header still finds every other
@@ -935,12 +935,10 @@ font folders are listed only for a script the engine carries no face for.
   tables, environments from the glossary, what a category change in a
   package's own file reaches, and a package's sample document in
   `build/packages`.
-- **The reference has a look of its own.** `docs/style.css` over Doxygen's
-  stylesheet -- system fonts, flat bars, rounded member blocks, code that
-  scrolls rather than wraps, Markdown tables with borders -- and a light and
-  dark theme switched from the top bar, with `docs/logo.svg` beside the
-  project's name and version. Every block of code has a copy button,
-  sections fold, and long pages list their headings. The README is the
+- **The reference reads better.** Doxygen's own look, unstyled, with a
+  light and dark theme switched from the top bar and the project's name and
+  version at the top. Every block of code has a copy button, sections
+  fold, and long pages list their headings. The README is the
   front page, and the security policy, this changelog and the code of
   conduct are pages beside the package guide; headings take GitHub's
   anchors, so a README link to one of its sections works in both places.

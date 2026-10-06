@@ -163,7 +163,6 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_PROJECT_NAME "mLaTeX")
     set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
     set(DOXYGEN_PROJECT_BRIEF "A LaTeX typesetting engine")
-    set(DOXYGEN_PROJECT_LOGO "${source}/docs/logo.svg")
     set(DOXYGEN_OUTPUT_DIRECTORY "${binary}/docs")
     set(DOXYGEN_GENERATE_HTML YES)
     set(DOXYGEN_GENERATE_LATEX NO)
@@ -194,12 +193,11 @@ if(DOXYGEN_FOUND)
     # sits beside its description rather than buried in it.
     set(DOXYGEN_ALIASES [["complexity=@par Complexity:^^"]])
 
-    # The site's own look -- docs/style.css over Doxygen's -- with a switch
-    # between light and dark in the top bar, a copy button on every block of
-    # code, collapsible sections, and each long page's headings listed beside
-    # it. Headings take GitHub's anchors, so the README's links to its own
-    # sections work here as they do there.
-    set(DOXYGEN_HTML_EXTRA_STYLESHEET "${source}/docs/style.css")
+    # Doxygen's own look, with a switch between light and dark in the top
+    # bar, a copy button on every block of code, collapsible sections, and
+    # each long page's headings listed beside it. Headings take GitHub's
+    # anchors, so the README's links to its own sections work here as they
+    # do there.
     set(DOXYGEN_HTML_COLORSTYLE TOGGLE)
     set(DOXYGEN_HTML_COPY_CLIPBOARD YES)
     set(DOXYGEN_HTML_DYNAMIC_SECTIONS YES)
