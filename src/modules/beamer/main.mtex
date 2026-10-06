@@ -12,7 +12,7 @@
 % The frame, its columns and its blocks are the engine's own. A frame is as
 % many slides as its overlays ask for -- \pause, \only<2>, \item<2->,
 % \begin{itemize}[<+->] -- each a page, what a slide does not show unseen in
-% its place; its themes are read and let go.
+% its place; its theme draws its head, its foot and its frame titles.
 
 \@requirepackage{amsmath}
 \@requirepackage{amssymb}
@@ -34,14 +34,23 @@
 \definecolor{example}{rgb}{0,0.5,0}
 
 % The title, subtitle, authors, institute and date, each with the short form
-% a theme's foot would carry, read and let go.
+% a theme's foot carries -- the long one when none is given.
 \@define\@subtitle{}
 \@define\@institute{}
-\@define\title[2][]{\@define\thetitle{#2}}
+\@define\thetitle{}
+\@define\theauthor{}
+\@define\thedate{\today}
+\@define\@shorttitle{}
+\@define\@shortauthor{}
+\@define\@shortdate{}
+\@define\title[2][]{\@define\thetitle{#2}\@define\@shorttitle{#1}}
 \@define\subtitle[2][]{\@define\@subtitle{\par\vskip .3em{\normalsize #2\par}}}
-\@define\author[2][]{\@define\theauthor{#2}}
-\@define\date[2][]{\@define\thedate{#2}}
+\@define\author[2][]{\@define\theauthor{#2}\@define\@shortauthor{#1}}
+\@define\date[2][]{\@define\thedate{#2}\@define\@shortdate{#1}}
 \@define\institute[2][]{\@define\@institute{#2}}
+\@define\insertshorttitle{\expandafter\@ifempty\expandafter{\@shorttitle}\thetitle\else\@shorttitle\fi}
+\@define\insertshortauthor{\expandafter\@ifempty\expandafter{\@shortauthor}\theauthor\else\@shortauthor\fi}
+\@define\insertshortdate{\expandafter\@ifempty\expandafter{\@shortdate}\thedate\else\@shortdate\fi}
 \@define\titlegraphic[1]{}
 \@define\logo[1]{}
 \@define\inserttitle{\thetitle}
@@ -78,10 +87,16 @@
 \@define\@subsectionhook{}
 \@define\AtBeginSection[2][]{\@define\@sectionhook{#2}}
 \@define\AtBeginSubsection[2][]{\@define\@subsectionhook{#2}}
+\@define\insertsectionhead{}
+\@define\insertsubsectionhead{}
 \@define\section{\@ifstar{\@gobble}{\@beamersection}}
-\@define\@beamersection[2][]{\refstepcounter{section}\addcontentsline{toc}{section}{#2}\@sectionhook}
+\@define\@beamersection[2][]{\refstepcounter{section}\@define\insertsectionhead{#2}\@define\insertsubsectionhead{}%
+\markboth{\@marked{#2}}{}\addcontentsline{toc}{section}{#2}\@sectionhook}
 \@define\subsection{\@ifstar{\@gobble}{\@beamersubsection}}
-\@define\@beamersubsection[2][]{\refstepcounter{subsection}\addcontentsline{toc}{subsection}{#2}\@subsectionhook}
+\@define\@beamersubsection[2][]{\refstepcounter{subsection}\@define\insertsubsectionhead{#2}%
+\markright{\@marked{#2}}\addcontentsline{toc}{subsection}{#2}\@subsectionhook}
+% A section's name as a theme's head shows it, set as its band's text is.
+\@define\@marked[1]{\color{white}\tiny #1}
 
 % The contents are an outline: no heading, no pages, and a section's
 % options -- `[currentsection]` -- read and let go.
@@ -162,13 +177,122 @@
 \@define\note[2][]{}
 \@define\beamerdefaultoverlayspecification[1]{}
 
-% Themes, colors, fonts and templates: the default theme's, whatever the
-% document asks for.
-\@define\usetheme[2][]{}
-\@define\usecolortheme[2][]{}
+% Themes, as beamer draws its own: each a colour theme's colours, an outer
+% theme's head and foot -- infolines' three boxes of author, title, date and
+% page, split's two, a band of the section above -- a frame title on a band
+% or plain, and an inner theme's bullets. The palette's three blues, dark
+% to light, are what the boxes are painted in.
+\colorlet{tertiary}{structure!70!black}
+\colorlet{secondary}{structure}
+\colorlet{primary}{structure!55!white}
+\@define\@palette{\colorlet{tertiary}{structure!70!black}\colorlet{secondary}{structure}%
+\colorlet{primary}{structure!55!white}}
+
+% A band of a line of tiny text across a share of the paper, in a colour.
+\@define\@band#1#2#3#4#5{\colorbox{#1}{\makebox[#2\paperwidth][#3]{\rule[-3pt]{0pt}{9pt}\hspace{.5em}\color{#4}\tiny #5\hspace{.5em}}}}
+
+% The outer themes' heads and feet, at the slide's very edges, no rules
+% under or over them: set as the document begins, when its title and its
+% authors are known, the section's and the subsection's names the marks
+% each \section and \subsection sets.
+\@define\@foot#1{\pagestyle{fancy}\pagerules{0pt}{0pt}\setlength{\footskip}{\dimexpr 0.6cm-3pt\relax}%
+\AtBeginDocument{\fancyfoot[L]{\hspace*{-1cm}{\setlength{\fboxsep}{0pt}#1}}}}
+\@define\@head#1{\pagestyle{fancy}\pagerules{0pt}{0pt}\setlength{\headsep}{\dimexpr 0.35cm-6pt\relax}%
+\@topmargin=0.65cm\AtBeginDocument{\fancyhead[L]{\hspace*{-1cm}{\setlength{\fboxsep}{0pt}#1}}}}
+\@namedef{@outer@default}{}
+\@namedef{@outer@infolines}{%
+\@head{\@band{tertiary}{0.5}{l}{white}{\leftmark}\@band{secondary}{0.5}{l}{white}{\rightmark}}%
+\@foot{\@band{tertiary}{0.3333}{c}{white}{\insertshortauthor}\@band{secondary}{0.3333}{c}{white}{\insertshorttitle}%
+\@band{primary}{0.3334}{r}{black}{\insertshortdate\hspace{2em}\thepage}}}
+\@namedef{@outer@split}{%
+\@head{\@band{tertiary}{0.5}{l}{white}{\leftmark}\@band{secondary}{0.5}{l}{white}{\rightmark}}%
+\@foot{\@band{tertiary}{0.5}{r}{white}{\insertshortauthor}\@band{secondary}{0.5}{l}{white}{\insertshorttitle}}}
+\@namedef{@outer@smoothbars}{%
+\@head{\@band{tertiary}{1}{l}{white}{\leftmark}}%
+\@foot{\@band{tertiary}{0.5}{r}{white}{\insertshortauthor}\@band{secondary}{0.5}{l}{white}{\insertshorttitle}}}
+\@namedef{@outer@miniframes}{\@head{\@band{tertiary}{1}{l}{white}{\leftmark}}}
+\@namedef{@outer@shadow}{\@nameuse{@outer@split}}
+\@namedef{@outer@tree}{\@head{\@band{secondary}{1}{l}{white}{\insertshorttitle\quad\leftmark}}}
+\@namedef{@outer@sidebar}{}
+\@namedef{@outer@metropolis}{\@foot{\@band{white}{1}{r}{structure}{\thepage}}}
+\@define\useoutertheme[2][]{\@ifundefined{@outer@#2}{\warning{beamer: outer theme '#2' is drawn as the default}}%
+{\@nameuse{@outer@#2}}}
+
+% A frame title plain, in the structure's colour; on a band across the
+% slide, white; or on one as wide as the text.
+\@define\@titleplain[2][]{{\Large\color{structure}#2\par}\vskip .2em}
+\@define\@titleband[2][]{\par\noindent\hspace*{-1cm}{\setlength{\fboxsep}{0pt}\colorbox{secondary}{\makebox[\paperwidth][l]%
+{\rule[-.45em]{0pt}{1.6em}\hspace{1cm}\Large\color{white}#2}}}\par\vskip .4em}
+\@define\@titlebox[2][]{\par\noindent{\setlength{\fboxsep}{0pt}\colorbox{primary}{\makebox[\textwidth][l]%
+{\rule[-.45em]{0pt}{1.6em}\hspace{.4em}\Large\color{tertiary}#2}}}\par\vskip .4em}
+\@define\@titles#1{\expandafter\let\expandafter\@frametitle\csname @title#1\endcsname}
+
+% The inner themes' bullets: triangles, balls, circles, squares.
+\@define\@bullets#1#2{\@define\labelitemi{\textcolor{structure}{#1}}\@define\labelitemii{\textcolor{structure}{#2}}%
+\@define\labelitemiii{\textcolor{structure}{#2}}}
+\@namedef{@inner@default}{}
+\@namedef{@inner@rounded}{\@bullets{\small$\bullet$}{\scriptsize$\bullet$}}
+\@namedef{@inner@circles}{\@bullets{\small$\bullet$}{\scriptsize$\circ$}}
+\@namedef{@inner@rectangles}{\@bullets{\rule[.2ex]{.45em}{.45em}}{\rule[.25ex]{.35em}{.35em}}}
+\@define\useinnertheme[2][]{\@ifundefined{@inner@#2}{\warning{beamer: inner theme '#2' is drawn as the default}}%
+{\@nameuse{@inner@#2}}}
+
+% The colour themes: the structure's colour, and the palette made of it.
+\@define\@hue#1{\definecolor{structure}{rgb}{#1}\@palette}
+\@namedef{@colors@default}{\@hue{0.2,0.2,0.7}}
+\@namedef{@colors@whale}{\@hue{0.2,0.2,0.7}}
+\@namedef{@colors@dolphin}{\@hue{0.25,0.25,0.75}}
+\@namedef{@colors@seahorse}{\@hue{0.4,0.4,0.8}}
+\@namedef{@colors@beaver}{\@hue{0.67,0,0}}
+\@namedef{@colors@crane}{\@hue{0.9,0.55,0}}
+\@namedef{@colors@wolverine}{\@hue{0.1,0.2,0.45}\colorlet{primary}{yellow!80!orange}}
+\@namedef{@colors@spruce}{\@hue{0,0.35,0.2}}
+\@namedef{@colors@dove}{\@hue{0.3,0.3,0.3}}
+\@namedef{@colors@seagull}{\@hue{0.45,0.45,0.45}}
+\@namedef{@colors@fly}{\@hue{0.4,0.4,0.4}}
+\@namedef{@colors@beetle}{\@hue{0.2,0.2,0.7}}
+\@namedef{@colors@albatross}{\@hue{0.2,0.2,0.7}}
+\@namedef{@colors@structure}{\@hue{0.2,0.2,0.7}}
+\@namedef{@colors@metropolis}{\@hue{0.14,0.25,0.28}\colorlet{secondary}{structure}}
+\@namedef{@colors@orchid}{}
+\@namedef{@colors@rose}{}
+\@namedef{@colors@lily}{}
+\@define\usecolortheme[2][]{\@ifundefined{@colors@#2}{\warning{beamer: colour theme '#2' is drawn as the default}}%
+{\@nameuse{@colors@#2}}}
 \@define\usefonttheme[2][]{}
-\@define\useinnertheme[2][]{}
-\@define\useoutertheme[2][]{}
+
+% The presentation themes: an outer theme, a frame title, bullets and
+% colours each, as beamer's own combine them.
+\@define\@theme#1#2#3#4{\@nameuse{@outer@#1}\@titles{#2}\@nameuse{@inner@#3}\@nameuse{@colors@#4}}
+\@namedef{@theme@default}{}
+\@namedef{@theme@AnnArbor}{\@theme{infolines}{band}{rounded}{wolverine}}
+\@namedef{@theme@Antibes}{\@theme{tree}{band}{rounded}{whale}}
+\@namedef{@theme@Bergen}{\@theme{sidebar}{plain}{rectangles}{default}}
+\@namedef{@theme@Berkeley}{\@theme{sidebar}{band}{rounded}{whale}}
+\@namedef{@theme@Berlin}{\@theme{smoothbars}{band}{rounded}{whale}}
+\@namedef{@theme@Boadilla}{\@theme{infolines}{plain}{rounded}{dolphin}}
+\@namedef{@theme@CambridgeUS}{\@theme{infolines}{band}{rounded}{beaver}}
+\@namedef{@theme@Copenhagen}{\@theme{split}{band}{rounded}{whale}}
+\@namedef{@theme@Darmstadt}{\@theme{smoothbars}{band}{rounded}{whale}}
+\@namedef{@theme@Dresden}{\@theme{miniframes}{plain}{circles}{default}}
+\@namedef{@theme@Frankfurt}{\@theme{smoothbars}{plain}{rounded}{default}}
+\@namedef{@theme@Goettingen}{\@theme{sidebar}{plain}{rounded}{default}}
+\@namedef{@theme@Hannover}{\@theme{sidebar}{plain}{rounded}{default}}
+\@namedef{@theme@Ilmenau}{\@theme{smoothbars}{band}{rounded}{whale}}
+\@namedef{@theme@JuanLesPins}{\@theme{tree}{band}{rounded}{whale}}
+\@namedef{@theme@Luebeck}{\@theme{split}{band}{rounded}{whale}}
+\@namedef{@theme@Madrid}{\@theme{infolines}{band}{rounded}{whale}}
+\@namedef{@theme@Malmoe}{\@theme{split}{band}{rounded}{whale}}
+\@namedef{@theme@Marburg}{\@theme{sidebar}{band}{rounded}{whale}}
+\@namedef{@theme@Montpellier}{\@theme{tree}{plain}{rounded}{default}}
+\@namedef{@theme@PaloAlto}{\@theme{sidebar}{band}{rounded}{whale}}
+\@namedef{@theme@Pittsburgh}{\@theme{default}{plain}{default}{default}}
+\@namedef{@theme@Rochester}{\@theme{default}{band}{rectangles}{whale}}
+\@namedef{@theme@Singapore}{\@theme{miniframes}{plain}{circles}{default}}
+\@namedef{@theme@Szeged}{\@theme{miniframes}{plain}{default}{default}}
+\@namedef{@theme@Warsaw}{\@theme{shadow}{band}{rounded}{whale}}
+\@namedef{@theme@metropolis}{\@theme{metropolis}{band}{rectangles}{metropolis}}
+\@define\usetheme[2][]{\@ifundefined{@theme@#2}{\warning{beamer: theme '#2' is drawn as the default}}{\@nameuse{@theme@#2}}}
 \@define\setbeamercolor{\@ifstar{\@gobbletwo}{\@gobbletwo}}
 \@define\setbeamerfont{\@ifstar{\@gobbletwo}{\@gobbletwo}}
 \@define\setbeamersize[1]{}

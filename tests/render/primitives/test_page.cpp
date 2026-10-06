@@ -221,6 +221,20 @@ int main() {
                 holds(result.pages[2], "Beta") && !holds(result.pages[2], "Alpha")) &&
                "a mark on its page and the next, until another");
     }
+    {
+        // A theme's head and foot: the section's name, the short author and
+        // title, the date.
+        const Result result = typeset("\\documentclass{beamer}\\usetheme{Madrid}\\title[Short]{Long title}"
+                                      "\\author[Me]{Me Myself}\\date{Today}\\begin{document}\\section{Opening}"
+                                      "\\begin{frame}{F}Body.\\end{frame}\\end{document}");
+        if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
+        assert((result.clean && result.pages.size() == 1) && "a themed frame");
+        assert((result.pages.size() == 1 && holds(result.pages[0], "Opening") && holds(result.pages[0], "Me") &&
+                holds(result.pages[0], "Short") && holds(result.pages[0], "Today")) &&
+               "its headline's section and its footline's author, title and date");
+        assert((holds(result.pdf, "0.14 0.14 0.49 rg") && holds(result.pdf, "0.56 0.56 0.835 rg")) &&
+               "its bands in the palette's dark and light blues");
+    }
 
     // The letter class: the addresses, the date, the salutation, the
     // closing and the signature, on a page of its own.

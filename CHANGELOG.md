@@ -72,8 +72,21 @@ sees, newest work last within each group.
   title page's title, subtitle, author, institute and date; `block`,
   `alertblock` and `exampleblock` under a coloured bar; `columns`, as blocks
   and as `\column`; blue triangles for bullets; an outline for
-  `\tableofcontents`, and `\AtBeginSection`'s frames. Themes, colour themes
-  and templates are read.
+  `\tableofcontents`, and `\AtBeginSection`'s frames. Templates are read.
+- **beamer's themes are drawn**: `\usetheme` -- Madrid, AnnArbor,
+  Boadilla, CambridgeUS, Warsaw, Copenhagen, Luebeck, Malmoe, Berlin,
+  Darmstadt, Ilmenau, Frankfurt, Dresden, Singapore, Szeged, Antibes,
+  JuanLesPins, Montpellier, Rochester, Pittsburgh, the sidebar themes and
+  metropolis -- as an outer theme's head and foot at the slide's edges
+  (infolines' author, title, date and page; split's author and title; the
+  section's and subsection's names above), a frame title on a band or in
+  the structure's colour, an inner theme's bullets (triangles, balls,
+  circles, squares) and a colour theme's colours (whale, dolphin,
+  seahorse, beaver, crane, wolverine, spruce, dove, seagull, fly, ...);
+  `\useoutertheme`, `\useinnertheme` and `\usecolortheme` alone too, a
+  theme it does not know drawn as the default with a warning. A title,
+  author and date's short forms, `\title[Short]{...}`, are what the foot
+  carries. A sidebar theme's sidebar is not drawn.
 - **beamer's overlays**: a frame is as many slides as its overlays ask for,
   each a page. `\pause` (and `\pause[3]`) hides the rest of the frame until
   its step; `\only<2>{...}` is there on its slides alone; `\uncover`,
@@ -916,7 +929,10 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-beamer's themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
-run's `.aux` -- the engine's one pass does what that run is for.
-Coverage figures above count packages that load and whose common commands set
-text — not that every feature of each is drawn.
+By choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a
+second run's `.aux` -- the engine's one pass does what that run is for. A
+beamer sidebar theme's sidebar, text inside an EPS or SVG picture in its
+own embedded font (it is set in the nearest of PDF's standard faces), and
+a gradient's shading (it is its first colour) are drawn near enough, not
+exactly. Coverage figures above count packages that load and whose common
+commands set text — not that every feature of each is drawn.
