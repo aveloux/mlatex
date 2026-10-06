@@ -336,7 +336,7 @@ namespace render::primitives {
                 // number written as it says; its spacing, when it gives one.
                 if (const Look& look = looks[level]; look.set) {
                     const float size = Styles::measure(body, look.size);
-                    const typography::Font* restore = context.selection.text();
+                    const Selection restore = context.selection;
                     context.selection.text(Styles::resolve(context, Styles::Cut::Normal, size));
                     for (const Styles::Cut cut : look.cuts) {
                         if (const typography::Font* changed = Styles::resolve(context, cut, size)) {
@@ -344,7 +344,7 @@ namespace render::primitives {
                         }
                     }
                     const typography::Font* face = context.selection.text();
-                    context.selection.text(restore);
+                    context.selection = restore;
                     if (!face) face = font;
 
                     if (look.unlabelled) {

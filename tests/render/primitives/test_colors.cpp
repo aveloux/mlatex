@@ -76,6 +76,17 @@ int main() {
                "a command's text in the colour in use");
     }
     {
+        // A colour chosen inside a box's argument stays inside the box: the
+        // text after each turns black again before the next colour.
+        const Result result = article("\\pagestyle{empty}", "\\mbox{\\color{red}inside} outside "
+                                                            "\\textbf{\\color{blue}bold} after");
+        const std::size_t red = result.pdf.find("1 0 0 rg");
+        const std::size_t blue = result.pdf.find("0 0 1 rg");
+        assert((result.clean && red != std::string::npos && blue != std::string::npos) && "each in its colour");
+        assert((result.pdf.find("0 0 0 rg", red) < blue && result.pdf.find("0 0 0 rg", blue) != std::string::npos) &&
+               "and what follows each box black again");
+    }
+    {
         const Result result = article("", "{\\color{blue} blue \\normalcolor black} after");
         assert((result.clean && holds(result.pdf, "0 0 1 rg")) && "\\color colors what follows in its group");
     }

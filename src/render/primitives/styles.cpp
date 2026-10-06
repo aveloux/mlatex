@@ -231,7 +231,7 @@ namespace render::primitives {
                     return directive(arena, nullptr, origin);
                 }
 
-                const typography::Font* restore = context.selection.text();
+                const Selection restore = context.selection;
                 if (const typography::Font* font = select(cut, size)) {
                     context.selection.text(font);
                 }
@@ -245,7 +245,7 @@ namespace render::primitives {
                 // selection has been put back -- so the choice has to travel
                 // with the text rather than be looked up again.
                 stamp(children, context);
-                context.selection.text(restore);
+                context.selection = restore;
 
                 // A group node, not a box: a box could not be broken across a
                 // line, and a styled sentence has to be.

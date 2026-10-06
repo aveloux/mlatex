@@ -66,7 +66,7 @@ namespace render::primitives {
         // inside the note changes from that, as it does in LaTeX.
         const layout::Document::Configuration& page = context.document.configuration;
         const float size = Styles::measure(page.size, Styles::Size::Footnote);
-        const typography::Font* restore = context.selection.text();
+        const Selection restore = context.selection;
         const typography::Font* font = Styles::resolve(context, Styles::Cut::Normal, size);
         if (!font) return nullptr;
         context.selection.text(font);
@@ -86,7 +86,7 @@ namespace render::primitives {
             content.push_back(raised);
         }
         for (const syntax::Node* child : body) compose(content, child, context);
-        context.selection.text(restore);
+        context.selection = restore;
 
         const memory::Slice<layout::Node*> pieces = arena.allocate<layout::Node*>(content.size());
         std::ranges::copy(content, pieces.begin());

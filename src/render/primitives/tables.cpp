@@ -736,12 +736,12 @@ namespace render::primitives {
                     syntax::Token open = mouth.read();
                     while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
                     if (open.is(syntax::Catcodes::Category::Group, '{')) {
-                        const typography::Font* restore = context.selection.text();
+                        const Selection restore = context.selection;
                         mouth.push(syntax::semantics::Scope::Type::Group);
                         const memory::Slice<syntax::Node*> inside = parser.parse('}');
                         mouth.pop(syntax::semantics::Scope::Type::Group);
                         stamp(inside, context);
-                        context.selection.text(restore);
+                        context.selection = restore;
                         cell.nodes.insert(cell.nodes.end(), inside.begin(), inside.end());
                     } else if (!open.empty()) {
                         mouth.stream().inject(std::span{&open, 1});

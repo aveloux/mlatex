@@ -377,7 +377,7 @@ namespace render::primitives {
             // description, as its term is.
             layout::Node* mark = nullptr;
             if (font && !label.empty()) {
-                const typography::Font* restore = context.selection.text();
+                const Selection restore = context.selection;
                 if (level.marker == Marker::Description) {
                     context.selection.text(Styles::resolve(context, Styles::Cut::Bold, font->size()));
                 }
@@ -390,7 +390,7 @@ namespace render::primitives {
 
                 std::vector<layout::Node*> nodes;
                 for (const syntax::Node* child : read) compose(nodes, child, context);
-                context.selection.text(restore);
+                context.selection = restore;
                 const memory::Slice<layout::Node*> shaped = arena.allocate<layout::Node*>(nodes.size());
                 std::ranges::copy(nodes, shaped.begin());
                 mark = layout::Line::horizontal(arena, shaped, 0.0f);

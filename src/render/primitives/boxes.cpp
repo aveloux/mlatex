@@ -61,8 +61,9 @@ namespace render::primitives {
         const std::size_t line = Registers::reserved + 1;
 
         // What a box holds: one brace group, read in a scope of its own, and
-        // set in the face it was read in -- which is then put back, since a
-        // face is not a register the scope restores.
+        // set in the face it was read in -- which is then put back, with the
+        // colour, since neither is a register the scope restores: a
+        // `\color` inside the box stays there.
         const auto contents = [this, &context](syntax::Parser& parser, std::string_view name,
                                                std::optional<float> width = std::nullopt) {
             syntax::Mouth& mouth = parser.mouth;
@@ -76,8 +77,7 @@ namespace render::primitives {
                 return memory::Slice<syntax::Node*>{};
             }
 
-            const typography::Font* text = context.selection.text();
-            const typography::Font* formula = context.selection.formula();
+            const Selection kept = context.selection;
             mouth.push(syntax::semantics::Scope::Type::Box);
             if (width) {
                 context.registers.set(Registers::Type::Dimension, line,
@@ -86,8 +86,7 @@ namespace render::primitives {
             const memory::Slice<syntax::Node*> children = parser.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Box);
             stamp(children, context);
-            context.selection.text(text);
-            context.selection.formula(formula);
+            context.selection = kept;
             return children;
         };
 

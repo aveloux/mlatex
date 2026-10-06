@@ -876,10 +876,10 @@ namespace render::primitives {
                 mouth.read();
 
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                const typography::Font* restore = context.selection.text();
+                const Selection restore = context.selection;
                 const memory::Slice<syntax::Node*> read = parser.parse('}');
                 stamp(read, context);
-                context.selection.text(restore);
+                context.selection = restore;
                 mouth.pop(syntax::semantics::Scope::Type::Group);
 
                 std::vector<layout::Node*> set;

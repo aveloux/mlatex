@@ -449,6 +449,10 @@ sees, newest work last within each group.
 - **Text a command sets is in the colour in use**: `\textcolor{red}{50\%}`'s
   sign, an accented `\'e`, a `\ldots` -- each was set black whatever the
   colour around it.
+- **A colour chosen in a box stays in it**: `\mbox{\color{red}x} y`,
+  `\textbf{\color{blue}x}`, a TikZ node's, a list label's, a cell's, a
+  footnote's -- what followed the box took the colour, as only the face
+  was put back after it.
 - **Space after a sentence** is TeX's: the space factor of `.`, `?` and `!`
   (3000), `:` (2000), `;` (1500) and `,` (1250) widens and loosens the space
   after it, and a capital before the full stop keeps it an abbreviation's;
