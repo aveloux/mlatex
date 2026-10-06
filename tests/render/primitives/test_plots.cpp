@@ -83,11 +83,14 @@ int main() {
 
     // TikZ's formulas: a number with a unit is a length in points, and says so.
     bool measured = false;
-    const auto length = Plots::calculate("veclen(3pt, 4pt) + 1in", 0.0, &measured);
+    const auto length = Plots::calculate("veclen(3pt, 4pt) + 1in", 0.0, 0.0, &measured);
     assert((length && std::abs(*length - 77.27) < 1e-9 && measured) && "veclen, and a length in points");
     measured = false;
     assert((comes("mod(7, 3) + int(2.7) + sign(-4)", 0.0, 2.0)) && "mod, int and sign");
-    assert((Plots::calculate("2*3", 0.0, &measured) && !measured) && "a formula of no unit is a number");
+    assert((Plots::calculate("2*3", 0.0, 0.0, &measured) && !measured) && "a formula of no unit is a number");
+    const auto surface = Plots::calculate("x*y + y^2", 2.0, 3.0);
+    assert((surface && *surface == 15.0) && "a function of x and y, for a surface");
+    assert((!Plots::calculate("x + y", 1.0)) && "and one of y given none has no value");
     assert((comes("1cm", 0.0, 72.27 / 2.54)) && "a centimetre in points");
 
     {

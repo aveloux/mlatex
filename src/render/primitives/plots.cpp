@@ -18,7 +18,8 @@
 
 namespace render::primitives {
 
-    std::optional<double> Plots::calculate(const std::string_view text, const double x, bool* const measured) {
+    std::optional<double> Plots::calculate(const std::string_view text, const double x, const double y,
+                                           bool* const measured) {
         constexpr double degree = std::numbers::pi / 180.0;
         std::size_t at = 0;
         bool broken = false;
@@ -110,8 +111,8 @@ namespace render::primitives {
                 return number;
             }
 
-            // A name: x -- or TikZ's \x -- pi, e, or a function of one
-            // argument or two.
+            // A name: x -- or TikZ's \x -- a surface's y, pi, e, or a
+            // function of one argument or two.
             if (head == '\\') ++at;
             const std::size_t start = at;
             while (at < text.size() && ((text[at] >= 'a' && text[at] <= 'z') || (text[at] >= 'A' && text[at] <= 'Z') ||
@@ -122,6 +123,7 @@ namespace render::primitives {
             blank();
             if (at >= text.size() || text[at] != '(') {
                 if (name == "x" || name == "t") return x;
+                if (name == "y") return y;
                 if (name == "pi") return std::numbers::pi;
                 if (name == "e") return std::numbers::e;
                 broken = true;

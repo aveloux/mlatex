@@ -100,7 +100,8 @@ namespace render::primitives {
         // `{sin(30)}`, `2*0.5` -- in points when a length is in it and in
         // the unit a bare number has when none is. No variable is in reach.
         bool measured = false;
-        const auto worked = Plots::calculate(text, std::numeric_limits<double>::quiet_NaN(), &measured);
+        const auto worked = Plots::calculate(text, std::numeric_limits<double>::quiet_NaN(),
+                                              std::numeric_limits<double>::quiet_NaN(), &measured);
         if (!worked) return std::nullopt;
         return measured ? static_cast<float>(*worked) : static_cast<float>(*worked) * fallback;
     }
@@ -563,7 +564,7 @@ namespace render::primitives {
                         const graphics::Point2 way{dx * std::cos(angle) - dy * std::sin(angle),
                                                    dx * std::sin(angle) + dy * std::cos(angle)};
                         bool measured = false;
-                        const auto share = Plots::calculate(part, 0.0, &measured);
+                        const auto share = Plots::calculate(part, 0.0, 0.0, &measured);
                         if (!share) return std::nullopt;
                         const float length = std::hypot(way.x, way.y);
                         const float reach = measured ? (length > 0.0f ? static_cast<float>(*share) / length : 0.0f)
@@ -1415,7 +1416,8 @@ namespace render::primitives {
                             formula = text.substr(begin, at - begin);
                         }
                         bool measured = false;
-                        const auto value = Plots::calculate(substitute(formula), std::numeric_limits<double>::quiet_NaN(), &measured);
+                        const auto value = Plots::calculate(substitute(formula), std::numeric_limits<double>::quiet_NaN(),
+                                                                      std::numeric_limits<double>::quiet_NaN(), &measured);
                         if (!value) {
                             miss("\\draw: let's \\n" + name + " = {" + std::string(trim(formula)) +
                                  "} is not a formula this engine works out");

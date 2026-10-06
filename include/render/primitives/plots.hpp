@@ -5,6 +5,7 @@
 #include "syntax/traceback.hpp"
 
 #include <array>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -59,19 +60,23 @@ namespace render::primitives {
         /// @param context Engine services; a table's file is read through its reader.
         void operator()(syntax::Parser& parser, Context& context) const;
 
-        /// @brief Works out a function of x as pgfplots writes one.
+        /// @brief Works out a function of x -- and of y, for a surface -- as
+        ///        pgfplots writes one.
         ///
         /// A number may carry a unit, as TikZ's formulas do -- `\\x1+1cm`,
         /// `veclen(3pt,4pt)` -- and is then a length in points.
         ///
-        /// @param text     The function: `x^2 - 3*sin(deg(x))`.
+        /// @param text     The function: `x^2 - 3*sin(deg(x))`, `x*y`.
         /// @param x        The value of x.
+        /// @param y        The value of y; a function of y given none has none.
         /// @param measured Set when a number in it carried a unit, so the
         ///                 value is in points; left alone otherwise.
         /// @return Its value, or nothing when it is not a function this reads
         ///         or has no finite value there.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x, bool* measured = nullptr);
+        [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x,
+                                                             double y = std::numeric_limits<double>::quiet_NaN(),
+                                                             bool* measured = nullptr);
 
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
