@@ -848,6 +848,10 @@ font folders are listed only for a script the engine carries no face for.
   the second's comma: a `@misc` with no `howpublished` was `Notes. , 1843.`
   A book's edition is in lower case after its publisher, as plain sets it:
   `Addison-Wesley, second edition, 1994`.
+- On Windows the JPEG and WebP libraries are copied beside the program and
+  the C library, debug or release as the build is. Being delay-loaded hid
+  them from vcpkg's own copy, and the first WebP picture a document drew
+  ended the program with 0xC06D007E unless the DLL happened to be on PATH.
 
 ### Tests
 

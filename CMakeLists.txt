@@ -241,6 +241,16 @@ if(TARGET harfbuzz::harfbuzz AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_T
             list(APPEND dependencies "${file}")
         endif()
     endforeach()
+
+    # The JPEG and WebP libraries are delay-loaded (see below), which hides
+    # them from vcpkg's copy: without these, the first WebP picture a document
+    # drew ended the program. Each build's own, debug or release.
+    foreach(library jpeg62 libwebp libsharpyuv)
+        if(EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/${library}.dll")
+            list(APPEND dependencies
+                    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/$<$<CONFIG:Debug>:debug/>bin/${library}.dll")
+        endif()
+    endforeach()
 endif()
 
 find_package(PNG REQUIRED)
