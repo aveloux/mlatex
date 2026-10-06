@@ -334,6 +334,14 @@ namespace latex {
             errors << "Document unreadable or empty: " << (source ? source->string() : "(text)") << '\n';
             return false;
         }
+        // A .bib file set as a document of its own: imported, every entry it
+        // holds listed, in plain's style under an article's References -- a
+        // bibliography to look over before a word of the paper citing it is
+        // written. Read beside itself, as any file a document inputs is.
+        if (source && source->extension() == ".bib") {
+            content = "\\documentclass{article}\\begin{document}\\nocite{*}\\input{" + source->filename().string() +
+                      "}\\bibliography{}\\end{document}\n";
+        }
 
         const auto loaded = std::chrono::high_resolution_clock::now();
 

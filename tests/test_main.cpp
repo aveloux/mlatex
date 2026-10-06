@@ -93,6 +93,12 @@ int main() {
     std::filesystem::path bare = document;
     bare.replace_extension();
     assert((run(bare, "-q") == 0) && "a document named without its extension is found as .mtex");
+    const std::filesystem::path entries =
+        write(temporary / "main-entries.bib", "@misc{one, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n");
+    std::filesystem::path listed = entries;
+    std::filesystem::remove(listed.replace_extension(".pdf"));
+    assert((run(temporary / "main-entries", "-q") == 0 && std::filesystem::exists(listed)) &&
+           "or as .bib, a bibliography set as a list of its entries");
 
     // What a document inputs, from a folder of its own as well as its own.
     const std::filesystem::path shared = temporary / "main-shared";

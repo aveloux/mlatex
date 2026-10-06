@@ -149,6 +149,26 @@ int main() {
                "a forward page reference is filled from a second pass");
     }
 
+    // --- A bibliography set as a document of its own ------------------------------------
+    {
+        const std::filesystem::path bib = std::filesystem::temp_directory_path() / "latex-entries.bib";
+        std::ofstream(bib, std::ios::binary)
+            << "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX}, publisher = {Addison-Wesley}, year = 1994}\n"
+               "@misc{never, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n";
+        std::filesystem::path pdf = bib;
+        pdf.replace_extension(".pdf");
+        std::ostringstream errors;
+        std::vector<std::string> pages;
+        const bool clean = latex::compose(latex::locate(__FILE__), bib, pdf, {}, nullptr, errors, &pages);
+        std::string text;
+        for (const std::string& page : pages) text += page;
+        std::erase_if(text, [](const char letter) { return letter == ' ' || letter == '\n'; });
+        if (!clean) std::fprintf(stderr, "%s", errors.str().c_str());
+        assert((clean && std::filesystem::exists(pdf)) && "a .bib file sets as a document");
+        assert((holds(text, "References") && holds(text, "LeslieLamport") && holds(text, "AdaLovelace")) &&
+               "every entry it holds, listed though none is cited");
+    }
+
     // --- Mistakes ----------------------------------------------------------------------
     {
         const Result undefined = article("", "\\nosuchcommand");

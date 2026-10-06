@@ -137,6 +137,10 @@ sees, newest work last within each group.
   `\bibliography{}` and `\printbibliography` both set what it holds, and a
   file `\bibliography` names as well is read once. One that is not there is
   `File `refs.bib' not found`.
+- **A `.bib` file is a document of its own**: `latex refs.bib` -- or
+  `latex refs`, a `.bib` looked for after `.mtex` and `.tex` -- sets every
+  entry it holds, cited or not, in plain's style under an article's
+  References, to look a bibliography over before citing it.
 - **`@preamble`** is kept, as BibTeX writes it into the `.bbl`: its text
   goes ahead of the list, so a command the entries use -- `\noopsort`, a
   logo -- is defined before they are set. It was read past.

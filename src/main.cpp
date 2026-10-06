@@ -208,7 +208,8 @@ int main(int count, char* arguments[]) {
             // column of their own and what it does beside them.
             std::cout << "Usage: latex [options] [document]\n\n"
                          "Typesets a document into a PDF. A document named without an extension is\n"
-                         "looked for as NAME.mtex, then NAME.tex; with none named, the engine's own\n"
+                         "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
+                         "set as a list of every entry it holds; with none named, the engine's own\n"
                          "sample, build/main.mtex, is set.\n";
             std::string_view heading;
             for (const Option& each : options) {
@@ -384,13 +385,13 @@ int main(int count, char* arguments[]) {
         }
     }
 
-    // The document: as named, or with .mtex or .tex after a name given
+    // The document: as named, or with .mtex, .tex or .bib after a name given
     // without one, as TeX finds `paper` as paper.tex; with none named, the
     // sample beside the build.
     if (source.empty()) {
         source = assets.parent_path() / "build" / "main.mtex";
     } else if (!source.has_extension() && !std::filesystem::exists(source, failure)) {
-        for (const std::string_view extension : {".mtex", ".tex"}) {
+        for (const std::string_view extension : {".mtex", ".tex", ".bib"}) {
             if (std::filesystem::path named = std::filesystem::path(source).replace_extension(extension);
                 std::filesystem::exists(named, failure)) {
                 source = named;
