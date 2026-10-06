@@ -26,7 +26,7 @@ sees, newest work last within each group.
   document: an unknown package is marked loaded, named in a warning, and its
   commands found in the glossary when they are used.
 - **509 packages and 14 classes, each proven by a document of its own**
-  (was about 360, and 121 before that): `build/packages/<name>.mtex` uses
+  (was about 360, and 121 before that): `tests/packages/<name>.mtex` uses
   what its package is loaded for, and the engine's test sets all 523 and fails
   on any error, any unknown package and any command nothing defines. New
   folders this round: `CJK`, `SIunits`, `acro`, `axodraw2`, `bohr`,
@@ -771,6 +771,16 @@ page's text goes.
   between runs. The Windows runners install WiX 7 and accept its EULA, so
   each makes an MSI; every runner collects its packages from `release/`,
   and a pushed `v*` tag attaches them all to a GitHub release.
+- **The sample paper is set on GitHub.** The Windows x64 runner sets
+  `build/main.mtex` with the program it just built and keeps the result as
+  `main.pdf`, to open and see how the engine sets a real paper: from any
+  run of the [Build workflow](https://github.com/aveloux/mlatex/actions/workflows/build.yml),
+  under its artifacts, and once a version is tagged, at
+  [releases/latest/download/main.pdf](https://github.com/aveloux/mlatex/releases/latest/download/main.pdf).
+- **The package documents are with the tests.** The 523 sample documents,
+  one per package and class, move from `build/packages/` to
+  `tests/packages/`, beside the test that sets every one of them;
+  `build/` keeps only the sample paper.
   It replaces a workflow that installed Skia, which the engine has not
   used for months, and compiled with a GCC that has no `#embed`.
   Dependabot keeps the workflow's actions current.
@@ -913,7 +923,7 @@ font folders are listed only for a script the engine carries no face for.
   baseline, `\matrix`, a label halfway along its line, edges and loops.
 - Then: `test_strings` and `test_records`; numbers in words; a font's wide
   variants; `\the\value`; category changes in a row; and in `test_latex`
-  every one of the 523 documents in `build/packages`. 85 tests pass in Debug
+  every one of the 523 documents in `tests/packages`. 85 tests pass in Debug
   and Release, with no warning in either build.
 - `build/main.mtex` has a third appendix, **Kernel checks**, setting what
   LaTeX's own kernel gives a document with no package at all: every face,
@@ -939,7 +949,7 @@ font folders are listed only for a script the engine carries no face for.
   that must end in the `\@ifnextchar` deciding it, xstring and the data
   tables, environments from the glossary, what a category change in a
   package's own file reaches, and a package's sample document in
-  `build/packages`.
+  `tests/packages`.
 - **The reference reads better.** Doxygen's own look, unstyled, with a
   light and dark theme switched from the top bar and the project's name and
   version at the top. Every block of code has a copy button, sections

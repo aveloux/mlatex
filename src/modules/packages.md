@@ -349,9 +349,9 @@ beside the others, and a line to the index in `src/modules/main.mtex`. A
 class's module is checked the same way from `tests/render/primitives/test_page.cpp`,
 and the glossary's lines from `tests/syntax/test_glossary.cpp`.
 
-`build/packages/` holds one small document for each package and class the
+`tests/packages/` holds one small document for each package and class the
 engine reads -- 509 packages and 14 classes -- each using what its package is
 loaded for. `tests/test_engine.cpp` sets every one and fails on any error or
 any package or command the engine does not know, so a new package should come
-with its document there: `build/packages/<name>.mtex`, a whole document from
+with its document there: `tests/packages/<name>.mtex`, a whole document from
 `\documentclass` to `\end{document}`.

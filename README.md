@@ -47,7 +47,7 @@ once, in compiled code.
 ## Highlights
 
 - **Reads existing LaTeX.** 509 packages and 14 document classes, each
-  checked by a sample document of its own in `build/packages/`, plus a
+  checked by a sample document of its own in `tests/packages/`, plus a
   glossary of about 630 more commands from CTAN packages that have no folder
   of their own. An unknown package produces a warning, not a failed build.
 - **Fast.** On a release build, a one-page article takes a few milliseconds,
@@ -295,8 +295,8 @@ detail.
 | `src/modules/` | Packages and classes, one folder each, compiled into the binary |
 | `src/jit/` | Reserved for the just-in-time target |
 | `assets/` | Fonts, hyphenation patterns and the command glossary |
-| `build/` | The sample paper and one sample document per package |
-| `tests/` | One test per source file, at the same relative path |
+| `build/` | The sample paper, `main.mtex` |
+| `tests/` | One test per source file, at the same relative path, and in `tests/packages/` one sample document per package |
 
 ## Contributing
 

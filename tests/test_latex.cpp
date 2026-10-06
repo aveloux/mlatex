@@ -184,11 +184,11 @@ int main() {
     }
 
     // --- Every package's own document --------------------------------------------------
-    // build/packages holds one document for every package and class the engine
+    // tests/packages holds one document for every package and class the engine
     // reads, each using what it is loaded for; every one has to come out with
     // no error and no package or command the engine does not know.
     {
-        const std::filesystem::path folder = latex::locate(__FILE__).parent_path() / "build" / "packages";
+        const std::filesystem::path folder = latex::locate(__FILE__).parent_path() / "tests" / "packages";
         std::size_t read = 0;
         std::string failed;
         for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder)) {

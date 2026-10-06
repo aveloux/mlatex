@@ -143,6 +143,21 @@ jobs:
       - name: Test
         run: ctest --test-dir "${{ env.TREE }}" --output-on-failure --timeout 300
 
+      # The sample paper, set by the program just built: the PDF to open and
+      # look at, kept with every run and attached to every release.
+      - name: Set the sample paper
+        if: matrix.name == 'Windows x64'
+        shell: bash
+        run: '"$TREE/latex" --file-line-error --output-directory release build/main.mtex'
+
+      - name: Keep the sample paper
+        if: matrix.name == 'Windows x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: main.pdf
+          path: release/main.pdf
+          if-no-files-found: error
+
       # Every package lands in release/, as it does on a person's machine.
       - name: Package
         run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
@@ -159,6 +174,7 @@ jobs:
             release/*.deb
             release/*.rpm
             release/*.tar.gz
+            release/*.pdf
           if-no-files-found: error
 
   release:
