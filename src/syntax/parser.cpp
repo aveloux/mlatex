@@ -116,9 +116,18 @@ namespace syntax {
                             "Dispatching custom node handler for '{}'", token.text);
                 if (Node* node = (*handlers[token.symbol])(*this)) {
                     // A block standing on its own ends the paragraph it
-                    // interrupts; text a command set starts one.
+                    // interrupts; text a command set starts one, in the face
+                    // and colour in use as typed text is -- `50\%` in red
+                    // under `\color{red}` -- where the command chose neither.
                     if (node->display) mouth.vertical = true;
-                    if (node->type == Node::Type::Text) mouth.vertical = false;
+                    if (node->type == Node::Type::Text) {
+                        mouth.vertical = false;
+                        if (stamp && !node->tint) {
+                            const void* chosen = node->face;
+                            stamp(*node);
+                            if (chosen) node->face = chosen;
+                        }
+                    }
                     nodes.push_back(node);
                 }
                 continue;

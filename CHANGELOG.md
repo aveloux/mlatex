@@ -434,6 +434,9 @@ sees, newest work last within each group.
   TeX's does, so `\raggedright`, a centred block and a beamer slide fill
   each line in turn; a paragraph of two lines broke at its first chance,
   a word or two on its first line.
+- **Text a command sets is in the colour in use**: `\textcolor{red}{50\%}`'s
+  sign, an accented `\'e`, a `\ldots` -- each was set black whatever the
+  colour around it.
 - **Space after a sentence** is TeX's: the space factor of `.`, `?` and `!`
   (3000), `:` (2000), `;` (1500) and `,` (1250) widens and loosens the space
   after it, and a capital before the full stop keeps it an abbreviation's;

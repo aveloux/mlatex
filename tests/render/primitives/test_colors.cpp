@@ -69,6 +69,13 @@ int main() {
         assert((holds(result.pdf, "0 0.5 0 rg")) && "a model and its numbers");
     }
     {
+        // Text a command sets -- a sign, an accented letter -- is in the
+        // colour in use, as typed text is.
+        const Result result = article("", "\\textcolor{red}{\\%}");
+        assert((result.clean && holds(result.text, "%") && holds(result.pdf, "1 0 0 rg")) &&
+               "a command's text in the colour in use");
+    }
+    {
         const Result result = article("", "{\\color{blue} blue \\normalcolor black} after");
         assert((result.clean && holds(result.pdf, "0 0 1 rg")) && "\\color colors what follows in its group");
     }
