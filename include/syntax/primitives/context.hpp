@@ -34,9 +34,9 @@ namespace syntax::primitives {
     /// A name that reaches outside that folder -- from its root, or up
     /// through `..` -- is never read, and a document that came from memory
     /// has no folder to read from, only the files it wrote itself (#Writer),
-    /// which is what keeps a sandboxed run inside its sandbox. Asked only
-    /// after the files handed in and the engine's own packages, so a package
-    /// costs no look at the disk.
+    /// which is what keeps a document from reading what it was not given.
+    /// Asked only after the files handed in and the engine's own packages, so
+    /// a package costs no look at the disk.
     ///
     /// @return The file's bytes, or null when there is no such file.
     using Reader = std::function<const std::string*(std::string_view name)>;

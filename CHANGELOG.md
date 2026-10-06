@@ -989,9 +989,12 @@ font folders are listed only for a script the engine carries no face for.
   token for a test alone; `Glossary::size()`; 23 `#include`s nothing in
   their file used, and one included twice. `Glossary::define` looks its line
   up through `Glossary::get`, as a reader of the class expects.
-- The engine never uses the sandbox (`memory/sandbox`: `VM`, `Allocator`,
-  `Policy`), which only its own tests run; it is kept, and says so here,
-  rather than deleted without asking.
+- **The sandbox** (`memory/sandbox`: `VM`, `Allocator`, `Policy`), which
+  only its own tests ran. `VM` drove the language alone, with no page
+  behind it, and none of `Policy`'s rules reached the engine that
+  `latex::compose` runs; what keeps a document in bounds is that engine's
+  own: no shell, no file written, reads confined to its folders (see
+  SECURITY.md).
 - The old `render/primitives/structure`, `configuration` and `expression`
   folders, replaced by one flat module per concern; fontconfig lookup, in
   favour of the font library over `assets/fonts`; margin protrusion; the
