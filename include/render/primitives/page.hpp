@@ -91,6 +91,8 @@ namespace render::primitives {
         mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
         mutable std::vector<std::size_t> spread{};   ///< The columns in force, each change on top of the last.
         mutable std::vector<char> frames{};          ///< beamer's frames open: where each sets what it holds, `t`, `c` or `b`.
+        mutable int slide{1};                        ///< Which slide of its frame is being set, from 1.
+        mutable int pauses{1};                       ///< beamer's `beamerpauses`: the slide what follows a `\\pause` shows from.
     };
 
 }

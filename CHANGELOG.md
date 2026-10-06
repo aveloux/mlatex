@@ -72,9 +72,21 @@ sees, newest work last within each group.
   title page's title, subtitle, author, institute and date; `block`,
   `alertblock` and `exampleblock` under a coloured bar; `columns`, as blocks
   and as `\column`; blue triangles for bullets; an outline for
-  `\tableofcontents`, and `\AtBeginSection`'s frames. Overlays -- `\pause`,
-  `\only<2>`, `\item<2->`, `\alert<2>`, `\uncover` -- are the frame's last
-  slide, as a handout sets it; themes, colour themes and templates are read.
+  `\tableofcontents`, and `\AtBeginSection`'s frames. Themes, colour themes
+  and templates are read.
+- **beamer's overlays**: a frame is as many slides as its overlays ask for,
+  each a page. `\pause` (and `\pause[3]`) hides the rest of the frame until
+  its step; `\only<2>{...}` is there on its slides alone; `\uncover`,
+  `\visible` and `\onslide<2->{...}` are in their place on every slide and
+  seen on theirs, `\invisible` the other way round, and `\onslide<2->`
+  alone sets what follows it; `\alt<2>{a}{b}`, `\temporal`; `\item<2->`
+  with its label, and a list's default, `\begin{itemize}[<+->]`, one item
+  a step; `\alert<2>`, `\textbf<2>`, `\textit`, `\emph`, `\structure`,
+  `\color` and `\textcolor` on their slides; `onlyenv`, `uncoverenv`,
+  `visibleenv`, `invisibleenv`, and a block or a theorem given an overlay.
+  Specifications as beamer reads them: `2`, `2-`, `-3`, `1-3,5`, `+-`,
+  `.-`, `+(1)-`. What a slide does not show keeps its place, unseen and
+  out of its page's text, so the slides of a frame line up.
 - **The letter class**: `\address`, `\signature`, the `letter` block, and
   `\opening`, `\closing`, `\ps`, `\encl` and `\cc` laid out as letter.cls lays
   them out.
@@ -893,8 +905,7 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-beamer's overlays are one slide and its themes are read, not drawn. By
-choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
+beamer's themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
 run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
 text — not that every feature of each is drawn.

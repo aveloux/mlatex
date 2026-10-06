@@ -403,6 +403,9 @@ namespace render {
                 // One glyph onto the open run, opening a new run if need be.
                 const layout::Node::Glyph& mark = item->glyph();
                 if (mark.code == 0) return;
+                // A glyph wholly clear -- a beamer overlay's, unseen on this
+                // slide -- keeps its place and is neither drawn nor read.
+                if (mark.color.alpha <= 0.0f) return;
 
                 // The open run's own font is nearly always the next glyph's too, and
                 // its slot is already known. Otherwise the slot is the face's, not the

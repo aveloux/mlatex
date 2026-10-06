@@ -17,9 +17,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <charconv>
 #include <cmath>
 #include <format>
+#include <limits>
+#include <optional>
 #include <system_error>
 #include <ranges>
 #include <span>
@@ -400,27 +403,286 @@ namespace render::primitives {
                         "Document class '{}': {} by {} points, {}-point body", name, width, height, body);
         });
 
+        // An overlay specification's slides, as beamer reads one: `2`, `2-`,
+        // `-3`, `1-3`, a list of them; `+` the frame's next step, which the
+        // specification moves on past, `+(1)` one after it, and `.` the step
+        // before. A mode before a colon, `beamer:`, and an action, `|
+        // alert@2`, are let go. Each range from its first slide to its last,
+        // the last unbounded when none is written.
+        const auto ranges = [](const std::string_view spec, int& step) {
+            const auto trim = [](std::string_view text) {
+                while (!text.empty() && (text.front() == ' ' || text.front() == '\n')) text.remove_prefix(1);
+                while (!text.empty() && (text.back() == ' ' || text.back() == '\n')) text.remove_suffix(1);
+                return text;
+            };
+            std::vector<std::pair<int, int>> found;
+            bool stepped = false;
+            for (const auto piece : std::views::split(spec, ',')) {
+                std::string_view item(piece.begin(), piece.end());
+                if (const std::size_t bar = item.find('|'); bar != std::string_view::npos) item = item.substr(0, bar);
+                if (const std::size_t colon = item.find(':'); colon != std::string_view::npos) item = item.substr(colon + 1);
+                if (const std::size_t mark = item.find('@'); mark != std::string_view::npos) item = item.substr(mark + 1);
+                item = trim(item);
+                if (item.empty()) continue;
+                const auto value = [&](std::string_view written, const int fallback) {
+                    written = trim(written);
+                    if (written.empty()) return fallback;
+                    if (written.front() == '+' || written.front() == '.') {
+                        const bool next = written.front() == '+';
+                        stepped = stepped || next;
+                        int offset = 0;
+                        if (written.size() > 2 && written[1] == '(') {
+                            std::from_chars(written.data() + 2, written.data() + written.size(), offset);
+                        }
+                        return (next ? step : step - 1) + offset;
+                    }
+                    int number = fallback;
+                    std::from_chars(written.data(), written.data() + written.size(), number);
+                    return number;
+                };
+                std::size_t dash = std::string_view::npos;
+                for (std::size_t at = 0, depth = 0; at < item.size() && dash == std::string_view::npos; ++at) {
+                    if (item[at] == '(') ++depth;
+                    if (item[at] == ')' && depth > 0) --depth;
+                    if (item[at] == '-' && depth == 0) dash = at;
+                }
+                if (dash == std::string_view::npos) {
+                    const int only = value(item, 1);
+                    found.emplace_back(only, only);
+                } else {
+                    found.emplace_back(value(item.substr(0, dash), 1),
+                                       value(item.substr(dash + 1), std::numeric_limits<int>::max()));
+                }
+            }
+            if (stepped) ++step;
+            return found;
+        };
+
         // beamer's frame: a page of its own, its title at its head -- given
         // as its argument, or by the \frametitle it opens with -- and what it
         // holds set in the middle of the rest, at its top for `[t]` or at its
-        // foot for `[b]`. An overlay, `<2->`, is read and let go: every slide
-        // of a frame is the one page here. How a title looks is the class's
-        // \frametitle and \framesubtitle.
+        // foot for `[b]`. How a title looks is the class's \frametitle and
+        // \framesubtitle.
+        //
+        // A frame is as many slides as its pauses and its overlays ask for,
+        // each a page: what it holds is read once, its slides counted, and
+        // read again for each, `\begin{frame}<@2>` marking the second. A
+        // list's default overlay, `\begin{itemize}[<+->]`, goes to each of
+        // its items, and a block, a theorem or beamer's `onlyenv`,
+        // `uncoverenv`, `visibleenv` and `invisibleenv` given an overlay
+        // is wrapped in what shows it on its slides.
         const syntax::Symbol titled = parser.mouth.lexicon.intern("\\frametitle");
         const syntax::Symbol subtitled = parser.mouth.lexicon.intern("\\framesubtitle");
         context.blocks.watch(
             "frame",
-            [this, titled, subtitled](syntax::Mouth& mouth) {
+            [this, &context, titled, subtitled, ranges](syntax::Mouth& mouth) {
                 using Category = syntax::Catcodes::Category;
                 const auto blank = [&mouth] {
                     while (mouth.lookahead().category == Category::Space) mouth.read();
                 };
-                const auto overlay = [&mouth, blank] {
-                    blank();
-                    if (!mouth.lookahead().is('<')) return;
-                    while (!mouth.lookahead().empty() && !mouth.read().is('>')) {}
-                };
-                overlay();
+                blank();
+                std::string marked;
+                if (mouth.lookahead().is('<')) {
+                    mouth.read();
+                    for (syntax::Token token = mouth.read(); !token.empty() && !token.is('>'); token = mouth.read()) marked += token.text;
+                }
+                if (marked.starts_with('@')) {
+                    slide = 1;
+                    std::from_chars(marked.data() + 1, marked.data() + marked.size(), slide);
+                } else {
+                    slide = 1;
+
+                    // What the frame holds, to its end.
+                    std::vector<syntax::Token> body;
+                    for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
+                        if (token.text == "\\end" && mouth.lookahead().is(Category::Group, '{')) {
+                            std::string called;
+                            for (std::size_t index = 1; index < 12; ++index) {
+                                const syntax::Token letter = mouth.lookahead(index);
+                                if (letter.empty() || letter.is('}')) break;
+                                called += letter.text;
+                            }
+                            if (called == "frame") {
+                                mouth.stream().inject(std::span{&token, 1});
+                                break;
+                            }
+                        }
+                        body.push_back(token);
+                    }
+
+                    // Read through, as each slide will read it: its steps
+                    // counted, its slides' highest found, and the text each
+                    // slide reads written, its defaults and its blocks'
+                    // overlays written out.
+                    static constexpr std::array<std::string_view, 15> aware{
+                        "\\only", "\\uncover", "\\visible", "\\invisible", "\\onslide", "\\alt", "\\temporal", "\\item",
+                        "\\alert", "\\textbf", "\\textit", "\\emph", "\\structure", "\\color", "\\textcolor",
+                    };
+                    static constexpr std::array<std::string_view, 3> lists{"itemize", "enumerate", "description"};
+                    static constexpr std::array<std::string_view, 4> shown{"onlyenv", "uncoverenv", "visibleenv", "invisibleenv"};
+                    const auto after = [&body](std::size_t at) {
+                        while (at < body.size() && body[at].category == Category::Space) ++at;
+                        return at;
+                    };
+                    // The name in braces from a place, and where it ends.
+                    const auto called = [&body](const std::size_t at) -> std::pair<std::string, std::size_t> {
+                        if (at >= body.size() || !body[at].is(Category::Group, '{')) return {std::string{}, at};
+                        std::string name;
+                        std::size_t end = at + 1;
+                        for (; end < body.size() && !body[end].is(Category::Group, '}'); ++end) name += body[end].text;
+                        return {name, std::min(end + 1, body.size())};
+                    };
+                    // An overlay from a place, `<...>`, and where it ends.
+                    const auto overlay = [&body](const std::size_t at) -> std::pair<std::optional<std::string>, std::size_t> {
+                        if (at >= body.size() || !body[at].is('<')) return {std::nullopt, at};
+                        std::string spec;
+                        std::size_t end = at + 1;
+                        for (; end < body.size() && !body[end].is('>'); ++end) spec += body[end].text;
+                        return {spec, std::min(end + 1, body.size())};
+                    };
+                    // A braced group from a place, and where it ends.
+                    const auto group = [&body](const std::size_t at) {
+                        if (at >= body.size() || !body[at].is(Category::Group, '{')) return at;
+                        int depth = 0;
+                        for (std::size_t end = at; end < body.size(); ++end) {
+                            if (body[end].is(Category::Group, '{')) ++depth;
+                            if (body[end].is(Category::Group, '}') && --depth == 0) return end + 1;
+                        }
+                        return body.size();
+                    };
+
+                    int step = 1;
+                    int last = 1;
+                    bool marks = false;
+                    const auto count = [&](const std::string& spec) {
+                        marks = true;
+                        for (const auto& [first, final] : ranges(spec, step)) {
+                            last = std::max(last, first);
+                            if (final != std::numeric_limits<int>::max()) last = std::max(last, final);
+                        }
+                    };
+                    std::string text;
+                    std::vector<std::string> defaults;
+                    std::vector<std::pair<std::string, std::string>> closings;   // an environment, and what follows its end
+                    for (std::size_t at = 0; at < body.size();) {
+                        const syntax::Token& token = body[at];
+                        if (token.text == "\\pause") {
+                            marks = true;
+                            std::size_t next = after(at + 1);
+                            text += "\\@pause";
+                            if (next < body.size() && body[next].is('[')) {
+                                std::string written;
+                                for (++next; next < body.size() && !body[next].is(']'); ++next) written += body[next].text;
+                                std::from_chars(written.data(), written.data() + written.size(), step);
+                                text += "[" + written + "]";
+                                at = std::min(next + 1, body.size());
+                            } else {
+                                ++step;
+                                at = next;
+                            }
+                            text += ' ';
+                            last = std::max(last, step);
+                            continue;
+                        }
+                        if (token.text == "\\begin" || token.text == "\\end") {
+                            const auto [name, end] = called(after(at + 1));
+                            const bool opening = token.text == "\\begin";
+                            if (opening && std::ranges::contains(lists, name)) {
+                                // A list's default overlay, `[<+->]`, kept for its items.
+                                std::size_t next = after(end);
+                                std::string spec;
+                                if (next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
+                                    const auto [given, past] = overlay(next + 1);
+                                    spec = given.value_or("");
+                                    next = after(past);
+                                    if (next < body.size() && body[next].is(']')) ++next;
+                                    text += "\\begin{" + name + "}";
+                                    defaults.push_back(spec);
+                                    at = next;
+                                    continue;
+                                }
+                                defaults.emplace_back();
+                            } else if (!opening && std::ranges::contains(lists, name) && !defaults.empty()) {
+                                defaults.pop_back();
+                            }
+                            if (opening) {
+                                const auto [given, past] = overlay(after(end));
+                                if (given) {
+                                    count(*given);
+                                    if (std::ranges::contains(shown, name)) {
+                                        text += name == "onlyenv"        ? "\\@onslide{" + *given + "}{"
+                                                : name == "invisibleenv" ? "{\\@onslide{" + *given + "}{\\@conceal}{}"
+                                                                         : "{\\@onslide{" + *given + "}{}{\\@conceal}";
+                                        closings.emplace_back(name, name == "onlyenv" ? "}{}" : "}");
+                                    } else {
+                                        text += "{\\@onslide{" + *given + "}{}{\\@conceal}\\begin{" + name + "}";
+                                        closings.emplace_back(name, "\\end{" + name + "}}");
+                                    }
+                                    at = past;
+                                    continue;
+                                }
+                            } else if (!closings.empty() && closings.back().first == name) {
+                                text += closings.back().second;
+                                closings.pop_back();
+                                at = end;
+                                continue;
+                            }
+                            text += std::string(token.text) + "{" + name + "}";
+                            at = end;
+                            continue;
+                        }
+                        if (std::ranges::contains(aware, token.text)) {
+                            text += std::string(token.text) + ' ';
+                            std::size_t next = after(at + 1);
+                            // `\only{...}<2>` and `\alt{...}{...}<2>` may
+                            // write theirs after what they hold.
+                            if (next < body.size() && !body[next].is('<') && (token.text == "\\only" || token.text == "\\alt")) {
+                                std::size_t past = group(next);
+                                if (token.text == "\\alt") past = group(after(past));
+                                const auto [given, end] = overlay(after(past));
+                                if (given) count(*given);
+                                at += 1;
+                                continue;
+                            }
+                            const auto [given, past] = overlay(next);
+                            if (given) {
+                                count(*given);
+                                text += "<" + *given + ">";
+                                at = past;
+                            } else {
+                                if (token.text == "\\item" && !defaults.empty() && !defaults.back().empty()) {
+                                    count(defaults.back());
+                                    text += "<" + defaults.back() + ">";
+                                }
+                                at += 1;
+                            }
+                            continue;
+                        }
+                        // A control word keeps the space that ended it; a
+                        // control symbol, `\%`, had none.
+                        text += token.text;
+                        if (token.text.size() > 1 && token.text.front() == '\\' &&
+                            std::isalpha(static_cast<unsigned char>(token.text[1]))) {
+                            text += ' ';
+                        }
+                        ++at;
+                    }
+
+                    // One slide, as it was written; or each, the first read
+                    // now and the rest after it, each its own frame.
+                    if (!marks) {
+                        if (!body.empty()) mouth.stream().inject(std::span{body});
+                    } else {
+                        std::string slides = text;
+                        for (int copy = 2; copy <= last; ++copy) {
+                            slides += std::format("\\end{{frame}}\\begin{{frame}}<@{}>", copy) + text;
+                        }
+                        mouth.ingest(context.arena.copy(slides));
+                    }
+                }
+                pauses = 1;
+                context.selection.paused(false);
+
                 std::string options;
                 for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     options += token.text;
@@ -448,7 +710,11 @@ namespace render::primitives {
                     blank();
                     if (mouth.lookahead().symbol != (which == 0 ? titled : subtitled)) continue;
                     mouth.read();
-                    overlay();
+                    // A title's own overlay, `\frametitle<2>`, let go.
+                    blank();
+                    if (mouth.lookahead().is('<')) {
+                        while (!mouth.lookahead().empty() && !mouth.read().is('>')) {}
+                    }
                     static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                     heads[which] = mouth.argument({}, 0);
                 }
@@ -470,11 +736,47 @@ namespace render::primitives {
                     mouth.stream().inject(std::span{written});
                 }
             },
-            [this](syntax::Mouth& mouth) {
+            [this, &context](syntax::Mouth& mouth) {
                 const char placement = frames.empty() ? 'c' : frames.back();
                 if (!frames.empty()) frames.pop_back();
+                context.selection.paused(false);
                 mouth.ingest(placement == 'b' ? "\\par\\clearpage " : "\\par\\vfill\\clearpage ");
             });
+
+        // What a slide shows: `\@onslide{2-}{shown}{hidden}`, one of the two
+        // as the slide being set is or is not among the overlay's -- an
+        // empty overlay all of them -- moving the frame's step on past a `+`.
+        parser.mouth.bind("\\@onslide", [this, ranges](syntax::Mouth& mouth) {
+            std::string spec;
+            for (const syntax::Token& token : mouth.argument({}, 0)) spec += token.text;
+            const std::vector<syntax::Token> shown = mouth.argument({}, 0);
+            const std::vector<syntax::Token> hidden = mouth.argument({}, 0);
+            const std::vector<std::pair<int, int>> found = ranges(spec, pauses);
+            const bool on = found.empty() || std::ranges::any_of(found, [this](const std::pair<int, int>& range) {
+                                return slide >= range.first && slide <= range.second;
+                            });
+            const std::vector<syntax::Token>& chosen = on ? shown : hidden;
+            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+        });
+
+        // `\pause`: what follows shows from the frame's next step on -- or
+        // from the slide `\pause[3]` names -- unseen before it, in its place,
+        // to the frame's end.
+        parser.mouth.bind("\\@pause", [this, &context](syntax::Mouth& mouth) {
+            if (mouth.lookahead().is('[')) {
+                mouth.read();
+                std::string written;
+                for (syntax::Token token = mouth.read(); !token.empty() && !token.is(']'); token = mouth.read()) written += token.text;
+                std::from_chars(written.data(), written.data() + written.size(), pauses);
+            } else {
+                ++pauses;
+            }
+            if (slide < pauses) context.selection.paused(true);
+        });
+
+        // What follows hidden in its place, to its group's end, or shown.
+        parser.mouth.bind("\\@conceal", [&context](syntax::Mouth&) { context.selection.hidden(true); });
+        parser.mouth.bind("\\@reveal", [&context](syntax::Mouth&) { context.selection.hidden(false); });
 
         // The letter class's letter: on a page of its own, to the recipient
         // its argument names. How it is set -- the addresses, the date, the

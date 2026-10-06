@@ -43,11 +43,14 @@ namespace render::primitives {
         Selection(const Selection&) noexcept = default;
 
         /// @brief Takes another's faces and color -- a group's, put back as it
-        ///        closes -- which counts as a change like any other.
+        ///        closes -- which counts as a change like any other. Whether
+        ///        what follows is hidden goes with the group; whether a frame
+        ///        has paused does not.
         Selection& operator=(const Selection& other) noexcept {
             tint = other.tint;
             prose = other.prose;
             maths = other.maths;
+            concealed = other.concealed;
             ++count;
             return *this;
         }
@@ -83,8 +86,13 @@ namespace render::primitives {
             ++count;
         }
 
-        /// @brief The color text is set in, or null for the default, black.
-        [[nodiscard]] const layout::Node::Color* color() const noexcept { return tint; }
+        /// @brief The color text is set in, or null for the default, black --
+        ///        and none at all, every glyph clear, while what follows is
+        ///        hidden: a beamer overlay's, standing in its place unseen.
+        [[nodiscard]] const layout::Node::Color* color() const noexcept {
+            static constexpr layout::Node::Color clear{.alpha = 0.0f};
+            return concealed || stopped ? &clear : tint;
+        }
 
         /// @brief Selects the color text is set in: xcolor's `\\color`.
         /// @param value Color to use, or null for the default; must outlive the document.
@@ -93,10 +101,34 @@ namespace render::primitives {
             ++count;
         }
 
+        /// @brief Whether what follows is hidden until its group ends: an
+        ///        overlay's `\\uncover`, an `\\item<2->` on its first slide.
+        [[nodiscard]] bool hidden() const noexcept { return concealed; }
+
+        /// @brief Hides what follows, or shows it again.
+        /// @param value True to hide it.
+        void hidden(const bool value) noexcept {
+            concealed = value;
+            ++count;
+        }
+
+        /// @brief Whether a beamer frame's `\\pause` hides the rest of it on
+        ///        this slide, groups or none.
+        [[nodiscard]] bool paused() const noexcept { return stopped; }
+
+        /// @brief Hides the rest of a frame, or ends that with the frame.
+        /// @param value True to hide it.
+        void paused(const bool value) noexcept {
+            stopped = value;
+            ++count;
+        }
+
     private:
         const layout::Node::Color* tint{nullptr}; ///< Color for running text.
         const typography::Font* prose{nullptr};   ///< Face for running text.
         const typography::Font* maths{nullptr};   ///< Face for formulas.
+        bool concealed{false};                     ///< Whether what follows is hidden, to its group's end.
+        bool stopped{false};                       ///< Whether the rest of the frame is hidden.
         std::uint64_t count{0};                    ///< Changes so far; see changes().
     };
 

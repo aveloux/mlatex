@@ -171,8 +171,9 @@ int main() {
                "\\setcounter{page} numbers the page it lands on, and the next counts on");
     }
 
-    // beamer's frames: a page each, its title at its head, with no page
-    // numbers and no page left empty between them.
+    // beamer's frames: a page for each slide, its title at its head, with no
+    // page numbers and no page left empty between them; what a slide does
+    // not show is not on it.
     {
         const Result result = typeset("\\documentclass{beamer}\\title{Talk}\\author{Me}\\begin{document}"
                                       "\\frame{\\titlepage}"
@@ -182,11 +183,29 @@ int main() {
                                       "\\begin{frame}[t]\\frametitle{Code}\\only<2>{Shown.}\\end{frame}"
                                       "\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
-        assert((result.clean && result.pages.size() == 3) && "a page for each frame, none between");
-        assert((result.pages.size() == 3 && holds(result.pages[0], "TalkMe") && holds(result.pages[1], "Motivation") &&
-                holds(result.pages[1], "First") && holds(result.pages[1], "SecondAfter.") &&
-                result.pages[2] == "CodeShown.") &&
-               "the title page, a frame's title before what it holds, overlays shown");
+        assert((result.clean && result.pages.size() == 5) && "a page for each slide, none between");
+        assert((result.pages.size() == 5 && holds(result.pages[0], "TalkMe") && holds(result.pages[1], "Motivation") &&
+                holds(result.pages[1], "First") && !holds(result.pages[1], "Second") && !holds(result.pages[1], "After") &&
+                holds(result.pages[2], "SecondAfter.")) &&
+               "the title page, then a frame's slides: an item and a pause's text from the second");
+        assert((result.pages.size() == 5 && result.pages[3] == "Code" && result.pages[4] == "CodeShown.") &&
+               "and \\only's text on its slide alone");
+    }
+    {
+        // Steps from a list's default overlay, \uncover, \alt and an
+        // environment of beamer's own, each on its slides.
+        const Result result = typeset("\\documentclass{beamer}\\begin{document}"
+                                      "\\begin{frame}\\begin{itemize}[<+->]\\item A\\item B\\end{itemize}"
+                                      "\\uncover<2>{U}\\alt<1>{X}{Y}\\begin{onlyenv}<2>Z\\end{onlyenv}\\end{frame}"
+                                      "\\end{document}");
+        if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
+        assert((result.clean && result.pages.size() == 2) && "two steps, two slides");
+        assert((result.pages.size() == 2 && holds(result.pages[0], "A") && !holds(result.pages[0], "B") &&
+                holds(result.pages[0], "X") && !holds(result.pages[0], "U") && !holds(result.pages[0], "Z")) &&
+               "the first: its first item, \\alt's first text");
+        assert((result.pages.size() == 2 && holds(result.pages[1], "B") && holds(result.pages[1], "UY") &&
+                holds(result.pages[1], "Z")) &&
+               "the second: every item, what \\uncover holds, \\alt's other text, the environment's");
     }
 
     // The letter class: the addresses, the date, the salutation, the
