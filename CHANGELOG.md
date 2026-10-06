@@ -136,7 +136,7 @@ sees, newest work last within each group.
   `\addbibresource` does, rather than reading BibTeX's `@entries` as TeX;
   `\bibliography{}` and `\printbibliography` both set what it holds, and a
   file `\bibliography` names as well is read once. One that is not there is
-  `File `refs.bib' not found`.
+  ``File `refs.bib' not found``.
 - **A `.bib` file is a document of its own**: `latex refs.bib` -- or
   `latex refs`, a `.bib` looked for after `.mtex` and `.tex` -- sets every
   entry it holds, cited or not, in plain's style under an article's
@@ -170,15 +170,15 @@ sees, newest work last within each group.
   as TeX's is. It was a number everywhere, and an assignment in text.
 - **`\catcode` reaches what is not yet read.** The document is lexed ahead,
   so a category change now rewrites the part of it not yet read, as TeX
-  meets characters it has not reached: `\catcode`\!=13` makes every `!` to
-  come active, `\catcode`\|=0` makes `|textbf` a command, a comment character
+  meets characters it has not reached: ``\catcode`\!=13`` makes every `!` to
+  come active, ``\catcode`\|=0`` makes `|textbf` a command, a comment character
   drops the rest of its line, and a character made a letter carries on the
   control word before it. A change made in a group reaches only to the
   group's end -- its `}`, `\endgroup` or `\end`.
 - An active character is a macro only where it is active: a `!` made active
   expands, an ordinary `!` is a `!`; `\def` and `\let` name either. A
   character made ordinary is text whatever it means otherwise:
-  `\catcode`\$=12` prints a dollar.
+  ``\catcode`\$=12`` prints a dollar.
 - `\let` and `\csname` share a primitive's identity, not a copy of it, so
   `\ifx` sees them as the same: `\expandafter\ifx\csname undefined\endcsname\relax`
   holds, as it does in TeX.
@@ -592,7 +592,7 @@ sees, newest work last within each group.
   `mesh/cols` says.
 - **Commutative diagrams are drawn**, each as the TikZ picture it is: a
   matrix of its objects and an arrow for each, its labels on the side the
-  package puts them. tikz-cd's `\arrow` -- `"f"`, `"f"'` swapped,
+  package puts them. tikz-cd's `\arrow` -- ``"f"``, ``"f"'`` swapped,
   `description`, `hook`, `tail`, `two heads`, `mapsto`, `dashed`,
   `Rightarrow` and `equal` as double lines, `bend left`, `shift left`,
   `phantom`, `from=`, spacing by tikz-cd's names; xy-pic's `\xymatrix`, with
@@ -677,7 +677,7 @@ sees, newest work last within each group.
 - **Bookmarks**: every heading hyperref would bookmark is in the file's
   outline, one level under another, and the file opens with it shown.
 - **The file's information**: `/Producer`, and the `pdftitle`, `pdfauthor`,
-  `pdfsubject` and `pdfkeywords` \hypersetup gives; an `/ID` made from the
+  `pdfsubject` and `pdfkeywords` `\hypersetup` gives; an `/ID` made from the
   file's own bytes, the same for the same document every time.
 - **PDF/A-2b**, the archival standard, for pdfx's `a-2b` (and its kin) or
   `\DocumentMetadata{pdfstandard=A-2b}`: the file's information again as XMP,
@@ -920,6 +920,21 @@ font folders are listed only for a script the engine carries no face for.
   tables, environments from the glossary, what a category change in a
   package's own file reaches, and a package's sample document in
   `build/packages`.
+- **The reference has a look of its own.** `docs/style.css` over Doxygen's
+  stylesheet -- system fonts, flat bars, rounded member blocks, code that
+  scrolls rather than wraps, Markdown tables with borders -- and a light and
+  dark theme switched from the top bar, with `docs/logo.svg` beside the
+  project's name and version. Every block of code has a copy button,
+  sections fold, and long pages list their headings. The README is the
+  front page, and the security policy, this changelog and the code of
+  conduct are pages beside the package guide; headings take GitHub's
+  anchors, so a README link to one of its sections works in both places.
+  Four code spans here held a backtick or a quote that Doxygen paired
+  wrongly, which turned the rest of the file inside out; they are written
+  with double backticks, and the reference still builds with no warnings.
+- The root `Doxyfile`, which named a folder that is gone and none of the
+  settings the `docs` target uses, is removed: the target is configured in
+  `CMakeLists.txt` alone.
 
 ### Names
 

@@ -24,7 +24,7 @@ Report them privately in one of two ways:
 
 - through GitHub's private vulnerability reporting, using **Report a
   vulnerability** on the repository's **Security** tab; or
-- by email to **andromedeyz@hotmail.com**, with `mLaTeX security` in the
+- by email to andromedeyz@hotmail.com, with `mLaTeX security` in the
   subject line.
 
 Please include:

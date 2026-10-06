@@ -141,7 +141,7 @@ The build produces three targets: `latex` (the command-line program), `core`
 (the C library, `latex_ffi`). Every source file has a matching test under
 `tests/`.
 
-### Packages
+### Packaging
 
 From a Release build tree:
 
@@ -306,7 +306,7 @@ Everyone taking part is expected to follow the
 ## Support
 
 mLaTeX is maintained by Andres Hernandez
-([@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
+([\@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
 project or its direction, write to andromedeyz@hotmail.com. To report a
 security issue, follow [SECURITY.md](SECURITY.md) instead of opening a
 public issue.
@@ -328,4 +328,4 @@ patterns come from the [hyph-utf8](https://www.hyphenation.org) project.
 Above all, it owes its language to Donald Knuth's TeX and Leslie Lamport's
 LaTeX.
 
-To myself, Andres Hernandez [@ApaxPhoenix](https://github.com/ApaxPhoenix), Christ is King.
+To myself, Andres Hernandez [\@ApaxPhoenix](https://github.com/ApaxPhoenix), Christ is King.

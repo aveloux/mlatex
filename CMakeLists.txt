@@ -160,8 +160,10 @@ endif()
 find_package(Doxygen)
 
 if(DOXYGEN_FOUND)
-    set(DOXYGEN_PROJECT_NAME "latex")
-    set(DOXYGEN_PROJECT_BRIEF "A typesetting engine")
+    set(DOXYGEN_PROJECT_NAME "mLaTeX")
+    set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
+    set(DOXYGEN_PROJECT_BRIEF "A LaTeX typesetting engine")
+    set(DOXYGEN_PROJECT_LOGO "${source}/docs/logo.svg")
     set(DOXYGEN_OUTPUT_DIRECTORY "${binary}/docs")
     set(DOXYGEN_GENERATE_HTML YES)
     set(DOXYGEN_GENERATE_LATEX NO)
@@ -192,9 +194,24 @@ if(DOXYGEN_FOUND)
     # sits beside its description rather than buried in it.
     set(DOXYGEN_ALIASES [["complexity=@par Complexity:^^"]])
 
-    # The guides beside the reference: how to write a package, as a page of
-    # its own.
-    doxygen_add_docs(docs "${source}/include" "${source}/src" "${source}/docs"
+    # The site's own look -- docs/style.css over Doxygen's -- with a switch
+    # between light and dark in the top bar, a copy button on every block of
+    # code, collapsible sections, and each long page's headings listed beside
+    # it. Headings take GitHub's anchors, so the README's links to its own
+    # sections work here as they do there.
+    set(DOXYGEN_HTML_EXTRA_STYLESHEET "${source}/docs/style.css")
+    set(DOXYGEN_HTML_COLORSTYLE TOGGLE)
+    set(DOXYGEN_HTML_COPY_CLIPBOARD YES)
+    set(DOXYGEN_HTML_DYNAMIC_SECTIONS YES)
+    set(DOXYGEN_TOC_INCLUDE_HEADINGS 3)
+    set(DOXYGEN_MARKDOWN_ID_STYLE GITHUB)
+
+    # The README is the front page, and the guides and policies beside the
+    # reference are pages of their own: how to write a package, the security
+    # policy, the changelog and the code of conduct.
+    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${source}/README.md")
+    doxygen_add_docs(docs "${source}/README.md" "${source}/include" "${source}/src" "${source}/docs"
+            "${source}/SECURITY.md" "${source}/CHANGELOG.md" "${source}/CODE_OF_CONDUCT.md"
             COMMENT "Generating documentation")
 endif()
 
