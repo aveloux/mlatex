@@ -120,15 +120,15 @@ vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib
 ### Build and test
 
 ```bash
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
+cmake -B cmake-build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
 ```
 
 ```bash
-cmake --build build
+cmake --build cmake-build-release
 ```
 
 ```bash
-ctest --test-dir build --output-on-failure
+ctest --test-dir cmake-build-release --output-on-failure
 ```
 
 On Windows, the `debug`, `release` and `wasm` presets in
@@ -146,7 +146,7 @@ The build produces three targets: `latex` (the command-line program), `core`
 From a Release build tree:
 
 ```bash
-cpack --config build/CPackConfig.cmake -B build/packages
+cpack --config cmake-build-release/CPackConfig.cmake -B packages
 ```
 
 This produces the packages listed under [Installation](#installation) for
@@ -270,10 +270,10 @@ const pdf = session.pdf();
 The API reference is generated from the sources with Doxygen:
 
 ```bash
-cmake --build build --target docs
+cmake --build cmake-build-release --target docs
 ```
 
-It is written to `build/docs/html`. The reference and
+It is written to `cmake-build-release/docs/html`. The reference and
 [docs/packages.md](docs/packages.md) cover the engine's internals and
 package authoring. [CHANGELOG.md](CHANGELOG.md) describes every feature in
 detail.

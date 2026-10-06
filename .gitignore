@@ -1,0 +1,17 @@
+# Build trees: CLion's profiles' and the presets', all named cmake-build-*.
+cmake-build-*/
+
+# The sample documents in build/ are tracked; what they make is not, since
+# main.pdf changes every day through \today.
+/build/**/*.pdf
+
+# Programs built before the CMake targets existed; a build writes its own
+# into its build tree.
+/bin/
+
+# Packages a release build leaves behind.
+/packages/
+*.msi
+*.dmg
+*.deb
+*.rpm
