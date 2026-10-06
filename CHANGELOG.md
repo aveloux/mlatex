@@ -754,6 +754,14 @@ page's text goes.
   `mlatex_0.1.0_arm64.deb`, `mlatex-0.1.0-macos-universal.dmg` when
   `CMAKE_OSX_ARCHITECTURES` names two -- and another architecture is
   another build.
+- **One workflow builds every package.** `.github/workflows/build.yml`
+  builds, tests and packages on six runners -- Windows, Linux and macOS,
+  each on x64 and ARM64 -- with a C++26 compiler on each (Visual Studio's
+  clang-cl, Clang 20, Homebrew's LLVM) and vcpkg's libraries cached
+  between runs; a pushed `v*` tag attaches every package to a release.
+  It replaces a workflow that installed Skia, which the engine has not
+  used for months, and compiled with a GCC that has no `#embed`.
+  Dependabot keeps the workflow's actions current.
 
 ### For programs
 

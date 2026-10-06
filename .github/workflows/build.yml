@@ -1,0 +1,165 @@
+# Builds, tests and packages the engine on every platform and architecture
+# a release ships for, one runner each: CMake packages the architecture it
+# builds, so another architecture is another build. A pushed tag `v*` also
+# attaches every package to a GitHub release.
+#
+# Every runner gets a C++26 compiler with #embed: Visual Studio's clang-cl on
+# Windows, Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS.
+# vcpkg builds the libraries, cached between runs, and gperf with them.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows x64, runner: windows-2022, triplet: x64-windows, architecture: x64 }
+          - { name: Windows ARM64, runner: windows-11-arm, triplet: arm64-windows, architecture: arm64 }
+          - { name: Linux x64, runner: ubuntu-24.04, triplet: x64-linux, architecture: x64 }
+          - { name: Linux ARM64, runner: ubuntu-24.04-arm, triplet: arm64-linux, architecture: arm64 }
+          - { name: macOS ARM64, runner: macos-15, triplet: arm64-osx, architecture: arm64 }
+          - { name: macOS x64, runner: macos-15-intel, triplet: x64-osx, architecture: x64 }
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg
+      TREE: ${{ github.workspace }}/cmake-build-release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache vcpkg's builds
+        uses: actions/cache@v4
+        with:
+          path: .vcpkg
+          key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: vcpkg-${{ matrix.triplet }}-
+
+      # A vcpkg of its own: not every runner image carries one.
+      - name: Install the libraries
+        shell: bash
+        run: |
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          git clone --depth 1 https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
+          suffix=""
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
+            suffix=".exe"
+          else
+            "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          fi
+          "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} \
+            harfbuzz libpng libjpeg-turbo libwebp zlib gperf
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+          echo "GPERF=$RUNNER_TEMP/vcpkg/installed/${{ matrix.triplet }}/tools/gperf/gperf$suffix" >> "$GITHUB_ENV"
+
+      - name: Set up Visual Studio's clang-cl
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+          $machine = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
+          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+
+      - name: Load the Visual Studio environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.architecture }}
+
+      - name: Set up Clang 20
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          sudo bash llvm.sh 20
+          sudo apt-get install -y ninja-build rpm
+          echo "COMPILER=clang++-20" >> "$GITHUB_ENV"
+          echo "CCOMPILER=clang-20" >> "$GITHUB_ENV"
+
+      - name: Set up Homebrew's LLVM
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm ninja
+          echo "COMPILER=$(brew --prefix llvm)/bin/clang++" >> "$GITHUB_ENV"
+          echo "CCOMPILER=$(brew --prefix llvm)/bin/clang" >> "$GITHUB_ENV"
+
+      # In PowerShell on Windows, where Git Bash's own tools would stand in
+      # front of Visual Studio's on the path.
+      - name: Configure
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >
+          cmake -B "$env:TREE" -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          "-DCMAKE_C_COMPILER=$env:CCOMPILER"
+          "-DCMAKE_CXX_COMPILER=$env:COMPILER"
+          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+          "-DGPERF_EXECUTABLE=$env:GPERF"
+
+      - name: Configure
+        if: runner.os != 'Windows'
+        shell: bash
+        run: >
+          cmake -B "$TREE" -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER="$CCOMPILER"
+          -DCMAKE_CXX_COMPILER="$COMPILER"
+          -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+          -DGPERF_EXECUTABLE="$GPERF"
+          ${{ runner.os == 'macOS' && '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0' || '' }}
+
+      - name: Build
+        run: cmake --build "${{ env.TREE }}"
+
+      - name: Test
+        run: ctest --test-dir "${{ env.TREE }}" --output-on-failure --timeout 300
+
+      - name: Package
+        run: cpack --config "${{ env.TREE }}/CPackConfig.cmake" -B packages
+
+      - name: Keep the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlatex-${{ runner.os }}-${{ matrix.architecture }}
+          path: |
+            packages/*.msi
+            packages/*.zip
+            packages/*.dmg
+            packages/*.deb
+            packages/*.rpm
+            packages/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*
+          generate_release_notes: true
