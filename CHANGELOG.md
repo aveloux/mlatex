@@ -449,6 +449,10 @@ sees, newest work last within each group.
 - **Text a command sets is in the colour in use**: `\textcolor{red}{50\%}`'s
   sign, an accented `\'e`, a `\ldots` -- each was set black whatever the
   colour around it.
+- **`\headsep` and `\footskip` place the head and the foot**: set with
+  `\setlength`, they say how far above the text a head's baseline stands
+  and how far below it a foot's; both were fixed at article's 25 and 30
+  points, a head or a foot off the page of a slide.
 - **A colour chosen in a box stays in it**: `\mbox{\color{red}x} y`,
   `\textbf{\color{blue}x}`, a TikZ node's, a list label's, a cell's, a
   footnote's -- what followed the box took the colour, as only the face

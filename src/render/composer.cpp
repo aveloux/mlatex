@@ -211,14 +211,16 @@ namespace render {
             }
         }
 
-        // LaTeX's article class: the head's baseline 25pt above the column,
-        // the foot's 30pt below it.
+        // The head's baseline \headsep above the column, the foot's
+        // \footskip below it: 25pt and 30pt, LaTeX's article's, unless the
+        // document or its class says -- a beamer theme's lines at the
+        // slide's very edges.
         const layout::Document::Configuration& page = document.configuration;
         const layout::Document::Furniture& furniture = document.furniture;
         const float edge = page.left;
         const float span = page.width - page.left - page.right;
-        const float head = page.top - 25.0f;
-        const float foot = page.height - page.bottom + 30.0f;
+        const float head = page.top - page.heading;
+        const float foot = page.height - page.bottom + page.footing;
 
         switch (own) {
             case Directive::Style::Plain:

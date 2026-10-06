@@ -72,6 +72,8 @@ namespace render::layout {
             float right{72.0f};     ///< Right margin.
             float top{72.0f};       ///< Top margin.
             float bottom{72.0f};    ///< Bottom margin.
+            float heading{25.0f};   ///< From the head's baseline down to the text: `\\headsep`, as the composer reads it.
+            float footing{30.0f};   ///< From the text's foot down to the foot's baseline: `\\footskip`.
             float leading{14.0f};   ///< Baseline-to-baseline distance within a paragraph.
             float indent{15.0f};    ///< Indentation of a paragraph's first line: `\\parindent`.
             float size{12.0f};      ///< The body's size, `\\normalsize`, which every size step is taken from.

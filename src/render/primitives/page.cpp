@@ -152,6 +152,10 @@ namespace render::primitives {
                 page.right = page.width - page.left - apply(column);
             } else if (name == "\\textheight") {
                 page.bottom = page.height - page.top - apply(tall);
+            } else if (name == "\\headsep") {
+                page.heading = apply(page.heading);
+            } else if (name == "\\footskip") {
+                page.footing = apply(page.footing);
             } else if (name == "\\oddsidemargin" || name == "\\evensidemargin") {
                 page.left = 72.0f + apply(page.left - 72.0f);
                 page.right = page.width - page.left - column;
