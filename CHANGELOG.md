@@ -831,6 +831,10 @@ font folders are listed only for a script the engine carries no face for.
   first for `[t]`, the last for `[b]` -- not at the top of the first; tabu's
   `X[l]`, `X[c]` and `X[r]` were read as three more columns each; makecell's
   `[l]`, `[r]`, `[t]` and `[b]` were taken for a vertical position.
+- A BibTeX entry missing the first part of a block no longer starts it with
+  the second's comma: a `@misc` with no `howpublished` was `Notes. , 1843.`
+  A book's edition is in lower case after its publisher, as plain sets it:
+  `Addison-Wesley, second edition, 1994`.
 
 ### Tests
 

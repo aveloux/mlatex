@@ -95,6 +95,19 @@ int main() {
                                       host);
         assert((result.clean && holds(result.text, "Nevercited")) && "\\nocite lists an entry without citing it");
     }
+    {
+        latex::Host sparse;
+        sparse.files["sparse.bib"] = "@misc{lovelace, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n"
+                                     "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX},\n"
+                                     "  publisher = {Addison-Wesley}, edition = {Second}, year = 1994}\n";
+        const Result result = typeset("\\documentclass{article}\\begin{document}\\nocite{*}"
+                                      "\\bibliography{sparse}\\end{document}",
+                                      sparse);
+        assert((result.clean && holds(result.text, "Notes.1843.")) &&
+               "a misc with no howpublished leaves no comma before its year");
+        assert((holds(result.text, "Addison-Wesley,secondedition,1994.")) &&
+               "an edition in lower case after the publisher");
+    }
 
     // --- By author and year -------------------------------------------------------
     {

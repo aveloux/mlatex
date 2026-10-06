@@ -873,8 +873,12 @@ namespace render::primitives {
 
             for (const Entry& entry : chosen) {
                 std::vector<std::string> blocks;
+                // A block whose first part was missing starts at its second's
+                // comma -- a misc with no howpublished, `, 1843` -- and is cut
+                // to what is there, as BibTeX's output.check leaves it.
                 const auto add = [&blocks](std::string block) {
                     while (!block.empty() && (block.back() == ' ' || block.back() == ',')) block.pop_back();
+                    while (!block.empty() && (block.front() == ' ' || block.front() == ',')) block.erase(block.begin());
                     if (!block.empty()) blocks.push_back(std::move(block));
                 };
                 const auto with = [](const std::string& value, const std::string& prefix, const std::string& suffix = "") {
@@ -1047,8 +1051,15 @@ namespace render::primitives {
                     std::string reference = volume + with(number, "(", ")") + with(span, volume.empty() && number.empty() ? "pages " : ":");
                     add(place + with(reference, place.empty() ? "" : ", ") + with(when, ", "));
                 } else if (type == "book" || type == "booklet" || type == "proceedings") {
-                    add(publisher + with(address, publisher.empty() ? "" : ", ") +
-                        with(field(entry, "edition"), ", ", " edition") + with(when, ", "));
+                    // The edition in lower case after the publisher, as plain
+                    // changes its case mid-sentence: `Addison-Wesley, second
+                    // edition`.
+                    std::string edition = field(entry, "edition");
+                    if (!edition.empty() && !(publisher.empty() && address.empty())) {
+                        edition.front() = static_cast<char>(std::tolower(static_cast<unsigned char>(edition.front())));
+                    }
+                    add(publisher + with(address, publisher.empty() ? "" : ", ") + with(edition, ", ", " edition") +
+                        with(when, ", "));
                 } else if (type == "inproceedings" || type == "conference" || type == "incollection") {
                     std::string place = "In " + with(edited, "", ", ") + with(field(entry, "booktitle"), "\\emph{", "}");
                     place += with(volume, ", volume ") + with(span, ", pages ") + with(address, ", ") + with(when, ", ");
