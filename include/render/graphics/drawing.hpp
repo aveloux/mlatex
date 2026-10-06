@@ -27,6 +27,11 @@ namespace render::graphics {
     /// those resources reach is copied, and numbered from 0 in the order it
     /// was reached, so the writer only renumbers them into its own file.
     ///
+    /// A picture drawn as PostScript arrives the same way: an EPS file's
+    /// program is run (script()) into the content of a page as large as its
+    /// picture, the same operators a PDF's page would hold -- paths, fills,
+    /// strokes, clips, colours -- its text set in PDF's standard faces.
+    ///
     /// @par What it does not read
     /// An encrypted file, and contents compressed other than with Flate; a
     /// page's rotation is not applied.
@@ -58,13 +63,14 @@ namespace render::graphics {
             bool streamed{false};     ///< Whether it is a stream.
         };
 
-        /// @brief Reads a page of a PDF.
+        /// @brief Reads a page of a PDF, or an EPS file's picture.
         /// @param bytes The whole file.
-        /// @param page  Which page, from 1.
-        /// @return The page, or std::nullopt when the bytes are no PDF this
-        ///         can read, or it has no such page.
+        /// @param page  Which page, from 1; a picture has only the one.
+        /// @return The page, or std::nullopt when the bytes are no PDF or
+        ///         EPS this can read, or it has no such page.
         /// @complexity O(n) in the objects the page reaches, and linear in
-        ///             the file's length when its cross-reference is broken.
+        ///             the file's length when its cross-reference is broken;
+        ///             a picture's, in what its program does or its elements.
         [[nodiscard]] static std::optional<Drawing> decode(std::span<const std::byte> bytes, int page = 1);
 
         /// @brief How wide the page is, in points.
@@ -78,6 +84,37 @@ namespace render::graphics {
         Value resources{};     ///< The page's resources, renumbered: a Table, or a Reference to one, into #objects.
         Value group{};         ///< The page's transparency group, renumbered, or a Null value for none.
         std::vector<Object> objects{};                        ///< Every object the resources and the group reach.
+
+    private:
+        /// @brief An Encapsulated PostScript file's picture: its program run.
+        ///
+        /// The box is its `%%BoundingBox` comment's. The program runs as a
+        /// PostScript interpreter runs it -- its stack, its dictionaries, its
+        /// procedures, loops and conditions -- and what it paints is written
+        /// as PDF's operators in the page's own points: every path already
+        /// through the transformation it was built under, so a `gsave scale
+        /// arc grestore stroke` comes out as PostScript draws it. Text is set
+        /// in the standard face its font's name is nearest; an image whose
+        /// samples follow it in the file is drawn inline. A program that
+        /// runs too long is stopped where it stands, and what it drew kept.
+        /// @param file The file's text, from its `%!PS`.
+        /// @return The picture, or std::nullopt with no bounding box.
+        /// @complexity O(n) in what the program does, a few million steps at most.
+        [[nodiscard]] static std::optional<Drawing> script(std::string_view file);
+
+        /// @brief How wide letters stand in one of PDF's standard faces.
+        /// @param face    The face: `Helvetica-Bold`, `Times-Roman`, `Courier`.
+        /// @param letters The letters, one byte each.
+        /// @return Their width, in thousandths of the size they are set at.
+        /// @complexity O(n) in the letters.
+        [[nodiscard]] static double breadth(std::string_view face, std::string_view letters) noexcept;
+
+        /// @brief The resources a picture's text needs: each standard face it
+        ///        is set in, named `/F0`, `/F1` and on in the order given.
+        /// @param names The faces' names.
+        /// @return A Table holding `/Font`, or a Null value when there are none.
+        /// @complexity O(n) in the faces.
+        [[nodiscard]] static Value faces(const std::vector<std::string>& names);
     };
 
 }

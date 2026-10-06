@@ -22,7 +22,24 @@ namespace render::graphics {
 
     std::optional<Drawing> Drawing::decode(const std::span<const std::byte> bytes, const int page) {
         using Type = Value::Type;
-        const std::string_view file(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+        std::string_view file(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+
+        // A picture in PostScript -- after the header a DOS EPS file with a
+        // preview opens with, at the place and the length it names.
+        if (file.starts_with("\xC5\xD0\xD3\xC6") && file.size() >= 12) {
+            const auto field = [&file](const std::size_t at) {
+                std::size_t value = 0;
+                for (std::size_t index = 0; index < 4; ++index) {
+                    value |= static_cast<std::size_t>(static_cast<unsigned char>(file[at + index])) << (8 * index);
+                }
+                return value;
+            };
+            const std::size_t start = field(4);
+            const std::size_t length = field(8);
+            if (start < file.size()) file = file.substr(start, std::min(length, file.size() - start));
+        }
+        if (file.starts_with("%!PS")) return page == 1 ? script(file) : std::nullopt;
+
         if (!file.starts_with("%PDF-") || page < 1) return std::nullopt;
         constexpr std::size_t none = std::string_view::npos;
 
@@ -637,6 +654,54 @@ namespace render::graphics {
             made.objects.push_back(std::move(object));
         }
         return made;
+    }
+
+    double Drawing::breadth(const std::string_view face, const std::string_view letters) noexcept {
+        // The widths of the printable ASCII letters, from a space to a
+        // tilde, in Adobe's metrics for Helvetica and Times-Roman; Courier's
+        // are all 600. A bold or slanted cut is near enough its upright one.
+        static constexpr std::array<short, 95> helvetica{
+            278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556,
+            556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778,
+            722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278,
+            278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556,
+            556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,
+        };
+        static constexpr std::array<short, 95> times{
+            250, 333, 408, 500, 500, 833, 778, 180, 333, 333, 500, 564, 250, 333, 250, 278, 500, 500, 500, 500,
+            500, 500, 500, 500, 500, 500, 278, 278, 564, 564, 564, 444, 921, 722, 667, 667, 722, 611, 556, 722,
+            722, 333, 389, 722, 611, 889, 722, 722, 556, 722, 667, 556, 611, 722, 722, 944, 722, 722, 611, 333,
+            278, 333, 469, 500, 333, 444, 500, 444, 500, 444, 333, 500, 500, 278, 278, 500, 278, 778, 500, 500,
+            500, 500, 333, 389, 278, 500, 500, 722, 500, 500, 444, 480, 200, 480, 541,
+        };
+        const bool fixed = face.starts_with("Courier");
+        const std::array<short, 95>& table = face.starts_with("Times") ? times : helvetica;
+        double total = 0.0;
+        for (const char letter : letters) {
+            const auto code = static_cast<unsigned char>(letter);
+            total += fixed ? 600.0 : code >= 32 && code < 127 ? table[code - 32] : 500.0;
+        }
+        return total;
+    }
+
+    Drawing::Value Drawing::faces(const std::vector<std::string>& names) {
+        using Type = Value::Type;
+        if (names.empty()) return {};
+        Value fonts{.type = Type::Table};
+        for (std::size_t index = 0; index < names.size(); ++index) {
+            Value font{.type = Type::Table,
+                       .items = {{.type = Type::Name, .text = "/Type"}, {.type = Type::Name, .text = "/Font"},
+                                 {.type = Type::Name, .text = "/Subtype"}, {.type = Type::Name, .text = "/Type1"},
+                                 {.type = Type::Name, .text = "/BaseFont"}, {.type = Type::Name, .text = "/" + names[index]}}};
+            // The symbol faces keep their own encoding.
+            if (names[index] != "Symbol" && names[index] != "ZapfDingbats") {
+                font.items.push_back({.type = Type::Name, .text = "/Encoding"});
+                font.items.push_back({.type = Type::Name, .text = "/WinAnsiEncoding"});
+            }
+            fonts.items.push_back({.type = Type::Name, .text = "/F" + std::to_string(index)});
+            fonts.items.push_back(std::move(font));
+        }
+        return {.type = Type::Table, .items = {{.type = Type::Name, .text = "/Font"}, std::move(fonts)}};
     }
 
 }

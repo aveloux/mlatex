@@ -584,6 +584,16 @@ sees, newest work last within each group.
 - TikZ's `overlay` and `remember picture`: the picture takes no room, and
   `current page` and `current page text area` are nodes, so a picture can
   stand at a page's corner.
+- **EPS pictures are drawn**: `\includegraphics{chart.eps}` runs the file's
+  PostScript and draws what it paints as a form, as a PDF figure is drawn,
+  in the box its `%%BoundingBox` gives: paths, arcs, fills, strokes, clips,
+  dashes, colour in grey, RGB, CMYK and HSB, transformations -- each path
+  through the one it was built under -- procedures, dictionaries, loops,
+  conditions and `stopped`; text in the standard face its font's name is
+  nearest (Helvetica, Times, Courier, Symbol, each cut); an image whose
+  samples follow it in the file, inline. A DOS EPS's binary header is
+  passed over, a font's encrypted part skipped, and a program that never
+  ends stopped where it stands.
 - `\includegraphics{figure.tikz}` (or `.pgf`) reads the file as the picture
   it writes; mwe's `example-image`, `-a`, `-b`, `-c` and their kin are framed
   boxes of their size with their name in them.
@@ -865,8 +875,8 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn. beamer's overlays are one slide and
-its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
-and a second run's `.aux` -- the engine's one pass does what that run is for.
+SVG is a placeholder, not drawn. beamer's overlays are one slide and its
+themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
+run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
 text — not that every feature of each is drawn.

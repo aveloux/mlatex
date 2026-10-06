@@ -116,11 +116,22 @@ int main() {
         assert((wrong.clean && holds(wrong.errors, "warning: \\includegraphics: the 'angle' key is not supported")) &&
                "a key it cannot honour is a warning that names it");
 
+        // PostScript is drawn as a PDF's page is, a form.
         latex::Host drawn;
-        drawn.files["chart.eps"] = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n";
+        drawn.files["chart.eps"] = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 50\n0 0 100 50 rectfill\n";
+        const Result vector = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
+                                      "\\includegraphics[width=4cm]{chart}\\end{document}",
+                                      drawn);
+        assert((vector.clean && vector.errors.empty()) && "an EPS picture, found without its extension");
+        assert((count(vector.pdf, "/Subtype /Form") == 1 && holds(vector.pdf, "/BBox [0 0 100 50]")) &&
+               "drawn as a form, its box its own");
+
+        // A form it does not draw is framed, and said so.
+        latex::Host unknown;
+        unknown.files["chart.ps"] = "not a picture in any form";
         const Result kept = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                     "\\includegraphics[width=4cm]{chart}\\end{document}",
-                                    drawn);
+                                    unknown);
         assert((kept.clean && holds(kept.errors, "'chart' is in a form this engine does not draw; its place is kept")) &&
                "a picture in a form it does not draw is found, and its place kept with a warning");
         assert((count(kept.pdf, "/Subtype /Image") == 0 && holds(kept.pdf, " re")) && "framed, and empty");
