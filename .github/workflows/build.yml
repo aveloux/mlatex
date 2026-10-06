@@ -148,7 +148,7 @@ jobs:
       - name: Set the sample paper
         if: matrix.name == 'Windows x64'
         shell: bash
-        run: '"$TREE/latex" --file-line-error --output-directory release build/main.mtex'
+        run: '"$TREE/mlatex" --file-line-error --output-directory release build/main.mtex'
 
       - name: Keep the sample paper
         if: matrix.name == 'Windows x64'

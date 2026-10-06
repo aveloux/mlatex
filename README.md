@@ -96,9 +96,9 @@ will include:
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
-`bin/latex` inside the installed folder. Add that `bin` folder to your `PATH`
-to run it from anywhere. On Linux it is kept out of `/usr/bin` so that it
-does not conflict with TeX Live's own `latex`.
+`bin/mlatex` inside the installed folder. Add that `bin` folder to your `PATH`
+to run it from anywhere. It is named `mlatex` so that it never collides with
+the `latex` a TeX distribution installs.
 
 ## Building from source
 
@@ -143,7 +143,7 @@ On Windows, the `debug`, `release` and `wasm` presets in
 leave out the toolchain file, the build looks for vcpkg in `VCPKG_ROOT` and
 then in `C:/vcpkg`.
 
-The build produces three targets: `latex` (the command-line program), `core`
+The build produces three targets: `latex` (the command-line program, built as `mlatex`), `core`
 (the engine as a static library, which every other target links) and `ffi`
 (the C library, `latex_ffi`). Every source file has a matching test under
 `tests/`.
@@ -167,7 +167,7 @@ produces one disk image for both.
 ## Usage
 
 ```bash
-latex paper
+mlatex paper
 ```
 
 This compiles `paper.mtex` or, failing that, `paper.tex`, and writes
@@ -176,23 +176,23 @@ words separated by dashes. TeX's own spellings are accepted too, so scripts
 written for pdfLaTeX keep working.
 
 ```bash
-latex --interaction=batch-mode --halt-on-error paper
+mlatex --interaction=batch-mode --halt-on-error paper
 ```
 
 ```bash
-latex --output-directory=out --job-name=final paper.tex
+mlatex --output-directory=out --job-name=final paper.tex
 ```
 
 ```bash
-latex -I styles -I figures paper
+mlatex -I styles -I figures paper
 ```
 
 ```bash
-latex --watch --open paper
+mlatex --watch --open paper
 ```
 
 ```bash
-latex --time paper
+mlatex --time paper
 ```
 
 | Option | Meaning |
@@ -210,7 +210,7 @@ latex --time paper
 | `-T`, `--time` | Print how long the run took |
 | `--time-statistics` | Print every stage of the engine and its timing |
 
-`latex --help` lists every option. The exit status is 0 for a clean
+`mlatex --help` lists every option. The exit status is 0 for a clean
 document, 1 for a document with errors (a PDF is still written unless
 `--halt-on-error` is given), and 2 for a mistake on the command line.
 
@@ -218,7 +218,7 @@ document, 1 for a document with errors (a PDF is still written unless
 
 `\bibliography{refs}` and biblatex's `\addbibresource{refs.bib}` read a
 `.bib` file directly, so there is no separate BibTeX step. A `.bib` file can
-also be imported with `\input{refs.bib}`. Running `latex refs.bib`
+also be imported with `\input{refs.bib}`. Running `mlatex refs.bib`
 typesets every entry in the file, which is useful for checking a
 bibliography before citing it.
 

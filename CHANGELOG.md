@@ -709,6 +709,12 @@ alone: the command line has no `--set`. `latex::compose` takes where its
 report and its errors go, an empty destination for a draft, and where each
 page's text goes.
 
+- **The program is `mlatex`.** `latex` is the command every TeX
+  distribution installs, and the two could stand on one PATH; the
+  executable, its messages (`mlatex: no option ...`), `--help`,
+  `--version` and every package now say `mlatex`, and the banner reads
+  `This is mLaTeX 0.1.0.` The CMake target keeps the name `latex`, which
+  an IDE's run configuration follows.
 - **Names in words, with dashes between.** `--job-name`, `--draft-mode`
   (`-n`) and `--interaction=batch-mode`, `non-stop-mode`, `scroll-mode`,
   `error-stop-mode`; TeX's run-together `-jobname`, `-draftmode` and

@@ -1,5 +1,5 @@
 /// @file
-/// @brief The command line: `latex [options] [document]`.
+/// @brief The command line: `mlatex [options] [document]`.
 ///
 /// Everything the engine does is latex::compose(), in latex.cpp. What is
 /// here is only what the command line owns: where the executable is and its
@@ -14,12 +14,12 @@
 /// bindings' (latex::Session, the C library, latex.js), not this.
 ///
 /// @code
-/// latex paper                                  # paper.mtex, or paper.tex, into paper.pdf
-/// latex --interaction=batch-mode --halt-on-error paper
-/// latex --output-directory=out --job-name=final paper.mtex
-/// latex -I styles -I figures paper             # what it inputs, from there too
-/// latex --watch --open paper                   # set again on every save, the PDF shown
-/// latex --time paper                           # how long it took
+/// mlatex paper                                  # paper.mtex, or paper.tex, into paper.pdf
+/// mlatex --interaction=batch-mode --halt-on-error paper
+/// mlatex --output-directory=out --job-name=final paper.mtex
+/// mlatex -I styles -I figures paper             # what it inputs, from there too
+/// mlatex --watch --open paper                   # set again on every save, the PDF shown
+/// mlatex --time paper                           # how long it took
 /// @endcode
 #include "latex.hpp"
 #include "logger.hpp"
@@ -170,7 +170,7 @@ int main(int count, char* arguments[]) {
         // The document: the first argument that is not an option.
         if (ended || argument == "-" || !argument.starts_with('-')) {
             if (!source.empty()) {
-                std::cerr << "latex: one document at a time: " << source.string() << " and " << argument << '\n';
+                std::cerr << "mlatex: one document at a time: " << source.string() << " and " << argument << '\n';
                 return 2;
             }
             source = argument;
@@ -196,13 +196,13 @@ int main(int count, char* arguments[]) {
             }
         }
         if (!option) {
-            std::cerr << "latex: no option " << argument << "; see latex --help\n";
+            std::cerr << "mlatex: no option " << argument << "; see mlatex --help\n";
             return 2;
         }
         const auto take = [&]() -> std::optional<std::string_view> {
             if (value) return value;
             if (index + 1 < count && arguments[index + 1]) return std::string_view(arguments[++index]);
-            std::cerr << "latex: " << argument << " needs a value; see latex --help\n";
+            std::cerr << "mlatex: " << argument << " needs a value; see mlatex --help\n";
             return std::nullopt;
         };
         const std::string_view called = option->name;
@@ -210,7 +210,7 @@ int main(int count, char* arguments[]) {
         if (called == "help") {
             // The options under their headings, each name and value in a
             // column of their own and what it does beside them.
-            std::cout << "Usage: latex [options] [document]\n\n"
+            std::cout << "Usage: mlatex [options] [document]\n\n"
                          "Typesets a document into a PDF. A document named without an extension is\n"
                          "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
                          "set as a list of every entry it holds; with none named, the engine's own\n"
@@ -266,7 +266,7 @@ int main(int count, char* arguments[]) {
 #endif
             // C++26 is 202400 until the standard is out; past C++23 it is 26.
             constexpr int standard = __cplusplus > 202302L ? 26 : __cplusplus > 202002L ? 23 : 20;
-            std::cout << "latex " << LATEX_VERSION << '\n'
+            std::cout << "mlatex " << LATEX_VERSION << '\n'
                       << "Typesets LaTeX into PDF: one program, no TeX installation behind it.\n"
                       << "Built with " << compiler << " for " << system << ", C++" << standard << ", " << build
                       << ".\n";
@@ -278,7 +278,7 @@ int main(int count, char* arguments[]) {
             const auto given = take();
             if (!given) return 2;
             if (*given != "aot" && *given != "jit" && *given != "wasm") {
-                std::cerr << "latex: --target is aot, jit or wasm, not " << *given << '\n';
+                std::cerr << "mlatex: --target is aot, jit or wasm, not " << *given << '\n';
                 return 2;
             }
             target = *given;
@@ -294,7 +294,7 @@ int main(int count, char* arguments[]) {
             const auto given = take();
             if (!given) return 2;
             if (!std::filesystem::is_directory(*given, failure)) {
-                std::cerr << "latex: no folder " << *given << " for --include-directory\n";
+                std::cerr << "mlatex: no folder " << *given << " for --include-directory\n";
                 return 2;
             }
             host.directories.emplace_back(*given);
@@ -303,7 +303,7 @@ int main(int count, char* arguments[]) {
             if (!given) return 2;
             assets = *given;
             if (!std::filesystem::is_directory(assets / "fonts", failure)) {
-                std::cerr << "latex: " << assets.string() << " holds no fonts folder; --assets names the engine's "
+                std::cerr << "mlatex: " << assets.string() << " holds no fonts folder; --assets names the engine's "
                           << "assets, as the source tree's assets folder is\n";
                 return 2;
             }
@@ -314,7 +314,7 @@ int main(int count, char* arguments[]) {
                 return pair.first == *given || pair.second == *given;
             });
             if (mode == modes.end()) {
-                std::cerr << "latex: --interaction is batch-mode, non-stop-mode, scroll-mode or error-stop-mode, not "
+                std::cerr << "mlatex: --interaction is batch-mode, non-stop-mode, scroll-mode or error-stop-mode, not "
                           << *given << '\n';
                 return 2;
             }
@@ -340,7 +340,7 @@ int main(int count, char* arguments[]) {
         } else if (!option->value.empty() && !option->value.starts_with('[') && !value) {
             // The logger's own are read already, and only with their value
             // after `=`.
-            std::cerr << "latex: --" << called << " takes its value after `=`: --" << called << '=' << option->value
+            std::cerr << "mlatex: --" << called << " takes its value after `=`: --" << called << '=' << option->value
                       << '\n';
             return 2;
         }
@@ -349,7 +349,7 @@ int main(int count, char* arguments[]) {
     // Just in time and WebAssembly are where those targets go once they are
     // built: each is taken, and nothing is done yet.
     if (target != "aot") {
-        if (!quiet) std::cout << "latex: --target=" << target << " is not built yet; nothing was typeset.\n";
+        if (!quiet) std::cout << "mlatex: --target=" << target << " is not built yet; nothing was typeset.\n";
         return 0;
     }
 
@@ -386,7 +386,7 @@ int main(int count, char* arguments[]) {
         if (binary.empty()) binary = std::filesystem::current_path();
         assets = latex::locate(binary);
         if (assets.empty()) {
-            std::cerr << "latex: no assets directory found above " << binary.string() << "; name one with --assets\n";
+            std::cerr << "mlatex: no assets directory found above " << binary.string() << "; name one with --assets\n";
             return 1;
         }
     }
@@ -406,7 +406,7 @@ int main(int count, char* arguments[]) {
         }
     }
     if (!std::filesystem::exists(source, failure)) {
-        std::cerr << "latex: no document at " << source.string() << '\n';
+        std::cerr << "mlatex: no document at " << source.string() << '\n';
         return 1;
     }
 
@@ -420,7 +420,7 @@ int main(int count, char* arguments[]) {
     }
     const Clock::time_point found = Clock::now();
 
-    if (!quiet) std::cout << "This is latex " << LATEX_VERSION << ".\n";
+    if (!quiet) std::cout << "This is mLaTeX " << LATEX_VERSION << ".\n";
 
     // One run: the document set and its PDF written, each error with its
     // file before it when -file-line-error asks, the PDF left out when
@@ -444,7 +444,7 @@ int main(int count, char* arguments[]) {
 
         if (!ok && halting && !destination.empty()) {
             std::filesystem::remove(destination, failure);
-            std::cerr << "latex: no PDF written: the document has an error, and --halt-on-error was given\n";
+            std::cerr << "mlatex: no PDF written: the document has an error, and --halt-on-error was given\n";
         } else if (!quiet) {
             if (destination.empty()) {
                 std::cout << "No PDF written: --draft-mode.\n";

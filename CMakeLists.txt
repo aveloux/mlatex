@@ -457,7 +457,11 @@ if(EMSCRIPTEN)
 else()
     add_executable(latex "${source}/src/main.cpp")
     target_link_libraries(latex PRIVATE core)
-    # What `latex --version` prints.
+    # The program a person runs is `mlatex`: `latex` is the command a TeX
+    # distribution installs, and the two could stand on one PATH. The
+    # target keeps its name, which is what an IDE's run configuration names.
+    set_target_properties(latex PROPERTIES OUTPUT_NAME mlatex)
+    # What `mlatex --version` prints.
     target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
 
     # The engine as a C library, for a program that wants documents made

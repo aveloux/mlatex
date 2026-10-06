@@ -29,7 +29,7 @@ Report them privately in one of two ways:
 
 Please include:
 
-- the version and build (`latex --version`) and your operating system;
+- the version and build (`mlatex --version`) and your operating system;
 - the smallest document, command line or program that reproduces the issue;
 - what an attacker gains: code execution, reading or writing files,
   network access, denial of service or something else.
@@ -80,7 +80,7 @@ engine's own language.
   and `\httppost{url}{body}`. These use WinHTTP on Windows and libcurl on
   Linux and macOS when the build found it. The WebAssembly module makes no
   requests. When compiling documents you do not trust, turn the network
-  off: `latex --offline`, `latex::Host::offline` in C++, or
+  off: `mlatex --offline`, `latex::Host::offline` in C++, or
   `offline(session, 1)` in the C library. Each request is then refused and
   reported as an error before anything is sent, so a document cannot reach
   internal services or send data out. For defence in depth, also run the
@@ -101,7 +101,7 @@ engine's own language.
 
 ## Scope
 
-In scope: the engine (`core`), the `latex` command line, the C library
+In scope: the engine (`core`), the `mlatex` command line, the C library
 (`latex_ffi`), the WebAssembly module, the packages under `src/modules`, and
 the build and packaging scripts in this repository.
 
