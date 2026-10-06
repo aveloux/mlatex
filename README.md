@@ -77,7 +77,7 @@ once, in compiled code.
 mLaTeX is pre-release software (version 0.1.0). The `aot` target, which
 writes the PDF directly, is complete. The `jit` and `wasm` targets of the
 command line are accepted but not yet implemented; the just-in-time target
-is reserved in [`src/jit`](src/jit/README.md). See
+is reserved in [`src/jit`](src/jit/implementation.md). See
 [CHANGELOG.md](CHANGELOG.md) for what has been done and what is
 intentionally left out.
 
