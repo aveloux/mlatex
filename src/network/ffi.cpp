@@ -54,7 +54,7 @@ namespace network {
             #if defined(_WIN32)
                 HMODULE module = nullptr;
                 if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                                        reinterpret_cast<LPCWSTR>(&latex), &module)) {
+                                        reinterpret_cast<LPCWSTR>(&engine), &module)) {
                     return std::filesystem::path{};
                 }
                 std::wstring buffer(MAX_PATH, L'\0');
@@ -69,7 +69,7 @@ namespace network {
                 }
             #elif defined(__unix__) || defined(__APPLE__)
                 Dl_info info{};
-                if (dladdr(reinterpret_cast<const void*>(&latex), &info) && info.dli_fname) {
+                if (dladdr(reinterpret_cast<const void*>(&engine), &info) && info.dli_fname) {
                     std::error_code failure;
                     if (auto resolved = std::filesystem::canonical(info.dli_fname, failure); !failure) return resolved;
                 }
@@ -178,7 +178,7 @@ namespace network {
 
     extern "C" {
 
-        const Latex* latex(void) {
+        const Latex* engine(void) {
             static constexpr Latex table{
                 .compose = compose,
                 .dispose = dispose,

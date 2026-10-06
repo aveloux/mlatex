@@ -724,6 +724,10 @@ page's text goes.
   `latex::compose`, `latex::locate`. The command line is the CMake target
   `latex`, the program an IDE runs, and the engine's library the target
   `core`.
+- **The C library's one function is `engine()`** (was `latex()`): with C
+  linkage its name is global, and GCC and MSVC refuse a function named as
+  the engine's namespace is. Its visibility macro is `VISIBLE`, undefined
+  again at the header's end, and the library's build defines `EXPORTING`.
 
 ### Speed
 

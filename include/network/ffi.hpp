@@ -3,7 +3,7 @@
 /// @file
 /// @brief The engine as a C library, for a program that makes documents.
 ///
-/// The library exports one function, latex(), and it returns a struct of
+/// The library exports one function, engine(), and it returns a struct of
 /// every other: latex::Session's own operations, under latex::Session's own
 /// names -- compose a session, set a value, define a command, provide a file,
 /// typeset a document, dispose of the session. A C program calls them through
@@ -14,23 +14,23 @@
 ///     const Ledger* ledger = data;
 ///     char text[64];
 ///     int length = snprintf(text, sizeof text, "%.2f", ledger_balance(ledger, arguments[0]));
-///     latex()->write(output, text, (size_t)length);
+///     engine()->write(output, text, (size_t)length);
 /// }
 ///
-/// const Latex* engine = latex();
-/// Session* session = engine->compose(NULL);            // assets found beside the library
-/// engine->set(session, "customer", "Acme Ltd.");
-/// engine->define(session, "balance", 1, balance, &ledger);
-/// engine->provide(session, "letterhead/main.mtex", style, strlen(style));
-/// engine->provide(session, "chart.png", png, png_size);
+/// const Latex* table = engine();
+/// Session* session = table->compose(NULL);             // assets found beside the library
+/// table->set(session, "customer", "Acme Ltd.");
+/// table->define(session, "balance", 1, balance, &ledger);
+/// table->provide(session, "letterhead/main.mtex", style, strlen(style));
+/// table->provide(session, "chart.png", png, png_size);
 ///
 /// const unsigned char* pdf;
 /// size_t size;
-/// if (!engine->typeset(session, source, strlen(source), &pdf, &size)) {
-///     fprintf(stderr, "%s", engine->error(session));
+/// if (!table->typeset(session, source, strlen(source), &pdf, &size)) {
+///     fprintf(stderr, "%s", table->error(session));
 /// }
 /// if (pdf) send(pdf, size);                             // the session owns the bytes
-/// engine->dispose(session);
+/// table->dispose(session);
 /// @endcode
 ///
 /// with a document that asks for what it needs:
@@ -55,7 +55,7 @@
 /// UTF-8 and zero-terminated, paths included, on every platform; every
 /// function returns a plain int or pointer. It builds as a DLL on Windows and
 /// as a shared library with default visibility on Linux and macOS, and
-/// either way exports latex() and nothing else.
+/// either way exports engine() and nothing else.
 ///
 /// @par Threads
 /// A session is used by one thread at a time, and a command is called back
@@ -65,16 +65,20 @@
 
 #include <stddef.h>
 
+// How engine() is seen from outside the library: exported while the library
+// itself is built -- its build defines EXPORTING -- imported by a program on
+// Windows, visible by default elsewhere. Undefined again below, so a program
+// that includes this keeps the name free.
 #if defined(_WIN32) || defined(__CYGWIN__)
-    #if defined(LATEX_EXPORTS)
-        #define LATEX_API __declspec(dllexport)
+    #if defined(EXPORTING)
+        #define VISIBLE __declspec(dllexport)
     #else
-        #define LATEX_API __declspec(dllimport)
+        #define VISIBLE __declspec(dllimport)
     #endif
 #elif defined(__GNUC__) || defined(__clang__)
-    #define LATEX_API __attribute__((visibility("default")))
+    #define VISIBLE __attribute__((visibility("default")))
 #else
-    #define LATEX_API
+    #define VISIBLE
 #endif
 
 #if defined(__cplusplus)
@@ -191,10 +195,16 @@ typedef struct Latex {
 } Latex;
 
 /// @brief The library's operations. The one function it exports.
+///
+/// Named for what it hands out rather than for the library: with C linkage
+/// its name is global, and `latex` is the C++ engine's namespace.
+///
 /// @return The same struct on every call; never NULL.
-LATEX_API const Latex* latex(void);
+VISIBLE const Latex* engine(void);
 
 #if defined(__cplusplus)
 }
 }
 #endif
+
+#undef VISIBLE

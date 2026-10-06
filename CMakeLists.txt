@@ -440,7 +440,7 @@ else()
     # which on Linux and macOS takes dladdr and so the dynamic-loading library.
     add_library(ffi SHARED "${source}/src/network/ffi.cpp" "${source}/include/network/ffi.hpp")
     target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
-    target_compile_definitions(ffi PRIVATE LATEX_EXPORTS)
+    target_compile_definitions(ffi PRIVATE EXPORTING)
     set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
 
     # Loaded the first time a document needs them rather than when the program
