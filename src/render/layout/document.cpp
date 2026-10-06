@@ -754,6 +754,7 @@ namespace render::layout {
                     reversed = order.reversed;
                     break;
                 case Node::Directive::Command::Number:
+                case Node::Directive::Command::Marked:
                 case Node::Directive::Command::Note:
                 case Node::Directive::Command::Aside:
                 case Node::Directive::Command::Link:
@@ -763,6 +764,7 @@ namespace render::layout {
                     // page -- and the height on it -- it lands at.
                     pending.push_back(node);
                     break;
+                case Node::Directive::Command::Mark:
                 case Node::Directive::Command::Anchor:
                     // In the line when there is one, so it lands where the
                     // words around it do; between blocks otherwise, where it

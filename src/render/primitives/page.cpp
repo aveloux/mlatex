@@ -994,6 +994,58 @@ namespace render::primitives {
             }
             return directive(arena, nullptr, origin);
         };
+        // Marks: `\markboth{left}{right}` and `\markright{right}` set, where
+        // they are written, what a head's or a foot's `\leftmark` and
+        // `\rightmark` show -- on that page and the next until another is
+        // set -- each its text in a row, in the face in use.
+        const auto mark = [&context](syntax::Parser& parser, const std::size_t which) -> layout::Node* {
+            syntax::Mouth& mouth = parser.mouth;
+            memory::Arena& arena = parser.arena;
+            while (mouth.lookahead().category == syntax::Catcodes::Category::Space) mouth.read();
+            syntax::Token open = mouth.read();
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
+                if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
+                return nullptr;
+            }
+            const Selection kept = context.selection;
+            mouth.push(syntax::semantics::Scope::Type::Group);
+            const memory::Slice<syntax::Node*> content = parser.parse('}');
+            mouth.pop(syntax::semantics::Scope::Type::Group);
+            stamp(content, context);
+            context.selection = kept;
+            std::vector<layout::Node*> gathered;
+            for (const syntax::Node* child : content) compose(gathered, child, context);
+            const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(gathered.size());
+            std::ranges::copy(gathered, row.begin());
+            auto* node = arena.compose<layout::Node>();
+            node->directive({.command = layout::Node::Directive::Command::Mark,
+                             .note = layout::Line::horizontal(arena, row, 0.0f), .index = which});
+            return node;
+        };
+        // Between paragraphs a mark stands on its own, in a paragraph in it.
+        parser.bind("\\markboth", [mark](syntax::Parser& parser) -> syntax::Node* {
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const bool between = parser.mouth.vertical;
+            layout::Node* left = mark(parser, 0);
+            layout::Node* right = mark(parser, 1);
+            const memory::Slice<layout::Node*> both = parser.arena.allocate<layout::Node*>(2);
+            both[0] = left;
+            both[1] = right;
+            return directive(parser.arena, layout::Line::horizontal(parser.arena, both, 0.0f), origin, between);
+        });
+        parser.bind("\\markright", [mark](syntax::Parser& parser) -> syntax::Node* {
+            const memory::Location origin = parser.mouth.lookahead().location;
+            const bool between = parser.mouth.vertical;
+            return directive(parser.arena, mark(parser, 1), origin, between);
+        });
+        for (const auto& [name, which] : {std::pair{"\\leftmark", 0uz}, std::pair{"\\rightmark", 1uz}}) {
+            parser.bind(name, [which](syntax::Parser& parser) -> syntax::Node* {
+                auto* node = parser.arena.compose<layout::Node>();
+                node->directive({.command = layout::Node::Directive::Command::Marked, .index = which});
+                return directive(parser.arena, node, parser.mouth.lookahead().location);
+            });
+        }
+
         parser.bind("\\fancyhead", [furnishing](syntax::Parser& parser) { return furnishing(parser, true, false); });
         parser.bind("\\fancyfoot", [furnishing](syntax::Parser& parser) { return furnishing(parser, false, true); });
         parser.bind("\\fancyhf", [furnishing](syntax::Parser& parser) { return furnishing(parser, true, true); });

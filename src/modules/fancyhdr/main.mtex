@@ -12,10 +12,8 @@
 % as the page is drawn, which is the only point its number is known. What
 % this package adds is fancyhdr's own names over them, and its defaults.
 
-% The marks a head may show -- the chapter's or the section's title -- which
-% nothing here keeps: a head that shows one shows nothing in its place.
-\@define\leftmark{}
-\@define\rightmark{}
+% The marks a head may show, \leftmark and \rightmark, are the engine's own:
+% what \markboth and \markright set last, on the page or before it.
 
 % fancyhdr's first spelling, still the one most documents use.
 \@define\lhead[1]{\fancyhead[L]{#1}}

@@ -243,6 +243,11 @@ namespace render {
         bool capital{false};                                                   ///< In capitals.
         layout::Node::Directive::Style style{layout::Node::Directive::Style::Plain};   ///< From here on.
 
+        /// The marks a head or a foot shows on the page being drawn: the
+        /// left's and the right's, each the last set on it or before it --
+        /// a row of text set where `\\markboth` was written -- or none.
+        std::array<const layout::Node*, 2> marks{};
+
         std::string content{};       ///< The page description being built.
         std::string transcript{};    ///< The text of the page being drawn.
 

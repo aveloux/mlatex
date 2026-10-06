@@ -208,6 +208,20 @@ int main() {
                "the second: every item, what \\uncover holds, \\alt's other text, the environment's");
     }
 
+    {
+        // Marks: what \markboth sets is what a head's \leftmark shows, on
+        // its page and the next, until another is set.
+        const Result result = typeset("\\documentclass{article}\\usepackage{fancyhdr}\\pagestyle{fancy}\\fancyhf{}"
+                                      "\\fancyhead[L]{\\leftmark}\\fancyhead[R]{\\rightmark}\\begin{document}"
+                                      "\\markboth{Alpha}{Gamma}One.\\newpage Two.\\newpage\\markboth{Beta}{}Three."
+                                      "\\end{document}");
+        if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
+        assert((result.clean && result.pages.size() == 3) && "three pages");
+        assert((result.pages.size() == 3 && holds(result.pages[0], "AlphaGamma") && holds(result.pages[1], "AlphaGamma") &&
+                holds(result.pages[2], "Beta") && !holds(result.pages[2], "Alpha")) &&
+               "a mark on its page and the next, until another");
+    }
+
     // The letter class: the addresses, the date, the salutation, the
     // closing and the signature, on a page of its own.
     {

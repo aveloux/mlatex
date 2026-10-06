@@ -218,11 +218,9 @@
 \@define\twocolumn[1][]{\clearpage\@columns1 #1\par\@columns2 }
 \@define\onecolumn{\clearpage\@columns1 }
 
-% The running heads' marks, which a page style here sets from the headings
-% themselves, and text written straight into a list's file, which here has
-% no file: the lists are made from the headings and captions as they are read.
-\@define\markboth[2]{}
-\@define\markright[1]{}
+% Text written straight into a list's file, which here has no file: the
+% lists are made from the headings and captions as they are read. (The
+% running heads' marks, \markboth and \markright, are the engine's own.)
 \@define\addtocontents[2]{}
 
 % A character by its number, as \char takes one: \symbol{"2713}.

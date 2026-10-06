@@ -192,6 +192,21 @@ namespace render {
         {
         using Directive = layout::Node::Directive;
 
+        // The marks set on the page, wherever they stand in it: the last of
+        // each is what its head and foot show, and the next page's until
+        // that one sets its own.
+        const auto seek = [this](this const auto& self, const layout::Node* item) -> void {
+            if (!item) return;
+            if (item->type == layout::Node::Type::Directive && item->directive().command == Directive::Command::Mark &&
+                item->directive().index < marks.size()) {
+                marks[item->directive().index] = item->directive().note;
+            }
+            if (item->type == layout::Node::Type::Box) {
+                for (const layout::Node* child : item->box().list) self(child);
+            }
+        };
+        for (const layout::Node* item : nodes) seek(item);
+
         // The page's own instructions, in the order they were written.
         Directive::Style own = style;
         for (const layout::Node* item : nodes) {
@@ -332,6 +347,11 @@ namespace render {
                 }
                 continue;
             }
+            if (item && item->type == layout::Node::Type::Directive &&
+                item->directive().command == layout::Node::Directive::Command::Marked) {
+                if (item->directive().index < marks.size()) width += layout::Line::advance(marks[item->directive().index]);
+                continue;
+            }
             width += layout::Line::advance(item);
         }
 
@@ -345,6 +365,11 @@ namespace render {
             }
             node(item, position, baseline);
             position += layout::Line::advance(item);
+            if (item->type == layout::Node::Type::Directive &&
+                item->directive().command == layout::Node::Directive::Command::Marked &&
+                item->directive().index < marks.size()) {
+                position += layout::Line::advance(marks[item->directive().index]);
+            }
         }
     }
 
@@ -655,6 +680,9 @@ namespace render {
                 // drawn -- and an anchor's page, for the same reason.
                 if (item->directive().command == layout::Node::Directive::Command::Number) {
                     numeral(item->directive().font, position, baseline);
+                } else if (item->directive().command == layout::Node::Directive::Command::Marked) {
+                    // A head's or a foot's mark: the page's, set where it was marked.
+                    if (item->directive().index < marks.size()) node(marks[item->directive().index], position, baseline);
                 } else if (item->directive().command == layout::Node::Directive::Command::Anchor) {
                     const std::size_t slot = item->directive().index;
                     if (slot >= anchors.size()) anchors.resize(slot + 1);

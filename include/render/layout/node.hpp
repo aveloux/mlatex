@@ -259,8 +259,11 @@ namespace render::layout {
                 Direction,  ///< Paragraphs from here on read right to left when #reversed is set, left to right if not.
                 Link,       ///< What is drawn from here to the next Unlink goes to #target, or to #index's anchor.
                 Unlink,     ///< The innermost open link ends.
-                Repeat      ///< A long table's rows follow, to the next Repeat: a column they break out of ends
+                Repeat,     ///< A long table's rows follow, to the next Repeat: a column they break out of ends
                             ///< with #foot, and the next opens with #head. One with neither ends the table.
+                Mark,       ///< What a head or a foot shows from here on, #note set: the left mark for an
+                            ///< #index of 0, the right for 1 -- `\\markboth`, `\\markright`, a slide's section.
+                Marked      ///< The page's mark, #index's, drawn here: `\\leftmark`, `\\rightmark`.
             };
 
             /// @brief Where a float may go, as LaTeX's `[htbp!]` says: a bit

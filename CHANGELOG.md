@@ -453,6 +453,9 @@ sees, newest work last within each group.
   `\setlength`, they say how far above the text a head's baseline stands
   and how far below it a foot's; both were fixed at article's 25 and 30
   points, a head or a foot off the page of a slide.
+- **Marks**: `\markboth{left}{right}` and `\markright{right}` set what a
+  head's or a foot's `\leftmark` and `\rightmark` show, on the page they
+  are written on and the next until another is set; both showed nothing.
 - **A colour chosen in a box stays in it**: `\mbox{\color{red}x} y`,
   `\textbf{\color{blue}x}`, a TikZ node's, a list label's, a cell's, a
   footnote's -- what followed the box took the colour, as only the face
