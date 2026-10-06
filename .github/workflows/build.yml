@@ -38,7 +38,7 @@ jobs:
       TREE: ${{ github.workspace }}/cmake-build-release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache vcpkg's builds
         uses: actions/cache@v4
