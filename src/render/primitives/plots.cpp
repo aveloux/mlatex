@@ -289,16 +289,65 @@ namespace render::primitives {
                     const auto ty = [ylog](const double v) { return ylog ? std::log10(v) : v; };
                     const bool barred = has("ybar");
 
-                    // The limits: the data's, what the options set, and the
-                    // margin `enlargelimits` asks for on those they did not.
+                    // Each point's error bars, as its plot's options have
+                    // them -- `error bars/.cd, y dir=both, y explicit`, or
+                    // `error bars/y dir=plus` -- how far each reaches below
+                    // and above, across and up: the amounts its data gave
+                    // (`explicit`), one amount for all (`fixed`), either a
+                    // share of the value (`relative`); none for a direction
+                    // not drawn.
+                    const auto whiskers = [&](const Plot& plot) {
+                        std::array<std::string_view, 2> way{"none", "none"};
+                        std::array<bool, 2> given{};
+                        std::array<std::optional<double>, 2> same{};
+                        std::array<bool, 2> relative{};
+                        for (const auto& [key, value] : read(plot.options)) {
+                            const std::string_view name = key.starts_with("error bars/") ? key.substr(11) : key;
+                            if (name.size() < 3 || (name[0] != 'x' && name[0] != 'y') || name[1] != ' ') continue;
+                            const std::size_t axle = name[0] == 'x' ? 0 : 1;
+                            const std::string_view rest = name.substr(2);
+                            if (rest == "dir") way[axle] = value;
+                            if (rest == "explicit" || rest == "explicit relative") given[axle] = true;
+                            if (rest == "fixed" || rest == "fixed relative") same[axle] = number(value);
+                            if (rest.ends_with("relative")) relative[axle] = true;
+                        }
+                        std::vector<std::array<double, 4>> found(plot.points.size(), std::array<double, 4>{});
+                        for (std::size_t index = 0; index < plot.points.size(); ++index) {
+                            for (std::size_t axle = 0; axle < 2; ++axle) {
+                                if (way[axle] == "none") continue;
+                                const double value = axle == 0 ? plot.points[index].first : plot.points[index].second;
+                                for (std::size_t side = 0; side < 2; ++side) {
+                                    if (way[axle] == (side == 0 ? "plus" : "minus")) continue;
+                                    double amount = same[axle].value_or(0.0);
+                                    if (given[axle] && index < plot.errors.size()) amount = plot.errors[index][2 * axle + side];
+                                    if (!std::isfinite(amount)) amount = 0.0;
+                                    found[index][2 * axle + side] = std::abs(relative[axle] ? amount * value : amount);
+                                }
+                            }
+                        }
+                        return found;
+                    };
+
+                    // The limits: the data's, their error bars', what the
+                    // options set, and the margin `enlargelimits` asks for on
+                    // those they did not.
                     double xlo = std::numeric_limits<double>::infinity(), xhi = -xlo, ylo = xlo, yhi = -xlo;
                     for (const Plot& plot : axis.plots) {
-                        for (const auto& [x, y] : plot.points) {
+                        const std::vector<std::array<double, 4>> reach = whiskers(plot);
+                        for (std::size_t index = 0; index < plot.points.size(); ++index) {
+                            const auto [x, y] = plot.points[index];
                             if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
-                            xlo = std::min(xlo, tx(x));
-                            xhi = std::max(xhi, tx(x));
-                            ylo = std::min(ylo, ty(y));
-                            yhi = std::max(yhi, ty(y));
+                            const std::array<double, 4>& error = reach[index];
+                            for (const double along : {x - error[0], x, x + error[1]}) {
+                                if (xlog && along <= 0.0) continue;
+                                xlo = std::min(xlo, tx(along));
+                                xhi = std::max(xhi, tx(along));
+                            }
+                            for (const double up : {y - error[2], y, y + error[3]}) {
+                                if (ylog && up <= 0.0) continue;
+                                ylo = std::min(ylo, ty(up));
+                                yhi = std::max(yhi, ty(up));
+                            }
                         }
                     }
                     if (barred && !ylog) {
@@ -509,8 +558,8 @@ namespace render::primitives {
                             else if (key.contains("thick") || key.contains("thin") || key.contains("dash") ||
                                      key.contains("dot") || key == "solid" || key == "line width" || key.contains("opacity")) {
                                 kept += std::format(",{}{}{}", key, value.empty() ? "" : "=", value);
-                            } else if (value.empty() && !key.contains(' ') && key != "smooth" && key != "sharp plot" &&
-                                       key != "ybar" && key != "const plot") {
+                            } else if (value.empty() && !key.contains(' ') && !key.contains('/') && key != "smooth" &&
+                                       key != "sharp plot" && key != "ybar" && key != "const plot") {
                                 color = key;
                             }
                         }
@@ -586,6 +635,35 @@ namespace render::primitives {
                             }
                             flush();
                         }
+
+                        // Its error bars, in its color: a line each way the
+                        // options draw, a short bar across each end.
+                        const std::vector<std::array<double, 4>> reach = whiskers(plot);
+                        for (std::size_t at = 0; at < plot.points.size(); ++at) {
+                            const auto [x, y] = plot.points[at];
+                            if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
+                            const std::array<double, 4>& error = reach[at];
+                            constexpr double cap = 2.0;
+                            if (error[2] > 0.0 || error[3] > 0.0) {
+                                const double centre = px(x);
+                                const double low = ylog && y - error[2] <= 0.0 ? 0.0 : std::clamp(py(y - error[2]), 0.0, tall);
+                                const double high = std::clamp(py(y + error[3]), 0.0, tall);
+                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(centre, low), point(centre, high));
+                                for (const double end : {low, high}) {
+                                    out += std::format("\\draw[{}] {} -- {};", color, point(centre - cap, end), point(centre + cap, end));
+                                }
+                            }
+                            if (error[0] > 0.0 || error[1] > 0.0) {
+                                const double up = py(y);
+                                const double low = xlog && x - error[0] <= 0.0 ? 0.0 : std::clamp(px(x - error[0]), 0.0, wide);
+                                const double high = std::clamp(px(x + error[1]), 0.0, wide);
+                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(low, up), point(high, up));
+                                for (const double end : {low, high}) {
+                                    out += std::format("\\draw[{}] {} -- {};", color, point(end, up - cap), point(end, up + cap));
+                                }
+                            }
+                        }
+
                         if (!mark.empty()) {
                             for (const auto& [x, y] : plot.points) {
                                 if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
@@ -730,17 +808,37 @@ namespace render::primitives {
 
             std::string_view spec = trim(text);
             if (spec.starts_with("coordinates")) {
+                // Each point, and after one an error written `+- (dx,dy)`:
+                // as much below as above, or `+=` above alone and `-=` below.
                 const std::string_view inside = braced(spec);
-                for (std::size_t open = inside.find('('); open != std::string_view::npos; open = inside.find('(', open + 1)) {
+                std::string_view pending;
+                for (std::size_t open = inside.find('('); open != std::string_view::npos;) {
                     const std::size_t close = inside.find(')', open);
                     if (close == std::string_view::npos) break;
                     const std::string_view pair = inside.substr(open + 1, close - open - 1);
+                    const std::size_t next = inside.find('(', close);
+                    const std::string_view sign = trim(inside.substr(close + 1, std::min(next, inside.size()) - close - 1));
                     const std::size_t comma = pair.find(',');
-                    open = close;
-                    if (comma == std::string_view::npos) continue;
-                    const auto x = abscissa(pair.substr(0, comma));
-                    const auto y = number(pair.substr(comma + 1));
-                    if (x && y) plot.points.emplace_back(*x, *y);
+                    const auto x = comma == std::string_view::npos ? std::nullopt
+                                   : pending.empty()               ? abscissa(pair.substr(0, comma))
+                                                                   : number(pair.substr(0, comma));
+                    const auto y = comma == std::string_view::npos ? std::nullopt : number(pair.substr(comma + 1));
+                    if (x && y && pending.empty()) {
+                        plot.points.emplace_back(*x, *y);
+                        plot.errors.push_back({gap, gap, gap, gap});
+                    } else if (x && y && !plot.errors.empty()) {
+                        std::array<double, 4>& error = plot.errors.back();
+                        if (pending != "+=") {
+                            error[0] = *x;
+                            error[2] = *y;
+                        }
+                        if (pending != "-=") {
+                            error[1] = *x;
+                            error[3] = *y;
+                        }
+                    }
+                    pending = sign == "+-" || sign == "+=" || sign == "-=" ? sign : std::string_view{};
+                    open = next;
                 }
             } else if (spec.starts_with("table")) {
                 spec.remove_prefix(5);
@@ -797,11 +895,31 @@ namespace render::primitives {
                     return fallback;
                 };
                 const std::size_t xi = column("x", 0), yi = column("y", 1);
+                // The columns errors are read from: `y error=dy` by name or
+                // `y error index=2`, as much below as above, or `y error
+                // plus` and `y error minus` each its own.
+                const auto errant = [&](const std::string_view key) -> std::optional<std::size_t> {
+                    if (!find(table, key) && !find(table, std::format("{} index", key))) return std::nullopt;
+                    return column(key, std::numeric_limits<std::size_t>::max());
+                };
+                std::array<std::optional<std::size_t>, 4> erring{};
+                for (std::size_t axle = 0; axle < 2; ++axle) {
+                    const std::string letter = axle == 0 ? "x" : "y";
+                    const auto both = errant(letter + " error");
+                    erring[2 * axle] = errant(letter + " error minus").has_value() ? errant(letter + " error minus") : both;
+                    erring[2 * axle + 1] = errant(letter + " error plus").has_value() ? errant(letter + " error plus") : both;
+                }
                 for (const std::vector<std::string>& row : rows) {
                     if (xi >= row.size() || yi >= row.size()) continue;
                     const auto x = abscissa(row[xi]);
                     const auto y = number(row[yi]);
-                    if (x && y) plot.points.emplace_back(*x, *y);
+                    if (!x || !y) continue;
+                    plot.points.emplace_back(*x, *y);
+                    std::array<double, 4> error{gap, gap, gap, gap};
+                    for (std::size_t side = 0; side < 4; ++side) {
+                        if (erring[side] && *erring[side] < row.size()) error[side] = number(row[*erring[side]]).value_or(gap);
+                    }
+                    plot.errors.push_back(error);
                 }
             } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with("file")) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,

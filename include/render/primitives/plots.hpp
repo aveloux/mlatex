@@ -4,6 +4,7 @@
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
+#include <array>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -90,6 +91,11 @@ namespace render::primitives {
             std::string options{};                        ///< As written.
             bool cycled{false};                           ///< Takes the next of pgfplots' colors and marks.
             std::vector<std::pair<double, double>> points{};   ///< Its data: x and y, NaN for a gap.
+
+            /// Each point's errors as its data gave them -- `+- (0,0.2)`, a
+            /// table's `y error` column -- below and above across, then below
+            /// and above up; NaN where none was given. Empty for a function.
+            std::vector<std::array<double, 4>> errors{};
         };
 
         /// @brief One axis being read: its kind, its options and its plots.

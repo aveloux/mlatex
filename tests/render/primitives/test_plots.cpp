@@ -53,6 +53,13 @@ static bool holds(const std::string_view text, const std::string_view part) {
     return text.find(part) != std::string_view::npos;
 }
 
+/// How many times a text holds another.
+static std::size_t count(const std::string_view text, const std::string_view part) {
+    std::size_t found = 0;
+    for (std::size_t at = text.find(part); at != std::string_view::npos; at = text.find(part, at + part.size())) ++found;
+    return found;
+}
+
 /// Whether a function comes to what it should, near enough.
 static bool comes(const std::string_view function, const double x, const double expected) {
     const auto value = render::primitives::Plots::calculate(function, x);
@@ -123,6 +130,26 @@ int main() {
     {
         const Result result = picture("\\begin{axis}\\addplot {nosuch(x)};\\end{axis}");
         assert(holds(result.errors, "is not a function this can work out") && "a function it cannot work out");
+    }
+    {
+        // Error bars: a line each way they are drawn and a bar across each
+        // end -- three strokes a point, given with the data, from a table's
+        // column, or the same for every point -- and the limits make room.
+        const Result plain = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
+                                     "\\addplot+[mark=none] coordinates {(0,1) (1,2)};\\end{axis}");
+        const Result given = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
+                                     "\\addplot+[mark=none, error bars/.cd, y dir=both, y explicit] "
+                                     "coordinates {(0,1) +- (0,0.5) (1,2) +- (0,0.25)};\\end{axis}");
+        const Result tabled = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
+                                      "\\addplot+[mark=none, error bars/y dir=plus, error bars/y explicit] "
+                                      "table[x=x, y=y, y error=e] {x y e \\\\ 0 1 0.5 \\\\ 1 2 0.25 \\\\};\\end{axis}");
+        const Result fixed = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
+                                     "\\addplot+[mark=none, error bars/.cd, x dir=both, x fixed=0.1] "
+                                     "coordinates {(0,1) (1,2)};\\end{axis}");
+        assert((plain.clean && given.clean && tabled.clean && fixed.clean) && "plots with error bars, each read");
+        assert((count(given.pdf, " l S") == count(plain.pdf, " l S") + 6) && "a bar and two ends a point");
+        assert((count(tabled.pdf, " l S") == count(plain.pdf, " l S") + 6) && "from a table's column, upwards");
+        assert((count(fixed.pdf, " l S") == count(plain.pdf, " l S") + 6) && "the same across for every point");
     }
     return 0;
 }

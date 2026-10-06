@@ -505,6 +505,13 @@ sees, newest work last within each group.
   `only marks`, `mark=`, dashes and widths; `ybar` with `symbolic x coords`
   and `xtick=data`; `enlargelimits`; a width or height alone scaling the
   other; `\legend` and `\addlegendentry`, in the corner `legend pos` names.
+- **pgfplots' error bars**: `error bars/.cd, y dir=both, y explicit` with
+  coordinates written `(1,2) +- (0,0.25)`, `+=` above alone and `-=`
+  below; a table's `y error=` column, by name or `y error index`, or `y
+  error plus` and `minus`; one amount for every point, `y fixed=0.1`, or a
+  share of each, `fixed relative`; across with `x dir`. Each is a line in
+  the plot's colour with a bar across each end, and the axis's limits make
+  room for them.
 - **Commutative diagrams are drawn**, each as the TikZ picture it is: a
   matrix of its objects and an arrow for each, its labels on the side the
   package puts them. tikz-cd's `\arrow` -- `"f"`, `"f"'` swapped,
