@@ -361,6 +361,7 @@ namespace render::primitives {
                 std::size_t cited{0};   // where it was first cited, for the styles that keep that order
             };
             std::vector<Entry> read;
+            std::string preamble;   // every @preamble's text, in the order read
             memory::Dictionary<std::string> strings{
                 {"jan", "January"}, {"feb", "February"}, {"mar", "March"}, {"apr", "April"}, {"may", "May"},
                 {"jun", "June"}, {"jul", "July"}, {"aug", "August"}, {"sep", "September"}, {"oct", "October"},
@@ -382,8 +383,9 @@ namespace render::primitives {
 
                 // The file as BibTeX reads it: `@type{key, field = value, ...}`,
                 // a value braced, quoted, a number or a @string's name, joined
-                // with #; @string defines a name, @comment and @preamble are read
-                // past, and anything outside an entry is a comment.
+                // with #; @string defines a name, @preamble's text goes ahead
+                // of the list as BibTeX writes it into the .bbl, @comment is
+                // read past, and anything outside an entry is a comment.
                 const std::string_view source = *text;
                 std::size_t at = 0;
                 const auto blanks = [&] {
@@ -447,7 +449,13 @@ namespace render::primitives {
                     if (at >= source.size() || (source[at] != '{' && source[at] != '(')) continue;
                     const char closing = source[at] == '{' ? '}' : ')';
                     ++at;
-                    if (type == "comment" || type == "preamble") {
+                    if (type == "preamble") {
+                        preamble += value();
+                        blanks();
+                        if (at < source.size() && source[at] == closing) ++at;
+                        continue;
+                    }
+                    if (type == "comment") {
                         std::size_t depth = 0;
                         while (at < source.size() && !(source[at] == closing && depth == 0)) {
                             if (source[at] == '{') ++depth;
@@ -817,9 +825,8 @@ namespace render::primitives {
             // natbib's styles print a URL, and say what \url is where no
             // package has: typewriter text, as theirs does, a line ending
             // after a slash where it must.
-            std::string written = natural || house != House::Standard
-                                      ? "\\providecommand{\\url}[1]{\\texttt{\\@breakable{#1}}}\n"
-                                      : std::string{};
+            std::string written = preamble.empty() ? std::string{} : preamble + "\n";
+            if (natural || house != House::Standard) written += "\\providecommand{\\url}[1]{\\texttt{\\@breakable{#1}}}\n";
             if (house == House::Springer) written += "\\providecommand{\\doi}[1]{\\url{https://doi.org/#1}}\n";
             written += std::format("\\begin{{thebibliography}}{{{}}}\n", alpha ? std::string("MMM99")
                                                                                : std::to_string(chosen.size()));

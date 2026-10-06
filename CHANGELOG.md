@@ -131,6 +131,9 @@ sees, newest work last within each group.
   `\bibliography` names can be, as a paper sent to a journal or the arXiv
   ships; natbib-style `\bibitem[Knuth(1984)]{knuth}` entries cite by author
   and year.
+- **`@preamble`** is kept, as BibTeX writes it into the `.bbl`: its text
+  goes ahead of the list, so a command the entries use -- `\noopsort`, a
+  logo -- is defined before they are set. It was read past.
 - **`\jobname`** is the document's file name without its extension.
 - **`\ifpdf`, `\ifPDFTeX`, `\ifxetex`, `\ifluatex`** and iftex's others are
   real conditionals, answering as pdfTeX does.

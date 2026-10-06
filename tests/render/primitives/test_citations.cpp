@@ -108,6 +108,19 @@ int main() {
         assert((holds(result.text, "Addison-Wesley,secondedition,1994.")) &&
                "an edition in lower case after the publisher");
     }
+    {
+        // @preamble's text goes ahead of the list, as BibTeX writes it into
+        // the .bbl: here a command the entries use.
+        latex::Host preambled;
+        preambled.files["macros.bib"] = "@preamble{ \"\\providecommand{\\TeXbook}{The \\TeX book}\" }\n"
+                                        "@book{knuth86, author = {Donald E. Knuth}, title = {\\TeXbook},\n"
+                                        "  publisher = {Addison-Wesley}, year = 1986}\n";
+        const Result result = typeset("\\documentclass{article}\\begin{document}\\cite{knuth86}."
+                                      "\\bibliographystyle{plain}\\bibliography{macros}\\end{document}",
+                                      preambled);
+        if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
+        assert((result.clean && holds(result.text, "TheTEXbook")) && "@preamble defines what the entries use");
+    }
 
     // --- By author and year -------------------------------------------------------
     {
