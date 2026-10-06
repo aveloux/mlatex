@@ -2267,8 +2267,8 @@ namespace render::primitives {
             // placed, and is read where it already lies rather than copied
             // first. Then beside the document, in its own folder first and
             // then in each \graphicspath gave.
-            // A picture's own forms first, then a PDF's page and PostScript,
-            // each drawn as a form, and SVG, found to have its place kept.
+            // A picture's own forms first, then a PDF's page, PostScript and
+            // SVG, each drawn as a form.
             static constexpr std::array<std::string_view, 9> extensions{
                 "", ".png", ".jpg", ".jpeg", ".webp", ".pdf", ".eps", ".ps", ".svg",
             };
@@ -2363,13 +2363,13 @@ namespace render::primitives {
                 if (!received) pictures.emplace(encoded.data(), stored);
             } else if (std::optional<graphics::Drawing> page = graphics::Drawing::decode(encoded, leaf)) {
                 // A PDF: its page drawn as a form, as pdfTeX draws one; an
-                // EPS picture, drawn as its page would be.
+                // EPS or an SVG picture, drawn as its page would be.
                 drawings.push_back(std::move(*page));
                 drawn = &drawings.back();
                 if (!received) sheets[encoded.data()].emplace_back(leaf, drawn);
             } else {
-                // A picture in a form this engine does not draw -- SVG, or
-                // a file that reads as none of them -- leaves its place framed and
+                // A picture in a form this engine does not draw -- a file
+                // that reads as none of them -- leaves its place framed and
                 // empty, as wide and as tall as its keys ask, and says so. An
                 // example picture is framed the same way, in its own
                 // proportions -- 4:3 unless its name says otherwise, each in

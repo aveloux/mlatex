@@ -25,7 +25,8 @@ namespace render::graphics {
         std::string_view file(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 
         // A picture in PostScript -- after the header a DOS EPS file with a
-        // preview opens with, at the place and the length it names.
+        // preview opens with, at the place and the length it names -- or in
+        // SVG, whose element may follow a declaration and comments.
         if (file.starts_with("\xC5\xD0\xD3\xC6") && file.size() >= 12) {
             const auto field = [&file](const std::size_t at) {
                 std::size_t value = 0;
@@ -39,6 +40,7 @@ namespace render::graphics {
             if (start < file.size()) file = file.substr(start, std::min(length, file.size() - start));
         }
         if (file.starts_with("%!PS")) return page == 1 ? script(file) : std::nullopt;
+        if (!file.starts_with("%PDF-") && file.substr(0, 8192).contains("<svg")) return page == 1 ? markup(file) : std::nullopt;
 
         if (!file.starts_with("%PDF-") || page < 1) return std::nullopt;
         constexpr std::size_t none = std::string_view::npos;

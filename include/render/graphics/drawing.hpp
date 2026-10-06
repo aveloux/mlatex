@@ -27,10 +27,11 @@ namespace render::graphics {
     /// those resources reach is copied, and numbered from 0 in the order it
     /// was reached, so the writer only renumbers them into its own file.
     ///
-    /// A picture drawn as PostScript arrives the same way: an EPS file's
-    /// program is run (script()) into the content of a page as large as its
-    /// picture, the same operators a PDF's page would hold -- paths, fills,
-    /// strokes, clips, colours -- its text set in PDF's standard faces.
+    /// A picture drawn as PostScript or SVG arrives the same way: an EPS
+    /// file's program is run (script()) and an SVG file's elements read
+    /// (markup()), each into the content of a page as large as its picture,
+    /// the same operators a PDF's page would hold -- paths, fills, strokes,
+    /// clips, colours -- its text set in PDF's standard faces.
     ///
     /// @par What it does not read
     /// An encrypted file, and contents compressed other than with Flate; a
@@ -63,11 +64,11 @@ namespace render::graphics {
             bool streamed{false};     ///< Whether it is a stream.
         };
 
-        /// @brief Reads a page of a PDF, or an EPS file's picture.
+        /// @brief Reads a page of a PDF, or an EPS or SVG file's picture.
         /// @param bytes The whole file.
         /// @param page  Which page, from 1; a picture has only the one.
-        /// @return The page, or std::nullopt when the bytes are no PDF or
-        ///         EPS this can read, or it has no such page.
+        /// @return The page, or std::nullopt when the bytes are no PDF, EPS
+        ///         or SVG this can read, or it has no such page.
         /// @complexity O(n) in the objects the page reaches, and linear in
         ///             the file's length when its cross-reference is broken;
         ///             a picture's, in what its program does or its elements.
@@ -101,6 +102,21 @@ namespace render::graphics {
         /// @return The picture, or std::nullopt with no bounding box.
         /// @complexity O(n) in what the program does, a few million steps at most.
         [[nodiscard]] static std::optional<Drawing> script(std::string_view file);
+
+        /// @brief An SVG file's picture: its elements read.
+        ///
+        /// The page is the picture's `width` and `height` -- a pixel three
+        /// quarters of a point, as Inkscape exports one -- or its `viewBox`'s.
+        /// Rectangles, circles, ellipses, lines, polylines, polygons and paths
+        /// -- every command of `d`, arcs and smooth curves included -- are
+        /// filled and stroked as their `fill`, `stroke` and `stroke-width`
+        /// say, inherited from the groups around them, through each group's
+        /// and each element's `transform`; `<use>` draws what it names again,
+        /// and text is set in the standard face its family is nearest.
+        /// @param file The file's text.
+        /// @return The picture, or std::nullopt when it holds no `<svg>`.
+        /// @complexity O(n) in the file's length.
+        [[nodiscard]] static std::optional<Drawing> markup(std::string_view file);
 
         /// @brief How wide letters stand in one of PDF's standard faces.
         /// @param face    The face: `Helvetica-Bold`, `Times-Roman`, `Courier`.

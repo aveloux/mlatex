@@ -116,15 +116,17 @@ int main() {
         assert((wrong.clean && holds(wrong.errors, "warning: \\includegraphics: the 'angle' key is not supported")) &&
                "a key it cannot honour is a warning that names it");
 
-        // PostScript is drawn as a PDF's page is, a form.
+        // PostScript and SVG are drawn as a PDF's page is, each a form.
         latex::Host drawn;
         drawn.files["chart.eps"] = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 50\n0 0 100 50 rectfill\n";
-        const Result vector = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
-                                      "\\includegraphics[width=4cm]{chart}\\end{document}",
+        drawn.files["shape.svg"] = "<svg width=\"80\" height=\"40\"><circle cx=\"40\" cy=\"20\" r=\"10\"/></svg>";
+        const Result vector = typeset("\\documentclass{article}\\usepackage{graphicx}\\usepackage{svg}\\begin{document}"
+                                      "\\includegraphics[width=4cm]{chart}\\includesvg[width=3cm]{shape}\\end{document}",
                                       drawn);
-        assert((vector.clean && vector.errors.empty()) && "an EPS picture, found without its extension");
-        assert((count(vector.pdf, "/Subtype /Form") == 1 && holds(vector.pdf, "/BBox [0 0 100 50]")) &&
-               "drawn as a form, its box its own");
+        assert((vector.clean && vector.errors.empty()) && "an EPS and an SVG picture, found without their extensions");
+        assert((count(vector.pdf, "/Subtype /Form") == 2 && holds(vector.pdf, "/BBox [0 0 100 50]") &&
+                holds(vector.pdf, "/BBox [0 0 60 30]")) &&
+               "each drawn as a form, its box its own");
 
         // A form it does not draw is framed, and said so.
         latex::Host unknown;

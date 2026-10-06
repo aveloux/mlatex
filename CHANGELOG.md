@@ -594,6 +594,16 @@ sees, newest work last within each group.
   samples follow it in the file, inline. A DOS EPS's binary header is
   passed over, a font's encrypted part skipped, and a program that never
   ends stopped where it stands.
+- **SVG pictures are drawn**: `\includesvg{shape}` and
+  `\includegraphics{shape.svg}` read the file's elements -- rectangles
+  (rounded too), circles, ellipses, lines, polylines, polygons and paths,
+  every command of `d` -- through each group's and each element's
+  `transform`, filled and stroked as their attributes, the `<style>` rules
+  naming their element, class or id, and their `style` say, with
+  `opacity`; `<use>` draws again what it names, a gradient is its first
+  colour, `clip-path` clips, and text is set in the standard face its
+  family is nearest, its spans in their order and from its anchor. A
+  pixel is three quarters of a point, as Inkscape exports one.
 - `\includegraphics{figure.tikz}` (or `.pgf`) reads the file as the picture
   it writes; mwe's `example-image`, `-a`, `-b`, `-c` and their kin are framed
   boxes of their size with their name in them.
@@ -875,8 +885,8 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-SVG is a placeholder, not drawn. beamer's overlays are one slide and its
-themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
+beamer's overlays are one slide and its themes are read, not drawn. By
+choice, never: `\write18`, reading a `.sty` or `.cls` from disk, and a second
 run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
 text — not that every feature of each is drawn.
