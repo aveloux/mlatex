@@ -70,6 +70,14 @@ int main() {
             ragged = ragged && line->box().order == layout::Node::Order::Fil;
         }
         assert((ragged) && "a ragged line's room goes to the fill at its end, its word spaces keeping their width");
+
+        // Every ragged line costs the same, so a tie goes to the later
+        // break, as TeX's does: the first line takes all four words that
+        // fit, not the first break it could.
+        const memory::Slice<layout::Node*> filled = breaker.compose(words(arena, 6));
+        std::size_t first = 0;
+        for (const layout::Node* node : filled[0]->box().list) first += node->type == layout::Node::Type::Box;
+        assert((filled.size() == 2 && first == 4) && "a ragged line filled before it breaks");
     }
     {
         const layout::Breaker breaker(arena, scratch, {.target = 100.0f});

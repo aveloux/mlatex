@@ -429,6 +429,11 @@ sees, newest work last within each group.
   a line `\kill` ends is measured and not drawn -- in a tabbing, a tabular or
   a longtable alike. It used to be printed, its columns glued together.
 - `\` ending a source line is a word space in a formula too, as `\ ` is.
+- **A ragged line is filled before it breaks**: every line of a ragged
+  paragraph costs the same, and a tie now goes to the later break, as
+  TeX's does, so `\raggedright`, a centred block and a beamer slide fill
+  each line in turn; a paragraph of two lines broke at its first chance,
+  a word or two on its first line.
 - **Space after a sentence** is TeX's: the space factor of `.`, `?` and `!`
   (3000), `:` (2000), `;` (1500) and `,` (1250) widens and loosens the space
   after it, and a capital before the full stop keeps it an abbreviation's;

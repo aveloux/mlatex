@@ -198,7 +198,10 @@ namespace render::layout {
                     if (cursor + 1 == count && entry.hyphenated) loss += 5000.0f;
                     if (std::abs(fitness - entry.fitness) > 1) loss += 10000.0f;
 
-                    if (loss < lowest) {
+                    // A tie goes to the later break, as TeX's does: a ragged
+                    // paragraph, every line of it costing the same, fills
+                    // each line before it breaks, not the first it may.
+                    if (loss <= lowest) {
                         lowest = loss;
                         best = &entry;
                         fit = fitness;
