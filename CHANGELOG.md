@@ -925,7 +925,7 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Documentation
 
-- `docs/packages.md`: where a package is found (aliases, provided packages,
+- `src/modules/packages.md` (was `docs/packages.md`): where a package is found (aliases, provided packages,
   warnings), the glossary, classes (beamer, letter, `\@bodyshape`,
   `\@bibkind`), long definitions, characters and category changes, links and
   text given later, and environments as native blocks. The Doxygen reference

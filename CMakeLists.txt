@@ -205,10 +205,12 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_MARKDOWN_ID_STYLE GITHUB)
 
     # The README is the front page, and the guides and policies beside the
-    # reference are pages of their own: how to write a package, the security
-    # policy, the changelog and the code of conduct.
+    # reference are pages of their own: how to write a package (read from
+    # src/modules/packages.md, beside the packages), the security policy,
+    # the changelog and the code of conduct. Everything is generated into
+    # the build tree's docs/; the source tree keeps no docs folder.
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${source}/README.md")
-    doxygen_add_docs(docs "${source}/README.md" "${source}/include" "${source}/src" "${source}/docs"
+    doxygen_add_docs(docs "${source}/README.md" "${source}/include" "${source}/src"
             "${source}/SECURITY.md" "${source}/CHANGELOG.md" "${source}/CODE_OF_CONDUCT.md"
             COMMENT "Generating documentation")
 endif()

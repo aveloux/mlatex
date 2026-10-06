@@ -218,7 +218,7 @@ bibliography before citing it.
 ### Writing packages
 
 A package is a folder containing `main.mtex`, written in the same language
-as a document. See [docs/packages.md](docs/packages.md).
+as a document. See [src/modules/packages.md](src/modules/packages.md).
 
 ## Embedding the engine
 
@@ -276,7 +276,7 @@ cmake --build cmake-build-release --target docs
 ```
 
 It is written to `cmake-build-release/docs/html`. The reference and
-[docs/packages.md](docs/packages.md) cover the engine's internals and
+[src/modules/packages.md](src/modules/packages.md) cover the engine's internals and
 package authoring. [CHANGELOG.md](CHANGELOG.md) describes every feature in
 detail.
 
