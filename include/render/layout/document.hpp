@@ -219,7 +219,7 @@ namespace render::layout {
         /// which a document changes by changing its language, as a
         /// Node::Directive::Command::Language in its place does.
         ///
-        /// @param language A Command::Language directive: its #hyphenator, or
+        /// @param language A Command::Language directive: its Node::Directive::hyphenator, or
         ///                 null to break no word, which must outlive the
         ///                 document; its least letters either side of a break;
         ///                 its digits; whether it is spaced as French is.
