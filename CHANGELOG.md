@@ -741,6 +741,19 @@ page's text goes.
   Visual Studio shell points VCPKG_ROOT at.
 - The presets name clang-cl by its full path and tell CLion to run them in
   its Visual Studio toolchain (`vendor` › `jetbrains.com/clion`).
+- **A release build packages itself.** `cmake --install` lays out `bin/`
+  (the program, the C library and on Windows every DLL it loads),
+  `assets/` (fonts, hyphenation) beside it, `lib/` and `include/latex/`
+  -- the shape `latex::locate` finds its assets in from anywhere. In a
+  Release tree, `cpack` (or the `package` target) makes an MSI with WiX
+  4's `wix` or WiX 3's tools, and a .zip, on Windows; a disk image holding
+  an `mLaTeX` folder to drag onto Applications, and a .tar.gz, on macOS;
+  a .deb, an .rpm when rpmbuild is there, and a .tar.gz on Linux, under
+  `/opt/mlatex` so TeX Live's own `latex` is left alone. Each is named for
+  its system and architecture -- `mlatex-0.1.0-windows-x64.msi`,
+  `mlatex_0.1.0_arm64.deb`, `mlatex-0.1.0-macos-universal.dmg` when
+  `CMAKE_OSX_ARCHITECTURES` names two -- and another architecture is
+  another build.
 
 ### For programs
 

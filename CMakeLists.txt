@@ -475,4 +475,145 @@ else()
 
     enable_testing()
     add_subdirectory(tests)
+
+    # What an installed copy holds, laid out the way the engine looks for it:
+    # the program in bin/ and assets/ beside bin/. latex::locate walks up from
+    # the executable to the first folder holding assets/fonts, so the tree
+    # works wherever it is put. The C library and its header go with it, for
+    # a program that links the engine instead of running it. English
+    # hyphenation and every package are compiled in; the other languages'
+    # patterns and the fonts are read from assets/ at run time.
+    install(TARGETS latex ffi
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib)
+    install(FILES "${source}/include/network/ffi.hpp" DESTINATION include/latex)
+    install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
+    if(WIN32)
+        # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
+        # program -- HarfBuzz, FreeType, the image libraries, zlib, the
+        # delay-loaded ones included -- goes beside it again, so an installed
+        # copy runs on a machine with no vcpkg. The C and C++ runtimes are
+        # linked in (CMAKE_MSVC_RUNTIME_LIBRARY above): no redistributable.
+        install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:latex>/*.dll\")
+            file(INSTALL \${libraries} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")")
+    endif()
+
+    # A release build packages itself: `cpack` in the build tree -- or the
+    # `package` target -- leaves an MSI on Windows, a disk image on macOS,
+    # and a .deb and an .rpm on Linux, each with an archive beside it. A
+    # build is for one architecture, and its packages are named for it --
+    # mlatex-0.1.0-windows-arm64.msi, mlatex_0.1.0_amd64.deb -- so another is
+    # another build: clang-cl for ARM64 with the arm64-windows triplet, an
+    # aarch64 compiler, or on macOS CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    # with universal libraries for a single disk image that runs on both.
+    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
+        if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+            set(processor "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
+        else()
+            set(processor "${CMAKE_SYSTEM_PROCESSOR}")
+        endif()
+        list(LENGTH CMAKE_OSX_ARCHITECTURES slices)
+        if(APPLE AND slices EQUAL 1)
+            set(processor "${CMAKE_OSX_ARCHITECTURES}")
+        endif()
+        string(TOLOWER "${processor}" processor)
+        if(APPLE AND slices GREATER 1)
+            set(architecture universal)
+        elseif(processor MATCHES "^(x64|x86_64|amd64)$")
+            set(architecture x64)
+        elseif(processor MATCHES "^(arm64|arm64ec|aarch64)$")
+            set(architecture arm64)
+        elseif(processor MATCHES "^(x86|i[3-6]86)$")
+            set(architecture x86)
+        else()
+            set(architecture "${processor}")
+        endif()
+        if(WIN32)
+            set(platform windows)
+        elseif(APPLE)
+            set(platform macos)
+        else()
+            set(platform linux)
+        endif()
+
+        set(CPACK_PACKAGE_NAME mlatex)
+        set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
+        set(CPACK_PACKAGE_CONTACT "Andres Hernandez <andromedeyz@hotmail.com>")
+        set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typesets LaTeX into PDF: one program, no TeX installation behind it")
+        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ApaxPhoenix/latex")
+        set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+        set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
+        set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
+        set(CPACK_STRIP_FILES ON)
+        # WiX takes a license as .txt or .rtf only.
+        configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
+        set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")
+
+        if(WIN32)
+            # An MSI when WiX is installed -- the .NET tool `wix`, version 4
+            # or later, or version 3's candle and light -- and a .zip always.
+            # The upgrade code never changes, so a newer MSI replaces an
+            # older one rather than installing beside it.
+            set(CPACK_GENERATOR ZIP)
+            find_program(toolset wix)
+            find_program(candle candle HINTS "$ENV{WIX}/bin")
+            if(toolset)
+                list(APPEND CPACK_GENERATOR WIX)
+                set(CPACK_WIX_VERSION 4)
+            elseif(candle)
+                list(APPEND CPACK_GENERATOR WIX)
+            else()
+                message(STATUS "No WiX found: packaging a .zip and no .msi")
+            endif()
+            set(CPACK_WIX_UPGRADE_GUID "AA871061-E247-40FB-A13C-CBA1467E7954")
+            set(CPACK_WIX_ARCHITECTURE "${architecture}")
+        elseif(APPLE)
+            # A disk image holding an mLaTeX folder and a link to
+            # Applications to drag it onto.
+            set(CPACK_GENERATOR DragNDrop TGZ)
+            set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
+        else()
+            # Debian's and Red Hat's packages, named as each names its own,
+            # and an archive for everything else. An .rpm needs rpmbuild.
+            set(CPACK_GENERATOR DEB TGZ)
+            find_program(builder rpmbuild)
+            if(builder)
+                list(APPEND CPACK_GENERATOR RPM)
+            endif()
+            set(debian ${architecture})
+            set(redhat ${architecture})
+            if(architecture STREQUAL "x64")
+                set(debian amd64)
+                set(redhat x86_64)
+            elseif(architecture STREQUAL "arm64")
+                set(redhat aarch64)
+            elseif(architecture STREQUAL "x86")
+                set(debian i386)
+                set(redhat i686)
+            endif()
+            set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${debian})
+            set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+            set(CPACK_DEBIAN_PACKAGE_SECTION tex)
+            set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+            set(CPACK_RPM_PACKAGE_ARCHITECTURE ${redhat})
+            set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+            set(CPACK_RPM_PACKAGE_LICENSE AGPL-3.0-only)
+            set(CPACK_RPM_PACKAGE_GROUP Applications/Publishing)
+            set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /opt)
+        endif()
+
+        # Where each package puts the tree: an mLaTeX folder in the disk
+        # image, and /opt/mlatex for Debian and Red Hat -- whose own `latex`
+        # is TeX Live's, in /usr/bin, and is left alone.
+        file(CONFIGURE OUTPUT "${binary}/packaging.cmake" CONTENT [[
+if(CPACK_GENERATOR STREQUAL "DragNDrop")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/mLaTeX")
+elseif(CPACK_GENERATOR STREQUAL "DEB" OR CPACK_GENERATOR STREQUAL "RPM")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/mlatex")
+endif()
+]] @ONLY)
+        set(CPACK_PROJECT_CONFIG_FILE "${binary}/packaging.cmake")
+        include(CPack)
+    endif()
 endif()
