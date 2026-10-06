@@ -2,6 +2,7 @@
 /// @brief pgfplots: an axis and its plots, worked out as the axis closes and
 ///        drawn with TikZ's own `\\draw` and `\\node` in the picture around it.
 #include "render/primitives/plots.hpp"
+#include "render/primitives/colors.hpp"
 #include "logger.hpp"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <format>
 #include <limits>
 #include <numbers>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -477,10 +479,16 @@ namespace render::primitives {
                     const double ox = crossing ? std::clamp((0.0 - xlo) / (xhi - xlo) * wide, 0.0, wide) : 0.0;
                     const double oy = crossing ? std::clamp((0.0 - ylo) / (yhi - ylo) * tall, 0.0, tall) : 0.0;
 
+                    // Whether it is drawn in three dimensions, below, and
+                    // none of what follows in two.
+                    const bool deep = has("view") || std::ranges::any_of(axis.plots, [](const Plot& plot) {
+                                          return !plot.solid.empty();
+                                      });
+
                     // The grid, under everything else.
                     const std::string_view grid = find(settings, "grid").value_or("");
-                    const bool xgrid = grid == "major" || grid == "both" || has("xmajorgrids");
-                    const bool ygrid = grid == "major" || grid == "both" || has("ymajorgrids");
+                    const bool xgrid = !deep && (grid == "major" || grid == "both" || has("xmajorgrids"));
+                    const bool ygrid = !deep && (grid == "major" || grid == "both" || has("ymajorgrids"));
                     for (const double v : xs) {
                         const double at = px(v);
                         if (xgrid && at > 0.01 && at < wide - 0.01) {
@@ -539,6 +547,386 @@ namespace render::primitives {
                             out += std::format("{} {} circle (2pt);", how, point(x, y));
                         }
                     };
+                    // In three dimensions -- `\addplot3`, or an axis given a
+                    // `view` -- the data's box seen from the azimuth and the
+                    // elevation `view={25}{30}` gives, as pgfplots projects
+                    // it: x's unit (cos a, -sin a sin e), y's (sin a, cos a
+                    // sin e) and z's (0, cos e), stretched to the axis's
+                    // width and height. Its back edges and their grid, then
+                    // each surface's faces filled from the colormap by their
+                    // height, the farthest first, each mesh's lines and each
+                    // curve over them; ticks along the bottom front edges and
+                    // the leftmost upright one, the labels outside them, and
+                    // a `colorbar` at its right.
+                    if (deep) {
+                        double azimuth = 25.0;
+                        double elevation = 30.0;
+                        if (const auto view = find(settings, "view")) {
+                            std::vector<double> angles;
+                            for (std::size_t at = 0; at < view->size();) {
+                                double value = 0.0;
+                                const auto [stop, failure] = std::from_chars(view->data() + at, view->data() + view->size(), value);
+                                if (failure != std::errc{}) {
+                                    ++at;
+                                    continue;
+                                }
+                                angles.push_back(value);
+                                at = static_cast<std::size_t>(stop - view->data());
+                            }
+                            if (!angles.empty()) azimuth = angles[0];
+                            if (angles.size() > 1) elevation = angles[1];
+                        }
+                        if (const auto turned = find(settings, "view/h")) azimuth = number(*turned).value_or(azimuth);
+                        if (const auto raised = find(settings, "view/v")) elevation = number(*raised).value_or(elevation);
+
+                        // The data's box: its least and most each way, or what
+                        // the options set.
+                        constexpr double unbounded = std::numeric_limits<double>::infinity();
+                        std::array<double, 3> least{unbounded, unbounded, unbounded};
+                        std::array<double, 3> most{-unbounded, -unbounded, -unbounded};
+                        for (const Plot& plot : axis.plots) {
+                            for (const std::array<double, 3>& spot : plot.solid) {
+                                if (!std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); })) continue;
+                                for (std::size_t axle = 0; axle < 3; ++axle) {
+                                    least[axle] = std::min(least[axle], spot[axle]);
+                                    most[axle] = std::max(most[axle], spot[axle]);
+                                }
+                            }
+                        }
+                        static constexpr std::array<std::string_view, 3> letters{"x", "y", "z"};
+                        for (std::size_t axle = 0; axle < 3; ++axle) {
+                            if (!std::isfinite(least[axle])) {
+                                least[axle] = 0.0;
+                                most[axle] = 1.0;
+                            }
+                            const std::string low = std::format("{}min", letters[axle]);
+                            const std::string high = std::format("{}max", letters[axle]);
+                            if (const auto value = number(find(settings, low).value_or(""))) least[axle] = *value;
+                            if (const auto value = number(find(settings, high).value_or(""))) most[axle] = *value;
+                            if (most[axle] - least[axle] < 1e-12) {
+                                least[axle] -= 1.0;
+                                most[axle] += 1.0;
+                            }
+                        }
+
+                        // A point's share of the box each way; where that
+                        // stands on the page; and how near it is to the eye,
+                        // along (sin a cos e, -cos a cos e, sin e).
+                        const double a = azimuth * std::numbers::pi / 180.0;
+                        const double e = elevation * std::numbers::pi / 180.0;
+                        const auto share = [&](const std::array<double, 3>& spot) {
+                            std::array<double, 3> found{};
+                            for (std::size_t axle = 0; axle < 3; ++axle) {
+                                found[axle] = (spot[axle] - least[axle]) / (most[axle] - least[axle]);
+                            }
+                            return found;
+                        };
+                        const auto plane = [&](const std::array<double, 3>& part) {
+                            return std::pair{part[0] * std::cos(a) + part[1] * std::sin(a),
+                                             -part[0] * std::sin(a) * std::sin(e) + part[1] * std::cos(a) * std::sin(e) +
+                                                 part[2] * std::cos(e)};
+                        };
+                        const std::array<double, 3> eye{std::sin(a) * std::cos(e), -std::cos(a) * std::cos(e), std::sin(e)};
+                        const auto nearness = [&eye](const std::array<double, 3>& part) {
+                            return part[0] * eye[0] + part[1] * eye[1] + part[2] * eye[2];
+                        };
+                        double left = unbounded, right = -unbounded, bottom = unbounded, top = -unbounded;
+                        for (int corner = 0; corner < 8; ++corner) {
+                            const auto [p, q] = plane({static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
+                                                       static_cast<double>((corner >> 2) & 1)});
+                            left = std::min(left, p);
+                            right = std::max(right, p);
+                            bottom = std::min(bottom, q);
+                            top = std::max(top, q);
+                        }
+                        const auto place = [&](const std::array<double, 3>& part) {
+                            const auto [p, q] = plane(part);
+                            return std::pair{(p - left) / std::max(right - left, 1e-9) * wide,
+                                             (q - bottom) / std::max(top - bottom, 1e-9) * tall};
+                        };
+                        const auto at = [&](const std::array<double, 3>& part) {
+                            const auto [p, q] = place(part);
+                            return point(p, q);
+                        };
+
+                        // The colormap: pgfplots' `hot` unless the options
+                        // name another, its stops each a colour defined once,
+                        // and a height's colour the two stops around it mixed.
+                        static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> maps{{
+                            {"hot", "0 0 0 1;0.33 1 1 0;0.67 1 0.5 0;1 1 0 0"},
+                            {"hot2", "0 0 0 0;0.33 1 0 0;0.67 1 1 0;1 1 1 1"},
+                            {"jet", "0 0 0 0.5;0.125 0 0 1;0.375 0 1 1;0.625 1 1 0;0.875 1 0 0;1 0.5 0 0"},
+                            {"viridis", "0 0.267 0.005 0.329;0.25 0.231 0.322 0.545;0.5 0.129 0.569 0.553;"
+                                        "0.75 0.369 0.788 0.384;1 0.992 0.906 0.145"},
+                            {"cool", "0 0 1 1;1 1 0 1"},
+                            {"blackwhite", "0 0 0 0;1 1 1 1"},
+                            {"bluered", "0 0 0 0.7;0.2 0 0 1;0.4 0 1 1;0.6 1 1 0;0.8 1 0 0;1 0.5 0 0"},
+                            {"greenyellow", "0 0 0.5 0;1 1 1 0"},
+                            {"redyellow", "0 1 0 0;1 1 1 0"},
+                            {"violet", "0 0.1 0.1 0.4;0.5 0.5 0.1 0.6;1 0.9 0.9 1"},
+                        }};
+                        std::string_view named = find(settings, "colormap name").value_or("hot");
+                        for (const auto& [key, value] : settings) {
+                            if (key.starts_with("colormap/") && value.empty()) named = key.substr(9);
+                        }
+                        const auto chosen = std::ranges::find(maps, named, &std::pair<std::string_view, std::string_view>::first);
+                        std::vector<double> stops;
+                        for (const auto piece : std::views::split(chosen != maps.end() ? chosen->second : maps.front().second, ';')) {
+                            const std::string_view stop(piece.begin(), piece.end());
+                            std::array<double, 4> values{};
+                            std::size_t from = 0;
+                            for (double& value : values) {
+                                while (from < stop.size() && stop[from] == ' ') ++from;
+                                from = static_cast<std::size_t>(std::from_chars(stop.data() + from, stop.data() + stop.size(), value).ptr -
+                                                                stop.data());
+                            }
+                            out += std::format("\\definecolor{{pgfplotsmap{}}}{{rgb}}{{{:.3f},{:.3f},{:.3f}}}", stops.size(), values[1],
+                                               values[2], values[3]);
+                            stops.push_back(values[0]);
+                        }
+                        const auto mapped = [&](const double height) {
+                            const double t = std::clamp((height - least[2]) / (most[2] - least[2]), 0.0, 1.0);
+                            std::size_t index = 0;
+                            while (index + 2 < stops.size() && t > stops[index + 1]) ++index;
+                            const double span = std::max(stops[index + 1] - stops[index], 1e-9);
+                            return std::format("pgfplotsmap{}!{}!pgfplotsmap{}", index + 1,
+                                               std::lround(std::clamp((t - stops[index]) / span, 0.0, 1.0) * 100.0), index);
+                        };
+
+                        // The box's corner nearest the eye; its back edges,
+                        // every one not meeting that corner.
+                        const std::array<double, 3> front{eye[0] > 0.0 ? 1.0 : 0.0, eye[1] > 0.0 ? 1.0 : 0.0, eye[2] > 0.0 ? 1.0 : 0.0};
+                        const double floor = 1.0 - front[2];
+                        for (int corner = 0; corner < 8; ++corner) {
+                            const std::array<double, 3> from{static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
+                                                             static_cast<double>((corner >> 2) & 1)};
+                            for (std::size_t axle = 0; axle < 3; ++axle) {
+                                if (from[axle] != 0.0) continue;
+                                std::array<double, 3> to = from;
+                                to[axle] = 1.0;
+                                if (from == front || to == front) continue;
+                                out += std::format("\\draw {} -- {};", at(from), at(to));
+                            }
+                        }
+
+                        // Each axis's ticks, and the edge they stand on: x
+                        // along the bottom's front, y along its side, z up
+                        // the leftmost upright edge.
+                        std::array<double, 2> upright{0.0, 0.0};
+                        for (const double u : {0.0, 1.0}) {
+                            for (const double v : {0.0, 1.0}) {
+                                if (place({u, v, 0.0}).first < place({upright[0], upright[1], 0.0}).first - 1e-9) upright = {u, v};
+                            }
+                        }
+                        const std::array<std::array<std::array<double, 3>, 2>, 3> edges{{
+                            {{{0.0, front[1], floor}, {1.0, front[1], floor}}},
+                            {{{front[0], 0.0, floor}, {front[0], 1.0, floor}}},
+                            {{{upright[0], upright[1], 0.0}, {upright[0], upright[1], 1.0}}},
+                        }};
+                        const auto extent = [&](const std::array<std::array<double, 3>, 2>& edge) {
+                            const auto [p, q] = place(edge[0]);
+                            const auto [r, s] = place(edge[1]);
+                            return std::hypot(r - p, s - q);
+                        };
+                        const auto anchored = [](const double dx, const double dy) -> std::string_view {
+                            if (std::abs(dx) > 1.5 * std::abs(dy)) return dx > 0.0 ? "west" : "east";
+                            if (std::abs(dy) > 1.5 * std::abs(dx)) return dy > 0.0 ? "south" : "north";
+                            return dy > 0.0 ? (dx > 0.0 ? "south west" : "south east") : (dx > 0.0 ? "north west" : "north east");
+                        };
+                        const std::string_view grid3 = find(settings, "grid").value_or("");
+                        const bool gridded = grid3 == "major" || grid3 == "both";
+                        for (std::size_t axle = 0; axle < 3; ++axle) {
+                            const std::array<std::array<double, 3>, 2>& edge = edges[axle];
+                            const std::vector<double> marks = ticks(std::format("{}tick", letters[axle]), least[axle], most[axle],
+                                                                    extent(edge), false);
+                            // Outward: from the floor's middle to the edge's,
+                            // leaning down, so a bottom edge's numbers stand
+                            // below it and clear of z's at the corner they
+                            // share; z's to the left.
+                            std::array<double, 3> middle{0.5, 0.5, floor};
+                            std::array<double, 3> halfway{};
+                            for (std::size_t index = 0; index < 3; ++index) halfway[index] = (edge[0][index] + edge[1][index]) / 2.0;
+                            const auto [mx, my] = place(middle);
+                            const auto [hx, hy] = place(halfway);
+                            const double lateral = hx - mx;
+                            const double vertical = hy - my - 0.8 * std::max(std::hypot(hx - mx, hy - my), 1e-9);
+                            const double reach = std::max(std::hypot(lateral, vertical), 1e-9);
+                            const double dx = axle == 2 ? -1.0 : lateral / reach;
+                            const double dy = axle == 2 ? 0.0 : vertical / reach;
+                            for (std::size_t index = 0; index < marks.size(); ++index) {
+                                const double part = (marks[index] - least[axle]) / (most[axle] - least[axle]);
+                                if (part < -1e-9 || part > 1.0 + 1e-9) continue;
+                                std::array<double, 3> spot = edge[0];
+                                spot[axle] = part;
+                                if (gridded) {
+                                    // Across the two back faces it lies in.
+                                    for (std::size_t other = 0; other < 3; ++other) {
+                                        if (other == axle) continue;
+                                        std::array<double, 3> from = spot;
+                                        std::array<double, 3> to = spot;
+                                        for (std::size_t third = 0; third < 3; ++third) {
+                                            if (third == axle || third == other) continue;
+                                            from[third] = to[third] = third == 2 ? floor : 1.0 - front[third];
+                                        }
+                                        from[other] = 0.0;
+                                        to[other] = 1.0;
+                                        out += std::format("\\draw[black!25] {} -- {};", at(from), at(to));
+                                    }
+                                }
+                                const auto [px3, py3] = place(spot);
+                                out += std::format("\\draw {} -- {};", point(px3, py3), point(px3 - dx * 3.0, py3 - dy * 3.0));
+                                const std::string text = labelled(std::format("{}ticklabels", letters[axle]), marks[index], index, false);
+                                if (!text.empty()) {
+                                    out += std::format("\\node[anchor={}] at {} {{{}}};", anchored(dx, dy),
+                                                       point(px3 + dx * 3.0, py3 + dy * 3.0), text);
+                                }
+                            }
+                            if (const auto label = find(settings, std::format("{}label", letters[axle]))) {
+                                // z's label upright, beside its numbers.
+                                const auto [lx, ly] = place(halfway);
+                                const double apart = axle == 2 ? 26.0 : 18.0;
+                                const std::string written = axle == 2 ? std::format("\\rotatebox{{90}}{{{}}}", *label)
+                                                                      : std::string(*label);
+                                out += std::format("\\node[anchor={}] at {} {{{}}};", anchored(dx, dy),
+                                                   point(lx + dx * apart, ly + dy * apart), written);
+                            }
+                        }
+
+                        // The surfaces' faces and the meshes' lines, the
+                        // farthest first; then each curve, its marks on it.
+                        struct Face {
+                            double near;                                   // how near its middle is to the eye
+                            std::vector<std::array<double, 3>> corners;   // in the box's shares
+                            std::string color;                             // from the colormap
+                            bool filled;                                   // a surface's face, or a mesh's line
+                            bool faceted;                                  // its edges drawn darker
+                        };
+                        std::vector<Face> faces;
+                        for (std::size_t index = 0; index < axis.plots.size(); ++index) {
+                            const Plot& plot = axis.plots[index];
+                            if (plot.solid.empty()) continue;
+                            const Pairs own = read(plot.options);
+                            const bool surface = find(own, "surf").has_value();
+                            const bool mesh = find(own, "mesh").has_value();
+                            const std::string_view shader = find(own, "shader").value_or("faceted");
+                            const std::size_t stride = plot.columns;
+                            const auto whole = [&](const std::size_t at) {
+                                return std::ranges::all_of(plot.solid[at], [](const double value) { return std::isfinite(value); });
+                            };
+                            if ((surface || mesh) && stride > 1) {
+                                const std::size_t down = plot.solid.size() / stride;
+                                for (std::size_t row = 0; row < down; ++row) {
+                                    for (std::size_t column = 0; column < stride; ++column) {
+                                        const std::size_t here = row * stride + column;
+                                        std::vector<std::size_t> taken;
+                                        if (surface && row + 1 < down && column + 1 < stride) {
+                                            taken = {here, here + 1, here + stride + 1, here + stride};
+                                        }
+                                        std::vector<std::vector<std::size_t>> strokes;
+                                        if (mesh && column + 1 < stride) strokes.push_back({here, here + 1});
+                                        if (mesh && row + 1 < down) strokes.push_back({here, here + stride});
+                                        if (!taken.empty()) strokes.push_back(std::move(taken));
+                                        for (const std::vector<std::size_t>& corners : strokes) {
+                                            if (!std::ranges::all_of(corners, whole)) continue;
+                                            Face face{.near = 0.0, .corners = {}, .color = {}, .filled = corners.size() == 4,
+                                                      .faceted = shader == "faceted"};
+                                            double height = 0.0;
+                                            for (const std::size_t corner : corners) {
+                                                face.corners.push_back(share(plot.solid[corner]));
+                                                face.near += nearness(face.corners.back());
+                                                height += plot.solid[corner][2];
+                                            }
+                                            face.near /= static_cast<double>(corners.size());
+                                            face.color = mapped(height / static_cast<double>(corners.size()));
+                                            faces.push_back(std::move(face));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        std::ranges::sort(faces, {}, &Face::near);
+                        for (const Face& face : faces) {
+                            if (face.filled) {
+                                out += face.faceted ? std::format("\\filldraw[fill={0},draw={0}!70!black,very thin] ", face.color)
+                                                    : std::format("\\fill[{}] ", face.color);
+                            } else {
+                                out += std::format("\\draw[{}] ", face.color);
+                            }
+                            for (const std::array<double, 3>& corner : face.corners) out += at(corner) + " -- ";
+                            out.resize(out.size() - 4);
+                            out += face.filled ? " -- cycle;" : ";";
+                        }
+                        for (std::size_t index = 0; index < axis.plots.size(); ++index) {
+                            const Plot& plot = axis.plots[index];
+                            const Pairs own = read(plot.options);
+                            if (plot.solid.empty() || ((find(own, "surf") || find(own, "mesh")) && plot.columns > 1)) continue;
+                            std::string color = plot.cycled ? std::string(cycle[index % cycle.size()].first) : "black";
+                            std::string mark = plot.cycled ? std::string(cycle[index % cycle.size()].second) : "";
+                            std::string kept;
+                            bool line = true;
+                            for (const auto& [key, value] : own) {
+                                if (key == "color" || key == "draw") color = value;
+                                else if (key.contains("thick") || key.contains("thin") || key.contains("dash") ||
+                                         key.contains("dot") || key == "solid" || key == "line width") {
+                                    kept += std::format(",{}{}{}", key, value.empty() ? "" : "=", value);
+                                } else if (key == "mark") mark = value == "none" ? "" : std::string(value);
+                                else if (key == "only marks") line = false;
+                                else if (key == "no marks" || key == "no markers") mark.clear();
+                                else if (value.empty() && (Colors::resolve(key, context.variables) != graphics::black ||
+                                                           key.starts_with("black"))) {
+                                    color = key;
+                                }
+                            }
+                            // A grid's rows, each a line; a list, one.
+                            const std::size_t run = plot.columns > 1 ? plot.columns : plot.solid.size();
+                            for (std::size_t begin = 0; line && begin < plot.solid.size(); begin += run) {
+                                std::string path;
+                                for (std::size_t step = begin; step < std::min(begin + run, plot.solid.size()); ++step) {
+                                    if (!std::ranges::all_of(plot.solid[step], [](const double value) { return std::isfinite(value); })) {
+                                        if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};", color, kept, path);
+                                        path.clear();
+                                        continue;
+                                    }
+                                    path += (path.empty() ? "" : " -- ") + at(share(plot.solid[step]));
+                                }
+                                if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};", color, kept, path);
+                            }
+                            for (const std::array<double, 3>& spot : plot.solid) {
+                                if (mark.empty() || !std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); })) continue;
+                                const auto [mx, my] = place(share(spot));
+                                dot(mark, color, mx, my);
+                            }
+                        }
+
+                        // The colorbar: the colormap from the lowest height
+                        // up, beside the box, its heights' ticks at its right.
+                        if (has("colorbar")) {
+                            constexpr double gap3 = 12.0;
+                            constexpr double thick = 10.0;
+                            for (int slice = 0; slice < 40; ++slice) {
+                                const double from = tall * slice / 40.0;
+                                const double to = tall * (slice + 1) / 40.0;
+                                out += std::format("\\fill[{}] {} rectangle {};",
+                                                   mapped(least[2] + (most[2] - least[2]) * (slice + 0.5) / 40.0),
+                                                   point(wide + gap3, from), point(wide + gap3 + thick, to));
+                            }
+                            out += std::format("\\draw {} rectangle {};", point(wide + gap3, 0.0), point(wide + gap3 + thick, tall));
+                            const std::vector<double> heights = ticks("ztick", least[2], most[2], tall, false);
+                            for (std::size_t index = 0; index < heights.size(); ++index) {
+                                const double up = (heights[index] - least[2]) / (most[2] - least[2]) * tall;
+                                if (up < -0.01 || up > tall + 0.01) continue;
+                                out += std::format("\\draw {} -- {};", point(wide + gap3 + thick, up), point(wide + gap3 + thick - 3.0, up));
+                                out += std::format("\\node[right] at {} {{{}}};", point(wide + gap3 + thick, up),
+                                                   labelled("zticklabels", heights[index], index, false));
+                            }
+                        }
+                        if (const auto title = find(settings, "title")) {
+                            out += std::format("\\node[above] at {} {{{}}};", point(wide / 2.0, tall + 4.0), *title);
+                        }
+                        mouth.ingest(context.arena.copy(out));
+                        return;
+                    }
+
                     // The regions `fill between` asks for, under every line:
                     // the first plot's points along and the second's back,
                     // within `soft clip`'s domain -- each curve's end where
@@ -844,6 +1232,9 @@ namespace render::primitives {
         // or two, as a parametric curve.
         parser.mouth.bind("\\addplot", [this, &context, trim, split, read, find, number, spelled](syntax::Mouth& mouth) {
             const memory::Location origin = mouth.lookahead().location;
+            // `\addplot3`: the control word, then its 3.
+            const bool three = mouth.lookahead().is('3');
+            if (three) mouth.read();
             bool cycled = true;
             if (mouth.lookahead().is('+')) {
                 mouth.read();
@@ -893,7 +1284,19 @@ namespace render::primitives {
             };
 
             std::string_view spec = trim(text);
-            if (spec.starts_with("coordinates")) {
+            if (three && spec.starts_with("coordinates")) {
+                // Each point in three dimensions, `(x,y,z)`.
+                const std::string_view inside = braced(spec);
+                for (std::size_t open = inside.find('('); open != std::string_view::npos; open = inside.find('(', open + 1)) {
+                    const std::size_t close = inside.find(')', open);
+                    if (close == std::string_view::npos) break;
+                    const std::vector<std::string_view> parts = split(inside.substr(open + 1, close - open - 1));
+                    open = close;
+                    if (parts.size() != 3) continue;
+                    const auto x = number(parts[0]), y = number(parts[1]), z = number(parts[2]);
+                    if (x && y && z) plot.solid.push_back({*x, *y, *z});
+                }
+            } else if (spec.starts_with("coordinates")) {
                 // Each point, and after one an error written `+- (dx,dy)`:
                 // as much below as above, or `+=` above alone and `-=` below.
                 const std::string_view inside = braced(spec);
@@ -981,6 +1384,17 @@ namespace render::primitives {
                     return fallback;
                 };
                 const std::size_t xi = column("x", 0), yi = column("y", 1);
+                if (three) {
+                    // In three dimensions, z from its column too, and no
+                    // row read again in two.
+                    const std::size_t zi = column("z", 2);
+                    for (const std::vector<std::string>& row : rows) {
+                        if (xi >= row.size() || yi >= row.size() || zi >= row.size()) continue;
+                        const auto x = number(row[xi]), y = number(row[yi]), z = number(row[zi]);
+                        if (x && y && z) plot.solid.push_back({*x, *y, *z});
+                    }
+                    rows.clear();
+                }
                 // The columns errors are read from: `y error=dy` by name or
                 // `y error index=2`, as much below as above, or `y error
                 // plus` and `y error minus` each its own.
@@ -1044,7 +1458,44 @@ namespace render::primitives {
                     number(find(own, "samples").value_or(find(settings, "samples").value_or("25"))).value_or(25.0), 2.0,
                     2000.0);
                 bool any = false;
-                for (double step = 0.0; step < count; step += 1.0) {
+                if (three) {
+                    // In three dimensions: z a function of x and y over the
+                    // domain and `y domain`, `samples` by `samples y` points
+                    // a row at a time -- or three functions of them,
+                    // `({cos(x)}, {sin(x)}, {x})`, a curve with `samples y=0`.
+                    std::vector<std::string_view> parts{along};
+                    if (spec.starts_with('(')) parts = split(spec.substr(1, spec.rfind(')') - 1));
+                    for (std::string_view& part : parts) part = trim(part);
+                    const std::string_view upward = find(own, "y domain").value_or(find(own, "domain y").value_or(
+                        find(settings, "y domain").value_or(find(settings, "domain y").value_or(domain))));
+                    const std::size_t mark = upward.find(':');
+                    const double bottom = number(upward.substr(0, mark)).value_or(low);
+                    const double top = mark == std::string_view::npos ? high : number(upward.substr(mark + 1)).value_or(high);
+                    const double rows = std::clamp(
+                        number(find(own, "samples y").value_or(find(settings, "samples y").value_or(""))).value_or(count),
+                        0.0, 2000.0);
+                    const bool curve = rows < 1.0 || (parts.size() == 3 && std::ranges::none_of(parts, [](const std::string_view part) {
+                                           return part.find('y') != std::string_view::npos;
+                                       }));
+                    for (double row = 0.0; row < (curve ? 1.0 : rows); row += 1.0) {
+                        const double y = curve ? gap : bottom + (top - bottom) * row / std::max(rows - 1.0, 1.0);
+                        for (double step = 0.0; step < count; step += 1.0) {
+                            const double x = low + (high - low) * step / (count - 1.0);
+                            std::array<double, 3> spot{x, y, gap};
+                            if (parts.size() == 3) {
+                                for (std::size_t axle = 0; axle < 3; ++axle) {
+                                    spot[axle] = calculate(parts[axle], x, y).value_or(gap);
+                                }
+                            } else {
+                                spot[2] = calculate(parts.front(), x, y).value_or(gap);
+                            }
+                            any = any || std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); });
+                            plot.solid.push_back(spot);
+                        }
+                    }
+                    if (!curve) plot.columns = static_cast<std::size_t>(count);
+                }
+                for (double step = 0.0; step < count && !three; step += 1.0) {
                     const double x = low + (high - low) * step / (count - 1.0);
                     const auto y = calculate(along, x);
                     const auto t = across.empty() ? std::optional<double>(x) : calculate(across, x);
@@ -1054,6 +1505,19 @@ namespace render::primitives {
                 if (!any) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
                                              std::format("\\addplot: '{}' is not a function this can work out", along));
+                }
+            }
+            // Points in three dimensions are a surface's grid as `mesh/cols`
+            // says, or when the first of them share their y and the rest
+            // come as many at a time: a row while y holds, as pgfplots reads
+            // a grid.
+            if (three && plot.columns == 0) {
+                if (const auto columns = number(find(own, "mesh/cols").value_or(""))) {
+                    plot.columns = static_cast<std::size_t>(std::max(*columns, 0.0));
+                } else if (plot.solid.size() > 2) {
+                    std::size_t first = 1;
+                    while (first < plot.solid.size() && plot.solid[first][1] == plot.solid[0][1]) ++first;
+                    if (first > 1 && first < plot.solid.size() && plot.solid.size() % first == 0) plot.columns = first;
                 }
             }
             axis.plots.push_back(std::move(plot));

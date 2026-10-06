@@ -169,5 +169,23 @@ int main() {
                                     "\\addplot fill between[of=f and nothing];\\end{axis}");
         assert((holds(lost.errors, "fill between: no plot named 'nothing'")) && "a plot it cannot find is named");
     }
+    {
+        // In three dimensions: a surface's faces each filled from the
+        // colormap, the colorbar beside it in slices; a mesh's lines; a
+        // curve through points, seen from the view given.
+        const Result faced = picture("\\begin{axis}[zlabel={height}, colorbar]"
+                                       "\\addplot3[surf, samples=5, domain=0:1] {x*y};\\end{axis}");
+        assert((faced.clean && faced.errors.empty() && holds(faced.text, "height")) && "a surface, its z labelled");
+        assert((count(faced.pdf, "\nh f\n") == 16 + 40) && "four by four faces filled, and forty slices of colorbar");
+        const Result mesh = picture("\\begin{axis}\\addplot3[mesh, samples=4, domain=0:1] {x+y};\\end{axis}");
+        assert((mesh.clean && count(mesh.pdf, "\nh f\n") == 0 && count(mesh.pdf, " l S") >= 24) &&
+               "a mesh of lines, three by four each way, none filled");
+        const Result curve = picture("\\begin{axis}[view={60}{30}]"
+                                     "\\addplot3[red] coordinates {(0,0,0) (1,1,1) (2,0,2)};"
+                                     "\\addplot3[blue, domain=0:6, samples=30, samples y=0] ({cos(deg(x))}, {sin(deg(x))}, {x});"
+                                     "\\end{axis}");
+        assert((curve.clean && curve.errors.empty()) && "curves in three dimensions, a list and a helix");
+        assert((holds(curve.pdf, "1 0 0 RG") && holds(curve.pdf, "0 0 1 RG")) && "each in its colour");
+    }
     return 0;
 }

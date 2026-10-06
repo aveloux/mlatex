@@ -46,6 +46,15 @@ namespace render::primitives {
     /// sinh, cosh and tanh. A parametric plot, `({cos(x)}, {sin(x)})`, is
     /// two of them.
     ///
+    /// `\\addplot3` plots in three dimensions -- coordinates `(x,y,z)`, a
+    /// table's x, y and z, a function of x and y over the domain and `y
+    /// domain`, or three functions, a curve with `samples y=0` -- and an
+    /// axis holding one is drawn as pgfplots draws one in its `view`: the
+    /// box's back edges, a `surf`ace's faces filled from the colormap by
+    /// height, the farthest first, a `mesh`'s lines, a curve's line and
+    /// marks, ticks along its bottom front and its leftmost upright edge,
+    /// and a `colorbar`.
+    ///
     /// @par Reported
     /// A plot outside an axis, and one whose points could not be read -- a
     /// function it cannot work out, a table file it cannot find.
@@ -106,6 +115,15 @@ namespace render::primitives {
             /// region between two plots named with `name path`. Empty for a
             /// plot of points.
             std::string between{};
+
+            /// `\\addplot3`'s points: x, y and z, NaN for a gap. Empty for a
+            /// plot in two dimensions.
+            std::vector<std::array<double, 3>> solid{};
+
+            /// How many of #solid stand in each row of a surface's grid -- a
+            /// function's samples across, or the points of a table or a list
+            /// before y first changes -- or 0 for a line through them.
+            std::size_t columns{0};
         };
 
         /// @brief One axis being read: its kind, its options and its plots.

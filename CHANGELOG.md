@@ -518,6 +518,21 @@ sees, newest work last within each group.
   it crosses an edge; `fill opacity` pales it, a plot given none takes
   pgfplots' next colour paled, and the legend shows a patch. A curve drawn
   with `draw=none` is named for a fill to reach and not drawn.
+- **pgfplots in three dimensions**: `\addplot3` of coordinates `(x,y,z)`, a
+  table's x, y and z, a function of x and y -- `{x^2 - y^2}` over `domain`
+  and `y domain`, `samples` by `samples y` -- or three functions, a curve
+  with `samples y=0`. The axis is seen from its `view={25}{30}` (or
+  `view/h`, `view/v`) as pgfplots projects it: the box's back edges and,
+  with `grid=major`, the grid on its back faces; `surf` faces filled from
+  the colormap by their height and painted farthest first, faceted or
+  `shader=flat`; `mesh` lines coloured the same way; a curve's line and
+  marks. Ticks and their labels stand along the bottom front edges and the
+  leftmost upright one, `xlabel`, `ylabel` and `zlabel` beside them, and
+  `colorbar` sets the colormap beside the box. Colormaps: pgfplots' `hot`,
+  `hot2`, `jet`, `viridis`, `cool`, `blackwhite`, `bluered`, `greenyellow`,
+  `redyellow` and `violet`, by `colormap/name` or `colormap name=`. A grid
+  is read from a list or a table a row at a time while y holds, or as
+  `mesh/cols` says.
 - **Commutative diagrams are drawn**, each as the TikZ picture it is: a
   matrix of its objects and an arrow for each, its labels on the side the
   package puts them. tikz-cd's `\arrow` -- `"f"`, `"f"'` swapped,
@@ -850,7 +865,7 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Not yet
 
-EPS and SVG are placeholders, not drawn; pgfplots' 3D plots are not drawn. beamer's overlays are one slide and
+EPS and SVG are placeholders, not drawn. beamer's overlays are one slide and
 its themes are read, not drawn. By choice, never: `\write18`, reading a `.sty` or `.cls` from disk,
 and a second run's `.aux` -- the engine's one pass does what that run is for.
 Coverage figures above count packages that load and whose common commands set
