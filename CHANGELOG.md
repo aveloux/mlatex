@@ -722,6 +722,13 @@ page's text goes.
 - **`-w`/`--watch`** sets the document again each time it is saved, until
   interrupted; **`-O`/`--open`** shows the PDF in the system's viewer once
   written, through `ShellExecuteW`, `open` or `xdg-open`, never a shell.
+- **`--offline`** keeps a run off the network: `\httpget`, `\httppost` and
+  `\includegraphics{https://...}` are refused where they stand, each named
+  in an error (`\httpget of '...' refused: the run is offline`), and no
+  request is made. `latex::Host::offline` is the same for a program, and
+  the C library's `offline(session, on)` -- last in its struct, so a
+  program built against the older header still finds every other
+  operation where it was.
 - The banner is `This is latex 0.1.0.`, without the target; the logger's
   `--log-level` and `--log-file` say they take their value after `=` rather
   than reading the next argument as the document.

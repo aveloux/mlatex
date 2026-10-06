@@ -79,9 +79,12 @@ engine's own language.
   machine that compiles it: `\includegraphics{https://...}`, `\httpget{url}`
   and `\httppost{url}{body}`. These use WinHTTP on Windows and libcurl on
   Linux and macOS when the build found it. The WebAssembly module makes no
-  requests. When compiling documents you do not trust, run the engine
-  without network access, for example in a container or behind a firewall
-  rule, so that a document cannot reach internal services or send data out.
+  requests. When compiling documents you do not trust, turn the network
+  off: `latex --offline`, `latex::Host::offline` in C++, or
+  `offline(session, 1)` in the C library. Each request is then refused and
+  reported as an error before anything is sent, so a document cannot reach
+  internal services or send data out. For defence in depth, also run the
+  engine somewhere without network access.
 - **Time and memory.** As with TeX, a document can loop forever or use a
   large amount of memory. The engine does not limit either. A service that
   compiles untrusted documents should enforce its own timeout and memory
@@ -103,5 +106,6 @@ In scope: the engine (`core`), the `latex` command line, the C library
 the build and packaging scripts in this repository.
 
 Out of scope: denial of service caused only by a document's size or
-complexity, findings that depend on a modified build, and documents that ask
-for network access through the commands listed above.
+complexity, findings that depend on a modified build, and network requests
+a document makes while the engine is online. A request that leaves the
+machine while the engine is offline is in scope.

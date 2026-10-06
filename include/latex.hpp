@@ -56,6 +56,12 @@ namespace latex {
         /// `\\input`, `\\include`, `\\usepackage`, `\\includegraphics`, a
         /// bibliography -- in order: TeX's `-include-directory`.
         std::vector<std::filesystem::path> directories{};
+
+        /// Whether the document may not reach the network: `\\httpget`,
+        /// `\\httppost` and `\\includegraphics{https://...}` are refused and
+        /// reported, and no request leaves the machine. What a program
+        /// setting documents it did not write should turn on.
+        bool offline{false};
     };
 
     /// @brief The engine as a program keeps it: where its assets are, what it

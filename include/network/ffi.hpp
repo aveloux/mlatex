@@ -192,6 +192,17 @@ typedef struct Latex {
     ///         empty when there were none. Valid until the session is next
     ///         used. Never NULL.
     const char* (*error)(const Session* session);
+
+    /// @brief Keeps the session's documents off the network, or lets them
+    ///        on again: offline, `\\httpget`, `\\httppost` and a picture
+    ///        from `https://` are errors, and no request is sent. Off by
+    ///        default; turn it on for documents the program did not write.
+    ///        Last in the struct, so a program built against an older
+    ///        header finds every other operation where it was.
+    /// @param session The session.
+    /// @param on      Nonzero for offline, zero to allow the network.
+    /// @return 1 when the session was given; 0 otherwise.
+    int (*offline)(Session* session, int on);
 } Latex;
 
 /// @brief The library's operations. The one function it exports.

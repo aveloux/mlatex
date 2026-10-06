@@ -63,5 +63,22 @@ int main() {
         const Result result = article("", "\\httppost{http://127.0.0.1:1/form}{name=value}");
         assert((holds(result.errors, "\\httppost could not reach 'http://127.0.0.1:1/form'")) && "and so is a post");
     }
+
+    // Offline, neither is attempted: each is refused before a request is
+    // made, which is why the error is not the one an unreachable address
+    // gives.
+    {
+        latex::Host offline;
+        offline.offline = true;
+        const Result result = typeset("\\documentclass{article}\\begin{document}Before "
+                                      "\\httpget{http://127.0.0.1:1/nothing}\\httppost{http://127.0.0.1:1/form}{a=b}"
+                                      " after.\\end{document}",
+                                      offline);
+        assert((holds(result.errors, "\\httpget of 'http://127.0.0.1:1/nothing' refused: the run is offline") &&
+                holds(result.errors, "\\httppost to 'http://127.0.0.1:1/form' refused: the run is offline")) &&
+               "an offline run refuses every request by its address");
+        assert((!holds(result.errors, "could not reach")) && "and attempts none");
+        assert((holds(result.text, "Beforeafter.")) && "the text around them is set all the same");
+    }
     return 0;
 }

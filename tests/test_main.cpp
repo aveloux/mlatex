@@ -62,6 +62,11 @@ int main() {
     assert((run(document, "--time -q") == 0 && run(document, "-T") == 0) && "--time");
     assert((run(document, "--log-level warn") == 2) && "the logger's options take their value after =");
     assert((run(document, "--log-level=warn -q") == 0) && "as they are written");
+    const std::filesystem::path fetching = write(
+        temporary / "main-fetching.mtex",
+        "\\documentclass{article}\\begin{document}\\httpget{http://127.0.0.1:1/x}\\end{document}");
+    assert((run(document, "--offline -q") == 0 && run(fetching, "--offline -q") == 1) &&
+           "--offline sets a document that asks for nothing, and fails one that asks the network");
 
     // What the document is made into: a PDF ahead of time, or a target not
     // built yet, which is taken and does nothing.

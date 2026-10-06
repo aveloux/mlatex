@@ -206,6 +206,11 @@ namespace render::primitives {
         ///        #disk to find: `\\begin{filecontents}{refs.bib}`.
         syntax::primitives::Writer write{};
 
+        /// @brief Whether the run may not reach the network: `\\httpget`,
+        ///        `\\httppost` and an `https://` picture are refused, each
+        ///        named in an error, and nothing is sent. latex::Host::offline.
+        bool offline{false};
+
         /// @brief Where hyphenation patterns are read from: the assets' own
         ///        folder of TeX's `hyph-*.pat.txt`, or empty for none.
         std::string patterns{};

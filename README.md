@@ -69,7 +69,8 @@ once, in compiled code.
   and files from memory, then get the PDF back as bytes.
 - **Safe by design.** A document cannot run shell commands (`\write18` does
   not exist), cannot write files, and never loads `.sty` or `.cls` code from
-  disk. See [SECURITY.md](SECURITY.md).
+  disk. With `--offline` it cannot reach the network either. See
+  [SECURITY.md](SECURITY.md).
 
 ## Status
 
@@ -194,6 +195,7 @@ latex --time paper
 | `-n`, `--draft-mode` | Check the document and write no PDF |
 | `--halt-on-error` | Write no PDF if the document has an error |
 | `-I`, `--include-directory=DIR` | Also look in `DIR` for inputs, packages, pictures and bibliographies |
+| `--offline` | Make no network requests; for documents you did not write |
 | `-w`, `--watch` | Recompile every time the document is saved |
 | `-O`, `--open` | Open the PDF in the system viewer when it is written |
 | `-i`, `--interaction=MODE` | `batch-mode` prints only errors |

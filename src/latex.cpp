@@ -291,6 +291,7 @@ namespace latex {
         rendering.files = &host.files;
         rendering.disk = disk;
         rendering.write = write;
+        rendering.offline = host.offline;
         rendering.folios = folios;
         rendering.patterns = (assets / "hyphens").string();
         visuals(parser, rendering);

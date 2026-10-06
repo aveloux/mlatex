@@ -139,6 +139,18 @@ int main() {
         assert((count(kept.pdf, "/Subtype /Image") == 0 && holds(kept.pdf, " re")) && "framed, and empty");
     }
     {
+        // Offline, a picture from the network is refused before a request
+        // is made; one handed in under the same kind of name is not.
+        latex::Host offline;
+        offline.offline = true;
+        const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
+                                      "\\includegraphics{https://127.0.0.1:1/chart.png}\\end{document}",
+                                      offline);
+        assert((!result.clean &&
+                holds(result.errors, "\\includegraphics of 'https://127.0.0.1:1/chart.png' refused: the run is offline")) &&
+               "an offline run fetches no picture");
+    }
+    {
         const Result result = article("\\usepackage{graphicx}", "\\includegraphics{no-such-picture.png}");
         assert((!result.clean && holds(result.errors, "could not read 'no-such-picture.png'")) &&
                "a picture that is not there is named");

@@ -14,13 +14,20 @@ namespace render::primitives {
         lexicon.intern("\\httppost");
     }
 
-    void Requests::operator()(syntax::Parser& parser, Context&) const {
-        parser.bind("\\httpget", [this](syntax::Parser& parser) -> syntax::Node* {
+    void Requests::operator()(syntax::Parser& parser, Context& context) const {
+        // An offline run sends nothing: each request is refused where it is
+        // written, and named, as one that could not be sent would be.
+        parser.bind("\\httpget", [this, &context](syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
+            if (context.offline) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                                         "\\httpget of '" + url + "' refused: the run is offline");
+                return directive(arena, nullptr, origin);
+            }
             const auto response = network::compose("GET", url);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
@@ -32,13 +39,18 @@ namespace render::primitives {
             return arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text), origin);
         });
 
-        parser.bind("\\httppost", [this](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\httppost", [this, &context](syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
             const std::string body = syntax::Argument::text(mouth);
+            if (context.offline) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                                         "\\httppost to '" + url + "' refused: the run is offline");
+                return directive(arena, nullptr, origin);
+            }
 
             const auto response = network::compose("POST", url, body);
             if (!response) {

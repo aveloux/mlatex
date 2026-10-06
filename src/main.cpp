@@ -88,6 +88,10 @@ static constexpr std::array options{
            "Read the fonts and hyphenation patterns from\n"
            "DIR, not from the assets found above this\n"
            "program."},
+    Option{'\0', "offline", "", "", "Input",
+           "Reach no network: \\httpget, \\httppost and a\n"
+           "picture from https:// are errors, and nothing is\n"
+           "sent. For a document you did not write."},
     Option{'w', "watch", "", "", "Input",
            "Set the document again each time it is saved,\n"
            "until interrupted."},
@@ -323,6 +327,8 @@ int main(int count, char* arguments[]) {
             draft = true;
         } else if (called == "open") {
             opening = true;
+        } else if (called == "offline") {
+            host.offline = true;
         } else if (called == "watch") {
             watching = true;
         } else if (called == "file-line-error") {

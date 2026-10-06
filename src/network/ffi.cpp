@@ -176,6 +176,13 @@ namespace network {
         return session ? session->error.c_str() : "";
     }
 
+    /// @brief Latex::offline.
+    static int offline(Session* session, const int on) {
+        if (!session) return 0;
+        session->host.offline = on != 0;
+        return 1;
+    }
+
     extern "C" {
 
         const Latex* engine(void) {
@@ -191,6 +198,7 @@ namespace network {
                 .withdraw = withdraw,
                 .typeset = typeset,
                 .error = error,
+                .offline = offline,
             };
             return &table;
         }

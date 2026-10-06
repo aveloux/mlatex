@@ -2289,8 +2289,14 @@ namespace render::primitives {
                 }
             }
 
+            // From the network last, and never in an offline run.
             std::optional<std::vector<std::uint8_t>> received;
             if (encoded.empty() && (source.starts_with("http://") || source.starts_with("https://"))) {
+                if (context.offline) {
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                                             "\\includegraphics of '" + source + "' refused: the run is offline");
+                    return directive(arena, nullptr, origin, true);
+                }
                 received = network::get(source, "");
                 if (received) encoded = std::as_bytes(std::span{*received});
             }

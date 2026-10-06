@@ -106,6 +106,15 @@ int main() {
     assert((missing.error.find("\\owing") != std::string::npos) && "the missing command is named");
     assert((ledger.calls == 2) && "a command taken back is not called");
 
+    // Offline, a request is refused rather than sent; and allowed again.
+    assert((table->offline(session, 1) == 1 && table->offline(nullptr, 1) == 0) && "a session is taken offline");
+    const std::string_view fetching = "\\begin{document}\\httpget{http://127.0.0.1:1/x}\\end{document}";
+    const Result refused = typeset(session, fetching);
+    assert((refused.error.find("refused: the run is offline") != std::string::npos) && "offline, nothing is sent");
+    assert((table->offline(session, 0) == 1) && "and put back online");
+    const Result attempted = typeset(session, fetching);
+    assert((attempted.error.find("could not reach") != std::string::npos) && "online, the request is attempted");
+
     // Nothing to typeset is refused without touching the session.
     Result nothing;
     nothing.clean = table->typeset(session, nullptr, 0, &nothing.pdf, &nothing.size);

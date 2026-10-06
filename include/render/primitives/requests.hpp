@@ -35,7 +35,7 @@ namespace render::primitives {
 
         /// @brief Installs the request primitives.
         /// @param parser  Parser to bind into.
-        /// @param context Engine services; unused beyond what every module takes.
+        /// @param context Engine services: whether the run is offline.
         void operator()(syntax::Parser& parser, Context& context) const;
 
         /// @brief Errors this module has recorded.
