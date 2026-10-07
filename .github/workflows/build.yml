@@ -53,6 +53,17 @@ jobs:
           key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('.github/workflows/build.yml') }}
           restore-keys: vcpkg-${{ matrix.triplet }}-
 
+      # Install system tools required by vcpkg to build autotools ports like gperf
+      - name: Install system build dependencies for vcpkg
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y autoconf autoconf-archive automake libtool
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install autoconf autoconf-archive automake libtool
+          fi
+
       # A vcpkg of its own: not every runner image carries one.
       - name: Install the libraries
         shell: bash
