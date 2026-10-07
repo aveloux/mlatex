@@ -146,30 +146,39 @@ jobs:
 
       # In PowerShell on Windows, where Git Bash's own tools would stand in
       # front of Visual Studio's on the path.
-      - name: Configure
+      - name: Configure (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: >
-          cmake -B "$env:TREE" -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          "-DCMAKE_C_COMPILER=$env:CCOMPILER"
-          "-DCMAKE_CXX_COMPILER=$env:COMPILER"
-          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-          "-DGPERF_EXECUTABLE=$env:GPERF"
+        run: |
+          cmake -B "$env:TREE" -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            "-DCMAKE_C_COMPILER=$env:CCOMPILER" `
+            "-DCMAKE_CXX_COMPILER=$env:COMPILER" `
+            "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} `
+            "-DGPERF_EXECUTABLE=$env:GPERF"
 
-      - name: Configure
+      - name: Configure (POSIX)
         if: runner.os != 'Windows'
         shell: bash
-        run: >
-          cmake -B "$TREE" -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_C_COMPILER="$CCOMPILER"
-          -DCMAKE_CXX_COMPILER="$COMPILER"
-          -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-          -DGPERF_EXECUTABLE="$GPERF"
-          ${{ runner.os == 'macOS' && '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0' || '' }}
+        run: |
+          EXTRA_ARGS=()
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            # Fixes LLVM macOS 26.0 deployment target bugs
+            export MACOSX_DEPLOYMENT_TARGET=14.0
+            EXTRA_ARGS+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0")
+            # Fixes Homebrew LLVM size_t and stdio/math include order bugs
+            EXTRA_ARGS+=("-DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path)")
+          fi
+
+          cmake -B "$TREE" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="$CCOMPILER" \
+            -DCMAKE_CXX_COMPILER="$COMPILER" \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+            -DGPERF_EXECUTABLE="$GPERF" \
+            "${EXTRA_ARGS[@]}"
 
       - name: Build
         run: cmake --build "${{ env.TREE }}"
