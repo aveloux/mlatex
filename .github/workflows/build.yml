@@ -35,15 +35,21 @@ jobs:
           - { name: macOS x64, runner: macos-15-intel, triplet: x64-osx, architecture: x64 }
     env:
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/.vcpkg-downloads
+      # Use Microsoft's public asset mirror as a fallback when upstream sources (like GNU FTP) time out
+      VCPKG_ASSET_SOURCES: "clear;x-azurl,https://msinternal.blob.core.windows.net/vcpkg-mirror/,read"
       TREE: ${{ github.workspace }}/cmake-build-release
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache vcpkg's builds
+      # Cache both binary builds AND downloaded source archives (gperf, zlib, etc.)
+      - name: Cache vcpkg's builds and downloads
         uses: actions/cache@v4
         with:
-          path: .vcpkg
+          path: |
+            .vcpkg
+            .vcpkg-downloads
           key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('.github/workflows/build.yml') }}
           restore-keys: vcpkg-${{ matrix.triplet }}-
 
@@ -52,7 +58,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          mkdir -p "$VCPKG_DOWNLOADS"
           git clone --depth 1 https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
+          
           suffix=""
           if [ "$RUNNER_OS" = "Windows" ]; then
             "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
@@ -60,8 +68,23 @@ jobs:
           else
             "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
           fi
-          "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} \
-            harfbuzz libpng libjpeg-turbo libwebp zlib gperf
+
+          # Retry loop: Attempt vcpkg install up to 5 times if network drops or mirrors time out
+          for i in {1..5}; do
+            echo "Attempt $i to install libraries via vcpkg..."
+            if "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} \
+                harfbuzz libpng libjpeg-turbo libwebp zlib gperf; then
+              break
+            fi
+            
+            if [ $i -eq 5 ]; then
+              echo "vcpkg install failed after 5 attempts."
+              exit 1
+            fi
+            echo "Download or build failed. Retrying in 15 seconds..."
+            sleep 15
+          done
+
           echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
           echo "GPERF=$RUNNER_TEMP/vcpkg/installed/${{ matrix.triplet }}/tools/gperf/gperf$suffix" >> "$GITHUB_ENV"
 
@@ -72,8 +95,8 @@ jobs:
           $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
             -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
           $machine = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
-          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
-          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" \vert{} Out-File $env:GITHUB_ENV -Append
+          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" \vert{} Out-File $env:GITHUB_ENV -Append
 
       # WiX 7 for the .msi, with its EULA accepted for this runner and the
       # extensions CPack's installer uses. Accepting it is the project's
@@ -83,7 +106,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install --global wix --version 7.0.0
-          "$env:USERPROFILE\.dotnet\tools" | Out-File $env:GITHUB_PATH -Append
+          "$env:USERPROFILE\.dotnet\tools" \vert{} Out-File $env:GITHUB_PATH -Append
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" eula accept wix7
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.UI.wixext/7.0.0
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.Util.wixext/7.0.0
