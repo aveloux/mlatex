@@ -41,7 +41,7 @@ jobs:
       TREE: ${{ github.workspace }}/cmake-build-release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Cache both binary builds AND downloaded source archives (gperf, zlib, etc.)
       - name: Cache vcpkg's builds and downloads
