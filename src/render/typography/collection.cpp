@@ -155,7 +155,7 @@ namespace render::typography {
             std::memcpy(path.data, name.data(), name.size());
             path[name.size()] = '\0';
 
-            Entry* entry = arena.compose<Entry>();
+            auto* entry = arena.compose<Entry>();
             entry->family = std::string_view(family.data, family.count);
             entry->path = std::string_view(path.data, name.size());
             entry->next = table[slot];

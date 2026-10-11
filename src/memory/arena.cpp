@@ -56,7 +56,7 @@ namespace memory {
     #endif
         if (!data) throw std::bad_alloc{};
 
-        blocks.push_back(Block{data, capacity});
+        blocks.push_back(Block{.data = data, .capacity = capacity});
         cursor = data;
         limit = data + capacity;
         capacity *= 2;

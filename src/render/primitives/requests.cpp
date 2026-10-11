@@ -1,7 +1,7 @@
 /// @file
 /// @brief Requests implementation: `\\httpget`, `\\httppost`.
 #include "render/primitives/requests.hpp"
-#include "network/http.hpp"
+#include "protocols/http.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 
@@ -28,7 +28,7 @@ namespace render::primitives {
                                          "\\httpget of '" + url + "' refused: the run is offline");
                 return directive(arena, nullptr, origin);
             }
-            const auto response = network::compose("GET", url);
+            const auto response = protocols::compose("GET", url);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\httpget could not reach '" + url + "'");
@@ -52,7 +52,7 @@ namespace render::primitives {
                 return directive(arena, nullptr, origin);
             }
 
-            const auto response = network::compose("POST", url, body);
+            const auto response = protocols::compose("POST", url, body);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                          "\\httppost could not reach '" + url + "'");

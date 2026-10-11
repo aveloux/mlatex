@@ -59,7 +59,7 @@ namespace memory {
         /// @return The text, or std::nullopt when nothing is listed under it.
         /// @complexity O(1) expected: one hash, then the slots up to the first empty one.
         [[nodiscard]] constexpr std::optional<std::string_view> get(const std::string_view name) const noexcept {
-            for (std::size_t at = hash(name) & mask;; at = (at + 1) & mask) {
+            for (std::size_t at = hash(name) & mask;; at = at + 1 & mask) {
                 const std::uint16_t index = slots[at];
                 if (index == empty) return std::nullopt;
                 if (entries[index].name == name) return entries[index].text;

@@ -248,7 +248,7 @@ send(session.pdf);
 
 **C**, or any language that can call C (Python's ctypes, C#'s P/Invoke,
 Rust, Go). The library exports a single function, `engine()`, declared in
-`include/network/ffi.hpp`:
+`include/protocols/ffi.hpp`:
 
 ```c
 const Latex* table = engine();
@@ -291,7 +291,7 @@ detail.
 
 | Path | Contents |
 | --- | --- |
-| `include/`, `src/` | The engine: `syntax` (lexer, expander, parser), `render` (layout, typography, graphics, PDF), `memory` (arenas, tables), `network` (HTTP, the C library) |
+| `include/`, `src/` | The engine: `syntax` (lexer, expander, parser), `render` (layout, typography, graphics, PDF), `memory` (arenas, tables), `protocols` (HTTP, the C library) |
 | `src/modules/` | Packages and classes, one folder each, compiled into the binary |
 | `src/jit/` | Reserved for the just-in-time target |
 | `assets/` | Fonts, hyphenation patterns and the command glossary |

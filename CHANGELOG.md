@@ -759,7 +759,8 @@ page's text goes.
   `assets/` (fonts, hyphenation) beside it, `lib/` and `include/latex/`
   -- the shape `latex::locate` finds its assets in from anywhere. In a
   Release tree, `cpack` (or the `package` target) writes them all into the
-  project's `release/` folder: an MSI with WiX 4 or later's `wix` (WiX 7
+  project's own `bin/` folder, beside the sources (was `release/`): an MSI
+  with WiX 4 or later's `wix` (WiX 7
   once its EULA is accepted) or WiX 3's tools, and a .zip, on Windows; a
   disk image holding an `mLaTeX` folder to drag onto Applications, a .pkg
   installer that puts it in `/Applications/mLaTeX`, a .tar.gz and a .zip
@@ -775,7 +776,7 @@ page's text goes.
   each on x64 and ARM64 -- with a C++26 compiler on each (Visual Studio's
   clang-cl, Clang 20, Homebrew's LLVM) and vcpkg's libraries cached
   between runs. The Windows runners install WiX 7 and accept its EULA, so
-  each makes an MSI; every runner collects its packages from `release/`,
+  each makes an MSI; every runner collects its packages from `bin/`,
   and a pushed `v*` tag attaches them all to a GitHub release.
 - **The sample paper is set on GitHub.** The Windows x64 runner sets
   `build/main.mtex` with the program it just built and keeps the result as
@@ -796,7 +797,7 @@ page's text goes.
 - `latex::Session`: values, commands, packages and pictures handed in once
   and kept across documents; `set`, `define`, `provide`, their undoing verbs,
   `typeset`, `pdf`, `error`, and `pages()` for each page's text.
-- The same interface as a C library (`network/ffi.hpp`) and as a WebAssembly
+- The same interface as a C library (`protocols/ffi.hpp`) and as a WebAssembly
   module (`render/wasm.hpp`).
 - **The engine is `namespace latex`**, in `latex.hpp` and `latex.cpp` (was
   `engine`, in `engine.hpp`): `latex::Session`, `latex::Host`,
@@ -901,6 +902,12 @@ font folders are listed only for a script the engine carries no face for.
   the C library, debug or release as the build is. Being delay-loaded hid
   them from vcpkg's own copy, and the first WebP picture a document drew
   ended the program with 0xC06D007E unless the DLL happened to be on PATH.
+- **`test_main` read the command line's exit status wrong on Linux and
+  macOS.** POSIX's `system()` returns a wait status, not the exit code --
+  `WEXITSTATUS` is what reads the second out of the first. Every check for
+  a mistake's exit status of 1 or the command line's own of 2 compared
+  against `1 << 8` and `2 << 8` instead and failed, which is what the
+  workflow's first run on every runner actually found.
 
 ### Tests
 
@@ -1012,6 +1019,11 @@ font folders are listed only for a script the engine carries no face for.
   debug one exporting compile commands, so an IDE -- CLion with its Visual
   Studio toolchain -- reads the code as C++26 rather than through cl, which
   cannot configure the project and leaves every file unresolved.
+- **`namespace protocols`** (was `network`, in `include/network/` and
+  `src/network/`, now `include/protocols/` and `src/protocols/`): the HTTP
+  client `\httpget`, `\httppost` and `\includegraphics` share, and the C
+  library beside it. A module named for a layer of the internet read as
+  though the engine had one of its own; `protocols` is what it actually is.
 
 ### Removed
 

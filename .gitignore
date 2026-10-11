@@ -5,12 +5,8 @@ cmake-build-*/
 # main.pdf changes every day through \today.
 /build/**/*.pdf
 
-# Programs built before the CMake targets existed; a build writes its own
-# into its build tree.
+# Packages a release build leaves behind, in bin/.
 /bin/
-
-# Packages a release build leaves behind, in release/
-/release/
 *.msi
 *.dmg
 *.deb

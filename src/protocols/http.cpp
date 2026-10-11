@@ -9,7 +9,7 @@
 /// for it -- a request is refused the way one that could not be sent is, and
 /// everything that reads a file, which is most of what `\\includegraphics`
 /// does, works the same on every platform.
-#include "network/http.hpp"
+#include "protocols/http.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -28,7 +28,7 @@
     #include <string>
 #endif
 
-namespace network {
+namespace protocols {
 
 #if defined(_WIN32)
     /// @brief Closes a WinHTTP handle when it goes out of scope.
@@ -63,7 +63,7 @@ namespace network {
 
         // Only the two schemes this sends: anything else is refused here, on
         // every platform, rather than left to whichever client would try it.
-        if (!url.starts_with("http://") && !url.starts_with("https://")) return std::nullopt;
+        if (!url.starts_with("https://")) return std::nullopt;
 
     #if defined(_WIN32)
         // WinHTTP is wide throughout; a URL and a method are both pure
@@ -89,24 +89,24 @@ namespace network {
 
         const Handle session{WinHttpOpen(
             L"latex-engine/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-            WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0)};
+            nullptr, nullptr, 0)};
         if (!session.ok()) return std::nullopt;
 
         const Handle connection{WinHttpConnect(session, host, parts.nPort, 0)};
         if (!connection.ok()) return std::nullopt;
 
         const Handle request{WinHttpOpenRequest(
-            connection, verb.c_str(), path, nullptr, WINHTTP_NO_REFERER,
-            WINHTTP_DEFAULT_ACCEPT_TYPES, secure ? WINHTTP_FLAG_SECURE : 0)};
+            connection, verb.c_str(), path, nullptr, nullptr,
+            nullptr, secure ? WINHTTP_FLAG_SECURE : 0)};
         if (!request.ok()) return std::nullopt;
 
         // A body is sent as raw bytes exactly as given; a document asking
         // for JSON or form encoding writes the header itself, as \\httppost
         // does with its own Content-Type.
         const auto sent = body.empty()
-            ? WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                                 WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
-            : WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+            ? WinHttpSendRequest(request, nullptr, 0,
+                                 nullptr, 0, 0, 0)
+            : WinHttpSendRequest(request, nullptr, 0,
                                  const_cast<void*>(static_cast<const void*>(body.data())),
                                  static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
 
@@ -117,7 +117,7 @@ namespace network {
         DWORD status = 0;
         DWORD size = sizeof(status);
         if (WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                WINHTTP_HEADER_NAME_BY_INDEX, &status, &size, WINHTTP_NO_HEADER_INDEX)) {
+                                nullptr, &status, &size, nullptr)) {
             response.status = static_cast<int>(status);
         }
 
@@ -182,7 +182,7 @@ namespace network {
         const std::string_view source,
         const std::string_view base
     ) {
-        if (source.starts_with("http://") || source.starts_with("https://")) {
+        if (source.starts_with("https://")) {
             const std::optional<Response> response = compose("GET", source);
             if (!response) return std::nullopt;
             return response->body;

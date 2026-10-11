@@ -11,7 +11,7 @@
 /// One namespace, one file: `\includegraphics`'s source, `\httpget` and
 /// `\httppost` all reach the same two functions, so a change to how a
 /// request is built is made once.
-namespace network {
+namespace protocols {
 
     /// @brief One HTTP response: a status code and a body.
     struct Response {

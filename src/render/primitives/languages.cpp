@@ -22,84 +22,84 @@ namespace render::primitives {
     /// left. A language with no patterns of its own breaks no word; one with
     /// no captions of its own keeps whatever captions were in force.
     static constexpr std::array<Languages::Language, 78> languages{{
-        {"english", "english", "en-us", 2, 3, false},
-        {"american", "english", "en-us", 2, 3, false},
-        {"USenglish", "english", "en-us", 2, 3, false},
-        {"canadian", "english", "en-us", 2, 3, false},
-        {"british", "english", "en-gb", 2, 3, false},
-        {"UKenglish", "english", "en-gb", 2, 3, false},
-        {"australian", "english", "en-gb", 2, 3, false},
-        {"newzealand", "english", "en-gb", 2, 3, false},
-        {"german", "german", "de-1901", 2, 2, false},
-        {"ngerman", "german", "de-1996", 2, 2, false},
-        {"austrian", "german", "de-1901", 2, 2, false},
-        {"naustrian", "german", "de-1996", 2, 2, false},
-        {"swissgerman", "german", "de-ch-1901", 2, 2, false},
-        {"nswissgerman", "german", "de-ch-1901", 2, 2, false},
-        {"french", "french", "fr", 2, 2, false},
-        {"francais", "french", "fr", 2, 2, false},
-        {"acadian", "french", "fr", 2, 2, false},
-        {"canadien", "french", "fr", 2, 2, false},
-        {"spanish", "spanish", "es", 2, 2, false},
-        {"mexican", "spanish", "es", 2, 2, false},
-        {"italian", "italian", "it", 2, 2, false},
-        {"portuguese", "portuguese", "pt", 2, 3, false},
-        {"portuges", "portuguese", "pt", 2, 3, false},
-        {"brazil", "brazilian", "pt", 2, 3, false},
-        {"brazilian", "brazilian", "pt", 2, 3, false},
-        {"dutch", "dutch", "nl", 2, 2, false},
-        {"afrikaans", "", "af", 1, 2, false},
-        {"russian", "russian", "ru", 2, 2, false},
-        {"ukrainian", "ukrainian", "uk", 2, 2, false},
-        {"belarusian", "", "be", 2, 2, false},
-        {"bulgarian", "bulgarian", "bg", 2, 2, false},
-        {"macedonian", "", "mk", 2, 2, false},
-        {"serbian", "", "sh-latn", 2, 2, false},
-        {"serbianc", "", "sr-cyrl", 2, 2, false},
-        {"polish", "polish", "pl", 2, 2, false},
-        {"czech", "czech", "cs", 2, 3, false},
-        {"slovak", "", "sk", 2, 3, false},
-        {"slovene", "", "sl", 2, 2, false},
-        {"slovenian", "", "sl", 2, 2, false},
-        {"croatian", "croatian", "hr", 2, 2, false},
-        {"hungarian", "hungarian", "hu", 2, 2, false},
-        {"magyar", "hungarian", "hu", 2, 2, false},
-        {"romanian", "romanian", "ro", 2, 2, false},
-        {"greek", "greek", "el-monoton", 1, 1, false},
-        {"polutonikogreek", "greek", "el-polyton", 1, 1, false},
-        {"ancientgreek", "", "grc", 1, 1, false},
-        {"turkish", "turkish", "tr", 2, 2, false},
-        {"swedish", "swedish", "sv", 2, 2, false},
-        {"danish", "danish", "da", 2, 2, false},
-        {"norsk", "norsk", "nb", 2, 2, false},
-        {"bokmal", "norsk", "nb", 2, 2, false},
-        {"norwegian", "norsk", "nb", 2, 2, false},
-        {"nynorsk", "norsk", "nn", 2, 2, false},
-        {"finnish", "finnish", "fi", 2, 2, false},
-        {"estonian", "", "et", 2, 3, false},
-        {"icelandic", "", "is", 2, 2, false},
-        {"latvian", "", "lv", 2, 2, false},
-        {"lithuanian", "", "lt", 2, 2, false},
-        {"catalan", "catalan", "ca", 2, 2, false},
-        {"basque", "", "eu", 2, 2, false},
-        {"galician", "", "gl", 2, 2, false},
-        {"irish", "", "ga", 2, 3, false},
-        {"welsh", "", "cy", 2, 3, false},
-        {"latin", "", "la", 2, 2, false},
-        {"esperanto", "", "eo", 2, 2, false},
-        {"indonesian", "", "id", 2, 2, false},
-        {"bahasa", "", "id", 2, 2, false},
-        {"armenian", "", "hy", 1, 2, false},
-        {"georgian", "", "ka", 1, 2, false},
-        {"interlingua", "", "ia", 2, 2, false},
-        {"albanian", "", "sq", 2, 2, false},
-        {"thai", "", "th", 2, 3, false},
-        {"arabic", "arabic", "", 0, 0, true},
-        {"hebrew", "hebrew", "", 0, 0, true},
-        {"persian", "persian", "", 0, 0, true},
-        {"farsi", "persian", "", 0, 0, true},
-        {"urdu", "", "", 0, 0, true},
-        {"syriac", "", "", 0, 0, true},
+        {.name = "english", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
+        {.name = "american", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
+        {.name = "USenglish", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
+        {.name = "canadian", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
+        {.name = "british", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
+        {.name = "UKenglish", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
+        {.name = "australian", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
+        {.name = "newzealand", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
+        {.name = "german", .captions = "german", .patterns = "de-1901", .left = 2, .right = 2, .reversed = false},
+        {.name = "ngerman", .captions = "german", .patterns = "de-1996", .left = 2, .right = 2, .reversed = false},
+        {.name = "austrian", .captions = "german", .patterns = "de-1901", .left = 2, .right = 2, .reversed = false},
+        {.name = "naustrian", .captions = "german", .patterns = "de-1996", .left = 2, .right = 2, .reversed = false},
+        {.name = "swissgerman", .captions = "german", .patterns = "de-ch-1901", .left = 2, .right = 2, .reversed = false},
+        {.name = "nswissgerman", .captions = "german", .patterns = "de-ch-1901", .left = 2, .right = 2, .reversed = false},
+        {.name = "french", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
+        {.name = "francais", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
+        {.name = "acadian", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
+        {.name = "canadien", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
+        {.name = "spanish", .captions = "spanish", .patterns = "es", .left = 2, .right = 2, .reversed = false},
+        {.name = "mexican", .captions = "spanish", .patterns = "es", .left = 2, .right = 2, .reversed = false},
+        {.name = "italian", .captions = "italian", .patterns = "it", .left = 2, .right = 2, .reversed = false},
+        {.name = "portuguese", .captions = "portuguese", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
+        {.name = "portuges", .captions = "portuguese", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
+        {.name = "brazil", .captions = "brazilian", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
+        {.name = "brazilian", .captions = "brazilian", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
+        {.name = "dutch", .captions = "dutch", .patterns = "nl", .left = 2, .right = 2, .reversed = false},
+        {.name = "afrikaans", .captions = "", .patterns = "af", .left = 1, .right = 2, .reversed = false},
+        {.name = "russian", .captions = "russian", .patterns = "ru", .left = 2, .right = 2, .reversed = false},
+        {.name = "ukrainian", .captions = "ukrainian", .patterns = "uk", .left = 2, .right = 2, .reversed = false},
+        {.name = "belarusian", .captions = "", .patterns = "be", .left = 2, .right = 2, .reversed = false},
+        {.name = "bulgarian", .captions = "bulgarian", .patterns = "bg", .left = 2, .right = 2, .reversed = false},
+        {.name = "macedonian", .captions = "", .patterns = "mk", .left = 2, .right = 2, .reversed = false},
+        {.name = "serbian", .captions = "", .patterns = "sh-latn", .left = 2, .right = 2, .reversed = false},
+        {.name = "serbianc", .captions = "", .patterns = "sr-cyrl", .left = 2, .right = 2, .reversed = false},
+        {.name = "polish", .captions = "polish", .patterns = "pl", .left = 2, .right = 2, .reversed = false},
+        {.name = "czech", .captions = "czech", .patterns = "cs", .left = 2, .right = 3, .reversed = false},
+        {.name = "slovak", .captions = "", .patterns = "sk", .left = 2, .right = 3, .reversed = false},
+        {.name = "slovene", .captions = "", .patterns = "sl", .left = 2, .right = 2, .reversed = false},
+        {.name = "slovenian", .captions = "", .patterns = "sl", .left = 2, .right = 2, .reversed = false},
+        {.name = "croatian", .captions = "croatian", .patterns = "hr", .left = 2, .right = 2, .reversed = false},
+        {.name = "hungarian", .captions = "hungarian", .patterns = "hu", .left = 2, .right = 2, .reversed = false},
+        {.name = "magyar", .captions = "hungarian", .patterns = "hu", .left = 2, .right = 2, .reversed = false},
+        {.name = "romanian", .captions = "romanian", .patterns = "ro", .left = 2, .right = 2, .reversed = false},
+        {.name = "greek", .captions = "greek", .patterns = "el-monoton", .left = 1, .right = 1, .reversed = false},
+        {.name = "polutonikogreek", .captions = "greek", .patterns = "el-polyton", .left = 1, .right = 1, .reversed = false},
+        {.name = "ancientgreek", .captions = "", .patterns = "grc", .left = 1, .right = 1, .reversed = false},
+        {.name = "turkish", .captions = "turkish", .patterns = "tr", .left = 2, .right = 2, .reversed = false},
+        {.name = "swedish", .captions = "swedish", .patterns = "sv", .left = 2, .right = 2, .reversed = false},
+        {.name = "danish", .captions = "danish", .patterns = "da", .left = 2, .right = 2, .reversed = false},
+        {.name = "norsk", .captions = "norsk", .patterns = "nb", .left = 2, .right = 2, .reversed = false},
+        {.name = "bokmal", .captions = "norsk", .patterns = "nb", .left = 2, .right = 2, .reversed = false},
+        {.name = "norwegian", .captions = "norsk", .patterns = "nb", .left = 2, .right = 2, .reversed = false},
+        {.name = "nynorsk", .captions = "norsk", .patterns = "nn", .left = 2, .right = 2, .reversed = false},
+        {.name = "finnish", .captions = "finnish", .patterns = "fi", .left = 2, .right = 2, .reversed = false},
+        {.name = "estonian", .captions = "", .patterns = "et", .left = 2, .right = 3, .reversed = false},
+        {.name = "icelandic", .captions = "", .patterns = "is", .left = 2, .right = 2, .reversed = false},
+        {.name = "latvian", .captions = "", .patterns = "lv", .left = 2, .right = 2, .reversed = false},
+        {.name = "lithuanian", .captions = "", .patterns = "lt", .left = 2, .right = 2, .reversed = false},
+        {.name = "catalan", .captions = "catalan", .patterns = "ca", .left = 2, .right = 2, .reversed = false},
+        {.name = "basque", .captions = "", .patterns = "eu", .left = 2, .right = 2, .reversed = false},
+        {.name = "galician", .captions = "", .patterns = "gl", .left = 2, .right = 2, .reversed = false},
+        {.name = "irish", .captions = "", .patterns = "ga", .left = 2, .right = 3, .reversed = false},
+        {.name = "welsh", .captions = "", .patterns = "cy", .left = 2, .right = 3, .reversed = false},
+        {.name = "latin", .captions = "", .patterns = "la", .left = 2, .right = 2, .reversed = false},
+        {.name = "esperanto", .captions = "", .patterns = "eo", .left = 2, .right = 2, .reversed = false},
+        {.name = "indonesian", .captions = "", .patterns = "id", .left = 2, .right = 2, .reversed = false},
+        {.name = "bahasa", .captions = "", .patterns = "id", .left = 2, .right = 2, .reversed = false},
+        {.name = "armenian", .captions = "", .patterns = "hy", .left = 1, .right = 2, .reversed = false},
+        {.name = "georgian", .captions = "", .patterns = "ka", .left = 1, .right = 2, .reversed = false},
+        {.name = "interlingua", .captions = "", .patterns = "ia", .left = 2, .right = 2, .reversed = false},
+        {.name = "albanian", .captions = "", .patterns = "sq", .left = 2, .right = 2, .reversed = false},
+        {.name = "thai", .captions = "", .patterns = "th", .left = 2, .right = 3, .reversed = false},
+        {.name = "arabic", .captions = "arabic", .patterns = "", .left = 0, .right = 0, .reversed = true},
+        {.name = "hebrew", .captions = "hebrew", .patterns = "", .left = 0, .right = 0, .reversed = true},
+        {.name = "persian", .captions = "persian", .patterns = "", .left = 0, .right = 0, .reversed = true},
+        {.name = "farsi", .captions = "persian", .patterns = "", .left = 0, .right = 0, .reversed = true},
+        {.name = "urdu", .captions = "", .patterns = "", .left = 0, .right = 0, .reversed = true},
+        {.name = "syriac", .captions = "", .patterns = "", .left = 0, .right = 0, .reversed = true},
     }};
 
     Languages::Languages(syntax::Lexicon& lexicon) noexcept {
@@ -137,7 +137,7 @@ namespace render::primitives {
         // what a box or a cell holds is set as it is read, long before the
         // instruction is reached in its place, and is set in the language
         // chosen by then.
-        const auto order = [&context](syntax::Parser& parser, const layout::Node::Directive& said) -> syntax::Node* {
+        const auto order = [&context](const syntax::Parser& parser, const layout::Node::Directive& said) -> syntax::Node* {
             if (said.command == Command::Language) context.document.hyphenate(said);
             memory::Arena& arena = parser.arena;
             auto* mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
@@ -176,8 +176,7 @@ namespace render::primitives {
             std::string value = written.substr(at + 9);
             value = value.substr(0, value.find(','));
             std::erase(value, ' ');
-            const auto known = std::ranges::find(numerals, name, &std::pair<std::string, std::string>::first);
-            if (known != numerals.end()) known->second = value;
+            if (const auto known = std::ranges::find(numerals, name, &std::pair<std::string, std::string>::first); known != numerals.end()) known->second = value;
             else numerals.emplace_back(std::string(name), value);
         };
 
@@ -226,14 +225,14 @@ namespace render::primitives {
             remember(given, language->name);
             current = language->name;
 
-            std::string said = std::format("\\@direction{{{}}}\\@define\\languagename{{{}}}",
+            std::string said = std::format(R"(\@direction{{{}}}\@define\languagename{{{}}})",
                                            language->reversed ? "RTL" : "LTR", language->name);
             if (!language->captions.empty()) {
                 if (!std::ranges::contains(captioned, language->captions)) {
                     captioned.push_back(language->captions);
                     said += std::format("\\input{{babel/{}}}", language->captions);
                 }
-                said += std::format("\\csname captions{0}\\endcsname\\csname date{0}\\endcsname", language->captions);
+                said += std::format(R"(\csname captions{0}\endcsname\csname date{0}\endcsname)", language->captions);
             }
             mouth.ingest(mouth.arena.copy(said));
             return order(parser, spoken(*language));
@@ -268,7 +267,7 @@ namespace render::primitives {
                     const Language* known = get(language);
                     mouth.ingest(mouth.arena.copy(
                         whole ? std::format("\\par\\@language{{{}}}", language)
-                              : std::format("\\par\\@hyphenation{{{}}}\\@direction{{{}}}", language,
+                              : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})", language,
                                             known && known->reversed ? "RTL" : "LTR")));
                 },
                 [this, whole](syntax::Mouth& mouth) {
@@ -277,7 +276,7 @@ namespace render::primitives {
                     const Language* known = get(before);
                     mouth.ingest(mouth.arena.copy(
                         whole ? std::format("\\par\\@language{{{}}}", before)
-                              : std::format("\\par\\@hyphenation{{{}}}\\@direction{{{}}}", before,
+                              : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})", before,
                                             known && known->reversed ? "RTL" : "LTR")));
                 });
         };
@@ -305,7 +304,7 @@ namespace render::primitives {
                 const Language* language = get(item);
                 if (!language) continue;
                 remember(given, language->name);
-                said += std::format("\\@define\\text{0}{{\\foreignlanguage{{{0}}}}}", language->name);
+                said += std::format(R"(\@define\text{0}{{\foreignlanguage{{{0}}}}})", language->name);
                 if (std::ranges::contains(watched, language->name)) continue;
                 watched.push_back(language->name);
                 block(language->name == "arabic" ? "Arabic" : language->name, true, language->name);

@@ -1,4 +1,4 @@
-#include "network/http.hpp"
+#include "protocols/http.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -21,20 +21,20 @@ int main() {
         output.write(reinterpret_cast<const char*>(written.data()), static_cast<std::streamsize>(written.size()));
     }
 
-    const auto whole = network::get(file.string());
+    const auto whole = protocols::get(file.string());
     assert((whole.has_value() && *whole == written) && "a file is read byte for byte");
 
-    const auto relative = network::get("bytes.bin", folder.string());
+    const auto relative = protocols::get("bytes.bin", folder.string());
     assert((relative.has_value() && *relative == written) && "a relative name is found against its base");
 
-    assert((!network::get((folder / "missing.bin").string()).has_value()) && "a file that is not there is nothing");
+    assert((!protocols::get((folder / "missing.bin").string()).has_value()) && "a file that is not there is nothing");
 
     // Refused before anything could be sent, so these need no network.
-    assert((!network::compose("GET", "http://example.org/\r\nX-Injected: yes").has_value()) &&
+    assert((!protocols::compose("GET", "http://example.org/\r\nX-Injected: yes").has_value()) &&
            "a line break in the address is refused");
-    assert((!network::compose("GE\nT", "http://example.org/").has_value()) &&
+    assert((!protocols::compose("GE\nT", "http://example.org/").has_value()) &&
            "a line break in the method is refused");
-    assert((!network::compose("GET", "ftp://example.org/").has_value()) && "only HTTP and HTTPS are asked for");
+    assert((!protocols::compose("GET", "ftp://example.org/").has_value()) && "only HTTP and HTTPS are asked for");
 
     std::error_code ignored;
     std::filesystem::remove_all(folder, ignored);

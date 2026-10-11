@@ -191,17 +191,17 @@ jobs:
       - name: Set the sample paper
         if: matrix.name == 'Windows x64'
         shell: bash
-        run: '"$TREE/mlatex" --file-line-error --output-directory release build/main.mtex'
+        run: '"$TREE/mlatex" --file-line-error --output-directory bin build/main.mtex'
 
       - name: Keep the sample paper
         if: matrix.name == 'Windows x64'
         uses: actions/upload-artifact@v4
         with:
           name: main.pdf
-          path: release/main.pdf
+          path: bin/main.pdf
           if-no-files-found: error
 
-      # Every package lands in release/, as it does on a person's machine.
+      # Every package lands in bin/, as it does on a person's machine.
       - name: Package
         run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
 
@@ -210,14 +210,14 @@ jobs:
         with:
           name: mlatex-${{ runner.os }}-${{ matrix.architecture }}
           path: |
-            release/*.msi
-            release/*.zip
-            release/*.dmg
-            release/*.pkg
-            release/*.deb
-            release/*.rpm
-            release/*.tar.gz
-            release/*.pdf
+            bin/*.msi
+            bin/*.zip
+            bin/*.dmg
+            bin/*.pkg
+            bin/*.deb
+            bin/*.rpm
+            bin/*.tar.gz
+            bin/*.pdf
           if-no-files-found: error
 
   release:
@@ -230,10 +230,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: release
+          path: bin
           merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: release/*
+          files: bin/*
           generate_release_notes: true

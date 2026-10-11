@@ -65,8 +65,7 @@ namespace render::primitives {
         const auto measure = [this, &context](const bool between) {
             const std::size_t depth = levels.empty() ? 0 : std::min(levels.size() - 1, spacings.size() - 1);
             const Level& level = levels.back();
-            const float own = between ? level.spacing : level.around;
-            if (own >= 0.0f) return own;
+            if (const float own = between ? level.spacing : level.around; own >= 0.0f) return own;
             const float scale = context.document.configuration.size / 10.0f;
             return (between ? spacings[depth].second : spacings[depth].first) * scale;
         };
@@ -83,7 +82,7 @@ namespace render::primitives {
             const float em = font ? font->size() : 10.0f;
             const float margin = em * indent * static_cast<float>(levels.size());
             mouth.ingest(context.arena.copy(
-                std::format("\\par\\leftskip={:.2f}pt{}\\noindent ", margin,
+                std::format(R"(\par\leftskip={:.2f}pt{}\noindent )", margin,
                             around > 0.0f ? std::format("\\vskip {:.2f}pt plus 2pt minus 2pt", around)
                                           : std::string{})));
         };
@@ -186,8 +185,7 @@ namespace render::primitives {
                     }
                     levels.push_back(std::move(level));
 
-                    const float around = measure(false);
-                    if (around > 0.0f) {
+                    if (const float around = measure(false); around > 0.0f) {
                         mouth.ingest(context.arena.copy(std::format("\\par\\vskip {:.2f}pt plus 2pt minus 2pt ", around)));
                     }
                 },
@@ -440,7 +438,7 @@ namespace render::primitives {
             item[placed++] = directive(arena, layout::Line::horizontal(arena, contents, 0.0f), origin);
 
             return arena.compose<syntax::Node>(
-                syntax::Node::Type::Group, std::string_view{}, origin, memory::Slice{item.data, placed});
+                syntax::Node::Type::Group, std::string_view{}, origin, memory::Slice{.data = item.data, .count = placed});
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound list primitives");

@@ -19,9 +19,9 @@
 
 namespace render {
 
-    Wasm::Wasm() : ::latex::Session(std::string(root)) {}
+    Wasm::Wasm() : Session(std::string(root)) {}
 
-#if defined(__EMSCRIPTEN__)
+#if defined(__WIN32)
 
     emscripten::val Wasm::bytes() const {
         const std::string& made = pdf;

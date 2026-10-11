@@ -1,11 +1,11 @@
 /// @file
-/// @brief The engine as a C library: see network/ffi.hpp.
+/// @brief The engine as a C library: see protocols/ffi.hpp.
 ///
 /// Each operation is latex::Session's own, given a C signature: strings
 /// arrive as zero-terminated UTF-8, a command's handler is a C function and a
 /// pointer, and the PDF goes back as a pointer into the session. Nothing here
 /// decides anything the session does not; it only translates.
-#include "network/ffi.hpp"
+#include "protocols/ffi.hpp"
 #include "latex.hpp"
 
 #include <filesystem>
@@ -26,15 +26,15 @@
     #include <dlfcn.h>
 #endif
 
-namespace network {
+namespace protocols {
 
     /// @brief The opaque handle the C side holds: the session itself.
-    struct Session : ::latex::Session {
-        using ::latex::Session::Session;
+    struct [[maybe_unused]] Session : latex::Session {
+        using latex::Session::Session;
     };
 
     /// @brief What one call of a command has written so far.
-    struct Output {
+    struct [[maybe_unused]] Output {
         std::string text{};   ///< Read in the command's place once it returns.
     };
 
@@ -60,18 +60,18 @@ namespace network {
                 std::wstring buffer(MAX_PATH, L'\0');
                 for (;;) {
                     const DWORD written = GetModuleFileNameW(module, buffer.data(), static_cast<DWORD>(buffer.size()));
-                    if (written == 0) return std::filesystem::path{};
+                    if (written == 0) return {};
                     if (written < buffer.size()) {
                         buffer.resize(written);
-                        return std::filesystem::path(buffer);
+                        return {buffer};
                     }
                     buffer.resize(buffer.size() * 2);
                 }
             #elif defined(__unix__) || defined(__APPLE__)
-                Dl_info info{};
-                if (dladdr(reinterpret_cast<const void*>(&engine), &info) && info.dli_fname) {
+                Dl_info information{};
+                if (dladdr(reinterpret_cast<const void*>(&engine), &information) && information.dli_fname) {
                     std::error_code failure;
-                    if (auto resolved = std::filesystem::canonical(info.dli_fname, failure); !failure) return resolved;
+                    if (auto resolved = std::filesystem::canonical(information.dli_fname, failure); !failure) return resolved;
                 }
                 return std::filesystem::path{};
             #else

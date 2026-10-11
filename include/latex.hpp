@@ -17,7 +17,7 @@
 /// `main()` wants fonts indexed, a prelude read, a document parsed and
 /// composed, a PDF written; this is that one path, with the CLI's own
 /// argument parsing and self-location left to `main.cpp`. The foreign-function
-/// library in `network/ffi.hpp` calls the same path, which is why it can make
+/// library in `protocols/ffi.hpp` calls the same path, which is why it can make
 /// the same PDF from the same document without running a second program.
 namespace latex {
 
@@ -68,7 +68,7 @@ namespace latex {
     ///        hands every document, and what the last document made.
     ///
     /// This is the one interface every binding shares. The C library in
-    /// `network/ffi.hpp` is these same functions in a struct, under the same
+    /// `protocols/ffi.hpp` is these same functions in a struct, under the same
     /// names; the WebAssembly module in `render/wasm.hpp` is this class, bound
     /// for JavaScript under the same names again. Whatever a document can be
     /// handed from one language, it can be handed from all three.

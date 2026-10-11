@@ -63,7 +63,7 @@
 /// Separate sessions share nothing but the engine's read-only tables and may
 /// run side by side.
 
-#include <stddef.h>
+#include <cstddef>
 
 // How engine() is seen from outside the library: exported while the library
 // itself is built -- its build defines EXPORTING -- imported by a program on
@@ -82,7 +82,7 @@
 #endif
 
 #if defined(__cplusplus)
-namespace network {
+namespace protocols {
 extern "C" {
 #endif
 

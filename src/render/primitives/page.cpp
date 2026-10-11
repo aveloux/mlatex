@@ -381,7 +381,7 @@ namespace render::primitives {
             }
             // Theirs and KOMA-Script's: the references a chapter, `Bibliography`.
             if (name == "report" || name == "book" || name == "memoir" || name == "scrreprt" || name == "scrbook") {
-                mouth.ingest("\\@define\\@bibkind{chapter}\\@define\\@bibtitle{\\bibname}", origin);
+                mouth.ingest(R"(\@define\@bibkind{chapter}\@define\@bibtitle{\bibname})", origin);
             }
 
             // The body's face at the body's size, and the formulas' beside it.
@@ -594,8 +594,8 @@ namespace render::primitives {
                             if (opening && std::ranges::contains(lists, name)) {
                                 // A list's default overlay, `[<+->]`, kept for its items.
                                 std::size_t next = after(end);
-                                std::string spec;
                                 if (next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
+                                    std::string spec;
                                     const auto [given, past] = overlay(next + 1);
                                     spec = given.value_or("");
                                     next = after(past);
@@ -744,7 +744,7 @@ namespace render::primitives {
                 const char placement = frames.empty() ? 'c' : frames.back();
                 if (!frames.empty()) frames.pop_back();
                 context.selection.paused(false);
-                mouth.ingest(placement == 'b' ? "\\par\\clearpage " : "\\par\\vfill\\clearpage ");
+                mouth.ingest(placement == 'b' ? "\\par\\clearpage " : R"(\par\vfill\clearpage )");
             });
 
         // What a slide shows: `\@onslide{2-}{shown}{hidden}`, one of the two
@@ -794,7 +794,7 @@ namespace render::primitives {
         // pages after counted from one.
         context.blocks.watch(
             "titlepage", [](syntax::Mouth& mouth) { mouth.ingest("\\clearpage\\thispagestyle{empty}"); },
-            [](syntax::Mouth& mouth) { mouth.ingest("\\par\\clearpage\\setcounter{page}{1}"); });
+            [](syntax::Mouth& mouth) { mouth.ingest(R"(\par\clearpage\setcounter{page}{1})"); });
 
         using Directive = layout::Node::Directive;
 
@@ -806,7 +806,7 @@ namespace render::primitives {
 
         // The page's number, where it is written: in a head or a foot, or in
         // the text, where it takes the room two digits would.
-        parser.bind("\\thepage", [&context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\thepage", [&context](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const typography::Font* font = context.selection.text();
 
@@ -829,7 +829,7 @@ namespace render::primitives {
         // across a two-column page are each written with it. What is
         // measured against \\linewidth from here on is measured against a
         // column.
-        parser.bind("\\@columns", [this, &context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\@columns", [this, &context](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             const std::int32_t asked = syntax::Number::integer(mouth, context.registers).value_or(1);
@@ -870,10 +870,11 @@ namespace render::primitives {
                         heading += token.text;
                         if (token.text.size() > 1 && token.text.front() == '\\') heading += ' ';
                     }
-                    mouth.ingest(context.arena.copy("\\par\\vskip\\multicolsep " + heading + "\\par\\@columns " +
-                                                    count + " "));
+                    mouth.ingest(context.arena.copy(
+                        std::format(R"(\par\vskip\multicolsep {}\par\@columns {} )", heading, count)
+                        ));
                 },
-                [](syntax::Mouth& mouth) { mouth.ingest("\\par\\@columns0 \\vskip\\multicolsep "); });
+                [](syntax::Mouth& mouth) { mouth.ingest(R"(\par\@columns0 \vskip\multicolsep )"); });
         }
 
         // A style from this page on, or for this page alone.
@@ -884,7 +885,7 @@ namespace render::primitives {
         }};
         for (const bool local : {false, true}) {
             parser.bind(local ? "\\thispagestyle" : "\\pagestyle",
-                        [this, local](syntax::Parser& parser) -> syntax::Node* {
+                        [this, local](const syntax::Parser& parser) -> syntax::Node* {
                 memory::Arena& arena = parser.arena;
                 const memory::Location origin = parser.mouth.lookahead().location;
                 const std::string name = syntax::Argument::text(parser.mouth);
@@ -914,7 +915,7 @@ namespace render::primitives {
             });
         }
 
-        parser.bind("\\pagenumbering", [this](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\pagenumbering", [this](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             const std::string name = syntax::Argument::text(parser.mouth);
@@ -941,7 +942,7 @@ namespace render::primitives {
 
         // `\@folio{5}`: the number the page this lands on takes, the pages
         // after it counting on -- what `\setcounter{page}{5}` asks for.
-        parser.bind("\\@folio", [](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\@folio", [](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             const std::string written = syntax::Argument::text(parser.mouth);
@@ -1039,7 +1040,7 @@ namespace render::primitives {
             return directive(parser.arena, mark(parser, 1), origin, between);
         });
         for (const auto& [name, which] : {std::pair{"\\leftmark", 0uz}, std::pair{"\\rightmark", 1uz}}) {
-            parser.bind(name, [which](syntax::Parser& parser) -> syntax::Node* {
+            parser.bind(name, [which](const syntax::Parser& parser) -> syntax::Node* {
                 auto* node = parser.arena.compose<layout::Node>();
                 node->directive({.command = layout::Node::Directive::Command::Marked, .index = which});
                 return directive(parser.arena, node, parser.mouth.lookahead().location);

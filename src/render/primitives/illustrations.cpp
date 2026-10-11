@@ -4,7 +4,7 @@
 #include "render/primitives/illustrations.hpp"
 #include "render/primitives/colors.hpp"
 #include "render/primitives/plots.hpp"
-#include "network/http.hpp"
+#include "protocols/http.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"
 #include "syntax/semantics/scope.hpp"
@@ -2297,7 +2297,7 @@ namespace render::primitives {
                                              "\\includegraphics of '" + source + "' refused: the run is offline");
                     return directive(arena, nullptr, origin, true);
                 }
-                received = network::get(source, "");
+                received = protocols::get(source, "");
                 if (received) encoded = std::as_bytes(std::span{*received});
             }
             // mwe's example pictures, which an example document names without

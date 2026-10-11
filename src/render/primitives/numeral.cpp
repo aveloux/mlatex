@@ -45,7 +45,8 @@ namespace render::primitives {
         if (value <= 0) return {};
         const int clamped = std::min(value, 26);
         const char base = upper ? 'A' : 'a';
-        return std::string(1, static_cast<char>(base + clamped - 1));
+        std::string result(1, static_cast<char>(base + clamped - 1));
+        return result;
     }
 
     std::string Numeral::words(const int value, const bool ordinal) {
@@ -77,8 +78,7 @@ namespace render::primitives {
             for (const auto& [size, name] : scales) {
                 if (number < size) continue;
                 std::string text = self(number / size) + " " + std::string(name);
-                const std::int64_t rest = number % size;
-                if (rest != 0) text += (rest < 100 ? " and " : " ") + self(rest);
+                if (const std::int64_t rest = number % size; rest != 0) text += (rest < 100 ? " and " : " ") + self(rest);
                 return text;
             }
             return {};

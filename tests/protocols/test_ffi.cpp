@@ -1,4 +1,4 @@
-#include "network/ffi.hpp"
+#include "protocols/ffi.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -18,14 +18,14 @@ struct Ledger {
 };
 
 /// @brief A command implemented by the program: the balance of an account.
-static void balance(void* data, const char* const* arguments, const size_t count, network::Output* output) {
+static void balance(void* data, const char* const* arguments, const size_t count, protocols::Output* output) {
     auto* ledger = static_cast<Ledger*>(data);
     ++ledger->calls;
     if (count == 1) ledger->account = arguments[0];
 
     // Written in two parts, as a program building its answer might.
-    network::engine()->write(output, "\\textbf{", 8);
-    network::engine()->write(output, "12.50}", 6);
+    protocols::engine()->write(output, "\\textbf{", 8);
+    protocols::engine()->write(output, "12.50}", 6);
 }
 
 /// @brief A document, typeset through the library.
@@ -37,8 +37,8 @@ struct Result {
 };
 
 /// @brief Typesets one document with a session.
-static Result typeset(network::Session* session, const std::string_view document) {
-    const network::Latex* table = network::engine();
+static Result typeset(protocols::Session* session, const std::string_view document) {
+    const protocols::Latex* table = protocols::engine();
     Result result;
     result.clean = table->typeset(session, document.data(), document.size(), &result.pdf, &result.size);
     result.error = table->error(session);
@@ -46,13 +46,13 @@ static Result typeset(network::Session* session, const std::string_view document
 }
 
 int main() {
-    const network::Latex* table = network::engine();
+    const protocols::Latex* table = protocols::engine();
     assert((table != nullptr) && "the library hands out its operations");
-    assert((table == network::engine()) && "the same struct every time");
+    assert((table == protocols::engine()) && "the same struct every time");
     if (!table) return 1;
 
     assert((table->compose("no such folder") == nullptr) && "a session needs an assets folder");
-    network::Session* session = table->compose(nullptr);
+    protocols::Session* session = table->compose(nullptr);
     assert((session != nullptr) && "the library finds its own assets");
     if (!session) return 1;
 

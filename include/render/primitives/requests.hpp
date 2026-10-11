@@ -17,7 +17,7 @@ namespace render::primitives {
     /// \httppost{https://example.com/echo}{hello}
     /// @endcode
     ///
-    /// The same network::compose() a document's own `\includegraphics`
+    /// The same protocols::compose() a document's own `\includegraphics`
     /// reaches for its images reaches here too, generalized to whichever
     /// method a document names; the response body is set as plain text
     /// exactly where the command stood, the way `\includegraphics` sets an

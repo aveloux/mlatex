@@ -341,7 +341,7 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS
 )
 
 set(engine "${sources}")
-list(REMOVE_ITEM engine "${source}/src/main.cpp" "${source}/src/network/ffi.cpp" "${source}/src/render/wasm.cpp")
+list(REMOVE_ITEM engine "${source}/src/main.cpp" "${source}/src/protocols/ffi.cpp" "${source}/src/render/wasm.cpp")
 
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS
         "${source}/include/*.hpp"
@@ -417,7 +417,7 @@ endif()
 # PNG, JPEG and WebP decode an \includegraphics source into plain pixels;
 # zlib recompresses them for the PDF. An https:// source is fetched by the
 # HTTP client each platform already has: WinHTTP on Windows, and libcurl on
-# Linux and macOS when it is installed. Without one, network/http.cpp reads
+# Linux and macOS when it is installed. Without one, protocols/http.cpp reads
 # files alone -- which is also the case in a browser, where the page fetches
 # a picture and hands it in.
 target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
@@ -465,11 +465,11 @@ else()
     target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
 
     # The engine as a C library, for a program that wants documents made
-    # without running a second process: see include/network/ffi.hpp. Named
+    # without running a second process: see include/protocols/ffi.hpp. Named
     # latex_ffi so that its import library does not collide with the one the
     # executable leaves behind. It finds its assets from where it was loaded,
     # which on Linux and macOS takes dladdr and so the dynamic-loading library.
-    add_library(ffi SHARED "${source}/src/network/ffi.cpp" "${source}/include/network/ffi.hpp")
+    add_library(ffi SHARED "${source}/src/protocols/ffi.cpp" "${source}/include/protocols/ffi.hpp")
     target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
     target_compile_definitions(ffi PRIVATE EXPORTING)
     set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
@@ -508,7 +508,7 @@ else()
             RUNTIME DESTINATION bin
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib)
-    install(FILES "${source}/include/network/ffi.hpp" DESTINATION include/latex)
+    install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
     install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
     if(WIN32)
         # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
@@ -521,7 +521,7 @@ else()
     endif()
 
     # A release build packages itself: `cpack` in the build tree -- or the
-    # `package` target -- leaves every package in the source tree's release/
+    # `package` target -- leaves every package in the source tree's bin/
     # folder: an MSI and a .zip on Windows; a disk image, a .pkg installer,
     # a .tar.gz and a .zip on macOS; a .deb, an .rpm, a .tar.gz and a .zip
     # on Linux. A
@@ -569,9 +569,9 @@ else()
         set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
         set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
         set(CPACK_STRIP_FILES ON)
-        # The packages themselves in release/, beside the sources; what CPack
+        # The packages themselves in bin/, beside the sources; what CPack
         # stages to make them stays in the build tree.
-        set(CPACK_OUTPUT_FILE_PREFIX "${source}/release")
+        set(CPACK_OUTPUT_FILE_PREFIX "${source}/bin")
         # WiX takes a license as .txt or .rtf only.
         configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
         set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")

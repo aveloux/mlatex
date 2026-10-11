@@ -7,6 +7,10 @@
 #include <string>
 #include <string_view>
 
+#if !defined(_WIN32)
+    #include <sys/wait.h>
+#endif
+
 // The command line: the executable run as a person runs it -- a document in,
 // its PDF beside it out, TeX's options with one dash or two, what it is made
 // into, where it reads from and where it writes to -- and a mistake in either
@@ -19,10 +23,15 @@ static int run(const std::filesystem::path& document, const std::string_view opt
 #if defined(_WIN32)
     // cmd.exe drops the first and last quote of a command that starts with one.
     command = "\"" + command + " > NUL 2>&1\"";
+    return std::system(command.c_str());
 #else
     command += " > /dev/null 2>&1";
+    // POSIX's system() returns a wait status, not the exit code itself --
+    // comparing it directly against 1 or 2 below would compare against
+    // 1 << 8 or 2 << 8 instead, and every such check would fail.
+    const int status = std::system(command.c_str());
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 #endif
-    return std::system(command.c_str());
 }
 
 /// Writes a file where the executable can read it.
