@@ -17,7 +17,7 @@ namespace render::primitives {
     void Requests::operator()(syntax::Parser& parser, Context& context) const {
         // An offline run sends nothing: each request is refused where it is
         // written, and named, as one that could not be sent would be.
-        parser.bind("\\httpget", [this, &context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\httpget", [this, &context](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -39,7 +39,7 @@ namespace render::primitives {
             return arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text), origin);
         });
 
-        parser.bind("\\httppost", [this, &context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\httppost", [this, &context](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;

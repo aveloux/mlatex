@@ -13,6 +13,7 @@
 #include "layout/line.hpp"
 #include "layout/paragraph.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"
@@ -1091,7 +1092,7 @@ namespace render::primitives {
             bracketed(mouth);
             float degrees = 0.0f;
             const std::string written = syntax::Argument::expanded(mouth);
-            std::from_chars(written.data(), written.data() + written.size(), degrees);
+            chars::decimal(written.data(), written.data() + written.size(), degrees);
             const float angle = degrees * 3.14159265358979f / 180.0f;
             layout::Node* inner = row(arena, contents(parser, "\\rotatebox"));
             return directive(arena, transformed(arena, inner, std::cos(angle), -std::sin(angle), std::sin(angle),
@@ -1103,13 +1104,13 @@ namespace render::primitives {
             const memory::Location origin = mouth.lookahead().location;
             float across = 1.0f;
             const std::string written = syntax::Argument::expanded(mouth);
-            std::from_chars(written.data(), written.data() + written.size(), across);
+            chars::decimal(written.data(), written.data() + written.size(), across);
             float down = across;
             std::string vertical;
             for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 vertical += token.text;
             }
-            if (!vertical.empty()) std::from_chars(vertical.data(), vertical.data() + vertical.size(), down);
+            if (!vertical.empty()) chars::decimal(vertical.data(), vertical.data() + vertical.size(), down);
             layout::Node* inner = row(arena, contents(parser, "\\scalebox"));
             return directive(arena, transformed(arena, inner, across, 0.0f, 0.0f, down), origin);
         });

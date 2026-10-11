@@ -7,6 +7,7 @@
 /// one implementation rather than two that have to agree.
 #include "render/primitives/styles.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/semantics/scope.hpp"
 
@@ -270,7 +271,7 @@ namespace render::primitives {
             const std::string size = read(mouth);
             static_cast<void>(read(mouth));   // the baseline, which the class's leading keeps
             float points = 0.0f;
-            if (std::from_chars(size.data(), size.data() + size.size(), points).ec == std::errc{} && points > 0.0f) {
+            if (chars::decimal(size.data(), size.data() + size.size(), points).ec == std::errc{} && points > 0.0f) {
                 pending.size = points;
             } else {
                 pending.size = primitives::measure(size, mouth, context);

@@ -8,6 +8,7 @@
 /// found in the page tree, and every object the page's resources reach
 /// copied out, numbered in the order it was reached.
 #include "render/graphics/drawing.hpp"
+#include "chars.hpp"
 
 #include <zlib.h>
 
@@ -581,7 +582,7 @@ namespace render::graphics {
         for (std::size_t index = 0; index < 4; ++index) {
             const Value* corner = resolve(&box->items[index]);
             if (!corner || corner->type != Type::Plain) return std::nullopt;
-            std::from_chars(corner->text.data(), corner->text.data() + corner->text.size(), made.box[index]);
+            chars::decimal(corner->text.data(), corner->text.data() + corner->text.size(), made.box[index]);
         }
         if (made.box[0] > made.box[2]) std::swap(made.box[0], made.box[2]);
         if (made.box[1] > made.box[3]) std::swap(made.box[1], made.box[3]);

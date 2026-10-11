@@ -43,7 +43,7 @@ namespace render::primitives {
         }};
 
         for (const auto& [name, command, justification] : switches) {
-            parser.bind(name, [command, justification](syntax::Parser& parser) -> syntax::Node* {
+            parser.bind(name, [command, justification](const syntax::Parser& parser) -> syntax::Node* {
                 memory::Arena& arena = parser.arena;
                 auto* node = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 node->directive({.command = command, .justification = justification});
@@ -60,7 +60,7 @@ namespace render::primitives {
         }};
 
         for (const auto& [name, trailing] : edges) {
-            parser.bind(name, [this, &context, trailing, name](syntax::Parser& parser) -> syntax::Node* {
+            parser.bind(name, [this, &context, trailing, name](const syntax::Parser& parser) -> syntax::Node* {
                 syntax::Mouth& mouth = parser.mouth;
                 memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
@@ -94,27 +94,27 @@ namespace render::primitives {
         // or to the document's own baseline once none is left open, is never
         // missing a piece another block further out happened to leave set.
         static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> blocks{{
-            {"center", "\\par\\leftskip=0pt\\rightskip=0pt\\centering "},
-            {"flushleft", "\\par\\leftskip=0pt\\rightskip=0pt\\raggedright "},
-            {"flushright", "\\par\\leftskip=0pt\\rightskip=0pt\\raggedleft "},
+            {"center", R"(\par\leftskip=0pt\rightskip=0pt\centering )"},
+            {"flushleft", R"(\par\leftskip=0pt\rightskip=0pt\raggedright )"},
+            {"flushright", R"(\par\leftskip=0pt\rightskip=0pt\raggedleft )"},
             // ragged2e's names for the same three, and its justified block.
-            {"Center", "\\par\\leftskip=0pt\\rightskip=0pt\\centering "},
-            {"FlushLeft", "\\par\\leftskip=0pt\\rightskip=0pt\\raggedright "},
-            {"FlushRight", "\\par\\leftskip=0pt\\rightskip=0pt\\raggedleft "},
-            {"justify", "\\par\\leftskip=0pt\\rightskip=0pt\\justifying "},
+            {"Center", R"(\par\leftskip=0pt\rightskip=0pt\centering )"},
+            {"FlushLeft", R"(\par\leftskip=0pt\rightskip=0pt\raggedright )"},
+            {"FlushRight", R"(\par\leftskip=0pt\rightskip=0pt\raggedleft )"},
+            {"justify", R"(\par\leftskip=0pt\rightskip=0pt\justifying )"},
             // A passage set in from both margins: quote for a short one,
             // quotation for one long enough to need its paragraphs indented
             // as body text is, verse for lines of poetry, ragged at the right
             // where a line ends on its own rather than where the column does.
-            {"quote", "\\par\\leftskip=2.5em\\rightskip=2.5em\\justifying\\noindent "},
-            {"quotation", "\\par\\leftskip=2.5em\\rightskip=2.5em\\justifying "},
-            {"verse", "\\par\\leftskip=2.5em\\rightskip=2.5em\\raggedright\\noindent "},
+            {"quote", R"(\par\leftskip=2.5em\rightskip=2.5em\justifying\noindent )"},
+            {"quotation", R"(\par\leftskip=2.5em\rightskip=2.5em\justifying )"},
+            {"verse", R"(\par\leftskip=2.5em\rightskip=2.5em\raggedright\noindent )"},
         }};
 
         // The body's own alignment is the class's \\@bodyshape: justified,
         // or beamer's ragged right.
         static constexpr std::string_view baseline =
-            "\\par\\leftskip=0pt\\rightskip=0pt\\@bodyshape\\noindent ";
+            R"(\par\leftskip=0pt\rightskip=0pt\@bodyshape\noindent )";
 
         for (const auto& [name, opening] : blocks) {
             context.blocks.watch(

@@ -11,6 +11,7 @@
 #include "syntax/argument.hpp"
 #include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/modules.hpp"
 #include "syntax/number.hpp"
@@ -187,8 +188,13 @@ namespace render::primitives {
                     if (name != "\\parskip") return;
                 }
                 if (name.empty()) return;
-                mouth.ingest(context.arena.copy((added ? "\\@increase" : "\\@set") + name + (added ? " by " : "=") +
-                                                "\\dimexpr " + value + "\\relax "));
+                mouth.ingest(context.arena.copy(
+                    std::format("{}{}{}\\dimexpr {}\\relax ",
+                        added ? "\\@increase" : "\\@set",
+                        name,
+                        added ? " by " : "=",
+                        value)
+                 ));
             });
         }
 
@@ -225,7 +231,7 @@ namespace render::primitives {
                 std::string written;
                 for (const syntax::Token& token : macro->body) written += token.text;
                 float value = field;
-                if (std::from_chars(written.data(), written.data() + written.size(), value).ec == std::errc{} &&
+                if (chars::decimal(written.data(), written.data() + written.size(), value).ec == std::errc{} &&
                     value >= 0.0f && value <= 1.0f) {
                     field = value;
                 }
@@ -593,8 +599,7 @@ namespace render::primitives {
                             const bool opening = token.text == "\\begin";
                             if (opening && std::ranges::contains(lists, name)) {
                                 // A list's default overlay, `[<+->]`, kept for its items.
-                                std::size_t next = after(end);
-                                if (next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
+                                if (std::size_t next = after(end); next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
                                     std::string spec;
                                     const auto [given, past] = overlay(next + 1);
                                     spec = given.value_or("");
@@ -759,8 +764,7 @@ namespace render::primitives {
             const bool on = found.empty() || std::ranges::any_of(found, [this](const std::pair<int, int>& range) {
                                 return slide >= range.first && slide <= range.second;
                             });
-            const std::vector<syntax::Token>& chosen = on ? shown : hidden;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<syntax::Token>& chosen = on ? shown : hidden; !chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 
         // `\pause`: what follows shows from the frame's next step on -- or
@@ -1052,7 +1056,7 @@ namespace render::primitives {
         parser.bind("\\fancyhf", [furnishing](syntax::Parser& parser) { return furnishing(parser, true, true); });
 
         parser.mouth.bind("\\pagerules", [&context](syntax::Mouth& mouth) {
-            std::array<float, 2> widths{context.document.furniture.rule, context.document.furniture.line};
+            std::array widths{context.document.furniture.rule, context.document.furniture.line};
             for (float& width : widths) {
                 syntax::Token open = mouth.read();
                 if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {

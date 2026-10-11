@@ -31,7 +31,7 @@ namespace render::primitives {
     }
 
     void Rules::operator()(syntax::Parser& parser, Context& context) const {
-        parser.bind("\\rule", [&context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\rule", [&context](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -96,7 +96,7 @@ namespace render::primitives {
             }
         };
 
-        parser.bind("\\hrule", [&context, keywords](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\hrule", [&context, keywords](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -108,7 +108,7 @@ namespace render::primitives {
             return directive(arena, node, origin, true);
         });
 
-        parser.bind("\\vrule", [&context, keywords](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\vrule", [&context, keywords](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 

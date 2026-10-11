@@ -6,6 +6,7 @@
 #include "syntax/number.hpp"
 #include "syntax/semantics/union.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -165,7 +166,7 @@ namespace syntax::primitives {
                         continue;
                     }
                     double weight = 1.0;
-                    if (infinite > 0) std::from_chars(amount.data(), amount.data() + infinite, weight);
+                    if (infinite > 0) chars::decimal(amount.data(), amount.data() + infinite, weight);
                     const auto order = static_cast<std::int32_t>(std::min<std::size_t>(amount.size() - infinite - 2, 3));
                     flex[part] = static_cast<std::int32_t>(weight * 65536.0);
                     flex[2] = part == 0 ? (flex[2] & ~3) | order : (flex[2] & 3) | order << 2;

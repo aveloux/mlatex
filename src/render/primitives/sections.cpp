@@ -13,6 +13,7 @@
 #include "syntax/argument.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/semantics/scope.hpp"
 
@@ -416,7 +417,7 @@ namespace render::primitives {
                 if (word == "\\titlerule") {
                     const std::string thick = enclosed('[', ']');
                     look.rule = 0.4f;
-                    std::from_chars(thick.data(), thick.data() + thick.size(), look.rule);
+                    chars::decimal(thick.data(), thick.data() + thick.size(), look.rule);
                     continue;
                 }
                 if (word == "\\bfseries" || word == "\\bf") look.cuts.push_back(Styles::Cut::Bold);
@@ -452,7 +453,7 @@ namespace render::primitives {
             const std::size_t cut = std::min(written.find("plus"), written.find("minus"));
             if (written.starts_with('*')) {
                 float amount = 0.0f;
-                std::from_chars(written.data() + 1, written.data() + written.size(), amount);
+                chars::decimal(written.data() + 1, written.data() + written.size(), amount);
                 return amount * context.document.configuration.size * 0.4306f;
             }
             return std::abs(measure(written.substr(0, cut), mouth, context));

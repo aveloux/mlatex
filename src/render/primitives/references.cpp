@@ -40,7 +40,7 @@ namespace render::primitives {
                        : std::string("??");
         }
 
-        const std::string number = mark.kind == "equation" && form != Form::Number ? "(" + mark.text + ")" : mark.text;
+        std::string number = mark.kind == "equation" && form != Form::Number ? "(" + mark.text + ")" : mark.text;
         if (form == Form::Number || mark.kind.empty()) return number;
 
         // The name the document or cleveref gave the kind, or the kind itself.
@@ -157,10 +157,10 @@ namespace render::primitives {
             Mark& mark = forwards[syntax::Argument::text(mouth)];
             mark.title = syntax::Argument::expanded(mouth);
             mark.defined = true;
-            for (const auto& [reference, form] : mark.references) reference->value = context.arena.copy(mark.title);
+            for (const auto &reference: mark.references | std::views::keys) reference->value = context.arena.copy(mark.title);
             mark.references.clear();
         });
-        parser.bind("\\@forward", [this](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\@forward", [this](const syntax::Parser& parser) -> syntax::Node* {
             memory::Arena& arena = parser.arena;
             Mark& mark = forwards[syntax::Argument::text(parser.mouth)];
             auto* text = arena.compose<syntax::Node>(syntax::Node::Type::Text,
@@ -170,7 +170,7 @@ namespace render::primitives {
             return text;
         });
 
-        parser.bind(place, [this](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind(place, [this](const syntax::Parser& parser) -> syntax::Node* {
             if (waiting.empty()) return nullptr;
             memory::Arena& arena = parser.arena;
             auto* anchor = arena.compose<layout::Node>(layout::Node::Type::Directive);
@@ -198,7 +198,7 @@ namespace render::primitives {
         }};
 
         for (const auto& [name, form, enclosed] : forms) {
-            parser.bind(name, [this, &context, form, enclosed](syntax::Parser& parser) -> syntax::Node* {
+            parser.bind(name, [this, &context, form, enclosed](const syntax::Parser& parser) -> syntax::Node* {
                 syntax::Mouth& mouth = parser.mouth;
                 memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;

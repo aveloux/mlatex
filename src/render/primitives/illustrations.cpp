@@ -10,6 +10,7 @@
 #include "syntax/semantics/scope.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -81,7 +82,7 @@ namespace render::primitives {
                                                        const float em = 10.0f) noexcept {
         text = trim(text);
         float value = 0.0f;
-        const auto [stop, failure] = std::from_chars(text.data(), text.data() + text.size(), value);
+        const auto [stop, failure] = chars::decimal(text.data(), text.data() + text.size(), value);
         if (failure == std::errc{}) {
             const std::string_view unit = trim(text.substr(static_cast<std::size_t>(stop - text.data())));
             static constexpr std::array<std::pair<std::string_view, float>, 8> units{{
@@ -253,7 +254,7 @@ namespace render::primitives {
                 // tikz-cd's: a number counts its 0.56ex steps.
                 const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
                 float amount = value.empty() ? 1.0f : 0.0f;
-                const auto [stop, failure] = std::from_chars(value.data(), value.data() + value.size(), amount);
+                const auto [stop, failure] = chars::decimal(value.data(), value.data() + value.size(), amount);
                 const bool bare = failure == std::errc{} && stop == value.data() + value.size();
                 const float reach = value.empty() || bare ? amount * 0.56f * 0.43f * em : distance(value, 1.0f, em).value_or(0.0f);
                 shift = key == "shift left" ? reach : -reach;
@@ -277,7 +278,7 @@ namespace render::primitives {
                 if (!value.empty()) tint = Colors::resolve(value, context.variables);
             } else if (key == "opacity" || key == "draw opacity") {
                 float alpha = 1.0f;
-                if (std::from_chars(value.data(), value.data() + value.size(), alpha).ec == std::errc{}) {
+                if (chars::decimal(value.data(), value.data() + value.size(), alpha).ec == std::errc{}) {
                     ink.alpha = std::clamp(alpha, 0.0f, 1.0f);
                 } else {
                     miss("\\draw: '" + std::string(value) + "' is not an opacity");
@@ -289,10 +290,10 @@ namespace render::primitives {
                 // A plot's: over what, in how many steps, and in what name --
                 // x, as a function of it is read.
                 const std::size_t colon = value.find(':');
-                std::from_chars(value.data(), value.data() + std::min(colon, value.size()), low);
+                chars::decimal(value.data(), value.data() + std::min(colon, value.size()), low);
                 if (colon != std::string_view::npos) {
                     const std::string_view upper = trim(value.substr(colon + 1));
-                    std::from_chars(upper.data(), upper.data() + upper.size(), high);
+                    chars::decimal(upper.data(), upper.data() + upper.size(), high);
                 }
             } else if (key == "samples") {
                 std::from_chars(value.data(), value.data() + value.size(), samples);
@@ -455,7 +456,7 @@ namespace render::primitives {
             if (anchor.find("south") != std::string_view::npos) dy = -1.0f;
             if (dx == 0.0f && dy == 0.0f) {
                 float angle = 0.0f;
-                if (std::from_chars(anchor.data(), anchor.data() + anchor.size(), angle).ec != std::errc{}) return std::nullopt;
+                if (chars::decimal(anchor.data(), anchor.data() + anchor.size(), angle).ec != std::errc{}) return std::nullopt;
                 dx = std::cos(angle * std::numbers::pi_v<float> / 180.0f);
                 dy = std::sin(angle * std::numbers::pi_v<float> / 180.0f);
             } else if (!mark.round) {
@@ -822,7 +823,7 @@ namespace render::primitives {
                     if (value.find("north") != std::string_view::npos) up = 1;
                 } else if (key == "pos") {
                     float written = 0.5f;
-                    std::from_chars(value.data(), value.data() + value.size(), written);
+                    chars::decimal(value.data(), value.data() + value.size(), written);
                     share = written;
                 } else if (option == "midway" || option == "near start" || option == "near end" ||
                            option == "very near start" || option == "very near end" || option == "at start" ||
@@ -1170,7 +1171,7 @@ namespace render::primitives {
                     const std::string_view value = equals == std::string_view::npos ? std::string_view{}
                                                                                      : trim(option.substr(equals + 1));
                     float amount = 30.0f;
-                    if (!value.empty()) std::from_chars(value.data(), value.data() + value.size(), amount);
+                    if (!value.empty()) chars::decimal(value.data(), value.data() + value.size(), amount);
                     if (key == "bend left") bend = amount;
                     if (key == "bend right") bend = -amount;
                     if (key == "out") leaving = amount;
@@ -1669,7 +1670,7 @@ namespace render::primitives {
                     };
                     const auto number = [](const std::string& text) {
                         float value = 0.0f;
-                        std::from_chars(text.data(), text.data() + text.size(), value);
+                        chars::decimal(text.data(), text.data() + text.size(), value);
                         return value;
                     };
                     const std::array<std::string, 2> size = pair();
@@ -1754,7 +1755,7 @@ namespace render::primitives {
                     std::string_view option = trim(piece);
                     if (option.starts_with("scale=")) {
                         option.remove_prefix(6);
-                        if (std::from_chars(option.data(), option.data() + option.size(), scale).ec != std::errc{}) {
+                        if (chars::decimal(option.data(), option.data() + option.size(), scale).ec != std::errc{}) {
                             scale = 1.0f;
                         }
                     } else if (option.starts_with("node distance=")) {
@@ -2148,7 +2149,7 @@ namespace render::primitives {
             const std::string text = syntax::Argument::text(mouth);
             float value = color.alpha;
             if (const auto [stop, failure] =
-                    std::from_chars(text.data(), text.data() + text.size(), value);
+                    chars::decimal(text.data(), text.data() + text.size(), value);
                 failure == std::errc{}) {
                 color.alpha = value;
             }
@@ -2340,7 +2341,7 @@ namespace render::primitives {
                         const std::string_view part(piece.begin(), piece.end());
                         if (part.empty() || corner >= 4) continue;
                         float amount = 0.0f;
-                        const auto [end, fault] = std::from_chars(part.data(), part.data() + part.size(), amount);
+                        const auto [end, fault] = chars::decimal(part.data(), part.data() + part.size(), amount);
                         if (fault == std::errc{} && end != part.data() + part.size()) {
                             amount = primitives::measure(part, mouth, context) * 72.0f / 72.27f;
                         }
@@ -2477,7 +2478,7 @@ namespace render::primitives {
                         } else if (key == "height" || key == "totalheight") {
                             height = length(value);
                         } else if (key == "scale") {
-                            if (std::from_chars(value.data(), value.data() + value.size(), factor).ec != std::errc{}) factor = 1.0f;
+                            if (chars::decimal(value.data(), value.data() + value.size(), factor).ec != std::errc{}) factor = 1.0f;
                         } else if (key == "keepaspectratio") {
                             fitted = true;
                         } else if (key == "page" || key == "viewport" || key == "trim" || key == "clip") {

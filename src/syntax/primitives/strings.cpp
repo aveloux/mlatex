@@ -4,6 +4,7 @@
 #include "syntax/primitives/strings.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -145,8 +146,8 @@ namespace syntax::primitives {
             const std::string right = Argument::expanded(mouth);
             double first = 0.0;
             double second = 0.0;
-            const auto one = std::from_chars(left.data(), left.data() + left.size(), first);
-            const auto two = std::from_chars(right.data(), right.data() + right.size(), second);
+            const auto one = chars::decimal(left.data(), left.data() + left.size(), first);
+            const auto two = chars::decimal(right.data(), right.data() + right.size(), second);
             const bool numeric = !left.empty() && !right.empty() && one.ec == std::errc{} &&
                                  one.ptr == left.data() + left.size() && two.ec == std::errc{} &&
                                  two.ptr == right.data() + right.size();

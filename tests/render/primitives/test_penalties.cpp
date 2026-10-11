@@ -1,4 +1,5 @@
 #include "latex.hpp"
+#include "chars.hpp"
 
 #include <cassert>
 #include <charconv>
@@ -77,7 +78,7 @@ int main() {
             for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
                 const std::size_t start = result.pdf.rfind(' ', at - 1) + 1;
                 float y = 0.0f;
-                std::from_chars(result.pdf.data() + start, result.pdf.data() + at, y);
+                chars::decimal(result.pdf.data() + start, result.pdf.data() + at, y);
                 down.push_back(y);
             }
             return down.size() >= 2 ? down[1] - down[0] : 0.0f;

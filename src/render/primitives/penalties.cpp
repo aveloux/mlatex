@@ -18,7 +18,7 @@ namespace render::primitives {
     }
 
     void Penalties::operator()(syntax::Parser& parser, Context& context) const {
-        parser.bind("\\penalty", [&context](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\penalty", [&context](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -47,18 +47,18 @@ namespace render::primitives {
         // own tables and not this one -- a page break is a Node this module
         // builds, and nothing outside it can copy that.
         static constexpr std::array<Fixed, 8> fixed{{
-            {"\\nobreak", absolute, false, false, false},
-            {"\\break", -absolute, false, false, false},
-            {"\\\\", -absolute, false, true, false},
-            {"\\newline", -absolute, false, true, false},
-            {"\\linebreak", -absolute, false, true, false},
-            {"\\pagebreak", -absolute, true, true, false},
-            {"\\newpage", -absolute, true, true, false},
-            {"\\clearpage", -absolute, true, true, true},
+            {.name = "\\nobreak", .value = absolute, .page = false, .optional = false, .sheet = false},
+            {.name = "\\break", .value = -absolute, .page = false, .optional = false, .sheet = false},
+            {.name = "\\\\", .value = -absolute, .page = false, .optional = true, .sheet = false},
+            {.name = "\\newline", .value = -absolute, .page = false, .optional = true, .sheet = false},
+            {.name = "\\linebreak", .value = -absolute, .page = false, .optional = true, .sheet = false},
+            {.name = "\\pagebreak", .value = -absolute, .page = true, .optional = true, .sheet = false},
+            {.name = "\\newpage", .value = -absolute, .page = true, .optional = true, .sheet = false},
+            {.name = "\\clearpage", .value = -absolute, .page = true, .optional = true, .sheet = true},
         }};
 
         for (const auto& [name, value, page, optional, sheet] : fixed) {
-            parser.bind(name, [&context, name, value, page, optional, sheet](syntax::Parser& parser) -> syntax::Node* {
+            parser.bind(name, [&context, name, value, page, optional, sheet](const syntax::Parser& parser) -> syntax::Node* {
                 syntax::Mouth& mouth = parser.mouth;
                 memory::Arena& arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
@@ -106,7 +106,7 @@ namespace render::primitives {
         // `?`, `&`, `=`, `#` and the rest -- the last of a run of them, so
         // `https://` stays whole. What \\url and \\path set, so an address
         // in a narrow column turns over rather than running out of it.
-        parser.bind("\\@breakable", [](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\@breakable", [](const syntax::Parser& parser) -> syntax::Node* {
             syntax::Mouth& mouth = parser.mouth;
             memory::Arena& arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;

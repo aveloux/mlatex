@@ -10,6 +10,7 @@
 #include "layout/line.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/number.hpp"
 
@@ -59,7 +60,7 @@ namespace render::primitives {
                     : letters == 4 ? layout::Node::Order::Fill
                                    : layout::Node::Order::Filll;
             float amount = 1.0f;
-            if (!digits.empty()) std::from_chars(digits.data(), digits.data() + digits.size(), amount);
+            if (!digits.empty()) chars::decimal(digits.data(), digits.data() + digits.size(), amount);
             return amount;
         }
 

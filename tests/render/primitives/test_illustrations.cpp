@@ -1,4 +1,5 @@
 #include "latex.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -76,7 +77,7 @@ static std::vector<std::pair<float, float>> strokes(const std::string_view pdf) 
         const char* cursor = written.data();
         for (float& number : numbers) {
             while (cursor < written.data() + written.size() && (*cursor == ' ' || *cursor == '\n' || *cursor == 'm')) ++cursor;
-            cursor = std::from_chars(cursor, written.data() + written.size(), number).ptr;
+            cursor = chars::decimal(cursor, written.data() + written.size(), number).ptr;
         }
         found.emplace_back(numbers[2] - numbers[0], numbers[1] - numbers[3]);
     }
@@ -179,7 +180,7 @@ int main() {
         for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
             const std::size_t start = result.pdf.rfind(' ', at - 1) + 1;
             float y = 0.0f;
-            std::from_chars(result.pdf.data() + start, result.pdf.data() + at, y);
+            chars::decimal(result.pdf.data() + start, result.pdf.data() + at, y);
             if (y < 700.0f) lowest = std::max(lowest, y);
         }
         assert((result.clean && lowest > 72.0f + 100.0f) &&
@@ -263,7 +264,7 @@ int main() {
             const std::size_t y = result.pdf.rfind(' ', at - 1);
             const std::size_t x = result.pdf.rfind(' ', y - 1) + 1;
             float value = 0.0f;
-            std::from_chars(result.pdf.data() + x, result.pdf.data() + y, value);
+            chars::decimal(result.pdf.data() + x, result.pdf.data() + y, value);
             across.push_back(value);
         }
         assert((result.clean && across.size() >= 2 && std::ranges::max(across) - std::ranges::min(across) > 150.0f) &&
@@ -277,11 +278,11 @@ int main() {
         const std::size_t move = result.pdf.find(" m\n");
         const std::size_t start = result.pdf.rfind(' ', move - 1) + 1;
         float y = 0.0f;
-        std::from_chars(result.pdf.data() + start, result.pdf.data() + move, y);
+        chars::decimal(result.pdf.data() + start, result.pdf.data() + move, y);
         const std::size_t text = result.pdf.find(" Tm");
         const std::size_t first = result.pdf.rfind(' ', text - 1) + 1;
         float baseline = 0.0f;
-        std::from_chars(result.pdf.data() + first, result.pdf.data() + text, baseline);
+        chars::decimal(result.pdf.data() + first, result.pdf.data() + text, baseline);
         assert((result.clean && std::abs(y - baseline) < 0.01f) && "its bottom on the baseline, and \\tikz's two forms");
     }
     {
@@ -299,7 +300,7 @@ int main() {
             const std::size_t y = result.pdf.rfind(' ', at - 1);
             const std::size_t x = result.pdf.rfind(' ', y - 1) + 1;
             float value = 0.0f;
-            std::from_chars(result.pdf.data() + x, result.pdf.data() + y, value);
+            chars::decimal(result.pdf.data() + x, result.pdf.data() + y, value);
             across.push_back(value);
         }
         assert((across.size() >= 5 && across[4] > across[0] && across[4] < across[1]) &&

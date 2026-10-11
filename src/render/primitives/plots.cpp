@@ -4,6 +4,7 @@
 #include "render/primitives/plots.hpp"
 #include "render/primitives/colors.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -83,7 +84,7 @@ namespace render::primitives {
             }
             if ((head >= '0' && head <= '9') || head == '.') {
                 double number = 0.0;
-                const auto [stop, failure] = std::from_chars(text.data() + at, text.data() + text.size(), number);
+                const auto [stop, failure] = chars::decimal(text.data() + at, text.data() + text.size(), number);
                 if (failure != std::errc{}) {
                     broken = true;
                     return 0.0;
@@ -231,15 +232,15 @@ namespace render::primitives {
             return found;
         };
         const auto find = [](const Pairs& pairs, const std::string_view key) -> std::optional<std::string_view> {
-            for (auto pair = pairs.rbegin(); pair != pairs.rend(); ++pair) {
-                if (pair->first == key) return pair->second;
+            for (const auto & pair : std::views::reverse(pairs)) {
+                if (pair.first == key) return pair.second;
             }
             return std::nullopt;
         };
         const auto number = [trim](std::string_view text) -> std::optional<double> {
             text = trim(text);
             double value = 0.0;
-            const auto [stop, failure] = std::from_chars(text.data(), text.data() + text.size(), value);
+            const auto [stop, failure] = chars::decimal(text.data(), text.data() + text.size(), value);
             if (failure != std::errc{} || stop != text.data() + text.size()) return std::nullopt;
             return value;
         };
@@ -565,7 +566,7 @@ namespace render::primitives {
                             std::vector<double> angles;
                             for (std::size_t at = 0; at < view->size();) {
                                 double value = 0.0;
-                                const auto [stop, failure] = std::from_chars(view->data() + at, view->data() + view->size(), value);
+                                const auto [stop, failure] = chars::decimal(view->data() + at, view->data() + view->size(), value);
                                 if (failure != std::errc{}) {
                                     ++at;
                                     continue;
@@ -677,7 +678,7 @@ namespace render::primitives {
                             std::size_t from = 0;
                             for (double& value : values) {
                                 while (from < stop.size() && stop[from] == ' ') ++from;
-                                from = static_cast<std::size_t>(std::from_chars(stop.data() + from, stop.data() + stop.size(), value).ptr -
+                                from = static_cast<std::size_t>(chars::decimal(stop.data() + from, stop.data() + stop.size(), value).ptr -
                                                                 stop.data());
                             }
                             out += std::format("\\definecolor{{pgfplotsmap{}}}{{rgb}}{{{:.3f},{:.3f},{:.3f}}}", stops.size(), values[1],
@@ -1558,7 +1559,7 @@ namespace render::primitives {
                 written += "\\\\";
                 const bool named = index == 0 && std::ranges::any_of(table[index], [](const std::string& item) {
                     double value = 0.0;
-                    const auto [end, fault] = std::from_chars(item.data(), item.data() + item.size(), value);
+                    const auto [end, fault] = chars::decimal(item.data(), item.data() + item.size(), value);
                     return fault != std::errc{} || end != item.data() + item.size();
                 });
                 if (named) written += "\\hline ";

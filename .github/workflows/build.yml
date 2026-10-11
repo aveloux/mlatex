@@ -106,8 +106,8 @@ jobs:
           $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
             -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
           $machine = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
-          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" \vert{} Out-File $env:GITHUB_ENV -Append
-          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" \vert{} Out-File $env:GITHUB_ENV -Append
+          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
 
       # WiX 7 for the .msi, with its EULA accepted for this runner and the
       # extensions CPack's installer uses. Accepting it is the project's
@@ -117,7 +117,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install --global wix --version 7.0.0
-          "$env:USERPROFILE\.dotnet\tools" \vert{} Out-File $env:GITHUB_PATH -Append
+          "$env:USERPROFILE\.dotnet\tools" | Out-File $env:GITHUB_PATH -Append
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" eula accept wix7
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.UI.wixext/7.0.0
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.Util.wixext/7.0.0

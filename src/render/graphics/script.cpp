@@ -10,6 +10,7 @@
 /// path is kept already through the transformation it was built under, as
 /// PostScript keeps it, so no transformation is written and none is needed.
 #include "render/graphics/drawing.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -43,7 +44,7 @@ namespace render::graphics {
                 std::size_t found = 0;
                 for (float& corner : box) {
                     while (cursor < end && (*cursor == ' ' || *cursor == '\t')) ++cursor;
-                    const auto [stop, failure] = std::from_chars(cursor, end, corner);
+                    const auto [stop, failure] = chars::decimal(cursor, end, corner);
                     if (failure != std::errc{}) break;
                     cursor = stop;
                     ++found;
@@ -197,7 +198,7 @@ namespace render::graphics {
             const std::string_view word = text.substr(start, at - start);
             if (literal) return Object{.kind = Kind::Literal, .text = std::string(word)};
             double value = 0.0;
-            if (const auto [stop, failure] = std::from_chars(word.data(), word.data() + word.size(), value);
+            if (const auto [stop, failure] = chars::decimal(word.data(), word.data() + word.size(), value);
                 failure == std::errc{} && stop == word.data() + word.size()) {
                 return Object{.kind = Kind::Number, .number = value};
             }

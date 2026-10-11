@@ -2,6 +2,7 @@
 /// @brief Color primitives: `\\textcolor`, `\\definecolor` and `\\colorlet`.
 #include "render/primitives/colors.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include "syntax/argument.hpp"
 #include "syntax/semantics/scope.hpp"
@@ -58,7 +59,7 @@ namespace render::primitives {
         for (std::size_t index = 1; index < parts.size(); index += 2) {
             const std::string_view written = trim(parts[index]);
             float share = 100.0f;
-            if (std::from_chars(written.data(), written.data() + written.size(), share).ec != std::errc{}) {
+            if (chars::decimal(written.data(), written.data() + written.size(), share).ec != std::errc{}) {
                 share = 100.0f;
             }
             const float part = std::clamp(share / 100.0f, 0.0f, 1.0f);
@@ -88,7 +89,7 @@ namespace render::primitives {
         for (const auto piece : std::views::split(value, ',')) {
             if (count == numbers.size()) return std::nullopt;
             const std::string_view number = trim(std::string_view(piece.begin(), piece.end()));
-            const auto [stop, failure] = std::from_chars(number.data(), number.data() + number.size(), numbers[count]);
+            const auto [stop, failure] = chars::decimal(number.data(), number.data() + number.size(), numbers[count]);
             if (failure != std::errc{} || stop != number.data() + number.size()) return std::nullopt;
             ++count;
         }

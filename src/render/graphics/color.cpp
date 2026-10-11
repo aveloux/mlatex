@@ -2,6 +2,7 @@
 /// @brief Color implementation: every format this engine reads into the
 ///        0-1 form PDF wants.
 #include "render/graphics/color.hpp"
+#include "chars.hpp"
 
 #include <array>
 #include <charconv>
@@ -87,7 +88,7 @@ namespace render::graphics {
             for (std::size_t index = 0; index < wanted; ++index) {
                 const std::string_view part = parts[index];
                 if (part.empty()) return black;
-                const auto [stop, failure] = std::from_chars(part.data(), part.data() + part.size(), channel[index]);
+                const auto [stop, failure] = chars::decimal(part.data(), part.data() + part.size(), channel[index]);
                 if (failure != std::errc{} || stop != part.data() + part.size()) return black;
             }
 

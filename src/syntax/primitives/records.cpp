@@ -4,6 +4,7 @@
 #include "syntax/primitives/records.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "chars.hpp"
 
 #include <algorithm>
 #include <array>
@@ -136,7 +137,7 @@ namespace syntax::primitives {
         // Whether a value reads whole as a number.
         const auto numeric = [](const std::string& text) {
             double value = 0.0;
-            const auto [end, fault] = std::from_chars(text.data(), text.data() + text.size(), value);
+            const auto [end, fault] = chars::decimal(text.data(), text.data() + text.size(), value);
             return !text.empty() && fault == std::errc{} && end == text.data() + text.size();
         };
         // A table as a tabular: its names over its rows, a number column set
@@ -423,8 +424,8 @@ namespace syntax::primitives {
                 for (const auto& [column, descending] : order) {
                     double first = 0.0;
                     double second = 0.0;
-                    const auto one = std::from_chars(left[column].data(), left[column].data() + left[column].size(), first);
-                    const auto two = std::from_chars(right[column].data(), right[column].data() + right[column].size(), second);
+                    const auto one = chars::decimal(left[column].data(), left[column].data() + left[column].size(), first);
+                    const auto two = chars::decimal(right[column].data(), right[column].data() + right[column].size(), second);
                     const bool numbers = one.ec == std::errc{} && two.ec == std::errc{};
                     const bool less = numbers ? first < second : left[column] < right[column];
                     const bool more = numbers ? first > second : left[column] > right[column];
@@ -447,7 +448,7 @@ namespace syntax::primitives {
                 for (const std::vector<std::string>& row : table->rows) {
                     double value = 0.0;
                     if (column < row.size() &&
-                        std::from_chars(row[column].data(), row[column].data() + row[column].size(), value).ec == std::errc{}) {
+                        chars::decimal(row[column].data(), row[column].data() + row[column].size(), value).ec == std::errc{}) {
                         total += value;
                         ++counted;
                     }
