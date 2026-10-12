@@ -337,5 +337,3 @@ Fira Math, Asana Math and the TeX Gyre math fonts, and its hyphenation
 patterns come from the [hyph-utf8](https://www.hyphenation.org) project.
 Above all, it owes its language to Donald Knuth's TeX and Leslie Lamport's
 LaTeX.
-
-To myself, Andres Hernandez [\@ApaxPhoenix](https://github.com/ApaxPhoenix), Christ is King.
