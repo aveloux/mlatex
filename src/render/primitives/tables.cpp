@@ -10,7 +10,7 @@
 #include "layout/line.hpp"
 #include "layout/paragraph.hpp"
 #include "logger.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include "syntax/semantics/scope.hpp"
 
@@ -553,7 +553,7 @@ namespace render::primitives {
             if (const syntax::Mouth::Macro* written = mouth.macro(lexicon.intern("\\arraystretch"))) {
                 std::string digits;
                 for (const syntax::Token& token : written->body) digits += token.text;
-                if (chars::decimal(digits.data(), digits.data() + digits.size(), stretch).ec != std::errc{}) {
+                if (patch::decimal(digits.data(), digits.data() + digits.size(), stretch).ec != std::errc{}) {
                     stretch = 1.0f;
                 }
             }

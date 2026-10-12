@@ -778,6 +778,11 @@ page's text goes.
   between runs. The Windows runners install WiX 7 and accept its EULA, so
   each makes an MSI; every runner collects its packages from `bin/`,
   and a pushed `v*` tag attaches them all to a GitHub release.
+  The Windows runners are the Visual Studio 2026 images
+  (`windows-2025-vs2026`, `windows-11-vs2026-arm`): the 2022 image's Clang
+  19 and CMake 3.31 cannot ask for C++26 between them. vcpkg's toolchain is
+  handed over as `TOOLCHAIN`, not `VCPKG_ROOT`, which loading Visual
+  Studio's environment points at the empty vcpkg Visual Studio ships.
 - **The sample paper is set on GitHub.** The Windows x64 runner sets
   `build/main.mtex` with the program it just built and keeps the result as
   `main.pdf`, to open and see how the engine sets a real paper: from any
@@ -908,6 +913,17 @@ font folders are listed only for a script the engine carries no face for.
   a mistake's exit status of 1 or the command line's own of 2 compared
   against `1 << 8` and `2 << 8` instead and failed, which is what the
   workflow's first run on every runner actually found.
+- **The engine builds on macOS again.** Apple's libc++ marks
+  `std::from_chars` for `float` and `double` unavailable before macOS 26,
+  at compile time, so every one of the 58 places that read a number that
+  way stopped the build. `patch::decimal` (`patch.hpp`) reads the same
+  grammar through `strtof` and `strtod`, behind the same signature and
+  result; reading a whole number with `std::from_chars` was never affected
+  and is unchanged. `std::abs` on a float is now included from `<cmath>`
+  wherever it is used, rather than reached through whichever header a
+  standard library happened to pull it in with.
+- Three pipes in the workflow's PowerShell had been written `\vert{}`, which
+  PowerShell cannot parse, and the Windows runners failed before building.
 
 ### Tests
 
@@ -950,6 +966,9 @@ font folders are listed only for a script the engine carries no face for.
 - Then: a long table over pages, its heads and feet, every row kept, its
   caption; `\multirow`, tabu's X columns; the pager's repeated head and foot;
   an address turning over unhyphenated; a word's first run of letters.
+- Then: `test_patch` -- a number read to its end, stopped at a unit, a
+  failure that leaves the value alone, and a range read to its own end and
+  not its text's. 86 tests pass in Release.
 
 ### Documentation
 

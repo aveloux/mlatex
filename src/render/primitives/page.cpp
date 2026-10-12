@@ -11,7 +11,7 @@
 #include "syntax/argument.hpp"
 #include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include "syntax/modules.hpp"
 #include "syntax/number.hpp"
@@ -231,7 +231,7 @@ namespace render::primitives {
                 std::string written;
                 for (const syntax::Token& token : macro->body) written += token.text;
                 float value = field;
-                if (chars::decimal(written.data(), written.data() + written.size(), value).ec == std::errc{} &&
+                if (patch::decimal(written.data(), written.data() + written.size(), value).ec == std::errc{} &&
                     value >= 0.0f && value <= 1.0f) {
                     field = value;
                 }

@@ -3,7 +3,7 @@
 #include "syntax/primitives/loops.hpp"
 #include "syntax/number.hpp"
 #include "logger.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include <charconv>
 #include <cmath>
@@ -156,12 +156,12 @@ namespace syntax::primitives {
                     double first = 0.0;
                     double end = 0.0;
                     double before = 0.0;
-                    chars::decimal(from.data(), from.data() + from.size(), first);
-                    chars::decimal(to.data(), to.data() + to.size(), end);
+                    patch::decimal(from.data(), from.data() + from.size(), first);
+                    patch::decimal(to.data(), to.data() + to.size(), end);
                     double step = 1.0;
                     if (index >= 2) {
                         const std::string earlier = spelled(items[index - 2]);
-                        if (chars::decimal(earlier.data(), earlier.data() + earlier.size(), before).ec == std::errc{}) {
+                        if (patch::decimal(earlier.data(), earlier.data() + earlier.size(), before).ec == std::errc{}) {
                             step = first - before;
                         }
                     }

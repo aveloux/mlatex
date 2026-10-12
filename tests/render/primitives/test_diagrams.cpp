@@ -1,5 +1,5 @@
 #include "latex.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -67,7 +67,7 @@ static std::vector<float> heights(const std::string_view pdf) {
     for (std::size_t at = pdf.find(" Tm"); at != std::string_view::npos; at = pdf.find(" Tm", at + 1)) {
         const std::size_t start = pdf.rfind(' ', at - 1) + 1;
         float y = 0.0f;
-        chars::decimal(pdf.data() + start, pdf.data() + at, y);
+        patch::decimal(pdf.data() + start, pdf.data() + at, y);
         found.push_back(y);
     }
     return found;
@@ -176,7 +176,7 @@ int main() {
             const std::size_t y = wide.pdf.rfind(' ', at - 1);
             const std::size_t x = wide.pdf.rfind(' ', y - 1) + 1;
             float value = 0.0f;
-            chars::decimal(wide.pdf.data() + x, wide.pdf.data() + y, value);
+            patch::decimal(wide.pdf.data() + x, wide.pdf.data() + y, value);
             lefts.push_back(value);
         }
         assert((wide.clean && lefts.size() >= 2 && lefts[1] - lefts[0] > 70.0f) &&

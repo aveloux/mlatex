@@ -8,7 +8,7 @@
 /// attributes, the `<style>` rules naming its element, class or id, and its
 /// `style` -- as PDF's operators in the page's own points, y turned upward.
 #include "render/graphics/drawing.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include <algorithm>
 #include <array>
@@ -224,7 +224,7 @@ namespace render::graphics {
                 double value = 0.0;
                 const char* start = text.data() + at;
                 if (*start == '+') ++start;
-                const auto [stop, failure] = chars::decimal(start, text.data() + text.size(), value);
+                const auto [stop, failure] = patch::decimal(start, text.data() + text.size(), value);
                 if (failure != std::errc{}) {
                     ++at;
                     continue;
@@ -239,7 +239,7 @@ namespace render::graphics {
         const auto length = [](std::string_view text, const double whole = 0.0) -> std::optional<double> {
             while (!text.empty() && (text.front() == ' ')) text.remove_prefix(1);
             double value = 0.0;
-            const auto [stop, failure] = chars::decimal(text.data(), text.data() + text.size(), value);
+            const auto [stop, failure] = patch::decimal(text.data(), text.data() + text.size(), value);
             if (failure != std::errc{}) return std::nullopt;
             const std::string_view unit = text.substr(static_cast<std::size_t>(stop - text.data()));
             if (unit.starts_with('%')) return value / 100.0 * whole;
@@ -432,7 +432,7 @@ namespace render::graphics {
             if (value.ends_with("!important")) value.remove_suffix(10);
             const auto amount = [&value]() {
                 double found = 1.0;
-                chars::decimal(value.data(), value.data() + value.size(), found);
+                patch::decimal(value.data(), value.data() + value.size(), found);
                 return value.ends_with('%') ? found / 100.0 : found;
             };
             if (key == "fill") style.fill = colour(value, style.color);
@@ -565,7 +565,7 @@ namespace render::graphics {
                     }
                     const char* start = data.data() + at;
                     if (*start == '+') ++start;
-                    const auto [stop, failure] = chars::decimal(start, data.data() + data.size(), values[read]);
+                    const auto [stop, failure] = patch::decimal(start, data.data() + data.size(), values[read]);
                     if (failure != std::errc{}) break;
                     at = static_cast<std::size_t>(stop - data.data());
                     ++read;

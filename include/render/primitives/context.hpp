@@ -4,7 +4,7 @@
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
 #include "memory/location.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 #include "render/layout/node.hpp"
 #include "syntax/expression/unicodes.hpp"
 #include "syntax/node.hpp"
@@ -352,7 +352,7 @@ namespace render::primitives {
             if (factor == "-") {
                 amount = -1.0f;
             } else if (!factor.empty() &&
-                       chars::decimal(factor.data(), factor.data() + factor.size(), amount).ec != std::errc{}) {
+                       patch::decimal(factor.data(), factor.data() + factor.size(), amount).ec != std::errc{}) {
                 amount = 1.0f;
             }
             return amount * context.document.configuration.indent;

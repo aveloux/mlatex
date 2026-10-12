@@ -1,5 +1,5 @@
 #include "latex.hpp"
-#include "chars.hpp"
+#include "patch.hpp"
 
 #include <cassert>
 #include <charconv>
@@ -92,7 +92,7 @@ int main() {
             const std::size_t y = result.pdf.rfind(' ', at - 1);
             const std::size_t x = result.pdf.rfind(' ', y - 1) + 1;
             float value = 0.0f;
-            chars::decimal(result.pdf.data() + x, result.pdf.data() + y, value);
+            patch::decimal(result.pdf.data() + x, result.pdf.data() + y, value);
             across.push_back(value);
         }
         assert((result.clean && across.size() >= 2 && across[0] > 300.0f) && "flush right inside its group");

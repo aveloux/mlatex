@@ -5,6 +5,7 @@
 #include "typography/shaper.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <filesystem>
 
 // A font: a face at a size -- a character's glyph, how far it moves the pen,

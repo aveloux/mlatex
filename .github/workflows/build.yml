@@ -5,6 +5,8 @@
 #
 # Every runner gets a C++26 compiler with #embed: Visual Studio's clang-cl on
 # Windows, Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS.
+# The Windows runners are the Visual Studio 2026 images: the 2022 ones carry
+# Clang 19 and CMake 3.31, which between them cannot ask for C++26 at all.
 # vcpkg builds the libraries, cached between runs, and gperf with them.
 name: Build
 
@@ -27,8 +29,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Windows x64, runner: windows-2022, triplet: x64-windows, architecture: x64 }
-          - { name: Windows ARM64, runner: windows-11-arm, triplet: arm64-windows, architecture: arm64 }
+          - { name: Windows x64, runner: windows-2025-vs2026, triplet: x64-windows, architecture: x64 }
+          - { name: Windows ARM64, runner: windows-11-vs2026-arm, triplet: arm64-windows, architecture: arm64 }
           - { name: Linux x64, runner: ubuntu-24.04, triplet: x64-linux, architecture: x64 }
           - { name: Linux ARM64, runner: ubuntu-24.04-arm, triplet: arm64-linux, architecture: arm64 }
           - { name: macOS ARM64, runner: macos-15, triplet: arm64-osx, architecture: arm64 }
@@ -96,7 +98,10 @@ jobs:
             sleep 15
           done
 
-          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+          # Not VCPKG_ROOT: loading Visual Studio's environment below points
+          # that at the vcpkg Visual Studio ships, which holds none of these
+          # libraries, and the configure would look there instead.
+          echo "TOOLCHAIN=$RUNNER_TEMP/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
           echo "GPERF=$RUNNER_TEMP/vcpkg/installed/${{ matrix.triplet }}/tools/gperf/gperf$suffix" >> "$GITHUB_ENV"
 
       - name: Set up Visual Studio's clang-cl
@@ -154,7 +159,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release `
             "-DCMAKE_C_COMPILER=$env:CCOMPILER" `
             "-DCMAKE_CXX_COMPILER=$env:COMPILER" `
-            "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            "-DCMAKE_TOOLCHAIN_FILE=$env:TOOLCHAIN" `
             -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} `
             "-DGPERF_EXECUTABLE=$env:GPERF"
 
@@ -175,7 +180,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="$CCOMPILER" \
             -DCMAKE_CXX_COMPILER="$COMPILER" \
-            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
             -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
             -DGPERF_EXECUTABLE="$GPERF" \
             "${EXTRA_ARGS[@]}"
