@@ -43,11 +43,11 @@ jobs:
       TREE: ${{ github.workspace }}/cmake-build-release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Cache both binary builds AND downloaded source archives (gperf, zlib, etc.)
       - name: Cache vcpkg's builds and downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .vcpkg
@@ -82,6 +82,14 @@ jobs:
             "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
           fi
 
+          # On macOS the libraries are built for the same 14.0 the engine is,
+          # not for the runner's own version: a library built for a newer
+          # macOS than its program draws a linker warning for every object in
+          # it, in every one of the tests, and runs on fewer machines.
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            echo 'set(VCPKG_OSX_DEPLOYMENT_TARGET 14.0)' >> "$RUNNER_TEMP/vcpkg/triplets/${{ matrix.triplet }}.cmake"
+          fi
+
           # Retry loop: Attempt vcpkg install up to 5 times if network drops or mirrors time out
           for i in {1..5}; do
             echo "Attempt $i to install libraries via vcpkg..."
@@ -104,16 +112,6 @@ jobs:
           echo "TOOLCHAIN=$RUNNER_TEMP/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
           echo "GPERF=$RUNNER_TEMP/vcpkg/installed/${{ matrix.triplet }}/tools/gperf/gperf$suffix" >> "$GITHUB_ENV"
 
-      - name: Set up Visual Studio's clang-cl
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
-            -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
-          $machine = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
-          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
-          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
-
       # WiX 7 for the .msi, with its EULA accepted for this runner and the
       # extensions CPack's installer uses. Accepting it is the project's
       # choice, made here: see https://docs.firegiant.com/wix/osmf/.
@@ -127,11 +125,30 @@ jobs:
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.UI.wixext/7.0.0
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add --global WixToolset.Util.wixext/7.0.0
 
-      - name: Load the Visual Studio environment
+      # Visual Studio's clang-cl, and its environment for every step after
+      # this one: what vcvarsall sets or changes -- the headers, libraries
+      # and tools on the path -- as a Developer Command Prompt would have it.
+      # Done here rather than through an action, none of which runs on
+      # Node.js 24.
+      - name: Load Visual Studio's clang-cl and environment
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.architecture }}
+        shell: pwsh
+        run: |
+          $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+          $machine = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
+          "COMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          "CCOMPILER=$studio\VC\Tools\Llvm\$machine\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+
+          $before = @{}
+          Get-ChildItem env: | ForEach-Object { $before[$_.Name] = $_.Value }
+          $after = cmd /c "`"$studio\VC\Auxiliary\Build\vcvarsall.bat`" ${{ matrix.architecture }} > nul && set"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          foreach ($line in $after) {
+            if ($line -match '^([^=]+)=(.*)$' -and $before[$Matches[1]] -ne $Matches[2]) {
+              "$($Matches[1])=$($Matches[2])" | Out-File $env:GITHUB_ENV -Append
+            }
+          }
 
       - name: Set up Clang 20
         if: runner.os == 'Linux'
@@ -200,7 +217,7 @@ jobs:
 
       - name: Keep the sample paper
         if: matrix.name == 'Windows x64'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: main.pdf
           path: bin/main.pdf
@@ -211,7 +228,7 @@ jobs:
         run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
 
       - name: Keep the packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mlatex-${{ runner.os }}-${{ matrix.architecture }}
           path: |
@@ -233,12 +250,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: bin
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: bin/*
           generate_release_notes: true

@@ -783,6 +783,13 @@ page's text goes.
   19 and CMake 3.31 cannot ask for C++26 between them. vcpkg's toolchain is
   handed over as `TOOLCHAIN`, not `VCPKG_ROOT`, which loading Visual
   Studio's environment points at the empty vcpkg Visual Studio ships.
+  Every action runs on Node.js 24 -- `checkout` 7, `cache` 6,
+  `upload-artifact` 7, `download-artifact` 8, `action-gh-release` 3 --
+  and Visual Studio's environment is loaded by running vcvarsall in the
+  workflow itself, since the action that did it has no release that does.
+  On macOS the libraries are built for 14.0, as the engine is, rather than
+  for the runner's own 15: the difference drew a linker warning for every
+  object of HarfBuzz and FreeType in every test, by the thousand.
 - **The sample paper is set on GitHub.** The Windows x64 runner sets
   `build/main.mtex` with the program it just built and keeps the result as
   `main.pdf`, to open and see how the engine sets a real paper: from any
