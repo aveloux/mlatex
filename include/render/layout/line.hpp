@@ -7,7 +7,6 @@
 #include <cstdint>
 
 namespace render::layout {
-
     /// @brief Packs a run of nodes into one box.
     ///
     /// This is TeX's `\\hbox` and `\\vbox`. Both measure their contents and
@@ -39,8 +38,8 @@ namespace render::layout {
     public:
         /// @brief Where a vertical box's contents sit across the column.
         enum class Anchor : std::uint8_t {
-            Start,   ///< Flush left, as a page of body text is.
-            Middle   ///< Centred, as a fraction's numerator is over its bar.
+            Start, ///< Flush left, as a page of body text is.
+            Middle ///< Centred, as a fraction's numerator is over its bar.
         };
 
         /// @brief Packs nodes left to right.
@@ -54,9 +53,9 @@ namespace render::layout {
         /// @param target Width to set to, or 0 to take the natural width.
         /// @return The box; never null.
         /// @complexity O(n) in the nodes.
-        [[nodiscard]] static Node* horizontal(
-            memory::Arena& arena,
-            memory::Slice<Node*> nodes,
+        [[nodiscard]] static Node *horizontal(
+            memory::Arena &arena,
+            memory::Slice<Node *> nodes,
             float target = 0.0f
         ) noexcept;
 
@@ -68,9 +67,9 @@ namespace render::layout {
         /// @param anchor  Where the contents sit across the column.
         /// @return The box; never null.
         /// @complexity O(n) in the nodes.
-        [[nodiscard]] static Node* vertical(
-            memory::Arena& arena,
-            memory::Slice<Node*> nodes,
+        [[nodiscard]] static Node *vertical(
+            memory::Arena &arena,
+            memory::Slice<Node *> nodes,
             float skip = 0.0f,
             Anchor anchor = Anchor::Start
         ) noexcept;
@@ -78,12 +77,12 @@ namespace render::layout {
         /// @brief How far a node moves the pen along a line.
         /// @param node Node to measure; null measures zero.
         /// @complexity O(1).
-        [[nodiscard]] static float advance(const Node* node) noexcept;
+        [[nodiscard]] static float advance(const Node *node) noexcept;
 
         /// @brief How much vertical room a node takes in a column.
         /// @param node Node to measure; null measures zero.
         /// @complexity O(1).
-        [[nodiscard]] static float extent(const Node* node) noexcept;
+        [[nodiscard]] static float extent(const Node *node) noexcept;
 
         /// @brief Puts a line's contents in the order they are drawn.
         ///
@@ -106,7 +105,6 @@ namespace render::layout {
         /// @param reversed Whether the line reads right to left, as its
         ///                 paragraph does.
         /// @complexity O(n) in the line's nodes.
-        static void reorder(memory::Arena& arena, Node* line, bool reversed);
+        static void reorder(memory::Arena &arena, Node *line, bool reversed);
     };
-
 }

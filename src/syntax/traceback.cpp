@@ -6,7 +6,6 @@
 #include <format>
 
 namespace syntax {
-
     std::string Traceback::format() const {
         static constexpr std::array<std::string_view, 15> kinds{
             "group", "equation", "environment", "delimiter", "argument", "token", "end-of-input",
@@ -20,5 +19,4 @@ namespace syntax {
         if (location.line == 0) return std::format("error ({}): {}", kind, message);
         return std::format("{}:{}: error ({}): {}", location.line, location.column, kind, message);
     }
-
 }

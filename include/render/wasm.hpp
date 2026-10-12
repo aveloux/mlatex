@@ -7,11 +7,10 @@
 #include <string_view>
 
 #if defined(__EMSCRIPTEN__)
-    #include <emscripten/val.h>
+#include <emscripten/val.h>
 #endif
 
 namespace render {
-
     /// @brief The engine compiled to WebAssembly, for a web page, a worker or
     ///        Node: latex::Session, bound for JavaScript under its own names.
     ///
@@ -57,7 +56,7 @@ namespace render {
         /// @brief A session over the fonts packed into the module.
         Wasm();
 
-    #if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
         /// @brief The last PDF made, copied into a Uint8Array of its own;
         ///        empty when none could be made.
         [[nodiscard]] emscripten::val bytes() const;
@@ -67,8 +66,7 @@ namespace render {
         /// @param arity    How many arguments it reads, from 0 to 9.
         /// @param function Called with each argument's text; what it returns
         ///                 is read in the command's place, through `String()`.
-        void attach(const std::string& name, std::size_t arity, emscripten::val function);
-    #endif
+        void attach(const std::string &name, std::size_t arity, emscripten::val function);
+#endif
     };
-
 }

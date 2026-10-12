@@ -10,7 +10,6 @@
 #include <cstddef>
 
 namespace syntax::primitives {
-
     /// @brief Conditionals: the `\\if` family, `\\else`, `\\or`, `\\fi`.
     ///
     /// @par Language
@@ -41,21 +40,21 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module compares against.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Relay(Lexicon& lexicon) noexcept;
+        explicit Relay(Lexicon &lexicon) noexcept;
 
         /// @brief Installs every conditional.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; numeric tests scan against its registers.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
-        static constexpr std::size_t limit = 1'000'000uz;   ///< Tokens one scan may read.
+        static constexpr std::size_t limit = 1'000'000uz; ///< Tokens one scan may read.
 
         /// @brief Takes a branch: keeps the text when the test held, skips it
         ///        otherwise, applying a pending `\\unless` first.
         /// @param mouth     Expander to read from when skipping.
         /// @param condition What the test decided.
         /// @complexity O(1) when taken, O(n) in the skipped tokens otherwise.
-        void path(Mouth& mouth, bool condition) const;
+        void path(Mouth &mouth, bool condition) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -64,25 +63,25 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief Reads past a branch that was not taken, to `\\else` or `\\fi`.
         /// @param mouth Expander to read from.
-        void skip(Mouth& mouth) const;
+        void skip(Mouth &mouth) const;
 
         /// @brief Reads past the remainder of a branch that was taken, to `\\fi`.
         /// @param mouth Expander to read from.
-        void drop(Mouth& mouth) const;
+        void drop(Mouth &mouth) const;
 
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
-        Symbol finish{};        ///< `\\fi`, the close of every conditional.
-        Symbol alternative{};   ///< `\\else`, the branch taken when a test fails.
-        Symbol branch{};        ///< `\\or`, a case separator inside `\\ifcase`.
-        Symbol integer{};       ///< `\\integer`, so a test may read a register.
-        Symbol length{};        ///< `\\length`, so `\\ifdim` may read a register.
-        Symbol terminate{};     ///< `\\endcsname`, the close of an `\\ifcsname` name.
+        Symbol finish{}; ///< `\\fi`, the close of every conditional.
+        Symbol alternative{}; ///< `\\else`, the branch taken when a test fails.
+        Symbol branch{}; ///< `\\or`, a case separator inside `\\ifcase`.
+        Symbol integer{}; ///< `\\integer`, so a test may read a register.
+        Symbol length{}; ///< `\\length`, so `\\ifdim` may read a register.
+        Symbol terminate{}; ///< `\\endcsname`, the close of an `\\ifcsname` name.
 
         /// The tests named `\\if...` that take their branches as arguments
         /// -- `\\ifstar`, `\\ifnextchar`, `\\ifstrequal`, `\\ifvariable`,
@@ -98,9 +97,8 @@ namespace syntax::primitives {
         /// @param token Token to look at.
         /// @return True for a conditional's opening.
         /// @complexity O(1).
-        [[nodiscard]] bool opens(const Mouth& mouth, const Token& token) const noexcept;
+        [[nodiscard]] bool opens(const Mouth &mouth, const Token &token) const noexcept;
 
-        mutable bool inverted = false;   ///< Set by `\\unless`, cleared by the next test.
+        mutable bool inverted = false; ///< Set by `\\unless`, cleared by the next test.
     };
-
 }

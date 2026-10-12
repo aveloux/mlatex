@@ -3,7 +3,6 @@
 #include <string_view>
 
 namespace render::graphics {
-
     /// @brief A color, as a document writes one: a hex triplet, an `rgb()`
     ///        or `rgba()` call, or a name.
     ///
@@ -36,7 +35,7 @@ namespace render::graphics {
         /// @return The color, or black when the text does not match.
         [[nodiscard]] static Color hex(std::string_view text) noexcept;
 
-        [[nodiscard]] friend bool operator==(const Color&, const Color&) noexcept = default;
+        [[nodiscard]] friend bool operator==(const Color &, const Color &) noexcept = default;
     };
 
     // xcolor's nineteen base colors, exactly as it defines them, so a
@@ -60,5 +59,4 @@ namespace render::graphics {
     inline constexpr Color purple{0.75f, 0.0f, 0.25f};
     inline constexpr Color teal{0.0f, 0.5f, 0.5f};
     inline constexpr Color violet{0.5f, 0.0f, 0.5f};
-
 }

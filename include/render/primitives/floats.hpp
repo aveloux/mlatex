@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Floats and their captions: `figure`, `table`, `algorithm`,
     ///        `\\caption` and `\\captionof`.
     ///
@@ -53,12 +52,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Floats(syntax::Lexicon& lexicon) noexcept;
+        explicit Floats(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the float blocks, `\\caption` and `\\captionof`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; numbers come from its counters.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -67,18 +66,18 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief One float being read.
         struct Open {
-            std::string kind{};   ///< Its counter: `figure`, `table`, `algorithm` or a kind of the document's own.
-            bool ruled{false};    ///< Set between rules, its caption at the head, as an algorithm is.
-            bool captioned{false};   ///< Its own caption has been read, and its counter stepped.
-            std::uint8_t place{0};   ///< Where it may go, as layout::Node::Directive::Place bits.
-            bool across{false};      ///< Starred: across the columns of a page of several.
+            std::string kind{}; ///< Its counter: `figure`, `table`, `algorithm` or a kind of the document's own.
+            bool ruled{false}; ///< Set between rules, its caption at the head, as an algorithm is.
+            bool captioned{false}; ///< Its own caption has been read, and its counter stepped.
+            std::uint8_t place{0}; ///< Where it may go, as layout::Node::Directive::Place bits.
+            bool across{false}; ///< Starred: across the columns of a page of several.
         };
 
         /// @brief Reads one caption and sets it.
@@ -87,11 +86,11 @@ namespace render::primitives {
         /// @param kind    What it captions: the counter it numbers by.
         /// @param ruled   True in a ruled float: the label bold, the caption flush left, a rule under it.
         /// @return The caption, as the nodes of a paragraph of its own.
-        [[nodiscard]] syntax::Node* caption(syntax::Parser& parser, Context& context, const std::string& kind,
+        [[nodiscard]] syntax::Node *caption(syntax::Parser &parser, Context &context, const std::string &kind,
                                             bool ruled) const;
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Open> floats{};                     ///< The floats being read, innermost last.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Open> floats{}; ///< The floats being read, innermost last.
 
         /// The two marks put around a float's blocks, which a document
         /// cannot write: each name has a colon in it, where the lexer ends a
@@ -101,5 +100,4 @@ namespace render::primitives {
         syntax::Symbol fixed{};
         syntax::Symbol release{};
     };
-
 }

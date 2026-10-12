@@ -15,8 +15,7 @@
 #include <vector>
 
 namespace syntax {
-
-    Parser::Parser(Mouth& mouth, memory::Arena& arena)
+    Parser::Parser(Mouth &mouth, memory::Arena &arena)
         : mouth(mouth), arena(arena) {
         paragraph = mouth.lexicon.intern("\\par");
         assign = mouth.lexicon.intern("\\@set");
@@ -39,23 +38,23 @@ namespace syntax {
         mouth.reader = {};
     }
 
-    memory::Slice<Node*> Parser::parse(const char closing) {
+    memory::Slice<Node *> Parser::parse(const char closing) {
         Symbol matched = none;
         return parse(closing, {}, matched);
     }
 
-    memory::Slice<Node*> Parser::parse(const char closing, const std::span<const Symbol> stops, Symbol& matched) {
+    memory::Slice<Node *> Parser::parse(const char closing, const std::span<const Symbol> stops, Symbol &matched) {
         matched = none;
         Logger::log(Logger::Type::Parser, Logger::Level::Informative,
                     "Starting AST syntax parsing pass (depth {})...", nesting);
 
         nesting++;
         struct Guard {
-            std::size_t& nesting;
+            std::size_t &nesting;
             ~Guard() { --nesting; }
         } guard{nesting};
 
-        std::vector<Node*> nodes;
+        std::vector<Node *> nodes;
         nodes.reserve(nesting == 1 ? 1024 : 16);
 
         std::string buffer;
@@ -67,7 +66,7 @@ namespace syntax {
         // The run of text being gathered: made and stamped as its first
         // character arrives, with the face in use then, and given its text
         // once it ends.
-        Node* text = nullptr;
+        Node *text = nullptr;
         std::uint64_t seen = 0;
         auto flush = [&] {
             if (!buffer.empty()) {
@@ -114,7 +113,7 @@ namespace syntax {
                 flush();
                 Logger::log(Logger::Type::Parser, Logger::Level::Debug,
                             "Dispatching custom node handler for '{}'", token.text);
-                if (Node* node = (*handlers[token.symbol])(*this)) {
+                if (Node *node = (*handlers[token.symbol])(*this)) {
                     // A block standing on its own ends the paragraph it
                     // interrupts; text a command set starts one, in the face
                     // and colour in use as typed text is -- `50\%` in red
@@ -123,7 +122,7 @@ namespace syntax {
                     if (node->type == Node::Type::Text) {
                         mouth.vertical = false;
                         if (stamp && !node->tint) {
-                            const void* chosen = node->face;
+                            const void *chosen = node->face;
                             stamp(*node);
                             if (chosen) node->face = chosen;
                         }
@@ -140,20 +139,21 @@ namespace syntax {
                             "Constructed Paragraph node at line {} column {}",
                             token.location.line, token.location.column);
                 nodes.push_back(arena.compose<Node>(
-                    Node::Type::Paragraph, std::string_view{}, token.location, memory::Slice<Node*>{}));
+                    Node::Type::Paragraph, std::string_view{}, token.location, memory::Slice<Node *>{}));
                 continue;
             }
 
             // A name \chardef gave a character is that character, in the run
             // of text it stands in: `\chardef\x=65 a\x b` is aAb.
-            const semantics::Registers& registers = mouth.state.registers;
+            const semantics::Registers &registers = mouth.state.registers;
             if (token.category == Catcodes::Category::Escape) {
                 if (const auto held = registers.target(token.symbol); held && held->character) {
                     const auto code = static_cast<std::uint32_t>(registers.get(held->type, held->slot));
                     if (changes && *changes != seen) flush();
                     if (buffer.empty()) {
                         position = token.location;
-                        text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node*>{});
+                        text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position,
+                                                   memory::Slice<Node *>{});
                         if (stamp) stamp(*text);
                         if (changes) seen = *changes;
                     }
@@ -197,7 +197,7 @@ namespace syntax {
 
                 if (tracebacks.size() < tolerance) {
                     const std::string message =
-                        "Undefined control sequence " + std::string(token.text);
+                            "Undefined control sequence " + std::string(token.text);
 
                     Logger::log(Logger::Type::Parser, Logger::Level::Error,
                                 "Parsing error at line {} column {}: {}",
@@ -220,7 +220,7 @@ namespace syntax {
             if (changes && *changes != seen) flush();
             if (buffer.empty()) {
                 position = token.location;
-                text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node*>{});
+                text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node *>{});
                 if (stamp) stamp(*text);
                 if (changes) seen = *changes;
             }
@@ -232,12 +232,12 @@ namespace syntax {
 
         if (!terminated) {
             const std::string message =
-                std::string("Unclosed group: expected '") + closing + "' before end of input";
+                    std::string("Unclosed group: expected '") + closing + "' before end of input";
             Logger::log(Logger::Type::Parser, Logger::Level::Error, "{}", message);
             tracebacks.emplace_back(Traceback::Type::Group, position, message);
         }
 
-        memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
+        memory::Slice<Node *> slice = arena.allocate<Node *>(nodes.size());
         if (!nodes.empty()) {
             std::ranges::copy(nodes, slice.begin());
         }
@@ -263,5 +263,4 @@ namespace syntax {
         // a \let in the argument it reads -- moves only the pointers.
         handlers[symbol] = handler ? std::make_unique<const Handler>(std::move(handler)) : nullptr;
     }
-
 }

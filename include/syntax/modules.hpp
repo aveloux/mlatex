@@ -4,7 +4,6 @@
 #include <string_view>
 
 namespace syntax::modules {
-
     /// @brief Finds an embedded prelude file's text by name.
     ///
     /// Every `.mtex` file under `src/modules` is compiled into the binary with
@@ -21,5 +20,4 @@ namespace syntax::modules {
     /// @return Its text, or std::nullopt when no such file is embedded.
     /// @complexity O(1) average.
     [[nodiscard]] std::optional<std::string_view> get(std::string_view name) noexcept;
-
 }

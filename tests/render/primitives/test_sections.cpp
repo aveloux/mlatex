@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,7 +54,7 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = typeset("\\documentclass{report}\\begin{document}\\part{P}\\chapter{C}\\section{S}"
-                                      "\\subsection{T}\\subsubsection{U}\\paragraph{V} text\\end{document}");
+            "\\subsection{T}\\subsubsection{U}\\paragraph{V} text\\end{document}");
         assert((result.clean && result.pages.size() == 2 && holds(result.pages[0], "PartIP")) &&
                "a part, its number on a line above its title");
         assert((result.pages.size() == 2 && result.pages[1].starts_with("Chapter1C")) &&
@@ -64,7 +64,7 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{book}\\begin{document}\\chapter{Intro}Text.\\appendix"
-                                      "\\chapter{Proofs}More.\\end{document}");
+            "\\chapter{Proofs}More.\\end{document}");
         assert((result.clean && result.pages.size() == 2 && result.pages[1].starts_with("AppendixAProofs")) &&
                "after \\appendix, a chapter is an Appendix, lettered");
     }
@@ -91,9 +91,9 @@ int main() {
     }
     {
         const Result result = article("", "\\listoffigures\\listoftables\\begin{figure}[h]\\caption[Short]{A figure}"
-                                          "\\end{figure}\\begin{table}[h]\\caption{A table}\\end{table}");
+                                      "\\end{figure}\\begin{table}[h]\\caption{A table}\\end{table}");
         assert((result.clean && holds(result.text, "ListofFigures1Short.") &&
-               holds(result.text, "ListofTables1Atable.")) &&
+                holds(result.text, "ListofTables1Atable.")) &&
                "the lists of figures and tables, a short caption in place of the long, dots led to the page");
         assert((holds(result.text, "Figure1:AfigureTable1:Atable")) && "and the long captions on the floats");
     }
@@ -116,7 +116,7 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{book}\\begin{document}\\frontmatter\\tableofcontents"
-                                      "\\chapter{Preface}\\mainmatter\\chapter{One}\\end{document}");
+            "\\chapter{Preface}\\mainmatter\\chapter{One}\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 3 && holds(result.text, "Prefaceii") &&
                 holds(result.text, "1One1")) &&
@@ -134,8 +134,9 @@ int main() {
     }
     {
         const Result result = article("\\usepackage{hyperref}", "\\section{One}\\subsection{Two}");
-        assert((holds(result.pdf, "/Type /Outlines") && holds(result.pdf, "(1 One)") && holds(result.pdf, "(1.1 Two)")) &&
-               "with hyperref, a bookmark for every heading, one under the other");
+        assert(
+            (holds(result.pdf, "/Type /Outlines") && holds(result.pdf, "(1 One)") && holds(result.pdf, "(1.1 Two)")) &&
+            "with hyperref, a bookmark for every heading, one under the other");
     }
     {
         const Result result = article("", "\\begin{acks}We thank you.\\end{acks}");

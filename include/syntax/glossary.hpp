@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace syntax {
-
     class Mouth;
 
     /// @brief What CTAN's packages define, for the commands the engine gives
@@ -47,7 +46,7 @@ namespace syntax {
         ///         was asked about already, is the parser's own, or is not in
         ///         the glossary.
         /// @complexity O(1): a flag, then at most one lookup per name in a run.
-        bool define(Mouth& mouth, const Token& token);
+        bool define(Mouth &mouth, const Token &token);
 
         /// @brief The line the glossary holds for a name.
         /// @param name A command's name, backslash and all: `\\selectlanguage`.
@@ -56,7 +55,6 @@ namespace syntax {
         [[nodiscard]] static std::optional<std::string_view> get(std::string_view name) noexcept;
 
     private:
-        std::vector<bool> tried{};   ///< Names asked about already, by symbol.
+        std::vector<bool> tried{}; ///< Names asked about already, by symbol.
     };
-
 }

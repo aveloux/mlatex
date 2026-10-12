@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,7 +54,7 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\textcolor{red}{red} \\textcolor{#00FF00}{green} "
-                                          "\\textcolor{rgb(0,0,255)}{blue}");
+                                      "\\textcolor{rgb(0,0,255)}{blue}");
         assert((result.clean && holds(result.text, "redgreenblue")) && "colored text");
         assert((holds(result.pdf, "1 0 0 rg") && holds(result.pdf, "0 1 0 rg") && holds(result.pdf, "0 0 1 rg")) &&
                "each filled in its own color");
@@ -79,7 +79,7 @@ int main() {
         // A colour chosen inside a box's argument stays inside the box: the
         // text after each turns black again before the next colour.
         const Result result = article("\\pagestyle{empty}", "\\mbox{\\color{red}inside} outside "
-                                                            "\\textbf{\\color{blue}bold} after");
+                                      "\\textbf{\\color{blue}bold} after");
         const std::size_t red = result.pdf.find("1 0 0 rg");
         const std::size_t blue = result.pdf.find("0 0 1 rg");
         assert((result.clean && red != std::string::npos && blue != std::string::npos) && "each in its colour");
@@ -96,8 +96,8 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\definecolor{bad}{rgb}{2,0,0}"
-                                      "\\definecolor{odd}{pantone}{123}\\begin{document}\\textcolor{nosuch}{x}"
-                                      "\\end{document}");
+            "\\definecolor{odd}{pantone}{123}\\begin{document}\\textcolor{nosuch}{x}"
+            "\\end{document}");
         assert((!result.clean) && "a color outside its model is an error");
         assert((holds(result.errors, "\\definecolor{bad}")) && "the out-of-range color is named");
         assert((holds(result.errors, "\\definecolor{odd}")) && "the unknown model is named");

@@ -12,13 +12,13 @@
 #include <string_view>
 
 namespace syntax::primitives {
-
-    Wrapper::Wrapper(Lexicon& lexicon) noexcept
+    Wrapper::Wrapper(Lexicon &lexicon) noexcept
         : relay(lexicon), blocks(lexicon), macros(lexicon), values(lexicon),
           compute(lexicon), loops(lexicon), include(lexicon),
-          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {}
+          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {
+    }
 
-    void Wrapper::operator()(Mouth& mouth, Context& context) const {
+    void Wrapper::operator()(Mouth &mouth, Context &context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
         bind(mouth, context, relay, blocks, macros, values, compute, loops, include,
@@ -40,7 +40,7 @@ namespace syntax::primitives {
             "ifnextchar", "ifpackageloaded", "ifstrequal", "provided", "expanded", "declare", "switch",
             "iffile", "iftest",
         };
-        for (const std::string_view word : vocabulary) {
+        for (const std::string_view word: vocabulary) {
             const Symbol plain = mouth.lexicon.intern("\\" + std::string(word));
             mouth.lend(mouth.lexicon.intern("\\@" + std::string(word)), plain);
         }
@@ -51,8 +51,8 @@ namespace syntax::primitives {
         // it is wired here rather than in either.
         blocks.watch(
             "document",
-            [this](Mouth& mouth) { hooks.run(mouth, "begindocument"); },
-            [this](Mouth& mouth) { hooks.run(mouth, "enddocument"); });
+            [this](Mouth &mouth) { hooks.run(mouth, "begindocument"); },
+            [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); });
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Informative,
                     "Core primitives installed");
@@ -62,7 +62,7 @@ namespace syntax::primitives {
         // Every module, conditionals included: relay keeps its own list like
         // the rest, so leaving it out here lost runaway and unclosed-\if
         // reports even though the module had recorded them.
-        const std::vector<Traceback>* lists[] = {
+        const std::vector<Traceback> *lists[] = {
             &relay.traceback(), &blocks.traceback(), &macros.traceback(),
             &values.traceback(), &compute.traceback(), &loops.traceback(),
             &include.traceback(), &variables.traceback(), &decimals.traceback(),
@@ -70,14 +70,13 @@ namespace syntax::primitives {
         };
 
         std::size_t total = 0uz;
-        for (const auto* list : lists) total += list->size();
+        for (const auto *list: lists) total += list->size();
 
         std::vector<Traceback> gathered;
         gathered.reserve(total);
-        for (const auto* list : lists) {
+        for (const auto *list: lists) {
             gathered.insert(gathered.end(), list->begin(), list->end());
         }
         return gathered;
     }
-
 }

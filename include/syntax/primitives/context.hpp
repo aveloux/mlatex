@@ -10,7 +10,6 @@
 #include <string>
 
 namespace syntax::primitives {
-
     // Same reason, and a necessary one: relay.hpp includes this header, so
     // including it back would close the cycle. Context only holds a reference.
     class Relay;
@@ -63,23 +62,23 @@ namespace syntax::primitives {
     /// next takes it with `std::exchange(context.global, false)`, so a prefix
     /// never outlives the one definition it was written for.
     struct Context {
-        semantics::Registers& registers;    ///< The register bank, scoped by Union.
-        Relay& relay;                       ///< Conditionals, for a module that needs to branch.
-        const Variables& variables;         ///< Named values, for a module that reads one by name.
+        semantics::Registers &registers; ///< The register bank, scoped by Union.
+        Relay &relay; ///< Conditionals, for a module that needs to branch.
+        const Variables &variables; ///< Named values, for a module that reads one by name.
 
-        bool global{false};                 ///< The next definition or assignment outlives its group.
-        bool spanning{false};               ///< The next macro's arguments may hold `\\par`.
-        bool isolated{false};               ///< The next macro may not appear inside an argument.
-        bool robust{false};                 ///< The next macro is kept as written by `\\edef`: `\\protected`.
-        bool provided{false};               ///< The next definition is made only if the name means nothing yet.
-        bool expanded{false};               ///< The next macro's body is expanded as it is defined, as `\\edef` does.
+        bool global{false}; ///< The next definition or assignment outlives its group.
+        bool spanning{false}; ///< The next macro's arguments may hold `\\par`.
+        bool isolated{false}; ///< The next macro may not appear inside an argument.
+        bool robust{false}; ///< The next macro is kept as written by `\\edef`: `\\protected`.
+        bool provided{false}; ///< The next definition is made only if the name means nothing yet.
+        bool expanded{false}; ///< The next macro's body is expanded as it is defined, as `\\edef` does.
 
         /// TeX's `\\afterassignment`: a token to read once the next definition
         /// or assignment has been made, whichever module makes it; empty for none.
         Token after{};
 
-        const Files* files{nullptr};        ///< Files handed in from memory, or none.
-        Reader disk{};                      ///< Files beside the document on disk, or none.
+        const Files *files{nullptr}; ///< Files handed in from memory, or none.
+        Reader disk{}; ///< Files beside the document on disk, or none.
     };
 
     /// @brief A module: anything callable as `(Mouth&, Context&)`.
@@ -87,8 +86,8 @@ namespace syntax::primitives {
     /// This is the whole interface. A module declares no base class and
     /// overrides nothing; it just has to be invocable, which is why Wrapper
     /// can fold over a pack of unrelated types.
-    template <typename Module>
-    concept Primitive = std::invocable<Module, Mouth&, Context&>;
+    template<typename Module>
+    concept Primitive = std::invocable<Module, Mouth &, Context &>;
 
     /// @brief Installs every module given, in order.
     ///
@@ -97,8 +96,7 @@ namespace syntax::primitives {
     /// @param modules The modules to install; later ones win a name clash.
     /// @complexity O(1) in the number of modules -- the fold is expanded at
     ///             compile time, so this is a straight run of calls.
-    void bind(Mouth& mouth, Context& context, Primitive auto&&... modules) {
+    void bind(Mouth &mouth, Context &context, Primitive auto &&... modules) {
         (std::invoke(modules, mouth, context), ...);
     }
-
 }

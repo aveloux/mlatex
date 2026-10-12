@@ -15,17 +15,16 @@
 #include <utility>
 
 namespace syntax::expression {
-
     // Fails with one clear, named message when this source is compiled
     // against an older syntax/expression/parser.hpp. The concept has to take a
     // template parameter: a requires-expression over a concrete type is
     // checked immediately and would hard-error instead of yielding false.
-    template <typename T>
+    template<typename T>
     concept Current = requires(T rule) { rule.arity; };
     static_assert(Current<Grammar::Rule>,
                   "stale syntax/expression/parser.hpp: update the header to the one matching this source");
 
-    Grammar::Grammar(Lexicon& lexicon) {
+    Grammar::Grammar(Lexicon &lexicon) {
         fences = {lexicon.intern("\\left"), lexicon.intern("\\right")};
         brackets = {
             Bracket{lexicon.intern("\\pmatrix"), '(', ')'},
@@ -58,9 +57,10 @@ namespace syntax::expression {
         row = lexicon.intern("\\\\");
     }
 
-    Parser::Parser(Mouth& mouth, const Unicodes& unicodes, const Grammar& grammar, memory::Arena& arena,
+    Parser::Parser(Mouth &mouth, const Unicodes &unicodes, const Grammar &grammar, memory::Arena &arena,
                    const Node::Style style)
-        : mouth(mouth), unicodes(unicodes), grammar(grammar), arena(arena), style(style) {}
+        : mouth(mouth), unicodes(unicodes), grammar(grammar), arena(arena), style(style) {
+    }
 
     void Grammar::silence(const Symbol symbol) {
         const auto index = static_cast<std::size_t>(symbol);
@@ -68,7 +68,7 @@ namespace syntax::expression {
         rules[index].silent = true;
     }
 
-    std::uint32_t Parser::delimiter(const Token& token) const {
+    std::uint32_t Parser::delimiter(const Token &token) const {
         if (token.text == "." || token.empty()) return 0;
         if (token.text == "\\{") return '{';
         if (token.text == "\\}") return '}';
@@ -122,14 +122,14 @@ namespace syntax::expression {
         return token;
     }
 
-    Node* Parser::compose(const Node::Type type) const {
-        auto* node = arena.compose<Node>(type);
+    Node *Parser::compose(const Node::Type type) const {
+        auto *node = arena.compose<Node>(type);
         node->style = style;
         return node;
     }
 
-    Node* Parser::compose(const Node::Type type, const Token& token) const {
-        Node* node = compose(type);
+    Node *Parser::compose(const Node::Type type, const Token &token) const {
+        Node *node = compose(type);
         node->value = token.text;
 
         // An operator is a symbol like any other, so its name is resolved the
@@ -149,14 +149,20 @@ namespace syntax::expression {
             // stands in for a minus sign, and the asterisk for the centred one
             // mathematics uses.
             const char written = name[0];
-            node->codepoint = written == '-'   ? 0x2212u
-                              : written == '*' ? 0x2217u
-                                               : static_cast<std::uint32_t>(static_cast<unsigned char>(written));
+            node->codepoint = written == '-'
+                                  ? 0x2212u
+                                  : written == '*'
+                                        ? 0x2217u
+                                        : static_cast<std::uint32_t>(static_cast<unsigned char>(written));
             switch (written) {
-                case '=': case '<': case '>': case ':':
+                case '=':
+                case '<':
+                case '>':
+                case ':':
                     node->category = Unicodes::Category::Relation;
                     break;
-                case ',': case ';':
+                case ',':
+                case ';':
                     node->category = Unicodes::Category::Punctuation;
                     break;
                 // A solidus is an ordinary symbol in TeX, whatever it is
@@ -167,15 +173,20 @@ namespace syntax::expression {
                 // A bracket is a character like any other in TeX's maths, not
                 // a group: `[0, T)` is a half-open interval, and only `\\left`
                 // and `\\right` make a pair that has to match.
-                case '(': case '[': case '{':
+                case '(':
+                case '[':
+                case '{':
                     node->category = Unicodes::Category::Opening;
                     break;
-                case ')': case ']': case '}':
+                case ')':
+                case ']':
+                case '}':
                     node->category = Unicodes::Category::Closing;
                     break;
                 default:
-                    node->category = type == Node::Type::Binary ? Unicodes::Category::Binary
-                                                                : Unicodes::Category::Ordinary;
+                    node->category = type == Node::Type::Binary
+                                         ? Unicodes::Category::Binary
+                                         : Unicodes::Category::Ordinary;
                     break;
             }
         }
@@ -184,7 +195,7 @@ namespace syntax::expression {
     }
 
     void Grammar::bind(const Symbol symbol, const Node::Type type, const int weight,
-                      const bool right, const bool structural, const int arity) {
+                       const bool right, const bool structural, const int arity) {
         const auto index = static_cast<std::size_t>(symbol);
         if (index >= rules.size()) {
             rules.resize(index + 1, Rule{});
@@ -203,35 +214,39 @@ namespace syntax::expression {
         rules[index].arity = arity;
     }
 
-    Node* Parser::sequence(const char closing, const Symbol stop, const Symbol alternate,
-                          Symbol* const matched) {
+    Node *Parser::sequence(const char closing, const Symbol stop, const Symbol alternate,
+                           Symbol *const matched) {
         if (matched) *matched = none;
 
         if (depth >= limit) {
-            tracebacks.emplace_back(Traceback::Type::Recursion, lookahead().location, "Expression nesting limit reached");
+            tracebacks.emplace_back(Traceback::Type::Recursion, lookahead().location,
+                                    "Expression nesting limit reached");
             return nullptr;
         }
 
         struct Guard {
-            std::size_t& counter;
-            explicit Guard(std::size_t& value) : counter(value) { ++counter; }
+            std::size_t &counter;
+            explicit Guard(std::size_t &value) : counter(value) { ++counter; }
             ~Guard() { --counter; }
         } guard(depth);
 
         // This run's ends, for a binary sign inside it; the enclosing run's
         // put back however this one returns.
         struct Restore {
-            Bound& bound;
+            Bound &bound;
             const Bound saved;
-            Restore(Bound& value, const Bound replacement) : bound(value), saved(std::exchange(value, replacement)) {}
+
+            Restore(Bound &value, const Bound replacement) : bound(value), saved(std::exchange(value, replacement)) {
+            }
+
             ~Restore() { bound = saved; }
         } restore(bound, Bound{.closing = closing, .stop = stop, .alternate = alternate});
 
-        std::array<Node*, 32> stack{};
-        std::vector<Node*> heap{};
+        std::array<Node *, 32> stack{};
+        std::vector<Node *> heap{};
         std::size_t count = 0;
 
-        auto push = [&](Node* item) {
+        auto push = [&](Node *item) {
             if (!item) return;
             if (count < stack.size()) {
                 stack[count] = item;
@@ -248,12 +263,12 @@ namespace syntax::expression {
         const bool bounded = closing != 0 || stop != none || alternate != none;
 
         // What has been read, as one node: nothing, the one item, or the run.
-        const auto collect = [&]() -> Node* {
+        const auto collect = [&]() -> Node * {
             if (count == 0) return nullptr;
             if (count == 1) return stack[0];
 
-            auto* node = compose(Node::Type::Sequence);
-            auto slice = arena.allocate<Node*>(count);
+            auto *node = compose(Node::Type::Sequence);
+            auto slice = arena.allocate<Node *>(count);
             if (heap.empty()) {
                 std::copy_n(stack.begin(), count, slice.begin());
             } else {
@@ -269,9 +284,9 @@ namespace syntax::expression {
             if (next.empty()) {
                 if (bounded) {
                     tracebacks.emplace_back(Traceback::Type::End, next.location,
-                          closing != 0
-                              ? std::format("Unexpected end of input; expected '{}'", closing)
-                              : std::string("Unexpected end of input inside a formula"));
+                                            closing != 0
+                                                ? std::format("Unexpected end of input; expected '{}'", closing)
+                                                : std::string("Unexpected end of input inside a formula"));
                 }
                 break;
             }
@@ -294,13 +309,14 @@ namespace syntax::expression {
             if (next.is(Catcodes::Category::Group, '}')) {
                 if (closing != 0) {
                     tracebacks.emplace_back(Traceback::Type::Delimiter, next.location,
-                          std::format("Mismatched delimiter '{}'; expected '{}'", next.text, closing));
+                                            std::format("Mismatched delimiter '{}'; expected '{}'", next.text,
+                                                        closing));
                     break;
                 }
 
                 advance();
                 tracebacks.emplace_back(Traceback::Type::Group, next.location,
-                      std::format("Unmatched '{}' in formula", next.text));
+                                        std::format("Unmatched '{}' in formula", next.text));
                 continue;
             }
 
@@ -309,14 +325,14 @@ namespace syntax::expression {
             // the run was going to end, the denominator.
             if (next.symbol != none && std::ranges::contains(grammar.infixes, next.symbol)) {
                 advance();
-                auto* fraction = compose(Node::Type::Fraction);
+                auto *fraction = compose(Node::Type::Fraction);
                 fraction->value = next.text;
                 fraction->left = collect();
                 fraction->right = sequence(closing, stop, alternate, matched);
                 return fraction;
             }
 
-            auto* item = step(0);
+            auto *item = step(0);
             if (!item) break;
             push(item);
         }
@@ -324,11 +340,11 @@ namespace syntax::expression {
         return collect();
     }
 
-    Node* Parser::matrix(const Grammar::Bracket& bracket) {
+    Node *Parser::matrix(const Grammar::Bracket &bracket) {
         const Token brace = lookahead();
         if (!brace.is(Catcodes::Category::Group, '{')) {
             tracebacks.emplace_back(Traceback::Type::Group, brace.location,
-                                     "A matrix needs a brace group for its cells");
+                                    "A matrix needs a brace group for its cells");
             return nullptr;
         }
         advance();
@@ -336,8 +352,8 @@ namespace syntax::expression {
         // Only the outermost grid's rows are told about: a matrix inside a
         // row of an `align` is part of that row, not a row of its own.
         struct Guard {
-            std::size_t& counter;
-            explicit Guard(std::size_t& value) : counter(value) { ++counter; }
+            std::size_t &counter;
+            explicit Guard(std::size_t &value) : counter(value) { ++counter; }
             ~Guard() { --counter; }
         } guard(grids);
         const bool outermost = grids == 1;
@@ -345,8 +361,8 @@ namespace syntax::expression {
             if (outermost && hook) hook(edge);
         };
 
-        std::vector<std::vector<Node*>> table;
-        std::vector<Node*> cells;   // the row still being built
+        std::vector<std::vector<Node *> > table;
+        std::vector<Node *> cells; // the row still being built
         bool closed = false;
 
         while (!closed) {
@@ -355,7 +371,7 @@ namespace syntax::expression {
             Symbol ended = none;
             cells.push_back(sequence('}', grammar.row, grammar.column, &ended));
 
-            if (ended == grammar.column) continue;   // another cell in this row
+            if (ended == grammar.column) continue; // another cell in this row
 
             closed = ended != grammar.row;
 
@@ -389,10 +405,10 @@ namespace syntax::expression {
         }
 
         std::size_t columns = 0;
-        for (const std::vector<Node*>& line : table) columns = std::max(columns, line.size());
+        for (const std::vector<Node *> &line: table) columns = std::max(columns, line.size());
         if (table.empty() || columns == 0) return nullptr;
 
-        auto* node = compose(Node::Type::Matrix);
+        auto *node = compose(Node::Type::Matrix);
         node->open = bracket.open;
         node->close = bracket.close;
         node->value = bracket.preamble;
@@ -401,9 +417,9 @@ namespace syntax::expression {
         node->category = Unicodes::Category::Inner;
 
         // Row-major, every row filled out to the widest with empty cells.
-        auto slice = arena.allocate<Node*>(table.size() * columns);
+        auto slice = arena.allocate<Node *>(table.size() * columns);
         std::size_t filled = 0;
-        for (const std::vector<Node*>& line : table) {
+        for (const std::vector<Node *> &line: table) {
             for (std::size_t index = 0; index < columns; ++index) {
                 slice[filled++] = index < line.size() ? line[index] : nullptr;
             }
@@ -412,7 +428,7 @@ namespace syntax::expression {
         return node;
     }
 
-    Node* Parser::argument() {
+    Node *Parser::argument() {
         const Token next = lookahead();
         if (next.empty()) return nullptr;
 
@@ -420,33 +436,34 @@ namespace syntax::expression {
             advance();
             // An empty group is still an argument -- `\\frac{}{2}`,
             // `\\underset{}{=}` -- and sets as nothing, as an empty base does.
-            Node* inside = sequence('}');
+            Node *inside = sequence('}');
             return inside ? inside : compose(Node::Type::Sequence);
         }
         return atom(false);
     }
 
-    Node* Parser::atom(const bool scripted) {
+    Node *Parser::atom(const bool scripted) {
         // An operator written before its operand -- a sign, `\\neg` -- takes
         // the atom after it, scripts and all. Not in a script or an argument,
         // which TeX reads as one token: `x^-1` raises the minus alone.
         if (scripted) {
             const Token next = lookahead();
             if (const auto index = static_cast<std::size_t>(next.symbol);
-                index < grammar.rules.size() && grammar.rules[index].type == Node::Type::Unary && grammar.rules[index].weight == 0) {
-
+                index < grammar.rules.size() && grammar.rules[index].type == Node::Type::Unary && grammar.rules[index].
+                weight == 0) {
                 if (depth >= limit) {
-                    tracebacks.emplace_back(Traceback::Type::Recursion, next.location, "Expression nesting limit reached");
+                    tracebacks.emplace_back(Traceback::Type::Recursion, next.location,
+                                            "Expression nesting limit reached");
                     return nullptr;
                 }
                 struct Guard {
-                    std::size_t& counter;
-                    explicit Guard(std::size_t& value) : counter(value) { ++counter; }
+                    std::size_t &counter;
+                    explicit Guard(std::size_t &value) : counter(value) { ++counter; }
                     ~Guard() { --counter; }
                 } guard(depth);
 
                 const Token token = advance();
-                auto* unary = compose(Node::Type::Unary, token);
+                auto *unary = compose(Node::Type::Unary, token);
                 unary->left = atom();
                 return script(unary);
             }
@@ -457,7 +474,7 @@ namespace syntax::expression {
         // its own mark.
         if (const Token next = lookahead(); next.category == Catcodes::Category::Mark || next.is('^') ||
                                             next.category == Catcodes::Category::Index || next.is('_')) {
-            Node* empty = compose(Node::Type::Sequence);
+            Node *empty = compose(Node::Type::Sequence);
             return scripted ? script(empty) : empty;
         }
 
@@ -468,7 +485,7 @@ namespace syntax::expression {
         std::string_view name = token.text;
         if (name.starts_with('\\')) name.remove_prefix(1);
 
-        Node* node = nullptr;
+        Node *node = nullptr;
         if (token.is(Catcodes::Category::Group, '{')) {
             // A brace group only groups.
             node = compose(Node::Type::Group);
@@ -510,15 +527,17 @@ namespace syntax::expression {
                         continue;
                     }
                     if (nesting > 0) continue;
-                    for (const char letter : next.text) {
+                    for (const char letter: next.text) {
                         if (letter == 'l' || letter == 'c' || letter == 'r') preamble += letter;
                         else if (letter == 'p' || letter == 'm' || letter == 'b') preamble += 'l';
                     }
                 }
             }
-            node = matrix(Grammar::Bracket{.name = grammar.array, .preamble = preamble.empty()
-                                                                 ? std::string_view{"c"}
-                                                                 : arena.copy(preamble)});
+            node = matrix(Grammar::Bracket{
+                .name = grammar.array, .preamble = preamble.empty()
+                                                       ? std::string_view{"c"}
+                                                       : arena.copy(preamble)
+            });
         } else if (found.structural && found.type == Node::Type::Text) {
             // A command that reads words, not a formula: `\\text` and its kin.
             // Kept as the command over one Text node, so the typesetter sets
@@ -588,9 +607,9 @@ namespace syntax::expression {
                     words += next.text;
                 }
 
-                auto* text = compose(Node::Type::Text);
+                auto *text = compose(Node::Type::Text);
                 text->value = arena.copy(words);
-                auto slice = arena.allocate<Node*>(1);
+                auto slice = arena.allocate<Node *>(1);
                 slice[0] = text;
                 node->arguments = slice;
                 node->left = text;
@@ -604,10 +623,14 @@ namespace syntax::expression {
             node->codepoint = delimiter(advance());
             node->value = token.text;
             switch (token.text.back()) {
-                case 'l': node->category = Unicodes::Category::Opening; break;
-                case 'r': node->category = Unicodes::Category::Closing; break;
-                case 'm': node->category = Unicodes::Category::Relation; break;
-                default: node->category = Unicodes::Category::Ordinary; break;
+                case 'l': node->category = Unicodes::Category::Opening;
+                    break;
+                case 'r': node->category = Unicodes::Category::Closing;
+                    break;
+                case 'm': node->category = Unicodes::Category::Relation;
+                    break;
+                default: node->category = Unicodes::Category::Ordinary;
+                    break;
             }
         } else if (found.structural) {
             // A radical, with its optional degree; a fraction; an accent,
@@ -634,9 +657,11 @@ namespace syntax::expression {
             node = compose(Node::Type::Variable);
             node->value = token.text;
             node->codepoint = delimiter(token);
-            node->category = token.text == "\\{"   ? Unicodes::Category::Opening
-                             : token.text == "\\}" ? Unicodes::Category::Closing
-                                                   : Unicodes::Category::Ordinary;
+            node->category = token.text == "\\{"
+                                 ? Unicodes::Category::Opening
+                                 : token.text == "\\}"
+                                       ? Unicodes::Category::Closing
+                                       : Unicodes::Category::Ordinary;
         } else if (token.text.size() == 2 && token.text[0] == '\\' &&
                    std::string_view{"%&#$_"}.contains(token.text[1])) {
             // The characters the lexer reads as instructions, escaped to be
@@ -677,20 +702,20 @@ namespace syntax::expression {
 
             // Gathered locally first, then allocated at exactly the size that
             // was filled: a command may run out of arguments partway through.
-            std::array<Node*, 16> gathered{};
+            std::array<Node *, 16> gathered{};
             const int capacity = std::min(wanted, static_cast<int>(gathered.size()));
             std::size_t filled = 0;
             for (int index = 0; index < capacity; ++index) {
-                Node* item = argument();
+                Node *item = argument();
                 if (!item) {
                     tracebacks.emplace_back(Traceback::Type::Argument, token.location,
-                                             std::format("{} expects {} argument(s)", token.text, wanted));
+                                            std::format("{} expects {} argument(s)", token.text, wanted));
                     break;
                 }
                 gathered[filled++] = item;
             }
             if (filled > 0) {
-                auto slice = arena.allocate<Node*>(filled);
+                auto slice = arena.allocate<Node *>(filled);
                 std::copy_n(gathered.begin(), filled, slice.begin());
                 node->arguments = slice;
                 node->left = slice[0];
@@ -704,18 +729,18 @@ namespace syntax::expression {
         return scripted ? script(node) : node;
     }
 
-    Node* Parser::script(Node* base) {
+    Node *Parser::script(Node *base) {
         if (!base) return nullptr;
 
-        Node* subscript = nullptr;
-        Node* superscript = nullptr;
+        Node *subscript = nullptr;
+        Node *superscript = nullptr;
 
         while (true) {
             const Token next = lookahead();
 
             if (next.category == Catcodes::Category::Index || next.is('_')) {
                 advance();
-                Node* item = atom(false);
+                Node *item = atom(false);
                 if (subscript) {
                     tracebacks.emplace_back(Traceback::Type::Syntax, next.location, "Double subscript");
                 } else {
@@ -723,7 +748,7 @@ namespace syntax::expression {
                 }
             } else if (next.category == Catcodes::Category::Mark || next.is('^')) {
                 advance();
-                Node* item = atom(false);
+                Node *item = atom(false);
                 if (superscript) {
                     tracebacks.emplace_back(Traceback::Type::Syntax, next.location, "Double superscript");
                 } else {
@@ -742,15 +767,15 @@ namespace syntax::expression {
             return base;
         }
 
-        auto* node = compose(Node::Type::Script);
+        auto *node = compose(Node::Type::Script);
         node->left = base;
         node->subscript = subscript;
         node->superscript = superscript;
         return node;
     }
 
-    Node* Parser::step(const int priority) {
-        Node* left = atom();
+    Node *Parser::step(const int priority) {
+        Node *left = atom();
         if (!left) return nullptr;
 
         // After an opening bracket, a relation, an operator or a comma, a
@@ -773,7 +798,7 @@ namespace syntax::expression {
                 if (found.weight < priority) break;
 
                 const Token token = advance();
-                auto* postfix = compose(Node::Type::Unary, token);
+                auto *postfix = compose(Node::Type::Unary, token);
                 postfix->left = left;
                 left = script(postfix);
                 continue;
@@ -789,7 +814,7 @@ namespace syntax::expression {
                 // charge's sign at the end of a superscript, `x^{3+}` --
                 // which TeX sets as written, and so is this.
                 const Token token = advance();
-                auto* binary = compose(found.type, token);
+                auto *binary = compose(found.type, token);
                 binary->left = left;
                 const Token after = lookahead();
                 const bool ends = after.empty() || after.is(Catcodes::Category::Group, '}') ||
@@ -807,12 +832,11 @@ namespace syntax::expression {
         return left;
     }
 
-    Node* Parser::parse(const char closing) {
+    Node *Parser::parse(const char closing) {
         return sequence(closing, none);
     }
 
-    Node* Parser::parse(const Symbol closing) {
+    Node *Parser::parse(const Symbol closing) {
         return sequence(0, closing);
     }
-
 }

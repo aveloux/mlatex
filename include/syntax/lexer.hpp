@@ -11,14 +11,13 @@
 #include <vector>
 
 namespace syntax {
-
     class Lexer {
     public:
         enum class Type {
             Newline, ///< State N: line start; an end-of-line here is \\par
-            Skip,    ///< State S: skipping blanks; an end-of-line here starts a new line and nothing more
-            Middle,  ///< State M: mid-line; an end-of-line here is a space
-            Blank    ///< Just past a \\par; further empty lines add nothing
+            Skip, ///< State S: skipping blanks; an end-of-line here starts a new line and nothing more
+            Middle, ///< State M: mid-line; an end-of-line here is a space
+            Blank ///< Just past a \\par; further empty lines add nothing
         };
 
         /// @brief Binds a lexer to a source buffer.
@@ -26,12 +25,13 @@ namespace syntax {
         /// @param codes  Category table, consulted per character and live to
         ///               `\\catcode` changes made while lexing.
         /// @param lexicon  Interning table for the tokens produced.
-        Lexer(std::string_view source, Catcodes& codes, Lexicon& lexicon);
+        Lexer(std::string_view source, Catcodes &codes, Lexicon &lexicon);
 
         Token advance();
+
         [[nodiscard]] bool empty() const noexcept;
 
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         [[nodiscard]] static constexpr std::size_t length(const char lead) noexcept {
@@ -48,8 +48,8 @@ namespace syntax {
         }
 
         std::string_view sources{};
-        Catcodes& table;
-        Lexicon& lexicon;
+        Catcodes &table;
+        Lexicon &lexicon;
         std::size_t offset = 0;
         memory::Location location{1, 1};
         Type type = Type::Newline;
@@ -63,7 +63,6 @@ namespace syntax {
         std::size_t opening = std::string_view::npos;
         std::size_t stop = 0;
         /// @}
-        std::vector<Traceback> tracebacks{};   ///< Illegal bytes, drained by Mouth::ingest.
+        std::vector<Traceback> tracebacks{}; ///< Illegal bytes, drained by Mouth::ingest.
     };
-
 }

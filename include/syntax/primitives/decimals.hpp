@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     class Variables;
 
     /// @brief Money-safe arithmetic and the formatting of amounts:
@@ -56,12 +55,12 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Decimals(Lexicon& lexicon) noexcept;
+        explicit Decimals(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\calculate`, `\\amount` and `\\separators`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; names resolve against its variables.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Evaluates an expression.
         /// @param text      Text to evaluate, already expanded.
@@ -70,7 +69,7 @@ namespace syntax::primitives {
         /// @return The value in millionths, or nullopt on any error.
         /// @complexity O(n) in the expression's length, plus each variable read.
         [[nodiscard]] static std::optional<std::int64_t> evaluate(
-            std::string_view text, const Variables& variables, std::string& error);
+            std::string_view text, const Variables &variables, std::string &error);
 
         /// @brief Writes a value exactly, with no trailing zeros: `37.5`, `-3`.
         /// @param value Value in millionths.
@@ -78,26 +77,26 @@ namespace syntax::primitives {
         /// @complexity O(1).
         [[nodiscard]] static std::string write(std::int64_t value);
 
-        static constexpr std::int64_t scale = 1'000'000;   ///< Millionths in one.
-        static constexpr int precision = 6;                ///< Decimal places a value keeps.
+        static constexpr std::int64_t scale = 1'000'000; ///< Millionths in one.
+        static constexpr int precision = 6; ///< Decimal places a value keeps.
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief State threaded through one evaluation.
         struct Pass {
-            std::string_view text;          ///< What is being read.
-            std::size_t cursor = 0;         ///< How far it has been read.
-            const Variables& variables;     ///< What a bare name resolves against.
-            std::string& error;             ///< Set on the first thing that goes wrong.
-            std::size_t level = 0;          ///< Nesting, through parentheses and variables.
+            std::string_view text; ///< What is being read.
+            std::size_t cursor = 0; ///< How far it has been read.
+            const Variables &variables; ///< What a bare name resolves against.
+            std::string &error; ///< Set on the first thing that goes wrong.
+            std::size_t level = 0; ///< Nesting, through parentheses and variables.
         };
 
-        [[nodiscard]] static std::optional<std::int64_t> expression(Pass& pass);   ///< Sums and differences.
-        [[nodiscard]] static std::optional<std::int64_t> term(Pass& pass);         ///< Products and quotients.
-        [[nodiscard]] static std::optional<std::int64_t> unary(Pass& pass);        ///< A signed operand.
-        [[nodiscard]] static std::optional<std::int64_t> primary(Pass& pass);      ///< A number, a name, a group.
+        [[nodiscard]] static std::optional<std::int64_t> expression(Pass &pass); ///< Sums and differences.
+        [[nodiscard]] static std::optional<std::int64_t> term(Pass &pass); ///< Products and quotients.
+        [[nodiscard]] static std::optional<std::int64_t> unary(Pass &pass); ///< A signed operand.
+        [[nodiscard]] static std::optional<std::int64_t> primary(Pass &pass); ///< A number, a name, a group.
 
         /// @brief A hundred-and-twenty-eight-bit unsigned number, as two words.
         ///
@@ -109,8 +108,8 @@ namespace syntax::primitives {
         /// runs a handful of times per document, where portability is worth
         /// more than the cycles an intrinsic would save.
         struct Wide {
-            std::uint64_t high{0};   ///< The upper sixty-four bits.
-            std::uint64_t low{0};    ///< The lower sixty-four bits.
+            std::uint64_t high{0}; ///< The upper sixty-four bits.
+            std::uint64_t low{0}; ///< The lower sixty-four bits.
         };
 
         /// @brief Multiplies two words into a wide number, exactly.
@@ -125,13 +124,14 @@ namespace syntax::primitives {
         /// @param quotient Set to the rounded quotient.
         /// @return False when the quotient does not fit a word.
         /// @complexity O(1): one pass over the dividend's 128 bits.
-        [[nodiscard]] static bool divide(Wide dividend, std::uint64_t divisor, std::uint64_t& quotient) noexcept;
+        [[nodiscard]] static bool divide(Wide dividend, std::uint64_t divisor, std::uint64_t &quotient) noexcept;
 
         /// @brief The magnitude of a signed value, as a word.
         /// @param value Value to take it of; the most negative one included.
         [[nodiscard]] static constexpr std::uint64_t magnitude(const std::int64_t value) noexcept {
-            return value < 0 ? std::uint64_t{0} - static_cast<std::uint64_t>(value)
-                             : static_cast<std::uint64_t>(value);
+            return value < 0
+                       ? std::uint64_t{0} - static_cast<std::uint64_t>(value)
+                       : static_cast<std::uint64_t>(value);
         }
 
         /// @brief Gives a magnitude its sign back, when it still fits.
@@ -139,7 +139,7 @@ namespace syntax::primitives {
         /// @param negative Whether the result is below zero.
         /// @param result   Set to the signed value.
         /// @return False when it does not fit.
-        [[nodiscard]] static bool sign(std::uint64_t value, bool negative, std::int64_t& result) noexcept;
+        [[nodiscard]] static bool sign(std::uint64_t value, bool negative, std::int64_t &result) noexcept;
 
         /// @brief Is this character part of a name in an expression?
         /// @param letter Character to test.
@@ -156,9 +156,8 @@ namespace syntax::primitives {
         /// so a variable defined in terms of itself is reported, not followed.
         static constexpr std::size_t depth = 64;
 
-        mutable std::string grouping{","};   ///< Between each three digits of the whole part.
-        mutable std::string point{"."};      ///< Between the whole part and the fraction.
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::string grouping{","}; ///< Between each three digits of the whole part.
+        mutable std::string point{"."}; ///< Between the whole part and the fraction.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

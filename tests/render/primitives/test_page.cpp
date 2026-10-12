@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -75,21 +75,21 @@ int main() {
         const Result book = typeset("\\documentclass{book}\\begin{document}x\\end{document}");
         assert((book.clean) && "the book class");
         const Result measured = typeset("\\documentclass{article}\\usepackage[a5paper,margin=1cm]{geometry}"
-                                        "\\begin{document}x\\end{document}");
+            "\\begin{document}x\\end{document}");
         assert((measured.clean && holds(measured.pdf, "/MediaBox [0 0 420 595]")) && "geometry's paper option");
         const Result called = typeset("\\documentclass{article}\\usepackage{geometry}"
-                                      "\\geometry{paperwidth=300pt,paperheight=400pt}\\begin{document}x"
-                                      "\\end{document}");
+            "\\geometry{paperwidth=300pt,paperheight=400pt}\\begin{document}x"
+            "\\end{document}");
         assert((holds(called.pdf, "/MediaBox [0 0 300 400]")) && "\\geometry sets the sheet from its keys");
         const Result unknown = typeset("\\documentclass{nosuch}\\begin{document}x\\end{document}");
         assert((unknown.clean && holds(unknown.errors, "warning: File `nosuch.cls' not found")) &&
                "an unknown class is a warning that names it, and the document is set as article");
         const Result ieee = typeset("\\documentclass[conference]{IEEEtran}\\begin{document}\\section{One}"
-                                    "\\the\\columnwidth\\end{document}");
+            "\\the\\columnwidth\\end{document}");
         assert((ieee.clean && ieee.errors.empty() && holds(ieee.text, "I.One")) &&
                "a class the engine carries a module for reads it: IEEEtran numbers sections in Roman, `I.`");
         const Result revtex = typeset("\\documentclass[aps,reprint]{revtex4-2}\\author{A}\\affiliation{Here}"
-                                      "\\begin{document}\\maketitle x\\end{document}");
+            "\\begin{document}\\maketitle x\\end{document}");
         assert((revtex.clean && holds(revtex.text, "Here")) && "revtex's affiliations are set under the authors");
         const Result width = article("", "\\the\\textwidth");
         assert((holds(width.text, "345.0pt")) && "the article class's text width at ten points");
@@ -99,7 +99,7 @@ int main() {
     {
         const Result plain = article("", "First.\\newpage Second.");
         assert((plain.clean && plain.pages.size() == 2 && plain.pages[0].ends_with("1") &&
-               plain.pages[1].ends_with("2")) &&
+                plain.pages[1].ends_with("2")) &&
                "each page carries its own number");
         assert((holds(plain.pdf, " 704.5 Tm")) && "in the foot, 30pt below the article class's text block");
 
@@ -111,7 +111,7 @@ int main() {
         const Result roman = article("",
                                      "\\pagenumbering{roman}One.\\newpage Two.\\newpage\\pagenumbering{arabic}Three.");
         assert((roman.pages.size() == 3 && roman.pages[0].ends_with("i") && roman.pages[1].ends_with("ii") &&
-               roman.pages[2].ends_with("1")) && "\\pagenumbering changes the style and counts from one again");
+                roman.pages[2].ends_with("1")) && "\\pagenumbering changes the style and counts from one again");
         const Result running = article("", "This is page \\thepage.");
         assert((running.clean && running.text.starts_with("Thisispage1.")) && "\\thepage in the text");
         const Result wrong = article("\\pagestyle{nosuch}", "x");
@@ -123,7 +123,7 @@ int main() {
                                      "\\fancyfoot[C]{Page \\thepage}",
                                      "Body.");
         assert((fancy.clean && holds(fancy.text, "Acme") && holds(fancy.text, "Report") &&
-               holds(fancy.text, "Page1")) &&
+                holds(fancy.text, "Page1")) &&
                "a fancy page carries its head and its foot, number and all");
         assert((holds(fancy.pdf, " 99.5 Tm")) && "the head 25pt above the text block");
         assert((holds(fancy.pdf, "0.4 re f")) && "with fancyhdr's rule under it");
@@ -145,14 +145,14 @@ int main() {
         assert((holds(result.pdf, " 0 0 -1 3") || holds(result.pdf, " 0 0 -1 4")) &&
                "text set in the right half of the page");
         const Result width = typeset("\\documentclass[twocolumn]{article}\\begin{document}\\the\\columnwidth{} "
-                                     "\\the\\textwidth\\end{document}");
+            "\\the\\textwidth\\end{document}");
         assert((holds(width.text, "200.0pt410.0pt")) &&
                "the class's column width and text width, as size10.clo has them");
     }
     {
         const Result result = article("\\usepackage{multicol}",
                                       "Before.\\begin{multicols}{2}[\\section{Heading}]" + filler(3) +
-                                          "\\end{multicols}After, across the page.");
+                                      "\\end{multicols}After, across the page.");
         assert((result.clean && holds(result.text, "Before.1Heading") && holds(result.text, "After,acrossthepage.")) &&
                "a multicols block, its heading across it, the text after across the page again");
         assert((result.pages.size() == 1) && "balanced, so it leaves the rest of the page for what follows");
@@ -176,16 +176,17 @@ int main() {
     // not show is not on it.
     {
         const Result result = typeset("\\documentclass{beamer}\\title{Talk}\\author{Me}\\begin{document}"
-                                      "\\frame{\\titlepage}"
-                                      "\\section{Start}"
-                                      "\\begin{frame}{Motivation}\\begin{itemize}\\item<1-> First\\item<2-> Second"
-                                      "\\end{itemize}\\pause After.\\end{frame}"
-                                      "\\begin{frame}[t]\\frametitle{Code}\\only<2>{Shown.}\\end{frame}"
-                                      "\\end{document}");
+            "\\frame{\\titlepage}"
+            "\\section{Start}"
+            "\\begin{frame}{Motivation}\\begin{itemize}\\item<1-> First\\item<2-> Second"
+            "\\end{itemize}\\pause After.\\end{frame}"
+            "\\begin{frame}[t]\\frametitle{Code}\\only<2>{Shown.}\\end{frame}"
+            "\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 5) && "a page for each slide, none between");
         assert((result.pages.size() == 5 && holds(result.pages[0], "TalkMe") && holds(result.pages[1], "Motivation") &&
-                holds(result.pages[1], "First") && !holds(result.pages[1], "Second") && !holds(result.pages[1], "After") &&
+                holds(result.pages[1], "First") && !holds(result.pages[1], "Second") && !holds(result.pages[1], "After")
+                &&
                 holds(result.pages[2], "SecondAfter.")) &&
                "the title page, then a frame's slides: an item and a pause's text from the second");
         assert((result.pages.size() == 5 && result.pages[3] == "Code" && result.pages[4] == "CodeShown.") &&
@@ -195,9 +196,9 @@ int main() {
         // Steps from a list's default overlay, \uncover, \alt and an
         // environment of beamer's own, each on its slides.
         const Result result = typeset("\\documentclass{beamer}\\begin{document}"
-                                      "\\begin{frame}\\begin{itemize}[<+->]\\item A\\item B\\end{itemize}"
-                                      "\\uncover<2>{U}\\alt<1>{X}{Y}\\begin{onlyenv}<2>Z\\end{onlyenv}\\end{frame}"
-                                      "\\end{document}");
+            "\\begin{frame}\\begin{itemize}[<+->]\\item A\\item B\\end{itemize}"
+            "\\uncover<2>{U}\\alt<1>{X}{Y}\\begin{onlyenv}<2>Z\\end{onlyenv}\\end{frame}"
+            "\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 2) && "two steps, two slides");
         assert((result.pages.size() == 2 && holds(result.pages[0], "A") && !holds(result.pages[0], "B") &&
@@ -212,21 +213,22 @@ int main() {
         // Marks: what \markboth sets is what a head's \leftmark shows, on
         // its page and the next, until another is set.
         const Result result = typeset("\\documentclass{article}\\usepackage{fancyhdr}\\pagestyle{fancy}\\fancyhf{}"
-                                      "\\fancyhead[L]{\\leftmark}\\fancyhead[R]{\\rightmark}\\begin{document}"
-                                      "\\markboth{Alpha}{Gamma}One.\\newpage Two.\\newpage\\markboth{Beta}{}Three."
-                                      "\\end{document}");
+            "\\fancyhead[L]{\\leftmark}\\fancyhead[R]{\\rightmark}\\begin{document}"
+            "\\markboth{Alpha}{Gamma}One.\\newpage Two.\\newpage\\markboth{Beta}{}Three."
+            "\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 3) && "three pages");
-        assert((result.pages.size() == 3 && holds(result.pages[0], "AlphaGamma") && holds(result.pages[1], "AlphaGamma") &&
-                holds(result.pages[2], "Beta") && !holds(result.pages[2], "Alpha")) &&
-               "a mark on its page and the next, until another");
+        assert(
+            (result.pages.size() == 3 && holds(result.pages[0], "AlphaGamma") && holds(result.pages[1], "AlphaGamma") &&
+             holds(result.pages[2], "Beta") && !holds(result.pages[2], "Alpha")) &&
+            "a mark on its page and the next, until another");
     }
     {
         // A theme's head and foot: the section's name, the short author and
         // title, the date.
         const Result result = typeset("\\documentclass{beamer}\\usetheme{Madrid}\\title[Short]{Long title}"
-                                      "\\author[Me]{Me Myself}\\date{Today}\\begin{document}\\section{Opening}"
-                                      "\\begin{frame}{F}Body.\\end{frame}\\end{document}");
+            "\\author[Me]{Me Myself}\\date{Today}\\begin{document}\\section{Opening}"
+            "\\begin{frame}{F}Body.\\end{frame}\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 1) && "a themed frame");
         assert((result.pages.size() == 1 && holds(result.pages[0], "Opening") && holds(result.pages[0], "Me") &&
@@ -240,8 +242,8 @@ int main() {
     // closing and the signature, on a page of its own.
     {
         const Result result = typeset("\\documentclass{letter}\\address{Here}\\signature{Me}\\date{Today}"
-                                      "\\begin{document}\\begin{letter}{You}\\opening{Dear you,}Body."
-                                      "\\closing{Yours,}\\encl{A copy}\\end{letter}\\end{document}");
+            "\\begin{document}\\begin{letter}{You}\\opening{Dear you,}Body."
+            "\\closing{Yours,}\\encl{A copy}\\end{letter}\\end{document}");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.clean && result.pages.size() == 1 &&
                 holds(result.text, "HereTodayYouDearyou,Body.Yours,Meencl:Acopy")) &&

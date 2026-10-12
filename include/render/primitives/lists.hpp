@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Lists, and the items inside them.
     ///
     /// @par Language
@@ -67,13 +66,13 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Lists(syntax::Lexicon& lexicon) noexcept;
+        explicit Lists(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\item` and registers the three list blocks.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the blocks are hooked through its
         ///                block module.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -82,26 +81,26 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief What an item's label looks like.
         enum class Marker : std::uint8_t {
-            Bullet,       ///< A dot, the same at every item.
-            Number,       ///< Counting from one within this level.
-            Description   ///< Whatever the item wrote in brackets.
+            Bullet, ///< A dot, the same at every item.
+            Number, ///< Counting from one within this level.
+            Description ///< Whatever the item wrote in brackets.
         };
 
         /// @brief One open list.
         struct Level {
-            Marker marker{Marker::Bullet};   ///< What its items are labelled with.
-            int counter{0};                  ///< How many items it has had.
-            std::string label{};             ///< Its own label, as enumitem's `label=` wrote it; empty for the default.
-            float spacing{-1.0f};            ///< Space between two items, in points; below zero for LaTeX's own.
-            float around{-1.0f};             ///< Space above and below the list, in points; the same.
-            bool begun{false};               ///< An item has been set in it, so the next is spaced from it.
+            Marker marker{Marker::Bullet}; ///< What its items are labelled with.
+            int counter{0}; ///< How many items it has had.
+            std::string label{}; ///< Its own label, as enumitem's `label=` wrote it; empty for the default.
+            float spacing{-1.0f}; ///< Space between two items, in points; below zero for LaTeX's own.
+            float around{-1.0f}; ///< Space above and below the list, in points; the same.
+            bool begun{false}; ///< An item has been set in it, so the next is spaced from it.
         };
 
         /// How far each level is indented past the one outside it, in ems.
@@ -110,13 +109,12 @@ namespace render::primitives {
         /// Space between a label and the text after it, in ems.
         static constexpr float separation = 0.5f;
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Level> levels{};                    ///< The lists currently open.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Level> levels{}; ///< The lists currently open.
 
         /// enumitem's \\setlist: options each kind of list reads before its
         /// own, by the kind's name -- and under the empty name, what every
         /// list reads.
         mutable std::unordered_map<std::string, std::string> defaults{};
     };
-
 }

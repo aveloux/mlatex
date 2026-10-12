@@ -8,7 +8,6 @@
 #include <string_view>
 
 namespace memory {
-
     /// @brief Named texts fixed at compile time, found in O(1).
     ///
     /// What the engine carries inside itself -- the prelude and its packages,
@@ -32,20 +31,20 @@ namespace memory {
     /// @endcode
     ///
     /// @tparam Count How many entries it holds.
-    template <std::size_t Count>
+    template<std::size_t Count>
     class Catalog {
     public:
         static_assert(Count < 0xFFFF, "a catalog indexes its entries in sixteen bits");
 
         /// @brief One entry: a name, and the text it stands for.
         struct Entry {
-            std::string_view name{};   ///< What it is found by.
-            std::string_view text{};   ///< What it holds.
+            std::string_view name{}; ///< What it is found by.
+            std::string_view text{}; ///< What it holds.
         };
 
         /// @brief Indexes the entries; run by the compiler, never at run time.
         /// @param listing The entries. A name listed twice is found as its first.
-        consteval explicit Catalog(const std::array<Entry, Count>& listing) : entries(listing) {
+        consteval explicit Catalog(const std::array<Entry, Count> &listing) : entries(listing) {
             slots.fill(empty);
             for (std::size_t index = 0; index < Count; ++index) {
                 std::size_t at = hash(entries[index].name) & mask;
@@ -70,7 +69,7 @@ namespace memory {
         [[nodiscard]] static constexpr std::size_t size() noexcept { return Count; }
 
         /// @brief Every entry, in the order they were listed.
-        [[nodiscard]] constexpr const std::array<Entry, Count>& listing() const noexcept { return entries; }
+        [[nodiscard]] constexpr const std::array<Entry, Count> &listing() const noexcept { return entries; }
 
     private:
         /// @brief FNV-1a: one multiply per byte, and good enough spread for
@@ -79,7 +78,7 @@ namespace memory {
         /// @return Its hash.
         [[nodiscard]] static constexpr std::uint64_t hash(const std::string_view name) noexcept {
             std::uint64_t value = 0xCBF29CE484222325ull;
-            for (const char letter : name) {
+            for (const char letter: name) {
                 value ^= static_cast<unsigned char>(letter);
                 value *= 0x100000001B3ull;
             }
@@ -89,11 +88,10 @@ namespace memory {
         /// Twice the entries, rounded up to a power of two, so there is always
         /// an empty slot for a search to stop at and the mask replaces a modulo.
         static constexpr std::size_t capacity = std::bit_ceil(Count * 2 + 1);
-        static constexpr std::size_t mask = capacity - 1;     ///< Slot index from a hash.
-        static constexpr std::uint16_t empty = 0xFFFF;        ///< A slot with no entry.
+        static constexpr std::size_t mask = capacity - 1; ///< Slot index from a hash.
+        static constexpr std::uint16_t empty = 0xFFFF; ///< A slot with no entry.
 
-        std::array<Entry, Count> entries{};                   ///< The entries, as listed.
-        std::array<std::uint16_t, capacity> slots{};          ///< Entry index by hash; #empty for none.
+        std::array<Entry, Count> entries{}; ///< The entries, as listed.
+        std::array<std::uint16_t, capacity> slots{}; ///< Entry index by hash; #empty for none.
     };
-
 }

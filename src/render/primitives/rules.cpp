@@ -13,27 +13,26 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// The thickness TeX gives a rule that is not measured, in points.
     static constexpr float hairline = 0.4f;
 
     /// @brief What a rule is drawn in: the color the text around it is set
     ///        in -- `\\textcolor{blue}{\\rule{1em}{1pt}}` -- black where none
     ///        was chosen.
-    [[nodiscard]] static layout::Node::Color ink(const Context& context) noexcept {
-        const layout::Node::Color* color = context.selection.color();
+    [[nodiscard]] static layout::Node::Color ink(const Context &context) noexcept {
+        const layout::Node::Color *color = context.selection.color();
         return color ? *color : layout::Node::Color{};
     }
 
-    Rules::Rules(syntax::Lexicon& lexicon) noexcept {
+    Rules::Rules(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\rule");
         lexicon.intern("\\underline");
     }
 
-    void Rules::operator()(syntax::Parser& parser, Context& context) const {
-        parser.bind("\\rule", [&context](const syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+    void Rules::operator()(syntax::Parser &parser, Context &context) const {
+        parser.bind("\\rule", [&context](const syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // `\\rule[0.5ex]{...}{...}`: how far above the baseline the rule
@@ -52,7 +51,7 @@ namespace render::primitives {
             // read and dropped rather than parsed, because what is inside them
             // is a number and not a document.
             float measured[2]{0.0f, 0.0f};
-            for (float& value : measured) {
+            for (float &value: measured) {
                 syntax::Token open = mouth.read();
                 if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});
@@ -68,7 +67,7 @@ namespace render::primitives {
                 }
             }
 
-            auto* node = arena.compose<layout::Node>();
+            auto *node = arena.compose<layout::Node>();
             // Raised, the rule's depth is the height it stands off the
             // baseline, below nothing: it reaches from there to its top.
             node->rule({.width = measured[0], .height = measured[1] + raise, .depth = -raise, .color = ink(context)});
@@ -81,12 +80,14 @@ namespace render::primitives {
         // draw nothing, which is the one thing a rule must not do.
         // TeX's own keywords, in any order and each as often as it likes:
         // `\\hrule height 0.8pt`, `\\vrule width 0pt height 8pt depth 3pt`.
-        const auto keywords = [&context](syntax::Mouth& mouth, layout::Node::Rule& shape) {
+        const auto keywords = [&context](syntax::Mouth &mouth, layout::Node::Rule &shape) {
             for (bool reading = true; reading;) {
                 reading = false;
-                for (const auto& [word, field] : {std::pair{"height", &layout::Node::Rule::height},
-                                                  std::pair{"depth", &layout::Node::Rule::depth},
-                                                  std::pair{"width", &layout::Node::Rule::width}}) {
+                for (const auto &[word, field]: {
+                         std::pair{"height", &layout::Node::Rule::height},
+                         std::pair{"depth", &layout::Node::Rule::depth},
+                         std::pair{"width", &layout::Node::Rule::width}
+                     }) {
                     if (!syntax::Argument::keyword(mouth, word)) continue;
                     if (const auto scanned = syntax::Number::dimension(mouth, context.registers)) {
                         shape.*field = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale);
@@ -96,31 +97,33 @@ namespace render::primitives {
             }
         };
 
-        parser.bind("\\hrule", [&context, keywords](const syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\hrule", [&context, keywords](const syntax::Parser &parser) -> syntax::Node * {
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 
             layout::Node::Rule shape{.width = breadth(context), .height = hairline, .color = ink(context)};
             keywords(parser.mouth, shape);
 
-            auto* node = arena.compose<layout::Node>();
+            auto *node = arena.compose<layout::Node>();
             node->rule(shape);
             return directive(arena, node, origin, true);
         });
 
-        parser.bind("\\vrule", [&context, keywords](const syntax::Parser& parser) -> syntax::Node* {
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\vrule", [&context, keywords](const syntax::Parser &parser) -> syntax::Node * {
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 
             // Descent comes back negative from the font and a depth is a
             // distance, so it is negated here.
-            const typography::Font* font = context.selection.text();
+            const typography::Font *font = context.selection.text();
             const typography::Font::Metric line =
-                font ? font->metrics() : typography::Font::Metric{};
-            layout::Node::Rule shape{.width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)};
+                    font ? font->metrics() : typography::Font::Metric{};
+            layout::Node::Rule shape{
+                .width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)
+            };
             keywords(parser.mouth, shape);
 
-            auto* node = arena.compose<layout::Node>();
+            auto *node = arena.compose<layout::Node>();
             node->rule(shape);
             return directive(arena, node, origin);
         });
@@ -129,9 +132,9 @@ namespace render::primitives {
         // baseline -- the same stacked-column shape a math-mode `\\underline`
         // is built from, with a fixed drop in place of a MATH table constant
         // since a text face carries none.
-        parser.bind("\\underline", [&context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\underline", [&context](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             syntax::Token open = mouth.read();
@@ -141,35 +144,35 @@ namespace render::primitives {
             }
 
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node*> content = parser.parse('}');
+            const memory::Slice<syntax::Node *> content = parser.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
             stamp(content, context);
 
-            std::vector<layout::Node*> gathered;
-            for (const syntax::Node* child : content) compose(gathered, child, context);
+            std::vector<layout::Node *> gathered;
+            for (const syntax::Node *child: content) compose(gathered, child, context);
             if (gathered.empty()) return directive(arena, nullptr, origin);
 
-            const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(gathered.size());
+            const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(gathered.size());
             std::ranges::copy(gathered, row.begin());
-            layout::Node* body = layout::Line::horizontal(arena, row, 0.0f);
+            layout::Node *body = layout::Line::horizontal(arena, row, 0.0f);
 
-            const typography::Font* font = context.selection.text();
+            const typography::Font *font = context.selection.text();
             const float drop = font ? font->size() * 0.08f : 2.0f;
 
-            auto* bar = arena.compose<layout::Node>(layout::Node::Type::Rule);
+            auto *bar = arena.compose<layout::Node>(layout::Node::Type::Rule);
             bar->rule({.width = body->box().width, .height = hairline});
 
-            auto* gap = arena.compose<layout::Node>(layout::Node::Type::Kern);
+            auto *gap = arena.compose<layout::Node>(layout::Node::Type::Kern);
             gap->kern({.width = drop});
 
-            const memory::Slice<layout::Node*> column = arena.allocate<layout::Node*>(3);
+            const memory::Slice<layout::Node *> column = arena.allocate<layout::Node *>(3);
             column[0] = body;
             column[1] = gap;
             column[2] = bar;
 
-            layout::Node* stacked = layout::Line::vertical(arena, column, 0.0f, layout::Line::Anchor::Middle);
+            layout::Node *stacked = layout::Line::vertical(arena, column, 0.0f, layout::Line::Anchor::Middle);
             layout::Node::Box shape = stacked->box();
-            shape.shift = -body->box().height;   // a column hangs from its top; raise to keep the baseline
+            shape.shift = -body->box().height; // a column hangs from its top; raise to keep the baseline
             stacked->box(shape);
 
             return directive(arena, stacked, origin);
@@ -177,5 +180,4 @@ namespace render::primitives {
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound rule primitives");
     }
-
 }

@@ -17,7 +17,6 @@
 #include <vector>
 
 namespace syntax {
-
     namespace semantics {
         class Union;
         class Registers;
@@ -64,13 +63,13 @@ namespace syntax {
     class Mouth {
     public:
         /// Primitive implementation, invoked when its control sequence surfaces.
-        using Handler = std::function<void(Mouth&)>;
+        using Handler = std::function<void(Mouth &)>;
 
         /// @brief One parameter in a macro's parameter text.
         struct Parameter {
-            bool optional = false;              ///< LaTeX-style `[...]` parameter.
-            std::vector<Token> delimiters{};    ///< Tokens that terminate the argument.
-            std::vector<Token> fallbacks{};     ///< Default, used when an optional argument is absent.
+            bool optional = false; ///< LaTeX-style `[...]` parameter.
+            std::vector<Token> delimiters{}; ///< Tokens that terminate the argument.
+            std::vector<Token> fallbacks{}; ///< Default, used when an optional argument is absent.
 
             /// xparse's `s` and `t`: the one token looked for, then what the
             /// argument is when that token is there -- #fallbacks being what
@@ -85,21 +84,23 @@ namespace syntax {
         /// `\\ifdefined` has to count them. A Parser reading from this
         /// expander fills both in, and empties them again when it goes.
         struct Reader {
-            std::function<bool(Symbol)> means{};          ///< Whether it gives a name a meaning.
-            std::function<bool(Symbol, Symbol)> lend{};   ///< Gives the first name the second's meaning; false when the second had none.
+            std::function<bool(Symbol)> means{}; ///< Whether it gives a name a meaning.
+            std::function<bool(Symbol, Symbol)> lend{};
+            ///< Gives the first name the second's meaning; false when the second had none.
         };
 
         /// @brief A user-defined macro.
         struct Macro {
-            std::vector<Parameter> parameters{};   ///< Parameter text, left to right.
-            std::vector<Token> prefix{};           ///< What must stand before the first argument, as plain
+            std::vector<Parameter> parameters{}; ///< Parameter text, left to right.
+            std::vector<Token> prefix{};
+            ///< What must stand before the first argument, as plain
                                                    ///< TeX's `\\def\\x[#1]` asks for its `[`.
-            std::vector<Token> body{};             ///< Replacement text.
-            bool literal = false;                  ///< Set by define(): the body needs no substitution.
-            bool spanning = false;                 ///< `\\long`: arguments may contain `\\par`.
-            bool isolated = false;                 ///< `\\outer`: may not appear inside an argument.
-            bool implicit = false;                 ///< Made by `\\let` from a character, which \\ifx takes it for.
-            bool robust = false;                   ///< e-TeX's `\\protected`: kept as written by `\\edef`.
+            std::vector<Token> body{}; ///< Replacement text.
+            bool literal = false; ///< Set by define(): the body needs no substitution.
+            bool spanning = false; ///< `\\long`: arguments may contain `\\par`.
+            bool isolated = false; ///< `\\outer`: may not appear inside an argument.
+            bool implicit = false; ///< Made by `\\let` from a character, which \\ifx takes it for.
+            bool robust = false; ///< e-TeX's `\\protected`: kept as written by `\\edef`.
         };
 
         /// @brief Binds an expander to a token stream and an engine state.
@@ -107,7 +108,7 @@ namespace syntax {
         /// @param state   Registers, catcodes and scope stack, shared with the caller.
         /// @param lexicon   Interning table, shared with the caller.
         /// @param arena Allocator for anything the expander composes.
-        Mouth(Cursor stream, semantics::Union& state, Lexicon& lexicon, memory::Arena& arena);
+        Mouth(Cursor stream, semantics::Union &state, Lexicon &lexicon, memory::Arena &arena);
 
         /// @brief Opens a scope of a given kind.
         ///
@@ -171,7 +172,7 @@ namespace syntax {
         /// @param allow     Non-zero when `\\par` is permitted inside it (`\\long`).
         /// @return The argument's tokens, with one layer of outer braces stripped
         ///         when the whole argument was a single group.
-        std::vector<Token> argument(const Parameter& parameter, int allow);
+        std::vector<Token> argument(const Parameter &parameter, int allow);
 
         /// @brief Lexes a source buffer and pushes it onto the stream.
         ///
@@ -204,6 +205,7 @@ namespace syntax {
         /// @param name    Control sequence, interned on the caller's behalf.
         /// @param handler Implementation.
         void bind(std::string_view name, Handler handler);
+
         /// @brief Attaches a primitive implementation to an interned symbol.
         /// @param symbol  Interned control sequence.
         /// @param handler Implementation.
@@ -262,13 +264,13 @@ namespace syntax {
         ///         lives in this object; it is invalidated by the next
         ///         define() or forget().
         /// @complexity O(1).
-        [[nodiscard]] const Macro* macro(Symbol symbol) const noexcept;
+        [[nodiscard]] const Macro *macro(Symbol symbol) const noexcept;
 
         /// @brief The primitive a control sequence means, if it means one.
         /// @param symbol Interned control sequence.
         /// @return The handler, or nullptr when none is bound.
         /// @complexity O(1).
-        [[nodiscard]] const Handler* handler(Symbol symbol) const noexcept;
+        [[nodiscard]] const Handler *handler(Symbol symbol) const noexcept;
 
         /// @brief Whether a control sequence means anything at all: a macro,
         ///        a primitive, or a command the #reader builds.
@@ -278,10 +280,10 @@ namespace syntax {
             return macro(symbol) != nullptr || handler(symbol) != nullptr || (reader.means && reader.means(symbol));
         }
 
-        Reader reader{};   ///< The Parser reading from this expander, as far as names go.
+        Reader reader{}; ///< The Parser reading from this expander, as far as names go.
 
         /// @brief Errors recorded so far.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief The raw token stack behind read() and expand().
         ///
@@ -295,7 +297,7 @@ namespace syntax {
         ///
         /// @return The stream, mutable: reading from it is reading from Mouth.
         /// @complexity O(1).
-        [[nodiscard]] Cursor& stream() noexcept { return cursor; }
+        [[nodiscard]] Cursor &stream() noexcept { return cursor; }
 
     private:
         /// @brief One entry on the macro undo log.
@@ -303,15 +305,15 @@ namespace syntax {
         /// Holds a shared pointer rather than a Macro by value: taking a record
         /// is then an atomic increment instead of deep-copying two vectors.
         struct Record {
-            Symbol symbol = none;            ///< Which macro slot.
-            std::shared_ptr<const Macro> macro{};      ///< Meaning to put back; null means undefined.
-            std::uint32_t level = 0;                   ///< Level stamp to put back with it.
+            Symbol symbol = none; ///< Which macro slot.
+            std::shared_ptr<const Macro> macro{}; ///< Meaning to put back; null means undefined.
+            std::uint32_t level = 0; ///< Level stamp to put back with it.
         };
 
     public:
-        semantics::Union& state;   ///< Registers, catcodes and scopes, shared with the caller.
-        Lexicon& lexicon;          ///< Interning table, shared with the caller.
-        memory::Arena& arena;      ///< Allocator for what handlers compose.
+        semantics::Union &state; ///< Registers, catcodes and scopes, shared with the caller.
+        Lexicon &lexicon; ///< Interning table, shared with the caller.
+        memory::Arena &arena; ///< Allocator for what handlers compose.
 
         /// Set when an expansion was abandoned: after a runaway expansion or a
         /// pending-token overflow. An empty token from expand() means end of
@@ -326,25 +328,25 @@ namespace syntax {
         bool vertical = true;
 
     private:
-        Cursor cursor{};           ///< The token stack being read.
+        Cursor cursor{}; ///< The token stack being read.
 
-        Symbol paragraph = none;   ///< `\\par`, the one name the expander knows by itself.
-        Glossary glossary{};     ///< Meanings for the names nothing else here gives one.
+        Symbol paragraph = none; ///< `\\par`, the one name the expander knows by itself.
+        Glossary glossary{}; ///< Meanings for the names nothing else here gives one.
 
-        std::vector<std::size_t> marks{};                ///< Undo-log height at each open scope.
+        std::vector<std::size_t> marks{}; ///< Undo-log height at each open scope.
         std::vector<semantics::Scope::Type> types{}; ///< What each open scope was opened as.
         std::vector<Traceback> tracebacks{}; ///< Errors recorded so far.
         std::vector<Record> records{}; ///< The macro undo log.
-        std::vector<std::pair<std::size_t, Token>> deferred{};   ///< \\aftergroup's tokens, each with its group's depth.
+        std::vector<std::pair<std::size_t, Token> > deferred{}; ///< \\aftergroup's tokens, each with its group's depth.
 
         std::vector<std::shared_ptr<const Macro> > macros{}; ///< Null slot means undefined.
         std::vector<std::uint32_t> levels{}; ///< Group depth of each definition; 0 is outermost.
         /// Primitive per symbol, each in an allocation of its own so a primitive
         /// that binds another while it runs is never moved out from under
         /// itself when the table grows; null means none.
-        std::vector<std::unique_ptr<const Handler>> handlers{};
-        std::vector<Symbol> lent{};   ///< By name, the primitive lend() bound it as; none for one bound directly.
-        bool keeping{false};          ///< Robust macros are kept as written: an `\\edef` is reading.
+        std::vector<std::unique_ptr<const Handler> > handlers{};
+        std::vector<Symbol> lent{}; ///< By name, the primitive lend() bound it as; none for one bound directly.
+        bool keeping{false}; ///< Robust macros are kept as written: an `\\edef` is reading.
 
         std::size_t depth = 0; ///< Re-entrant expand() calls in progress.
         std::size_t limit = 256; ///< Re-entrant expand() calls allowed.

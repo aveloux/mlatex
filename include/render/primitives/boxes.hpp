@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Explicit boxes: TeX's `\\hbox`, `\\vbox` and `\\vtop`, and
     ///        LaTeX's over them.
     ///
@@ -52,12 +51,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Boxes(syntax::Lexicon& lexicon) noexcept;
+        explicit Boxes(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the box primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; contents are shaped with its font.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -66,50 +65,51 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief A minipage opened and not yet read: how it hangs, and how wide.
         struct Opening {
-            char position;   ///< `c`, `t` or `b`.
-            float width;     ///< In points.
+            char position; ///< `c`, `t` or `b`.
+            float width; ///< In points.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Opening> openings{};                ///< Minipages opened, innermost last.
-        mutable std::array<layout::Node*, syntax::semantics::Registers::slots> stored{};   ///< The box registers.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Opening> openings{}; ///< Minipages opened, innermost last.
+        mutable std::array<layout::Node *, syntax::semantics::Registers::slots> stored{}; ///< The box registers.
 
         /// `\\hbox`, `\\vbox`, `\\vtop` and `\\mbox`: what may follow `\\setbox`'s number.
         std::array<syntax::Symbol, 4> made{};
 
         /// @brief A framed block opened and not yet read: which, and its options.
         struct Frame {
-            std::string kind;      ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
-            std::string options;   ///< As written between its brackets.
-            float width;           ///< The column inside, in points.
-            float rule;            ///< The frame's thickness; none for a shaded block.
-            float room;            ///< Between the frame and the column.
+            std::string kind; ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
+            std::string options; ///< As written between its brackets.
+            float width; ///< The column inside, in points.
+            float rule; ///< The frame's thickness; none for a shaded block.
+            float room; ///< Between the frame and the column.
         };
-        mutable std::vector<Frame> frames{};   ///< Framed blocks opened, innermost last.
-        mutable std::string preset{};          ///< tcolorbox's options for every box, as \\tcbset gave them.
-        mutable std::unordered_set<std::string> boxed{};   ///< The boxes \\newtcolorbox has named.
+
+        mutable std::vector<Frame> frames{}; ///< Framed blocks opened, innermost last.
+        mutable std::string preset{}; ///< tcolorbox's options for every box, as \\tcbset gave them.
+        mutable std::unordered_set<std::string> boxed{}; ///< The boxes \\newtcolorbox has named.
 
         /// @brief A beamer columns block open: where its columns hang unless
         ///        one says otherwise, and whether a column `\\column` started
         ///        is still open, its scope with it.
         struct Spread {
-            char position;   ///< `c`, `t` or `b`.
-            bool open;       ///< A `\\column` is being read.
+            char position; ///< `c`, `t` or `b`.
+            bool open; ///< A `\\column` is being read.
         };
-        mutable std::vector<Spread> spreads{};   ///< Columns blocks opened, innermost last.
 
-        syntax::Symbol framing{};  ///< The mark a framed block's opening leaves.
-        syntax::Symbol framed{};   ///< The mark its end leaves.
+        mutable std::vector<Spread> spreads{}; ///< Columns blocks opened, innermost last.
 
-        syntax::Symbol start{};    ///< The mark a minipage's opening leaves; no document can write it.
-        syntax::Symbol finish{};   ///< The mark its end leaves.
+        syntax::Symbol framing{}; ///< The mark a framed block's opening leaves.
+        syntax::Symbol framed{}; ///< The mark its end leaves.
+
+        syntax::Symbol start{}; ///< The mark a minipage's opening leaves; no document can write it.
+        syntax::Symbol finish{}; ///< The mark its end leaves.
     };
-
 }

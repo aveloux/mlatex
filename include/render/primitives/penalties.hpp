@@ -4,7 +4,6 @@
 #include "syntax/parser.hpp"
 
 namespace render::primitives {
-
     /// @brief Penalties: what a break at this point would cost.
     ///
     /// The line breaker weighs every possible break against every other, and a
@@ -35,15 +34,14 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Penalties(syntax::Lexicon& lexicon) noexcept;
+        explicit Penalties(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the penalty primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the count scans against its registers.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// The cost at which a break becomes forbidden, or forced when negated.
         static constexpr std::int32_t absolute = 10000;
     };
-
 }

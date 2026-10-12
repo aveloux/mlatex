@@ -10,7 +10,6 @@
 #include <string>
 
 namespace syntax::expression {
-
     /// Longest name the stack buffer can hold, NUL included.
     ///
     /// This is a buffer size, not a claim about the table: the heap path
@@ -33,7 +32,7 @@ namespace syntax::expression {
             std::memcpy(text, name.data(), name.size());
             text[name.size()] = '\0';
 
-            if (const auto* entry = Lookup::get(text, static_cast<unsigned int>(name.size()))) {
+            if (const auto *entry = Lookup::get(text, static_cast<unsigned int>(name.size()))) {
                 return Symbol{entry->codepoint, static_cast<Category>(entry->category)};
             }
             return std::nullopt;
@@ -41,11 +40,10 @@ namespace syntax::expression {
 
         // Longer than the buffer. Correct, just not allocation-free.
         const std::string heap(name);
-        if (const auto* entry = Lookup::get(heap.c_str(), static_cast<unsigned int>(heap.size()))) {
+        if (const auto *entry = Lookup::get(heap.c_str(), static_cast<unsigned int>(heap.size()))) {
             return Symbol{entry->codepoint, static_cast<Category>(entry->category)};
         }
 
         return std::nullopt;
     }
-
 }

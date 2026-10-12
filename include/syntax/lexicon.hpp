@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace syntax {
-
     /// @brief Interned name. Two control sequences are the same exactly when
     ///        their symbols are equal; the text is kept only for diagnostics.
     using Symbol = std::uint32_t;
@@ -35,10 +34,12 @@ namespace syntax {
     public:
         /// @brief Creates an empty table.
         /// @param arena Allocator for name text; must outlive the table.
-        explicit Lexicon(memory::Arena& arena);
+        explicit Lexicon(memory::Arena &arena);
 
-        Lexicon(const Lexicon&) = delete("a symbol is an index into one table, and means nothing in a copy of it");
-        Lexicon& operator=(const Lexicon&) = delete("a symbol is an index into one table, and means nothing in a copy of it");
+        Lexicon(const Lexicon &) = delete("a symbol is an index into one table, and means nothing in a copy of it");
+
+        Lexicon &operator=(const Lexicon &) = delete(
+            "a symbol is an index into one table, and means nothing in a copy of it");
 
         /// @brief Interns a name.
         /// @param name Text to intern.
@@ -58,10 +59,9 @@ namespace syntax {
         [[nodiscard]] std::size_t size() const noexcept { return names.size(); }
 
     private:
-        memory::Arena& arena;                  ///< Storage for name text.
-        std::vector<std::string_view> names;   ///< Text of each symbol.
-        std::vector<Symbol> table;             ///< Open-addressed slots for longer names; #none is empty.
-        std::array<Symbol, 256> singles{};     ///< Symbol of each one-byte name.
+        memory::Arena &arena; ///< Storage for name text.
+        std::vector<std::string_view> names; ///< Text of each symbol.
+        std::vector<Symbol> table; ///< Open-addressed slots for longer names; #none is empty.
+        std::array<Symbol, 256> singles{}; ///< Symbol of each one-byte name.
     };
-
 }

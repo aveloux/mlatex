@@ -12,7 +12,6 @@
 #include <optional>
 
 namespace syntax::primitives {
-
     /// @brief Register primitives: typed storage and arithmetic on it.
     ///
     /// @par Language
@@ -42,12 +41,12 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Values(Lexicon& lexicon) noexcept;
+        explicit Values(Lexicon &lexicon) noexcept;
 
         /// @brief Installs the register primitives.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; assignments land in its registers.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -56,10 +55,10 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
         /// The last glue read's stretch and shrink, in scaled points or
         /// scaled `fil`s, and their orders of infinity packed as the Order
@@ -71,28 +70,27 @@ namespace syntax::primitives {
         /// @param mouth   Expander to read from.
         /// @param context Engine services, for scanning the index.
         /// @return The addressed slot, or std::nullopt on a malformed reference.
-        [[nodiscard]] std::optional<semantics::Registers::Target> slot(Mouth& mouth, Context& context) const;
+        [[nodiscard]] std::optional<semantics::Registers::Target> slot(Mouth &mouth, Context &context) const;
 
         /// @brief Skips one optional noise word such as `=` or `by`.
         /// @param mouth Expander to read from.
         /// @param text  The word to skip.
-        static void skip(Mouth& mouth, std::string_view text);
+        static void skip(Mouth &mouth, std::string_view text);
 
-        Lexicon* lexicon{nullptr};   ///< For naming the banks when this module installs.
+        Lexicon *lexicon{nullptr}; ///< For naming the banks when this module installs.
 
-        Symbol relax{};     ///< `\\relax`, which ends an expression.
-        Symbol toks{};      ///< `\\toks`, the token registers by number.
-        Symbol numexpr{};   ///< `\\numexpr`, which \\the prints as a number.
-        Symbol dimexpr{};   ///< `\\dimexpr`, which \\the prints as a length.
+        Symbol relax{}; ///< `\\relax`, which ends an expression.
+        Symbol toks{}; ///< `\\toks`, the token registers by number.
+        Symbol numexpr{}; ///< `\\numexpr`, which \\the prints as a number.
+        Symbol dimexpr{}; ///< `\\dimexpr`, which \\the prints as a length.
 
         /// The next register each bank gives out -- integers, lengths, glue
         /// -- counted up from 128 to the engine's own at 240.
         mutable std::array<std::size_t, 3> following{128, 128, 128};
-        mutable std::size_t boxes{10};    ///< The next box register \\newbox gives out.
-        mutable std::size_t tokens{10};   ///< The next token register \\newtoks gives out.
+        mutable std::size_t boxes{10}; ///< The next box register \\newbox gives out.
+        mutable std::size_t tokens{10}; ///< The next token register \\newtoks gives out.
 
-        mutable std::array<std::vector<Token>, semantics::Registers::slots> lists{};   ///< The token registers.
-        mutable std::vector<std::uint16_t> listed{};   ///< The token register each name means, plus one; 0 for none.
+        mutable std::array<std::vector<Token>, semantics::Registers::slots> lists{}; ///< The token registers.
+        mutable std::vector<std::uint16_t> listed{}; ///< The token register each name means, plus one; 0 for none.
     };
-
 }

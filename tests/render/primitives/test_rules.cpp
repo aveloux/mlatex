@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -69,8 +69,8 @@ int main() {
     {
         const Result result = article("", "\\hrule\\hrule height 2pt\\vrule width 3pt height 8pt depth 2pt\\par");
         assert((result.clean && holds(result.pdf, " 345 0.4 re f") && holds(result.pdf, " 345 2 re f") &&
-               holds(result.pdf, " 3 10 re f")) && "\\hrule runs across the column, "
-                                 "\\vrule as tall as asked, with TeX's keywords");
+                holds(result.pdf, " 3 10 re f")) && "\\hrule runs across the column, "
+               "\\vrule as tall as asked, with TeX's keywords");
     }
     {
         const Result result = article("", "\\underline{under}");

@@ -15,22 +15,22 @@
 #include <array>
 
 namespace render::typography {
-
     /// American English, the language a document is broken in unless it
     /// asks for another.
     static constexpr char english[] = {
 #embed "../../../assets/hyphens/hyph-en-us.pat.txt" suffix(,)
-        0};
+        0
+    };
 
     /// @brief A language's trie as the compiler leaves it: the packed trie
     ///        parse() made, copied into arrays of exactly its size.
-    template <std::size_t Nodes, std::size_t Edges, std::size_t Levels>
+    template<std::size_t Nodes, std::size_t Edges, std::size_t Levels>
     struct Compiled {
-        std::array<Hyphenator::Node, Nodes> nodes{};                    ///< Every node, packed; the first is the root.
-        std::array<Hyphenator::Edge, Edges> edges{};                    ///< Every node's children, side by side.
-        std::array<std::uint8_t, Levels> levels{};                      ///< Every pattern's digits.
-        std::array<std::uint32_t, Hyphenator::alphabet> initials{};     ///< The root's child for each first letter.
-        std::size_t patterns{0};                                        ///< How many patterns it holds.
+        std::array<Hyphenator::Node, Nodes> nodes{}; ///< Every node, packed; the first is the root.
+        std::array<Hyphenator::Edge, Edges> edges{}; ///< Every node's children, side by side.
+        std::array<std::uint8_t, Levels> levels{}; ///< Every pattern's digits.
+        std::array<std::uint32_t, Hyphenator::alphabet> initials{}; ///< The root's child for each first letter.
+        std::size_t patterns{0}; ///< How many patterns it holds.
     };
 
     /// The English trie's size, found by building it once; the trie itself
@@ -70,5 +70,4 @@ namespace render::typography {
                     "Embedded {} hyphenation patterns for {}", patterns, name);
         return patterns;
     }
-
 }

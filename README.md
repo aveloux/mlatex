@@ -86,13 +86,13 @@ intentionally left out.
 Prebuilt packages have not been published yet. When they are, each release
 will include:
 
-| Platform | Package | Installs to |
-| --- | --- | --- |
-| Windows | `.msi` installer, `.zip` | `C:\Program Files\mLaTeX` |
-| macOS | `.pkg` installer | `/Applications/mLaTeX` |
-| macOS | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
-| Linux | `.deb`, `.rpm` | `/opt/mlatex` |
-| Linux | `.tar.gz`, `.zip` | wherever it is unpacked |
+| Platform | Package                              | Installs to                                         |
+|----------|--------------------------------------|-----------------------------------------------------|
+| Windows  | `.msi` installer, `.zip`             | `C:\Program Files\mLaTeX`                           |
+| macOS    | `.pkg` installer                     | `/Applications/mLaTeX`                              |
+| macOS    | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
+| Linux    | `.deb`, `.rpm`                       | `/opt/mlatex`                                       |
+| Linux    | `.tar.gz`, `.zip`                    | wherever it is unpacked                             |
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
@@ -113,11 +113,10 @@ the `latex` a TeX distribution installs.
   and zlib installed for your target triplet.
 - [gperf](https://www.gnu.org/software/gperf/).
 - Optional: libcurl on Linux and macOS for `\includegraphics` of `https://`
-  sources (Windows uses WinHTTP); Doxygen for the API reference; WiX
-  (version 3, or the `wix` .NET tool, version 4 or later) for an `.msi`.
+  sources (Windows uses WinHTTP); Doxygen for the API reference; WiX (version 3, or the `wix` .NET tool, version 4 or
+  later) for an `.msi`.
   WiX 7 needs its EULA accepted once per machine, `wix eula accept wix7`,
-  and the `WixToolset.UI.wixext` and `WixToolset.Util.wixext` extensions
-  (`wix extension add --global ...`); see
+  and the `WixToolset.UI.wixext` and `WixToolset.Util.wixext` extensions (`wix extension add --global ...`); see
   [WiX's maintenance fee](https://docs.firegiant.com/wix/osmf/).
 
 ```bash
@@ -195,20 +194,20 @@ mlatex --watch --open paper
 mlatex --time paper
 ```
 
-| Option | Meaning |
-| --- | --- |
-| `-o`, `--output-directory=DIR` | Write the PDF into `DIR` |
-| `-j`, `--job-name=NAME` | Name the PDF `NAME.pdf` |
-| `-n`, `--draft-mode` | Check the document and write no PDF |
-| `--halt-on-error` | Write no PDF if the document has an error |
+| Option                          | Meaning                                                              |
+|---------------------------------|----------------------------------------------------------------------|
+| `-o`, `--output-directory=DIR`  | Write the PDF into `DIR`                                             |
+| `-j`, `--job-name=NAME`         | Name the PDF `NAME.pdf`                                              |
+| `-n`, `--draft-mode`            | Check the document and write no PDF                                  |
+| `--halt-on-error`               | Write no PDF if the document has an error                            |
 | `-I`, `--include-directory=DIR` | Also look in `DIR` for inputs, packages, pictures and bibliographies |
-| `--offline` | Make no network requests; for documents you did not write |
-| `-w`, `--watch` | Recompile every time the document is saved |
-| `-O`, `--open` | Open the PDF in the system viewer when it is written |
-| `-i`, `--interaction=MODE` | `batch-mode` prints only errors |
-| `--file-line-error` | Print errors as `file:line:column: message` |
-| `-T`, `--time` | Print how long the run took |
-| `--time-statistics` | Print every stage of the engine and its timing |
+| `--offline`                     | Make no network requests; for documents you did not write            |
+| `-w`, `--watch`                 | Recompile every time the document is saved                           |
+| `-O`, `--open`                  | Open the PDF in the system viewer when it is written                 |
+| `-i`, `--interaction=MODE`      | `batch-mode` prints only errors                                      |
+| `--file-line-error`             | Print errors as `file:line:column: message`                          |
+| `-T`, `--time`                  | Print how long the run took                                          |
+| `--time-statistics`             | Print every stage of the engine and its timing                       |
 
 `mlatex --help` lists every option. The exit status is 0 for a clean
 document, 1 for a document with errors (a PDF is still written unless
@@ -263,8 +262,7 @@ if (!table->typeset(session, source, strlen(source), &pdf, &size)) {
 table->dispose(session);
 ```
 
-**JavaScript**, through the WebAssembly module built with the `wasm` preset
-(see `include/render/wasm.hpp`):
+**JavaScript**, through the WebAssembly module built with the `wasm` preset (see `include/render/wasm.hpp`):
 
 ```js
 const engine = await Latex();
@@ -289,14 +287,14 @@ detail.
 
 ## Project layout
 
-| Path | Contents |
-| --- | --- |
+| Path               | Contents                                                                                                                                                   |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `include/`, `src/` | The engine: `syntax` (lexer, expander, parser), `render` (layout, typography, graphics, PDF), `memory` (arenas, tables), `protocols` (HTTP, the C library) |
-| `src/modules/` | Packages and classes, one folder each, compiled into the binary |
-| `src/jit/` | Reserved for the just-in-time target |
-| `assets/` | Fonts, hyphenation patterns and the command glossary |
-| `build/` | The sample paper, `main.mtex` |
-| `tests/` | One test per source file, at the same relative path, and in `tests/packages/` one sample document per package |
+| `src/modules/`     | Packages and classes, one folder each, compiled into the binary                                                                                            |
+| `src/jit/`         | Reserved for the just-in-time target                                                                                                                       |
+| `assets/`          | Fonts, hyphenation patterns and the command glossary                                                                                                       |
+| `build/`           | The sample paper, `main.mtex`                                                                                                                              |
+| `tests/`           | One test per source file, at the same relative path, and in `tests/packages/` one sample document per package                                              |
 
 ## Contributing
 
@@ -318,8 +316,7 @@ The project's Discord server is the place to ask questions, discuss
 contributions and follow its direction:
 [discord.gg/null](https://discord.gg/null).
 
-mLaTeX is maintained by Andres Hernandez
-([\@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
+mLaTeX is maintained by Andres Hernandez ([\@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
 project or its direction, write to andromedeyz@hotmail.com. To report a
 security issue, follow [SECURITY.md](SECURITY.md) instead of opening a
 public issue.

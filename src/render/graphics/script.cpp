@@ -29,20 +29,22 @@
 #include <vector>
 
 namespace render::graphics {
-
     std::optional<Drawing> Drawing::script(const std::string_view file) {
         // --- The picture's box ---------------------------------------------------------------
 
         // `%%HiResBoundingBox:` if it gives one, `%%BoundingBox:` otherwise;
         // one that says `(atend)` is looked for again further on.
-        std::array<float, 4> box{};
+        std::array < float, 4 > box{};
         bool boxed = false;
-        for (const std::string_view key : {std::string_view{"%%HiResBoundingBox:"}, std::string_view{"%%BoundingBox:"}}) {
-            for (std::size_t at = file.find(key); at != std::string_view::npos && !boxed; at = file.find(key, at + key.size())) {
-                const char* cursor = file.data() + at + key.size();
-                const char* const end = file.data() + file.size();
+        for (const std::string_view key: {
+                 std::string_view{"%%HiResBoundingBox:"}, std::string_view{"%%BoundingBox:"}
+             }) {
+            for (std::size_t at = file.find(key); at != std::string_view::npos && !boxed;
+                 at = file.find(key, at + key.size())) {
+                const char *cursor = file.data() + at + key.size();
+                const char *const end = file.data() + file.size();
                 std::size_t found = 0;
-                for (float& corner : box) {
+                for (float &corner: box) {
                     while (cursor < end && (*cursor == ' ' || *cursor == '\t')) ++cursor;
                     const auto [stop, failure] = patch::decimal(cursor, end, corner);
                     if (failure != std::errc{}) break;
@@ -57,7 +59,7 @@ namespace render::graphics {
 
         Drawing drawing;
         drawing.box = box;
-        std::string& out = drawing.content;
+        std::string &out = drawing.content;
 
         // --- Its objects ---------------------------------------------------------------------
 
@@ -65,27 +67,32 @@ namespace render::graphics {
         // met; a literal, `/name`, is pushed. A procedure met in a procedure
         // is pushed, and run when something runs it.
         struct Object {
-            enum class Kind : std::uint8_t { Null, Number, Boolean, Name, Literal, Text, Procedure, Array, Mark, Table, Font, Source };
+            enum class Kind : std::uint8_t {
+                Null, Number, Boolean, Name, Literal, Text, Procedure, Array, Mark, Table, Font, Source
+            };
+
             Kind kind{Kind::Null};
-            double number{0.0};                                       // a number's value, a boolean's 1 or 0, a font's size
-            std::string text{};                                       // a name's letters, a string's bytes, a font's name
-            std::shared_ptr<std::vector<Object>> items{};             // a procedure's or an array's
-            std::shared_ptr<std::map<std::string, Object>> table{};   // a dictionary's
+            double number{0.0}; // a number's value, a boolean's 1 or 0, a font's size
+            std::string text{}; // a name's letters, a string's bytes, a font's name
+            std::shared_ptr<std::vector<Object> > items{}; // a procedure's or an array's
+            std::shared_ptr<std::map<std::string, Object> > table{}; // a dictionary's
         };
         using Kind = Object::Kind;
         using Table = std::map<std::string, Object>;
 
         const auto delimiter = [](const char letter) {
-            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter == '\0' ||
+            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter ==
+                   '\0' ||
                    std::string_view("()<>[]{}/%").contains(letter);
         };
         // Past blanks and comments.
-        const auto blank = [](const std::string_view text, std::size_t& at) {
+        const auto blank = [](const std::string_view text, std::size_t &at) {
             while (at < text.size()) {
                 const char letter = text[at];
                 if (letter == '%') {
                     while (at < text.size() && text[at] != '\n' && text[at] != '\r') ++at;
-                } else if (letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter == '\0') {
+                } else if (letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' ||
+                           letter == '\0') {
                     ++at;
                 } else {
                     break;
@@ -94,7 +101,8 @@ namespace render::graphics {
         };
         // The next object written from a place, a procedure read whole; none
         // at the end.
-        const auto read = [&](this const auto& self, const std::string_view text, std::size_t& at) -> std::optional<Object> {
+        const auto read = [&](this const auto &self, const std::string_view text,
+                              std::size_t &at) -> std::optional<Object> {
             blank(text, at);
             if (at >= text.size()) return std::nullopt;
             const char head = text[at];
@@ -110,15 +118,25 @@ namespace render::graphics {
                         const char escaped = text[at++];
                         if (escaped >= '0' && escaped <= '7') {
                             int code = escaped - '0';
-                            for (int digit = 0; digit < 2 && at < text.size() && text[at] >= '0' && text[at] <= '7'; ++digit) {
+                            for (int digit = 0; digit < 2 && at < text.size() && text[at] >= '0' && text[at] <= '7'; ++
+                                 digit) {
                                 code = code * 8 + (text[at++] - '0');
                             }
                             letters += static_cast<char>(code);
                         } else if (escaped == '\r' || escaped == '\n') {
                             if (escaped == '\r' && at < text.size() && text[at] == '\n') ++at;
                         } else {
-                            letters += escaped == 'n' ? '\n' : escaped == 'r' ? '\r' : escaped == 't' ? '\t' : escaped == 'b' ? '\b'
-                                     : escaped == 'f' ? '\f' : escaped;
+                            letters += escaped == 'n'
+                                           ? '\n'
+                                           : escaped == 'r'
+                                                 ? '\r'
+                                                 : escaped == 't'
+                                                       ? '\t'
+                                                       : escaped == 'b'
+                                                             ? '\b'
+                                                             : escaped == 'f'
+                                                                   ? '\f'
+                                                                   : escaped;
                         }
                     } else if (letter == '(') {
                         ++depth;
@@ -149,9 +167,13 @@ namespace render::graphics {
                 int pending = -1;
                 for (; at < text.size() && text[at] != '>'; ++at) {
                     const char letter = text[at];
-                    const int value = letter >= '0' && letter <= '9' ? letter - '0'
-                                    : letter >= 'a' && letter <= 'f' ? letter - 'a' + 10
-                                    : letter >= 'A' && letter <= 'F' ? letter - 'A' + 10 : -1;
+                    const int value = letter >= '0' && letter <= '9'
+                                          ? letter - '0'
+                                          : letter >= 'a' && letter <= 'f'
+                                                ? letter - 'a' + 10
+                                                : letter >= 'A' && letter <= 'F'
+                                                      ? letter - 'A' + 10
+                                                      : -1;
                     if (value < 0) continue;
                     if (pending < 0) {
                         pending = value;
@@ -166,7 +188,7 @@ namespace render::graphics {
             }
             if (head == '{') {
                 ++at;
-                auto items = std::make_shared<std::vector<Object>>();
+                auto items = std::make_shared<std::vector<Object> >();
                 while (true) {
                     blank(text, at);
                     if (at >= text.size()) break;
@@ -191,7 +213,7 @@ namespace render::graphics {
             const bool literal = head == '/';
             if (literal) {
                 ++at;
-                if (at < text.size() && text[at] == '/') ++at;   // `//name`, read as the name
+                if (at < text.size() && text[at] == '/') ++at; // `//name`, read as the name
             }
             const std::size_t start = at;
             while (at < text.size() && !delimiter(text[at])) ++at;
@@ -208,7 +230,8 @@ namespace render::graphics {
                 long long whole = 0;
                 std::from_chars(word.data(), word.data() + hash, radix);
                 if (radix >= 2 && radix <= 36 &&
-                    std::from_chars(word.data() + hash + 1, word.data() + word.size(), whole, radix).ec == std::errc{}) {
+                    std::from_chars(word.data() + hash + 1, word.data() + word.size(), whole, radix).ec == std::errc
+                    {}) {
                     return Object{.kind = Kind::Number, .number = static_cast<double>(whole)};
                 }
             }
@@ -228,7 +251,7 @@ namespace render::graphics {
         struct State {
             std::array<double, 6> matrix{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
             std::array<double, 3> color{0.0, 0.0, 0.0};
-            std::size_t components{1};        // how many numbers `setcolor` takes
+            std::size_t components{1}; // how many numbers `setcolor` takes
             double width{1.0};
             int cap{0};
             int join{0};
@@ -248,11 +271,13 @@ namespace render::graphics {
         std::vector<std::string> fonts;
 
         // A number as the content writes it: three places, no trailing zeros.
-        const auto put = [](std::string& into, const double value) {
-            std::array<char, 32> buffer{};
+        const auto put = [](std::string &into, const double value) {
+            std::array < char, 32 > buffer{};
             const double rounded = std::abs(value) < 0.0005 ? 0.0 : value;
-            const auto [stop, failure] = std::to_chars(buffer.data(), buffer.data() + buffer.size(), rounded, std::chars_format::fixed, 3);
-            std::string_view written(buffer.data(), failure == std::errc{} ? static_cast<std::size_t>(stop - buffer.data()) : 0);
+            const auto [stop, failure] = std::to_chars(buffer.data(), buffer.data() + buffer.size(), rounded,
+                                                       std::chars_format::fixed, 3);
+            std::string_view written(buffer.data(),
+                                     failure == std::errc{} ? static_cast<std::size_t>(stop - buffer.data()) : 0);
             while (written.contains('.') && (written.ends_with('0') || written.ends_with('.'))) {
                 const bool dot = written.ends_with('.');
                 written.remove_suffix(1);
@@ -263,29 +288,38 @@ namespace render::graphics {
         };
         // A point of user space on the page, and a distance in it.
         const auto device = [&state](const double x, const double y) {
-            const std::array<double, 6>& m = state.matrix;
+            const std::array<double, 6> &m = state.matrix;
             return std::pair{m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]};
         };
         const auto distance = [&state](const double x, const double y) {
-            const std::array<double, 6>& m = state.matrix;
+            const std::array<double, 6> &m = state.matrix;
             return std::pair{m[0] * x + m[2] * y, m[1] * x + m[3] * y};
         };
         // The matrix that does `first` and then `then`, and one undone.
-        const auto compose = [](const std::array<double, 6>& first, const std::array<double, 6>& then) {
-            return std::array<double, 6>{then[0] * first[0] + then[2] * first[1], then[1] * first[0] + then[3] * first[1],
-                                         then[0] * first[2] + then[2] * first[3], then[1] * first[2] + then[3] * first[3],
-                                         then[0] * first[4] + then[2] * first[5] + then[4],
-                                         then[1] * first[4] + then[3] * first[5] + then[5]};
+        const auto compose = [](const std::array<double, 6> &first, const std::array<double, 6> &then) {
+            return std::array < double, 6 >
+            {
+                then[0] * first[0] + then[2] * first[1], then[1] * first[0] + then[3] * first[1],
+                        then[0] * first[2] + then[2] * first[3], then[1] * first[2] + then[3] * first[3],
+                        then[0] * first[4] + then[2] * first[5] + then[4],
+                        then[1] * first[4] + then[3] * first[5] + then[5]
+            };
         };
-        const auto invert = [](const std::array<double, 6>& m) {
+        const auto invert = [](const std::array<double, 6> &m) {
             const double determinant = m[0] * m[3] - m[1] * m[2];
-            if (std::abs(determinant) < 1e-12) return std::array<double, 6>{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
-            return std::array<double, 6>{m[3] / determinant, -m[1] / determinant, -m[2] / determinant, m[0] / determinant,
-                                         (m[2] * m[5] - m[3] * m[4]) / determinant, (m[1] * m[4] - m[0] * m[5]) / determinant};
+            if (std::abs(determinant) < 1e-12) return std::array < double, 6 >
+            {
+                1.0, 0.0, 0.0, 1.0, 0.0, 0.0
+            };
+            return std::array < double, 6 >
+            {
+                m[3] / determinant, -m[1] / determinant, -m[2] / determinant, m[0] / determinant,
+                        (m[2] * m[5] - m[3] * m[4]) / determinant, (m[1] * m[4] - m[0] * m[5]) / determinant
+            };
         };
         // How much the transformation scales a length, on average.
         const auto scaling = [&state] {
-            const std::array<double, 6>& m = state.matrix;
+            const std::array<double, 6> &m = state.matrix;
             return std::sqrt(std::abs(m[0] * m[3] - m[1] * m[2]));
         };
 
@@ -310,7 +344,7 @@ namespace render::graphics {
             state.x = px;
             state.y = py;
         };
-        const auto curve = [&](const std::array<double, 6>& points) {
+        const auto curve = [&](const std::array<double, 6> &points) {
             for (std::size_t index = 0; index < 6; index += 2) {
                 const auto [px, py] = device(points[index], points[index + 1]);
                 put(state.path, px);
@@ -325,11 +359,14 @@ namespace render::graphics {
         // The current point back in user space.
         const auto current = [&] {
             const std::array<double, 6> back = invert(state.matrix);
-            return std::pair{back[0] * state.x + back[2] * state.y + back[4], back[1] * state.x + back[3] * state.y + back[5]};
+            return std::pair{
+                back[0] * state.x + back[2] * state.y + back[4], back[1] * state.x + back[3] * state.y + back[5]
+            };
         };
         // An arc round a centre, against the clock or with it, in curves of
         // a quarter turn at most, from a line to its start.
-        const auto arc = [&](const double cx, const double cy, const double radius, double from, double to, const bool clockwise) {
+        const auto arc = [&](const double cx, const double cy, const double radius, double from, double to,
+                             const bool clockwise) {
             if (clockwise) {
                 while (to > from) to -= 360.0;
             } else {
@@ -343,21 +380,25 @@ namespace render::graphics {
             for (int piece = 0; piece < pieces; ++piece) {
                 const double next = angle + step;
                 const double pull = 4.0 / 3.0 * std::tan(step / 4.0) * radius;
-                curve({cx + radius * std::cos(angle) - pull * std::sin(angle), cy + radius * std::sin(angle) + pull * std::cos(angle),
-                       cx + radius * std::cos(next) + pull * std::sin(next), cy + radius * std::sin(next) - pull * std::cos(next),
-                       cx + radius * std::cos(next), cy + radius * std::sin(next)});
+                curve({
+                    cx + radius * std::cos(angle) - pull * std::sin(angle),
+                    cy + radius * std::sin(angle) + pull * std::cos(angle),
+                    cx + radius * std::cos(next) + pull * std::sin(next),
+                    cy + radius * std::sin(next) - pull * std::cos(next),
+                    cx + radius * std::cos(next), cy + radius * std::sin(next)
+                });
                 angle = next;
             }
         };
         const auto paint = [&](std::string_view operation, const bool stroked) {
             if (state.path.empty()) return;
-            for (const double channel : state.color) put(out, channel);
+            for (const double channel: state.color) put(out, channel);
             out += stroked ? "RG\n" : "rg\n";
             if (stroked) {
                 put(out, state.width * scaling());
                 out += "w ";
                 out += std::to_string(state.cap) + " J " + std::to_string(state.join) + " j [";
-                for (const double dash : state.dashes) put(out, dash * scaling());
+                for (const double dash: state.dashes) put(out, dash * scaling());
                 out += "] ";
                 put(out, state.phase * scaling());
                 out += "d\n";
@@ -368,38 +409,62 @@ namespace render::graphics {
         };
         // The standard face a font's name is nearest.
         const auto standard = [](const std::string_view name) {
-            const bool bold = name.contains("Bold") || name.contains("Black") || name.contains("Heavy") || name.contains("Semibold");
+            const bool bold = name.contains("Bold") || name.contains("Black") || name.contains("Heavy") || name.
+                              contains("Semibold");
             const bool slanted = name.contains("Italic") || name.contains("Oblique") || name.contains("Slanted");
             if (name.contains("Symbol")) return std::string("Symbol");
             if (name.contains("Dingbats")) return std::string("ZapfDingbats");
-            if (name.contains("Courier") || name.contains("Mono") || name.contains("Typewriter") || name.starts_with("CMTT") ||
+            if (name.contains("Courier") || name.contains("Mono") || name.contains("Typewriter") || name.
+                starts_with("CMTT") ||
                 name.starts_with("cmtt")) {
-                return std::string(bold && slanted ? "Courier-BoldOblique" : bold ? "Courier-Bold" : slanted ? "Courier-Oblique" : "Courier");
+                return std::string(bold && slanted
+                                       ? "Courier-BoldOblique"
+                                       : bold
+                                             ? "Courier-Bold"
+                                             : slanted
+                                                   ? "Courier-Oblique"
+                                                   : "Courier");
             }
-            if (name.contains("Times") || name.contains("Roman") || (name.contains("Serif") && !name.contains("Sans")) ||
-                name.contains("Palatino") || name.contains("Bookman") || name.contains("Century") || name.contains("Garamond") ||
+            if (name.contains("Times") || name.contains("Roman") || (name.contains("Serif") && !name.contains("Sans"))
+                ||
+                name.contains("Palatino") || name.contains("Bookman") || name.contains("Century") || name.contains(
+                    "Garamond") ||
                 name.starts_with("CMR") || name.starts_with("cmr")) {
-                return std::string(bold && slanted ? "Times-BoldItalic" : bold ? "Times-Bold" : slanted ? "Times-Italic" : "Times-Roman");
+                return std::string(bold && slanted
+                                       ? "Times-BoldItalic"
+                                       : bold
+                                             ? "Times-Bold"
+                                             : slanted
+                                                   ? "Times-Italic"
+                                                   : "Times-Roman");
             }
-            return std::string(bold && slanted ? "Helvetica-BoldOblique" : bold ? "Helvetica-Bold" : slanted ? "Helvetica-Oblique" : "Helvetica");
+            return std::string(bold && slanted
+                                   ? "Helvetica-BoldOblique"
+                                   : bold
+                                         ? "Helvetica-Bold"
+                                         : slanted
+                                               ? "Helvetica-Oblique"
+                                               : "Helvetica");
         };
         // Letters set at the current point in the current font, which moves
         // on past them.
-        const auto show = [&](const std::string& letters) {
+        const auto show = [&](const std::string &letters) {
             if (!state.placed || letters.empty()) return;
             auto found = std::ranges::find(fonts, state.face);
             if (found == fonts.end()) {
                 fonts.push_back(state.face);
                 found = fonts.end() - 1;
             }
-            for (const double channel : state.color) put(out, channel);
+            for (const double channel: state.color) put(out, channel);
             out += "rg\nBT /F" + std::to_string(found - fonts.begin()) + " 1 Tf ";
-            const std::array<double, 6>& m = state.matrix;
-            for (const double value : {m[0] * state.size, m[1] * state.size, m[2] * state.size, m[3] * state.size, state.x, state.y}) {
+            const std::array<double, 6> &m = state.matrix;
+            for (const double value: {
+                     m[0] * state.size, m[1] * state.size, m[2] * state.size, m[3] * state.size, state.x, state.y
+                 }) {
                 put(out, value);
             }
             out += "Tm (";
-            for (const char letter : letters) {
+            for (const char letter: letters) {
                 const auto code = static_cast<unsigned char>(letter);
                 if (letter == '(' || letter == ')' || letter == '\\') {
                     out += '\\';
@@ -419,14 +484,14 @@ namespace render::graphics {
         // --- The program ---------------------------------------------------------------------
 
         std::vector<Object> stack;
-        std::vector<std::shared_ptr<Table>> dictionaries{std::make_shared<Table>()};
-        std::size_t cursor = 0;      // where the program is read from the file, for `currentfile`
-        std::size_t resumed = 0;     // where the last object the program read ended
-        std::size_t steps = 0;       // how many objects have run
-        std::size_t depth = 0;       // how many procedures deep it runs
-        bool leaving = false;        // an `exit` on its way out of the loop it is in
-        bool stopping = false;       // a `stop` on its way out to the `stopped` around it
-        bool halted = false;         // the program quit, or ran too long
+        std::vector<std::shared_ptr<Table> > dictionaries{std::make_shared<Table>()};
+        std::size_t cursor = 0; // where the program is read from the file, for `currentfile`
+        std::size_t resumed = 0; // where the last object the program read ended
+        std::size_t steps = 0; // how many objects have run
+        std::size_t depth = 0; // how many procedures deep it runs
+        bool leaving = false; // an `exit` on its way out of the loop it is in
+        bool stopping = false; // a `stop` on its way out to the `stopped` around it
+        bool halted = false; // the program quit, or ran too long
 
         const auto pop = [&stack]() -> Object {
             if (stack.empty()) return {};
@@ -438,27 +503,29 @@ namespace render::graphics {
             const Object top = pop();
             return top.kind == Kind::Number || top.kind == Kind::Boolean ? top.number : 0.0;
         };
-        const auto push = [&stack](const double value) { stack.push_back(Object{.kind = Kind::Number, .number = value}); };
+        const auto push = [&stack](const double value) {
+            stack.push_back(Object{.kind = Kind::Number, .number = value});
+        };
         const auto truth = [&stack](const bool value) {
             stack.push_back(Object{.kind = Kind::Boolean, .number = value ? 1.0 : 0.0});
         };
-        const auto lookup = [&dictionaries](const std::string& name) -> const Object* {
+        const auto lookup = [&dictionaries](const std::string &name) -> const Object * {
             for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend(); ++dictionary) {
                 if (const auto found = (*dictionary)->find(name); found != (*dictionary)->end()) return &found->second;
             }
             return nullptr;
         };
         // A matrix from an array of six numbers.
-        const auto matrix = [](const Object& array) {
-            std::array<double, 6> m{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
+        const auto matrix = [](const Object &array) {
+            std::array < double, 6 > m{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
             if (array.items && array.items->size() == 6) {
                 for (std::size_t index = 0; index < 6; ++index) m[index] = (*array.items)[index].number;
             }
             return m;
         };
-        const auto numbers = [](const std::array<double, 6>& m) {
-            auto items = std::make_shared<std::vector<Object>>();
-            for (const double value : m) items->push_back(Object{.kind = Kind::Number, .number = value});
+        const auto numbers = [](const std::array<double, 6> &m) {
+            auto items = std::make_shared<std::vector<Object> >();
+            for (const double value: m) items->push_back(Object{.kind = Kind::Number, .number = value});
             return Object{.kind = Kind::Array, .items = std::move(items)};
         };
         // Bytes read from the file where the program stands: in hexadecimal,
@@ -469,9 +536,13 @@ namespace render::graphics {
                 int pending = -1;
                 while (cursor < file.size() && bytes.size() < length) {
                     const char letter = file[cursor++];
-                    const int value = letter >= '0' && letter <= '9' ? letter - '0'
-                                    : letter >= 'a' && letter <= 'f' ? letter - 'a' + 10
-                                    : letter >= 'A' && letter <= 'F' ? letter - 'A' + 10 : -1;
+                    const int value = letter >= '0' && letter <= '9'
+                                          ? letter - '0'
+                                          : letter >= 'a' && letter <= 'f'
+                                                ? letter - 'a' + 10
+                                                : letter >= 'A' && letter <= 'F'
+                                                      ? letter - 'A' + 10
+                                                      : -1;
                     if (value < 0) continue;
                     if (pending < 0) {
                         pending = value;
@@ -492,7 +563,7 @@ namespace render::graphics {
             return bytes;
         };
 
-        const auto run = [&](this const auto& self, const Object& object, const bool invoked) -> void {
+        const auto run = [&](this const auto &self, const Object &object, const bool invoked) -> void {
             if (halted || leaving || stopping) return;
             if (++steps > 4000000) {
                 halted = true;
@@ -500,7 +571,7 @@ namespace render::graphics {
             }
             if (invoked && object.kind == Kind::Procedure) {
                 ++depth;
-                for (const Object& item : *object.items) {
+                for (const Object &item: *object.items) {
                     self(item, false);
                     if (halted || leaving || stopping) break;
                 }
@@ -517,8 +588,8 @@ namespace render::graphics {
             // operator of its own. Deep enough that a procedure must be
             // calling itself by the name of an operator, `/moveto {moveto}
             // def`, the operator.
-            const std::string& name = object.text;
-            if (const Object* defined = depth < 200 ? lookup(name) : nullptr) {
+            const std::string &name = object.text;
+            if (const Object *defined = depth < 200 ? lookup(name) : nullptr) {
                 const Object held = *defined;
                 if (held.kind == Kind::Procedure) {
                     self(held, true);
@@ -549,11 +620,12 @@ namespace render::graphics {
                     Object target = pop();
                     const Object source = pop();
                     if (source.items && target.items) {
-                        for (std::size_t index = 0; index < std::min(source.items->size(), target.items->size()); ++index) {
+                        for (std::size_t index = 0; index < std::min(source.items->size(), target.items->size()); ++
+                             index) {
                             (*target.items)[index] = (*source.items)[index];
                         }
                     } else if (source.table && target.table) {
-                        for (const auto& [key, value] : *source.table) (*target.table)[key] = value;
+                        for (const auto &[key, value]: *source.table) (*target.table)[key] = value;
                     } else if (target.kind == Kind::Text) {
                         target.text = source.text;
                     }
@@ -584,7 +656,7 @@ namespace render::graphics {
                 while (count < stack.size() && stack[stack.size() - 1 - count].kind != Kind::Mark) ++count;
                 push(static_cast<double>(count));
             } else if (name == "]") {
-                auto items = std::make_shared<std::vector<Object>>();
+                auto items = std::make_shared<std::vector<Object> >();
                 while (!stack.empty() && stack.back().kind != Kind::Mark) items->insert(items->begin(), pop());
                 pop();
                 stack.push_back(Object{.kind = Kind::Array, .items = std::move(items)});
@@ -593,11 +665,13 @@ namespace render::graphics {
                 std::vector<Object> pairs;
                 while (!stack.empty() && stack.back().kind != Kind::Mark) pairs.insert(pairs.begin(), pop());
                 pop();
-                for (std::size_t index = 0; index + 1 < pairs.size(); index += 2) (*table)[pairs[index].text] = pairs[index + 1];
+                for (std::size_t index = 0; index + 1 < pairs.size(); index += 2)
+                    (*table)[pairs[index].text] = pairs[index + 1];
                 stack.push_back(Object{.kind = Kind::Table, .table = std::move(table)});
 
-            // Arithmetic.
-            } else if (name == "add" || name == "sub" || name == "mul" || name == "div" || name == "idiv" || name == "mod" ||
+                // Arithmetic.
+            } else if (name == "add" || name == "sub" || name == "mul" || name == "div" || name == "idiv" || name ==
+                       "mod" ||
                        name == "atan" || name == "exp" || name == "max" || name == "min") {
                 const double right = number();
                 const double left = number();
@@ -616,33 +690,59 @@ namespace render::graphics {
                 if (name == "max") result = std::max(left, right);
                 if (name == "min") result = std::min(left, right);
                 push(result);
-            } else if (name == "neg" || name == "abs" || name == "sqrt" || name == "sin" || name == "cos" || name == "ln" ||
+            } else if (name == "neg" || name == "abs" || name == "sqrt" || name == "sin" || name == "cos" || name ==
+                       "ln" ||
                        name == "log" || name == "round" || name == "truncate" || name == "floor" || name == "ceiling" ||
                        name == "cvi" || name == "cvr") {
                 const double value = number();
                 const double turn = std::numbers::pi / 180.0;
-                push(name == "neg" ? -value : name == "abs" ? std::abs(value) : name == "sqrt" ? std::sqrt(std::max(value, 0.0))
-                     : name == "sin" ? std::sin(value * turn) : name == "cos" ? std::cos(value * turn)
-                     : name == "ln" ? std::log(value) : name == "log" ? std::log10(value)
-                     : name == "round" ? std::floor(value + 0.5) : name == "truncate" || name == "cvi" ? std::trunc(value)
-                     : name == "floor" ? std::floor(value) : name == "ceiling" ? std::ceil(value) : value);
+                push(name == "neg"
+                         ? -value
+                         : name == "abs"
+                               ? std::abs(value)
+                               : name == "sqrt"
+                                     ? std::sqrt(std::max(value, 0.0))
+                                     : name == "sin"
+                                           ? std::sin(value * turn)
+                                           : name == "cos"
+                                                 ? std::cos(value * turn)
+                                                 : name == "ln"
+                                                       ? std::log(value)
+                                                       : name == "log"
+                                                             ? std::log10(value)
+                                                             : name == "round"
+                                                                   ? std::floor(value + 0.5)
+                                                                   : name == "truncate" || name == "cvi"
+                                                                         ? std::trunc(value)
+                                                                         : name == "floor"
+                                                                               ? std::floor(value)
+                                                                               : name == "ceiling"
+                                                                                   ? std::ceil(value)
+                                                                                   : value);
             } else if (name == "rand" || name == "realtime" || name == "usertime") {
                 push(0.0);
             } else if (name == "srand") {
                 pop();
 
-            // Comparison and logic.
+                // Comparison and logic.
             } else if (name == "eq" || name == "ne") {
                 const Object right = pop();
                 const Object left = pop();
                 const bool same = left.kind == Kind::Number || left.kind == Kind::Boolean
-                                      ? (right.kind == Kind::Number || right.kind == Kind::Boolean) && left.number == right.number
+                                      ? (right.kind == Kind::Number || right.kind == Kind::Boolean) && left.number ==
+                                        right.number
                                       : left.text == right.text && left.kind != Kind::Null && right.kind != Kind::Null;
                 truth(name == "eq" ? same : !same);
             } else if (name == "gt" || name == "ge" || name == "lt" || name == "le") {
                 const double right = number();
                 const double left = number();
-                truth(name == "gt" ? left > right : name == "ge" ? left >= right : name == "lt" ? left < right : left <= right);
+                truth(name == "gt"
+                          ? left > right
+                          : name == "ge"
+                                ? left >= right
+                                : name == "lt"
+                                      ? left < right
+                                      : left <= right);
             } else if (name == "and" || name == "or" || name == "xor") {
                 const Object right = pop();
                 const Object left = pop();
@@ -660,7 +760,7 @@ namespace render::graphics {
             } else if (name == "null") {
                 stack.push_back(Object{});
 
-            // Control.
+                // Control.
             } else if (name == "if") {
                 const Object body = pop();
                 if (pop().number != 0.0) self(body, true);
@@ -705,20 +805,20 @@ namespace render::graphics {
                 const Object body = pop();
                 const Object over = pop();
                 if (over.items) {
-                    for (const Object& item : *over.items) {
+                    for (const Object &item: *over.items) {
                         stack.push_back(item);
                         self(body, true);
                         if (leaving || halted || stopping) break;
                     }
                 } else if (over.table) {
-                    for (const auto& [key, value] : *over.table) {
+                    for (const auto &[key, value]: *over.table) {
                         stack.push_back(Object{.kind = Kind::Literal, .text = key});
                         stack.push_back(value);
                         self(body, true);
                         if (leaving || halted || stopping) break;
                     }
                 } else if (over.kind == Kind::Text) {
-                    for (const char letter : over.text) {
+                    for (const char letter: over.text) {
                         push(static_cast<unsigned char>(letter));
                         self(body, true);
                         if (leaving || halted || stopping) break;
@@ -730,7 +830,8 @@ namespace render::graphics {
             } else if (name == "exec") {
                 const Object body = pop();
                 if (body.kind == Kind::Procedure) self(body, true);
-                else if (body.kind == Kind::Name || body.kind == Kind::Literal) self(Object{.kind = Kind::Name, .text = body.text}, false);
+                else if (body.kind == Kind::Name || body.kind == Kind::Literal) self(
+                    Object{.kind = Kind::Name, .text = body.text}, false);
                 else stack.push_back(body);
             } else if (name == "stopped") {
                 const Object body = pop();
@@ -742,7 +843,7 @@ namespace render::graphics {
             } else if (name == "quit") {
                 halted = true;
 
-            // Dictionaries, arrays and strings.
+                // Dictionaries, arrays and strings.
             } else if (name == "dict") {
                 pop();
                 stack.push_back(Object{.kind = Kind::Table, .table = std::make_shared<Table>()});
@@ -766,12 +867,13 @@ namespace render::graphics {
                 (*into)[key.text] = value;
             } else if (name == "load") {
                 const Object key = pop();
-                const Object* found = lookup(key.text);
+                const Object *found = lookup(key.text);
                 stack.push_back(found ? *found : Object{.kind = Kind::Name, .text = key.text});
             } else if (name == "where") {
                 const Object key = pop();
                 bool known = false;
-                for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend() && !known; ++dictionary) {
+                for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend() && !known; ++
+                     dictionary) {
                     if ((*dictionary)->contains(key.text)) {
                         stack.push_back(Object{.kind = Kind::Table, .table = *dictionary});
                         known = true;
@@ -788,7 +890,9 @@ namespace render::graphics {
                 if (dictionary.table) dictionary.table->erase(key.text);
             } else if (name == "currentdict" || name == "userdict" || name == "globaldict" || name == "statusdict" ||
                        name == "systemdict" || name == "errordict" || name == "$error") {
-                stack.push_back(Object{.kind = Kind::Table, .table = name == "currentdict" ? dictionaries.back() : dictionaries.front()});
+                stack.push_back(Object{
+                    .kind = Kind::Table, .table = name == "currentdict" ? dictionaries.back() : dictionaries.front()
+                });
             } else if (name == "countdictstack") {
                 push(static_cast<double>(dictionaries.size()));
             } else if (name == "get") {
@@ -821,14 +925,14 @@ namespace render::graphics {
                 push(1000.0);
             } else if (name == "array") {
                 const auto size = static_cast<std::size_t>(std::clamp(number(), 0.0, 100000.0));
-                stack.push_back(Object{.kind = Kind::Array, .items = std::make_shared<std::vector<Object>>(size)});
+                stack.push_back(Object{.kind = Kind::Array, .items = std::make_shared<std::vector<Object> >(size)});
             } else if (name == "string") {
                 const auto size = static_cast<std::size_t>(std::clamp(number(), 0.0, 1000000.0));
                 stack.push_back(Object{.kind = Kind::Text, .text = std::string(size, '\0')});
             } else if (name == "aload") {
                 const Object array = pop();
                 if (array.items) {
-                    for (const Object& item : *array.items) stack.push_back(item);
+                    for (const Object &item: *array.items) stack.push_back(item);
                 }
                 stack.push_back(array);
             } else if (name == "astore") {
@@ -842,7 +946,7 @@ namespace render::graphics {
                 const auto start = static_cast<std::size_t>(std::max(0.0, number()));
                 Object of = pop();
                 if (of.items) {
-                    auto items = std::make_shared<std::vector<Object>>();
+                    auto items = std::make_shared<std::vector<Object> >();
                     for (std::size_t index = start; index < std::min(start + count, of.items->size()); ++index) {
                         items->push_back((*of.items)[index]);
                     }
@@ -884,11 +988,13 @@ namespace render::graphics {
                     "nulltype", "realtype", "booleantype", "nametype", "nametype", "stringtype",
                     "arraytype", "arraytype", "marktype", "dicttype", "fonttype", "filetype",
                 };
-                stack.push_back(Object{.kind = Kind::Name, .text = std::string(types[static_cast<std::size_t>(value.kind)])});
+                stack.push_back(Object{
+                    .kind = Kind::Name, .text = std::string(types[static_cast<std::size_t>(value.kind)])
+                });
             } else if (name == "bind" || name == "readonly" || name == "executeonly" || name == "noaccess") {
                 // Each leaves what it is given as it is.
 
-            // The graphics state.
+                // The graphics state.
             } else if (name == "gsave" || name == "save") {
                 saved.push_back(state);
                 out += "q\n";
@@ -919,10 +1025,12 @@ namespace render::graphics {
                 const Object pattern = pop();
                 state.dashes.clear();
                 if (pattern.items) {
-                    for (const Object& item : *pattern.items) state.dashes.push_back(item.number);
+                    for (const Object &item: *pattern.items) state.dashes.push_back(item.number);
                 }
-            } else if (name == "setmiterlimit" || name == "setflat" || name == "setstrokeadjust" || name == "setoverprint" ||
-                       name == "setsmoothness" || name == "setpagedevice" || name == "setglobal" || name == "setobjectformat" ||
+            } else if (name == "setmiterlimit" || name == "setflat" || name == "setstrokeadjust" || name ==
+                       "setoverprint" ||
+                       name == "setsmoothness" || name == "setpagedevice" || name == "setglobal" || name ==
+                       "setobjectformat" ||
                        name == "setpacking") {
                 pop();
             } else if (name == "currentglobal" || name == "currentpacking") {
@@ -941,7 +1049,9 @@ namespace render::graphics {
                 const double yellow = number();
                 const double magenta = number();
                 const double cyan = number();
-                state.color = {(1.0 - cyan) * (1.0 - black), (1.0 - magenta) * (1.0 - black), (1.0 - yellow) * (1.0 - black)};
+                state.color = {
+                    (1.0 - cyan) * (1.0 - black), (1.0 - magenta) * (1.0 - black), (1.0 - yellow) * (1.0 - black)
+                };
             } else if (name == "sethsbcolor") {
                 const double value = number();
                 const double saturation = number();
@@ -951,8 +1061,12 @@ namespace render::graphics {
                 const double p = value * (1.0 - saturation);
                 const double q = value * (1.0 - saturation * part);
                 const double t = value * (1.0 - saturation * (1.0 - part));
-                const std::array<std::array<double, 3>, 6> colors{{{value, t, p}, {q, value, p}, {p, value, t},
-                                                                    {p, q, value}, {t, p, value}, {value, p, q}}};
+                const std::array<std::array < double, 3>, 6 > colors{
+                                                              {
+                                                                  {value, t, p}, {q, value, p}, {p, value, t},
+                                                                  {p, q, value}, {t, p, value}, {value, p, q}
+                                                              }
+                                                          };
                 state.color = colors[static_cast<std::size_t>(std::clamp(sector, 0.0, 5.0))];
             } else if (name == "setcolorspace") {
                 const Object space = pop();
@@ -960,26 +1074,28 @@ namespace render::graphics {
                 state.components = named == "DeviceRGB" || named == "CalRGB" ? 3 : named == "DeviceCMYK" ? 4 : 1;
                 state.color = {0.0, 0.0, 0.0};
             } else if (name == "setcolor") {
-                std::array<double, 4> values{};
+                std::array < double, 4 > values{};
                 for (std::size_t index = state.components; index-- > 0;) values[index] = number();
                 if (state.components == 3) state.color = {values[0], values[1], values[2]};
                 else if (state.components == 4) {
-                    state.color = {(1.0 - values[0]) * (1.0 - values[3]), (1.0 - values[1]) * (1.0 - values[3]),
-                                   (1.0 - values[2]) * (1.0 - values[3])};
+                    state.color = {
+                        (1.0 - values[0]) * (1.0 - values[3]), (1.0 - values[1]) * (1.0 - values[3]),
+                        (1.0 - values[2]) * (1.0 - values[3])
+                    };
                 } else {
                     state.color = {values[0], values[0], values[0]};
                 }
             } else if (name == "currentrgbcolor") {
-                for (const double channel : state.color) push(channel);
+                for (const double channel: state.color) push(channel);
             } else if (name == "currentgray") {
                 push((state.color[0] + state.color[1] + state.color[2]) / 3.0);
 
-            // The transformation.
+                // The transformation.
             } else if (name == "translate" || name == "scale" || name == "rotate" || name == "concat") {
                 // With a matrix given last, that matrix is changed instead.
                 std::optional<Object> given;
                 if (!stack.empty() && stack.back().kind == Kind::Array && name != "concat") given = pop();
-                std::array<double, 6> step{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
+                std::array < double, 6 > step{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
                 if (name == "translate") {
                     const double y = number();
                     step[4] = number();
@@ -1018,7 +1134,7 @@ namespace render::graphics {
                 const std::array<double, 6> second = matrix(pop());
                 stack.push_back(numbers(compose(matrix(pop()), second)));
             } else if (name == "transform" || name == "dtransform" || name == "itransform" || name == "idtransform") {
-                std::array<double, 6> m = state.matrix;
+                std::array < double, 6 > m = state.matrix;
                 if (!stack.empty() && stack.back().kind == Kind::Array) m = matrix(pop());
                 if (name.starts_with('i')) m = invert(m);
                 const double y = number();
@@ -1027,7 +1143,7 @@ namespace render::graphics {
                 push(m[0] * x + m[2] * y + (shifted ? m[4] : 0.0));
                 push(m[1] * x + m[3] * y + (shifted ? m[5] : 0.0));
 
-            // The path.
+                // The path.
             } else if (name == "newpath") {
                 state.path.clear();
                 state.placed = false;
@@ -1042,7 +1158,7 @@ namespace render::graphics {
                 if (name.ends_with("moveto")) move(x, y);
                 else line(x, y);
             } else if (name == "curveto" || name == "rcurveto") {
-                std::array<double, 6> points{};
+                std::array < double, 6 > points{};
                 for (std::size_t index = 6; index-- > 0;) points[index] = number();
                 if (name == "rcurveto") {
                     const auto [ux, uy] = current();
@@ -1074,7 +1190,7 @@ namespace render::graphics {
                 const double x = number();
                 line(x, y);
                 if (name == "arcto") {
-                    for (const double value : {x, y, x, y}) push(value);
+                    for (const double value: {x, y, x, y}) push(value);
                 }
             } else if (name == "currentpoint") {
                 const auto [ux, uy] = current();
@@ -1117,7 +1233,7 @@ namespace render::graphics {
                        name == "copypage" || name == "erasepage" || name == "initclip") {
                 // Nothing to draw, or the page as it stands.
 
-            // Text.
+                // Text.
             } else if (name == "findfont") {
                 const Object key = pop();
                 stack.push_back(Object{.kind = Kind::Font, .number = 1.0, .text = standard(key.text)});
@@ -1147,7 +1263,8 @@ namespace render::graphics {
                 const Object key = pop();
                 stack.push_back(Object{.kind = Kind::Font, .number = 1.0, .text = standard(key.text)});
                 static_cast<void>(font);
-            } else if (name == "show" || name == "ashow" || name == "widthshow" || name == "awidthshow" || name == "kshow" ||
+            } else if (name == "show" || name == "ashow" || name == "widthshow" || name == "awidthshow" || name ==
+                       "kshow" ||
                        name == "xshow" || name == "xyshow" || name == "glyphshow") {
                 Object letters = pop();
                 if (name == "kshow" || name == "xshow" || name == "xyshow") {
@@ -1155,7 +1272,13 @@ namespace render::graphics {
                     if (letters.kind != Kind::Text) std::swap(letters, stack.empty() ? letters : stack.back());
                     pop();
                 }
-                const std::size_t operands = name == "ashow" ? 2 : name == "widthshow" ? 3 : name == "awidthshow" ? 5 : 0;
+                const std::size_t operands = name == "ashow"
+                                                 ? 2
+                                                 : name == "widthshow"
+                                                       ? 3
+                                                       : name == "awidthshow"
+                                                             ? 5
+                                                             : 0;
                 for (std::size_t index = 0; index < operands; ++index) pop();
                 if (letters.kind == Kind::Text) show(letters.text);
             } else if (name == "stringwidth") {
@@ -1166,8 +1289,8 @@ namespace render::graphics {
                 pop();
                 pop();
 
-            // The file the program is read from: its bytes for an image,
-            // and an encrypted font's skipped.
+                // The file the program is read from: its bytes for an image,
+                // and an encrypted font's skipped.
             } else if (name == "currentfile") {
                 stack.push_back(Object{.kind = Kind::Source});
             } else if (name == "readhexstring" || name == "readstring") {
@@ -1194,9 +1317,9 @@ namespace render::graphics {
             } else if (name == "closefile" || name == "flushfile" || name == "print" || name == "=" || name == "==") {
                 pop();
 
-            // Images, whose samples come from a procedure or a string: drawn
-            // inline, in hexadecimal, through the transformation that puts
-            // the image's square on the page.
+                // Images, whose samples come from a procedure or a string: drawn
+                // inline, in hexadecimal, through the transformation that puts
+                // the image's square on the page.
             } else if (name == "image" || name == "colorimage" || name == "imagemask") {
                 std::size_t channels = 1;
                 bool multiple = false;
@@ -1205,7 +1328,8 @@ namespace render::graphics {
                     multiple = pop().number != 0.0;
                 }
                 std::vector<Object> sources;
-                for (std::size_t index = 0; index < (multiple ? channels : 1); ++index) sources.insert(sources.begin(), pop());
+                for (std::size_t index = 0; index < (multiple ? channels : 1); ++index) sources.insert(
+                    sources.begin(), pop());
                 const std::array<double, 6> placing = matrix(pop());
                 const double bits = name == "imagemask" ? 1.0 : number();
                 const bool polarity = name == "imagemask" && pop().number != 0.0;
@@ -1215,7 +1339,7 @@ namespace render::graphics {
                 const std::size_t needed = (columns * precision * channels + 7) / 8 * rows;
                 std::string samples;
                 for (int guard = 0; samples.size() < needed && guard < 1000000 && !halted && !stopping; ++guard) {
-                    const Object& source = sources.front();
+                    const Object &source = sources.front();
                     if (source.kind == Kind::Text) {
                         samples += source.text;
                         if (source.text.empty()) break;
@@ -1229,28 +1353,35 @@ namespace render::graphics {
                     samples += chunk.text;
                 }
                 samples.resize(needed, '\0');
-                if (!multiple && rows > 0 && columns > 0 && (precision == 1 || precision == 2 || precision == 4 || precision == 8)) {
-                    const std::array<double, 6> square{static_cast<double>(columns), 0.0, 0.0, -static_cast<double>(rows), 0.0,
-                                                       static_cast<double>(rows)};
+                if (!multiple && rows > 0 && columns > 0 && (
+                        precision == 1 || precision == 2 || precision == 4 || precision == 8)) {
+                    const std::array<double, 6> square{
+                        static_cast<double>(columns), 0.0, 0.0, -static_cast<double>(rows), 0.0,
+                        static_cast<double>(rows)
+                    };
                     const std::array<double, 6> whole = compose(compose(square, invert(placing)), state.matrix);
                     if (name == "imagemask") {
-                        for (const double channel : state.color) put(out, channel);
+                        for (const double channel: state.color) put(out, channel);
                         out += "rg\n";
                     }
                     out += "q ";
-                    for (const double value : whole) put(out, value);
+                    for (const double value: whole) put(out, value);
                     out += "cm\nBI /W " + std::to_string(columns) + " /H " + std::to_string(rows);
                     if (name == "imagemask") {
                         out += std::string(" /IM true /D [") + (polarity ? "1 0" : "0 1") + "]";
                     } else {
-                        out += " /BPC " + std::to_string(precision) + (channels == 3 ? " /CS /RGB" : channels == 4 ? " /CS /CMYK" : " /CS /G");
+                        out += " /BPC " + std::to_string(precision) + (channels == 3
+                                                                           ? " /CS /RGB"
+                                                                           : channels == 4
+                                                                                 ? " /CS /CMYK"
+                                                                                 : " /CS /G");
                     }
                     out += " /F /AHx ID\n";
-                    for (const char byte : samples) out += std::format("{:02X}", static_cast<unsigned char>(byte));
+                    for (const char byte: samples) out += std::format("{:02X}", static_cast<unsigned char>(byte));
                     out += ">\nEI Q\n";
                 }
 
-            // Anything else: its operands left, as nothing draws with them.
+                // Anything else: its operands left, as nothing draws with them.
             } else if (name == "version" || name == "product") {
                 stack.push_back(Object{.kind = Kind::Text, .text = "3010"});
             }
@@ -1271,5 +1402,4 @@ namespace render::graphics {
         drawing.resources = faces(fonts);
         return drawing;
     }
-
 }

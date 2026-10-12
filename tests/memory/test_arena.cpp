@@ -12,7 +12,9 @@
 struct alignas(16) Wide {
     std::int64_t value;
     std::int64_t spare{0};
-    explicit Wide(const std::int64_t start) : value(start) {}
+
+    explicit Wide(const std::int64_t start) : value(start) {
+    }
 };
 
 int main() {
@@ -33,7 +35,7 @@ int main() {
     assert((arena.allocate<int>(0).empty()) && "nothing asked for is nothing");
 
     // Alignment and construction.
-    Wide* wide = arena.compose<Wide>(7);
+    Wide *wide = arena.compose<Wide>(7);
     assert((wide->value == 7) && "compose runs the constructor");
     assert((reinterpret_cast<std::uintptr_t>(wide) % alignof(Wide) == 0) && "and aligns for the type");
 

@@ -15,10 +15,10 @@ int main() {
 
     char program[] = "latex";
     char option[] = "--debug=parser,layout";
-    char* arguments[] = {program, option};
+    char *arguments[] = {program, option};
     Logger::compose(2, arguments);
     assert((Logger::check(Logger::Type::Parser, Logger::Level::Error) &&
-           Logger::check(Logger::Type::Layout, Logger::Level::Error)) && "--debug= names the subsystems reported");
+            Logger::check(Logger::Type::Layout, Logger::Level::Error)) && "--debug= names the subsystems reported");
     assert((!Logger::check(Logger::Type::Lexer, Logger::Level::Error)) && "and only those");
     if constexpr (Logger::floor <= Logger::Level::Debug) {
         assert((Logger::check(Logger::Type::Parser, Logger::Level::Debug)) && "at the debug level, in a debug build");
@@ -29,7 +29,7 @@ int main() {
     assert((Logger::name(Logger::Type::Lexer) == "Lexer" && !Logger::name(Logger::Level::Warning).empty()) &&
            "every subsystem and level has a name");
 
-    char* none[] = {program};
+    char *none[] = {program};
     Logger::compose(1, none);
     assert((!Logger::check(Logger::Type::Parser, Logger::Level::Error)) && "with no options, nothing is reported");
 

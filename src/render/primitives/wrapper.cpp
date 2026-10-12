@@ -10,15 +10,16 @@
 #include <cstddef>
 
 namespace render::primitives {
-
-    Wrapper::Wrapper(syntax::Lexicon& lexicon) noexcept
+    Wrapper::Wrapper(syntax::Lexicon &lexicon) noexcept
         : page(lexicon), typeface(lexicon), styles(lexicon), symbols(lexicon), groups(lexicon),
           boxes(lexicon), spacing(lexicon),
           rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
           lists(lexicon), expressions(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
-          counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon), colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {}
+          counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon),
+          colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {
+    }
 
-    void Wrapper::operator()(syntax::Parser& parser, Context& context) const {
+    void Wrapper::operator()(syntax::Parser &parser, Context &context) const {
         // The counters first, because the modules that number things define
         // their own counters as they are installed.
         context.counters = &counters;
@@ -40,7 +41,7 @@ namespace render::primitives {
         // break of no size, which is what was written and not an error.
         // Colors reports only a color it was asked to define and could not;
         // one it is asked to use and cannot read is just black.
-        const std::array<const std::vector<syntax::Traceback>*, 23> parts{
+        const std::array<const std::vector<syntax::Traceback> *, 23> parts{
             &page.traceback(), &typeface.traceback(), &styles.traceback(),
             &boxes.traceback(), &tables.traceback(), &sections.traceback(),
             &paragraphs.traceback(), &lists.traceback(), &expressions.traceback(),
@@ -48,18 +49,18 @@ namespace render::primitives {
             &counters.traceback(), &theorems.traceback(), &floats.traceback(), &algorithms.traceback(),
             &illustrations.traceback(),
             &requests.traceback(),
-            &colors.traceback(), &verbatim.traceback(), &plots.traceback(), &diagrams.traceback(), &languages.traceback(),
+            &colors.traceback(), &verbatim.traceback(), &plots.traceback(), &diagrams.traceback(),
+            &languages.traceback(),
         };
 
         std::size_t total = 0;
-        for (const auto* list : parts) total += list->size();
+        for (const auto *list: parts) total += list->size();
 
         std::vector<syntax::Traceback> gathered;
         gathered.reserve(total);
-        for (const auto* list : parts) {
+        for (const auto *list: parts) {
             gathered.insert(gathered.end(), list->begin(), list->end());
         }
         return gathered;
     }
-
 }

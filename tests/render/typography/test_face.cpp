@@ -20,13 +20,13 @@ static std::filesystem::path assets() {
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena};          ///< The indexed tree.
+    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena}; ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
-    const render::typography::Font* text{nullptr};            ///< Latin Modern Roman.
-    const render::typography::Font* maths{nullptr};           ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
+    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -42,7 +42,7 @@ int main() {
     memory::Arena arena(1u << 24);
     render::typography::Collection collection(arena);
     collection.post((assets() / "fonts").string());
-    const render::typography::Collection::Entry* entry = collection.get("lmroman10-regular");
+    const render::typography::Collection::Entry *entry = collection.get("lmroman10-regular");
     assert((entry != nullptr) && "the file is found");
     if (!entry) return 0;
 
@@ -59,11 +59,11 @@ int main() {
     // Noto Naskh's tatweel keeps two contours of one point, anchors, far
     // above and below its stroke; its ink is the stroke alone, a little
     // above the baseline and no more than a tenth of an em thick.
-    if (const render::typography::Collection::Entry* naskh = collection.get("notonaskharabic-regular")) {
+    if (const render::typography::Collection::Entry *naskh = collection.get("notonaskharabic-regular")) {
         render::typography::Face arabic;
         assert((arabic.compose(naskh->bytes)) && "Noto Naskh Arabic opens");
         hb_codepoint_t tatweel = 0;
-        hb_font_t* font = hb_font_create(arabic.handle());
+        hb_font_t *font = hb_font_create(arabic.handle());
         assert((hb_font_get_nominal_glyph(font, 0x0640, &tatweel)) && "and has a tatweel");
         hb_font_destroy(font);
         const hb_glyph_extents_t stroke = arabic.extents(tatweel);

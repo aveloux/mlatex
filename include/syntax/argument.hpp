@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace syntax {
-
     /// @brief Reads a macro argument back as plain text.
     ///
     /// A name, a key, a file path -- anywhere a document writes one brace
@@ -21,12 +20,12 @@ namespace syntax {
         /// @param mouth Expander to read from.
         /// @return The joined characters; empty when the group itself was.
         /// @complexity O(k) in the number of tokens read.
-        [[nodiscard]] static std::string text(Mouth& mouth) {
+        [[nodiscard]] static std::string text(Mouth &mouth) {
             const std::vector<Token> gathered = mouth.argument({}, 0);
 
             std::string joined;
             joined.reserve(gathered.size());
-            for (const Token& token : gathered) joined += token.text;
+            for (const Token &token: gathered) joined += token.text;
             return joined;
         }
 
@@ -47,7 +46,7 @@ namespace syntax {
         /// @param mouth Expander to read from.
         /// @return The expanded text; empty when the group itself was.
         /// @complexity O(k) in the tokens the expansion produces.
-        [[nodiscard]] static std::string expanded(Mouth& mouth) {
+        [[nodiscard]] static std::string expanded(Mouth &mouth) {
             std::vector<Token> gathered = mouth.argument({}, 0);
 
             const Symbol marker = mouth.lexicon.intern("\\argument:end");
@@ -61,7 +60,7 @@ namespace syntax {
             mouth.stream().inject(gathered);
 
             std::string joined;
-            bool word = false;   // the last thing written was a control word
+            bool word = false; // the last thing written was a control word
             for (;;) {
                 const Token token = mouth.expand();
                 if (token.symbol == marker || token.empty() || mouth.error) break;
@@ -90,7 +89,7 @@ namespace syntax {
         /// @param word  The keyword, in lower case; matched in either case.
         /// @return Whether it was there.
         /// @complexity O(k) in the keyword's length.
-        static bool keyword(Mouth& mouth, const std::string_view word) {
+        static bool keyword(Mouth &mouth, const std::string_view word) {
             std::size_t offset = 0;
             while (mouth.lookahead(offset).category == Catcodes::Category::Space) ++offset;
             for (std::size_t index = 0; index < word.size(); ++index) {
@@ -101,5 +100,4 @@ namespace syntax {
             return true;
         }
     };
-
 }

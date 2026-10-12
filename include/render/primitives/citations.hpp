@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Citations and the list they cite: `\\cite` in every form LaTeX,
     ///        natbib and biblatex give it, `\\bibitem` and `thebibliography`,
     ///        and BibTeX's own work -- a `.bib` file read, sorted and set in a
@@ -58,52 +57,52 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Citations(syntax::Lexicon& lexicon) noexcept;
+        explicit Citations(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the citation primitives and registers `thebibliography`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the block is hooked through its block module.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a key reused, a `.bib`
         ///        file missing, a key cited that no list holds.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief How a citation is written.
         enum class Form : std::uint8_t {
-            Plain,           ///< `\\cite`: numbers in brackets, or natbib's textual form.
-            Parenthetical,   ///< `\\citep`, `\\parencite`: (Knuth, 1984), or [1].
-            Textual,         ///< `\\citet`, `\\textcite`: Knuth (1984), or Knuth [1].
-            Author,          ///< `\\citeauthor`: Knuth.
-            Year,            ///< `\\citeyear`: 1984.
-            Loose,           ///< `\\citealt`: Knuth 1984.
-            Comma,           ///< `\\citealp`: Knuth, 1984.
-            Number           ///< `\\citenum`: 1.
+            Plain, ///< `\\cite`: numbers in brackets, or natbib's textual form.
+            Parenthetical, ///< `\\citep`, `\\parencite`: (Knuth, 1984), or [1].
+            Textual, ///< `\\citet`, `\\textcite`: Knuth (1984), or Knuth [1].
+            Author, ///< `\\citeauthor`: Knuth.
+            Year, ///< `\\citeyear`: 1984.
+            Loose, ///< `\\citealt`: Knuth 1984.
+            Comma, ///< `\\citealp`: Knuth, 1984.
+            Number ///< `\\citenum`: 1.
         };
 
         /// @brief One citation key: how it is cited, once a list has it, and
         ///        every citation still waiting for it.
         struct Mark {
-            std::string text{};                         ///< Its number or label.
-            std::string author{};                       ///< natbib's author, when the entry has one.
-            std::string year{};                         ///< natbib's year, the same way.
-            bool defined{false};                        ///< Whether a `\\bibitem` has claimed it.
-            std::vector<std::size_t> references{};      ///< Citations, by index, to set again once it is.
-            std::size_t anchor{0};                      ///< Where its entry stands, for a link to it.
-            std::vector<layout::Node*> links{};         ///< hyperref's links to it made before it was, to point there.
+            std::string text{}; ///< Its number or label.
+            std::string author{}; ///< natbib's author, when the entry has one.
+            std::string year{}; ///< natbib's year, the same way.
+            bool defined{false}; ///< Whether a `\\bibitem` has claimed it.
+            std::vector<std::size_t> references{}; ///< Citations, by index, to set again once it is.
+            std::size_t anchor{0}; ///< Where its entry stands, for a link to it.
+            std::vector<layout::Node *> links{}; ///< hyperref's links to it made before it was, to point there.
         };
 
         /// @brief One citation: the node that prints it, the keys it names in
         ///        order, its notes, and its form.
         struct Citation {
-            syntax::Node* node{nullptr};       ///< Text node holding what it prints.
-            std::vector<std::string> keys{};   ///< The keys, spaces trimmed.
-            std::string before{};              ///< natbib's first bracket of two: `see`.
-            std::string note{};                ///< Its last bracket: `p.~5`.
-            Form form{Form::Plain};            ///< How it is written.
+            syntax::Node *node{nullptr}; ///< Text node holding what it prints.
+            std::vector<std::string> keys{}; ///< The keys, spaces trimmed.
+            std::string before{}; ///< natbib's first bracket of two: `see`.
+            std::string note{}; ///< Its last bracket: `p.~5`.
+            Form form{Form::Plain}; ///< How it is written.
         };
 
         /// @brief What a citation prints: numbers or labels in brackets, or
@@ -114,17 +113,18 @@ namespace render::primitives {
         /// @param context  Engine services, for the packages' settings.
         /// @return Its text.
         /// @complexity O(k) in its keys.
-        [[nodiscard]] std::string print(const Citation& citation, const Context& context) const;
+        [[nodiscard]] std::string print(const Citation &citation, const Context &context) const;
 
-        mutable memory::Dictionary<Mark> marks{};   ///< Every key seen or cited.
-        mutable std::vector<Citation> citations{};  ///< Every citation, in order.
-        mutable std::vector<std::string> resources{};   ///< biblatex's \\addbibresource files.
-        mutable std::vector<std::string> extra{};       ///< Keys \\nocite adds; `*` for every entry.
-        mutable int entries{0};                                  ///< How many `\\bibitem`s so far.
-        mutable float widest{0.0f};                              ///< The widest label, from the list's argument, in points.
-        mutable bool hung{false};                                ///< The list is set without labels, each entry hung: natbib's author-year list.
-        mutable std::optional<std::string> heading{};            ///< The list's heading as \\printbibliography's options give it, once.
-        mutable std::vector<syntax::Traceback> tracebacks{};    ///< Errors this module found.
+        mutable memory::Dictionary<Mark> marks{}; ///< Every key seen or cited.
+        mutable std::vector<Citation> citations{}; ///< Every citation, in order.
+        mutable std::vector<std::string> resources{}; ///< biblatex's \\addbibresource files.
+        mutable std::vector<std::string> extra{}; ///< Keys \\nocite adds; `*` for every entry.
+        mutable int entries{0}; ///< How many `\\bibitem`s so far.
+        mutable float widest{0.0f}; ///< The widest label, from the list's argument, in points.
+        mutable bool hung{false}; ///< The list is set without labels, each entry hung: natbib's author-year list.
+        mutable std::optional<std::string> heading{};
+        ///< The list's heading as \\printbibliography's options give it, once.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
 
         /// The gap between an entry's "[N]" label and its text -- LaTeX's
         /// `\\labelsep` -- in ems, and the space between two entries,
@@ -132,5 +132,4 @@ namespace render::primitives {
         static constexpr float separation = 0.5f;
         static constexpr float between = 8.0f;
     };
-
 }

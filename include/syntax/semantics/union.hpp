@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace syntax::semantics {
-
     /// @brief Every piece of state a group saves and restores.
     ///
     /// Opening a group opens it on the category table, on the registers and
@@ -26,8 +25,8 @@ namespace syntax::semantics {
         /// Opaque here: the syntax layer only carries them, and the render
         /// layer, which owns fonts, is the only one that looks inside.
         struct Fonts {
-            const void* text{nullptr};      ///< Face for running text.
-            const void* formula{nullptr};   ///< Face for formulas.
+            const void *text{nullptr}; ///< Face for running text.
+            const void *formula{nullptr}; ///< Face for formulas.
         };
 
         /// @brief Opens a group.
@@ -46,12 +45,11 @@ namespace syntax::semantics {
             saved.pop_back();
         }
 
-        Catcodes catcodes{};             ///< Category table.
-        Registers registers{};           ///< Register banks.
-        Fonts fonts{};                   ///< Current faces.
+        Catcodes catcodes{}; ///< Category table.
+        Registers registers{}; ///< Register banks.
+        Fonts fonts{}; ///< Current faces.
 
     private:
-        std::vector<Fonts> saved{};      ///< Faces to restore, one per open group.
+        std::vector<Fonts> saved{}; ///< Faces to restore, one per open group.
     };
-
 }

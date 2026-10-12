@@ -8,30 +8,29 @@
 #include <string>
 
 namespace render::primitives {
-
-    Requests::Requests(syntax::Lexicon& lexicon) noexcept {
+    Requests::Requests(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\httpget");
         lexicon.intern("\\httppost");
     }
 
-    void Requests::operator()(syntax::Parser& parser, Context& context) const {
+    void Requests::operator()(syntax::Parser &parser, Context &context) const {
         // An offline run sends nothing: each request is refused where it is
         // written, and named, as one that could not be sent would be.
-        parser.bind("\\httpget", [this, &context](const syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\httpget", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
             if (context.offline) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                         "\\httpget of '" + url + "' refused: the run is offline");
+                                        "\\httpget of '" + url + "' refused: the run is offline");
                 return directive(arena, nullptr, origin);
             }
             const auto response = protocols::compose("GET", url);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                         "\\httpget could not reach '" + url + "'");
+                                        "\\httpget could not reach '" + url + "'");
                 return directive(arena, nullptr, origin);
             }
 
@@ -39,23 +38,23 @@ namespace render::primitives {
             return arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text), origin);
         });
 
-        parser.bind("\\httppost", [this, &context](const syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\httppost", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
             const std::string body = syntax::Argument::text(mouth);
             if (context.offline) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                         "\\httppost to '" + url + "' refused: the run is offline");
+                                        "\\httppost to '" + url + "' refused: the run is offline");
                 return directive(arena, nullptr, origin);
             }
 
             const auto response = protocols::compose("POST", url, body);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                         "\\httppost could not reach '" + url + "'");
+                                        "\\httppost could not reach '" + url + "'");
                 return directive(arena, nullptr, origin);
             }
 
@@ -65,5 +64,4 @@ namespace render::primitives {
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound request primitives");
     }
-
 }

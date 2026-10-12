@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace memory {
-
     /// @brief Region allocator: bump-pointer allocation, released all at once.
     ///
     /// Blocks are mapped directly from the operating system, so pages are
@@ -35,19 +34,21 @@ namespace memory {
         /// @brief Returns every block to the operating system.
         ~Arena();
 
-        Arena(const Arena&) = delete("an arena owns its blocks, and two of them would free the same blocks twice");
-        Arena& operator=(const Arena&) = delete("an arena owns its blocks, and two of them would free the same blocks twice");
+        Arena(const Arena &) = delete("an arena owns its blocks, and two of them would free the same blocks twice");
+
+        Arena &operator=(const Arena &) = delete(
+            "an arena owns its blocks, and two of them would free the same blocks twice");
 
         /// @brief Allocates raw storage.
         /// @param size      Bytes wanted.
         /// @param alignment Required alignment; a power of two.
         /// @return Storage valid for the life of the arena.
         /// @complexity O(1); a new block is mapped when the current one is full.
-        [[nodiscard]] void* allocate(const std::size_t size, const std::size_t alignment) {
+        [[nodiscard]] void *allocate(const std::size_t size, const std::size_t alignment) {
             const std::uintptr_t start = (reinterpret_cast<std::uintptr_t>(cursor) + alignment - 1) & ~(alignment - 1);
             if (start + size > reinterpret_cast<std::uintptr_t>(limit)) return grow(size, alignment);
-            cursor = reinterpret_cast<std::byte*>(start + size);
-            return reinterpret_cast<void*>(start);
+            cursor = reinterpret_cast<std::byte *>(start + size);
+            return reinterpret_cast<void *>(start);
         }
 
         /// @brief Allocates uninitialised storage for @p count objects.
@@ -55,10 +56,10 @@ namespace memory {
         /// @param count Number of elements.
         /// @return The storage, or an empty slice when @p count is zero.
         /// @complexity O(1).
-        template <typename Type>
+        template<typename Type>
         [[nodiscard]] Slice<Type> allocate(const std::size_t count) {
             if (count == 0) return {};
-            return Slice<Type>{static_cast<Type*>(allocate(sizeof(Type) * count, alignof(Type))), count};
+            return Slice<Type>{static_cast<Type *>(allocate(sizeof(Type) * count, alignof(Type))), count};
         }
 
         /// @brief Constructs one object in the arena.
@@ -67,9 +68,9 @@ namespace memory {
         /// @param arguments Forwarded to the constructor.
         /// @return The object; its destructor never runs.
         /// @complexity O(1) plus the constructor.
-        template <typename Type, typename... Arguments>
-        [[nodiscard]] Type* compose(Arguments&&... arguments) {
-            return ::new (allocate(sizeof(Type), alignof(Type))) Type(std::forward<Arguments>(arguments)...);
+        template<typename Type, typename... Arguments>
+        [[nodiscard]] Type *compose(Arguments &&... arguments) {
+            return ::new(allocate(sizeof(Type), alignof(Type))) Type(std::forward<Arguments>(arguments)...);
         }
 
         /// @brief Copies text into the arena.
@@ -83,18 +84,17 @@ namespace memory {
         /// @param size      Bytes wanted.
         /// @param alignment Required alignment.
         /// @return Storage for the allocation that did not fit.
-        void* grow(std::size_t size, std::size_t alignment);
+        void *grow(std::size_t size, std::size_t alignment);
 
         /// @brief One mapped block.
         struct Block {
-            std::byte* data;         ///< Start of the block.
-            std::size_t capacity;    ///< Its size in bytes.
+            std::byte *data; ///< Start of the block.
+            std::size_t capacity; ///< Its size in bytes.
         };
 
-        std::vector<Block> blocks{};   ///< Every block mapped so far.
-        std::byte* cursor{nullptr};    ///< Next free byte in the newest block.
-        std::byte* limit{nullptr};     ///< End of the newest block.
-        std::size_t capacity{0};       ///< Size of the next block to map.
+        std::vector<Block> blocks{}; ///< Every block mapped so far.
+        std::byte *cursor{nullptr}; ///< Next free byte in the newest block.
+        std::byte *limit{nullptr}; ///< End of the newest block.
+        std::size_t capacity{0}; ///< Size of the next block to map.
     };
-
 }

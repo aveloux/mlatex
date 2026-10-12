@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -64,14 +64,14 @@ static std::size_t count(const std::string_view text, const std::string_view par
 int main() {
     {
         const Result result = article("", "\\begin{tabular}{|l|c|r|}\\hline a & b & c \\\\\\hline one & two & three "
-                                          "\\\\\\cline{1-2}\\multicolumn{2}{|c|}{span} & x\\\\\\hline\\end{tabular}");
+                                      "\\\\\\cline{1-2}\\multicolumn{2}{|c|}{span} & x\\\\\\hline\\end{tabular}");
         assert((result.clean && holds(result.text, "abconetwothreespanx")) && "a table's cells, in reading order");
         assert((count(result.pdf, " re f") >= 8) && "its rules");
     }
     {
         const Result result = article("\\usepackage{booktabs}", "\\begin{tabular}{ll}\\toprule A & B\\\\\\midrule "
-                                                                "1 & 2\\\\\\cmidrule(lr){1-2}3 & 4\\\\\\bottomrule"
-                                                                "\\end{tabular}");
+                                      "1 & 2\\\\\\cmidrule(lr){1-2}3 & 4\\\\\\bottomrule"
+                                      "\\end{tabular}");
         assert((result.clean && holds(result.text, "AB1234")) && "booktabs' rules");
     }
     {
@@ -86,13 +86,13 @@ int main() {
     }
     {
         const Result result = article("\\usepackage{multirow}", "\\begin{tabular}{ll}\\multirow{2}{*}{tall} & a\\\\ & b"
-                                                                "\\end{tabular}");
+                                      "\\end{tabular}");
         assert((result.clean && holds(result.text, "tall")) && "a cell over several rows");
     }
     {
         const Result result = article("", "x \\begin{tabular}[t]{c}top\\\\row\\end{tabular} "
-                                          "\\begin{tabular}[b]{c}up\\\\bottom\\end{tabular} "
-                                          "\\begin{tabular}{c}mid\\\\dle\\end{tabular} y");
+                                      "\\begin{tabular}[b]{c}up\\\\bottom\\end{tabular} "
+                                      "\\begin{tabular}{c}mid\\\\dle\\end{tabular} y");
         assert((result.clean && holds(result.text, "xtoprowupbottommiddley")) &&
                "tables are boxes in the line, beside the words around them");
         // Each stands on the line's baseline by its first row, its last, or
@@ -105,7 +105,7 @@ int main() {
     }
     {
         const Result result = article("", "\\begin{tabbing}Name \\= Value \\\\ a \\> b \\\\ \\end{tabbing}"
-                                          "After \\=o.");
+                                      "After \\=o.");
         assert((result.clean && holds(result.text, "NameValueab")) && "tabbing's lines set at its stops");
         assert((holds(result.text, "After\xC5\x8D.")) && "and \\= a macron again once it closes");
     }
@@ -154,12 +154,13 @@ int main() {
     }
     {
         const Result result = article("\\usepackage{tabu}", "\\begin{tabu} to \\linewidth {X[l] X[c] X[r]}"
-                                                            "a & b & c \\\\ \\end{tabu}");
+                                      "a & b & c \\\\ \\end{tabu}");
         assert((result.clean && holds(result.text, "abc")) && "tabu's X columns, their sides in brackets");
     }
     {
         // A table in Arabic runs right to left, its first column at the right.
-        const std::string_view table = "\\begin{tabular}{|l|l|l|}\\hline x & y & z \\\\\\hline q \\\\\\hline\\end{tabular}";
+        const std::string_view table =
+                "\\begin{tabular}{|l|l|l|}\\hline x & y & z \\\\\\hline q \\\\\\hline\\end{tabular}";
         const Result forward = article("", table);
         const Result mirrored = article("\\usepackage{polyglossia}\\setmainlanguage{arabic}", table);
         assert((forward.clean && holds(forward.text, "xyz")) && "a table read left to right");

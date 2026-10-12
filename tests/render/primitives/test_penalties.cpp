@@ -27,13 +27,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -73,9 +73,10 @@ int main() {
     }
     {
         // `\\[20pt]` leaves that much more between its line and the next.
-        const auto gap = [](const Result& result) {
+        const auto gap = [](const Result &result) {
             std::vector<float> down;
-            for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
+            for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos;
+                 at = result.pdf.find(" Tm", at + 1)) {
                 const std::size_t start = result.pdf.rfind(' ', at - 1) + 1;
                 float y = 0.0f;
                 patch::decimal(result.pdf.data() + start, result.pdf.data() + at, y);

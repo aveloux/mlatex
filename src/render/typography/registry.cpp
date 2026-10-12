@@ -14,12 +14,11 @@
 #include <bit>
 
 namespace render::typography {
-
     /// @brief Hashes a family and cut, folding the cut into the family's hash.
     /// @complexity O(n) in the family name's length.
     static constexpr std::size_t digest(const std::string_view family, const int weight, const int slant) noexcept {
         std::size_t value = 1469598103934665603ull;
-        for (const char letter : family) {
+        for (const char letter: family) {
             value ^= static_cast<std::size_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }
@@ -30,7 +29,7 @@ namespace render::typography {
 
     /// @brief Hashes a whole request: a face's digest with the size folded in.
     /// @complexity O(n) in the family name's length.
-    static constexpr std::size_t digest(const Registry::Request& request) noexcept {
+    static constexpr std::size_t digest(const Registry::Request &request) noexcept {
         // The size is taken at hundredth-point resolution, which is finer
         // than any document distinguishes and keeps the key an integer.
         std::size_t value = digest(request.family, request.weight, request.slant);
@@ -38,11 +37,11 @@ namespace render::typography {
         return value;
     }
 
-    Registry::Registry(memory::Arena& arena, Collection& collection, const std::size_t buckets) noexcept
+    Registry::Registry(memory::Arena &arena, Collection &collection, const std::size_t buckets) noexcept
         : arena(arena), collection(collection) {
         this->slots = std::bit_ceil(buckets > 0 ? buckets : 128);
-        table = arena.allocate<Entry*>(this->slots).data;
-        surfaces = arena.allocate<Surface*>(this->slots).data;
+        table = arena.allocate<Entry *>(this->slots).data;
+        surfaces = arena.allocate<Surface *>(this->slots).data;
         for (std::size_t index = 0; index < this->slots; ++index) {
             table[index] = nullptr;
             surfaces[index] = nullptr;
@@ -55,23 +54,23 @@ namespace render::typography {
         // Font only borrows the Face it points into.
         if (!table) return;
         for (std::size_t index = 0; index < slots; ++index) {
-            for (Entry* entry = table[index]; entry; entry = entry->next) {
+            for (Entry *entry = table[index]; entry; entry = entry->next) {
                 entry->font.dispose();
             }
         }
         for (std::size_t index = 0; index < slots; ++index) {
-            for (Surface* surface = surfaces[index]; surface; surface = surface->next) {
+            for (Surface *surface = surfaces[index]; surface; surface = surface->next) {
                 surface->face.dispose();
             }
         }
     }
 
-    Font* Registry::get(const Request& request) noexcept {
+    Font *Registry::get(const Request &request) noexcept {
         if (!table || request.family.empty()) return nullptr;
 
         const std::size_t slot = digest(request) & (slots - 1);
 
-        for (Entry* entry = table[slot]; entry; entry = entry->next) {
+        for (Entry *entry = table[slot]; entry; entry = entry->next) {
             if (entry->request.family == request.family &&
                 entry->request.weight == request.weight &&
                 entry->request.slant == request.slant &&
@@ -86,7 +85,7 @@ namespace render::typography {
         // to ask for a family, the file behind it is one entry. Collection's
         // lookup is O(1) average and free of I/O past the first read, so
         // paying for it ahead of the cache costs nothing on a hit.
-        const Collection::Entry* file = collection.get(request.family);
+        const Collection::Entry *file = collection.get(request.family);
         if (!file) {
             Logger::log(Logger::Type::Layout, Logger::Level::Error,
                         "No font indexed for family '{}'", request.family);
@@ -94,8 +93,8 @@ namespace render::typography {
         }
 
         const std::size_t bucket = digest(file->family, request.weight, request.slant) & (slots - 1);
-        Surface* built = nullptr;
-        for (Surface* found = surfaces[bucket]; found; found = found->next) {
+        Surface *built = nullptr;
+        for (Surface *found = surfaces[bucket]; found; found = found->next) {
             if (found->family == file->family && found->weight == request.weight && found->slant == request.slant) {
                 built = found;
                 break;
@@ -103,7 +102,7 @@ namespace render::typography {
         }
         if (!built) {
             built = arena.compose<Surface>();
-            built->family = file->family;   // already arena-resident, via Collection
+            built->family = file->family; // already arena-resident, via Collection
             built->weight = request.weight;
             built->slant = request.slant;
             if (!built->face.compose(file->bytes)) {
@@ -122,7 +121,7 @@ namespace render::typography {
         // request for it will say -- the file's own name would never match
         // an alias, and every request by one would build the font again. The
         // name is copied, because the caller's may not outlive the request.
-        Entry* entry = arena.compose<Entry>();
+        Entry *entry = arena.compose<Entry>();
         entry->request = request;
         entry->request.family = arena.copy(request.family);
 
@@ -147,9 +146,9 @@ namespace render::typography {
         return &entry->font;
     }
 
-    const Font* Registry::cover(const Font& font, const std::uint32_t code, const bool outside) noexcept {
+    const Font *Registry::cover(const Font &font, const std::uint32_t code, const bool outside) noexcept {
         const std::uint32_t block = code >> 7;
-        for (const Cover& known : covers) {
+        for (const Cover &known: covers) {
             if (known.font != &font || known.block != block || known.outside != outside) continue;
             if (!known.found || known.found->index(code) != 0) return known.found;
             break;
@@ -162,12 +161,12 @@ namespace render::typography {
         const bool bold = says("bold") || says("demi");
         const std::size_t cut = (bold ? 1 : 0) + (says("italic") || says("oblique") || says("slant") ? 2 : 0);
 
-        const auto draws = [&](const std::string_view family) -> const Font* {
+        const auto draws = [&](const std::string_view family) -> const Font * {
             if (family.empty() || family == name || !collection.get(family)) return nullptr;
-            const Font* found = get({.family = family, .size = font.size()});
+            const Font *found = get({.family = family, .size = font.size()});
             return found && found->index(code) != 0 ? found : nullptr;
         };
-        const auto remember = [&](const Font* found) {
+        const auto remember = [&](const Font *found) {
             covers.push_back({.font = &font, .block = block, .outside = outside, .found = found});
             return found;
         };
@@ -177,16 +176,20 @@ namespace render::typography {
         // face the engine carries, Noto Naskh Arabic, so an Arabic document
         // is drawn the same on every system, one without a face of its own
         // for the script included.
-        static constexpr std::array<std::array<std::string_view, 4>, 3> carried{{
-            {"newcm10-regular", "newcm10-bold", "newcm10-italic", "newcm10-bolditalic"},
-            {"newcmsans10-regular", "newcmsans10-bold", "newcmsans10-oblique", "newcmsans10-boldoblique"},
-            {"newcmmono10-regular", "newcmmono10-bold", "newcmmono10-italic", "newcmmono10-boldoblique"},
-        }};
-        const auto& own = carried[says("sans") ? 1 : says("mono") ? 2 : 0];
-        for (const std::string_view family :
-             {own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"},
-              std::string_view{bold ? "notonaskharabic-bold" : "notonaskharabic-regular"}}) {
-            if (const Font* found = draws(family)) return remember(found);
+        static constexpr std::array<std::array<std::string_view, 4>, 3> carried{
+            {
+                {"newcm10-regular", "newcm10-bold", "newcm10-italic", "newcm10-bolditalic"},
+                {"newcmsans10-regular", "newcmsans10-bold", "newcmsans10-oblique", "newcmsans10-boldoblique"},
+                {"newcmmono10-regular", "newcmmono10-bold", "newcmmono10-italic", "newcmmono10-boldoblique"},
+            }
+        };
+        const auto &own = carried[says("sans") ? 1 : says("mono") ? 2 : 0];
+        for (const std::string_view family:
+             {
+                 own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"},
+                 std::string_view{bold ? "notonaskharabic-bold" : "notonaskharabic-regular"}
+             }) {
+            if (const Font *found = draws(family)) return remember(found);
         }
         if (!outside) return remember(nullptr);
 
@@ -196,27 +199,39 @@ namespace render::typography {
         // Mac's, then the faces every system has of some script or other,
         // Chinese, then the symbols' faces, last. Listed now, if they never
         // were.
-        static constexpr std::array<std::array<std::string_view, 15>, 4> systems{{
-            {"amiri-regular", "notonaskharabic-regular", "times", "times new roman", "notoserif-regular", "freeserif",
-             "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "msyh", "notosanscjk-regular", "seguisym",
-             "notosanssymbols2-regular"},
-            {"amiri-bold", "notonaskharabic-bold", "timesbd", "times new roman bold", "notoserif-bold", "freeserifbold",
-             "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "msyhbd", "notosanscjk-bold", "seguisym",
-             "notosanssymbols2-regular"},
-            {"amiri-slanted", "notonaskharabic-regular", "timesi", "times new roman italic", "notoserif-italic",
-             "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma", "msyh",
-             "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"},
-            {"amiri-boldslanted", "notonaskharabic-bold", "timesbi", "times new roman bold italic",
-             "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
-             "segoeuiz", "tahomabd", "msyhbd", "notosanscjk-bold", "seguisym", "notosanssymbols2-regular"},
-        }};
+        static constexpr std::array<std::array<std::string_view, 15>, 4> systems{
+            {
+                {
+                    "amiri-regular", "notonaskharabic-regular", "times", "times new roman", "notoserif-regular",
+                    "freeserif",
+                    "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "msyh", "notosanscjk-regular", "seguisym",
+                    "notosanssymbols2-regular"
+                },
+                {
+                    "amiri-bold", "notonaskharabic-bold", "timesbd", "times new roman bold", "notoserif-bold",
+                    "freeserifbold",
+                    "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "msyhbd", "notosanscjk-bold",
+                    "seguisym",
+                    "notosanssymbols2-regular"
+                },
+                {
+                    "amiri-slanted", "notonaskharabic-regular", "timesi", "times new roman italic", "notoserif-italic",
+                    "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma", "msyh",
+                    "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"
+                },
+                {
+                    "amiri-boldslanted", "notonaskharabic-bold", "timesbi", "times new roman bold italic",
+                    "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
+                    "segoeuiz", "tahomabd", "msyhbd", "notosanscjk-bold", "seguisym", "notosanssymbols2-regular"
+                },
+            }
+        };
         collection.post();
-        for (const std::size_t pass : {cut, std::size_t{0}}) {
-            for (const std::string_view family : systems[pass]) {
-                if (const Font* found = draws(family)) return remember(found);
+        for (const std::size_t pass: {cut, std::size_t{0}}) {
+            for (const std::string_view family: systems[pass]) {
+                if (const Font *found = draws(family)) return remember(found);
             }
         }
         return remember(nullptr);
     }
-
 }

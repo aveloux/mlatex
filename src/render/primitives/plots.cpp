@@ -20,9 +20,8 @@
 #include <vector>
 
 namespace render::primitives {
-
     std::optional<double> Plots::calculate(const std::string_view text, const double x, const double y,
-                                           bool* const measured) {
+                                           bool *const measured) {
         constexpr double degree = std::numbers::pi / 180.0;
         std::size_t at = 0;
         bool broken = false;
@@ -33,7 +32,7 @@ namespace render::primitives {
         // By precedence, loosest first: 0 sums, 1 products, 2 a power --
         // which binds to the right, and tighter than a sign before it, so
         // -x^2 is -(x^2) as pgfplots reads it -- and 3 a value.
-        const auto value = [&](this const auto& self, const int level) -> double {
+        const auto value = [&](this const auto &self, const int level) -> double {
             if (broken) return 0.0;
             if (level < 2) {
                 double left = self(level + 1);
@@ -42,8 +41,13 @@ namespace render::primitives {
                     if (level == 0 ? sign != '+' && sign != '-' : sign != '*' && sign != '/') break;
                     ++at;
                     const double right = self(level + 1);
-                    left = sign == '+' ? left + right : sign == '-' ? left - right : sign == '*' ? left * right
-                                                                                              : left / right;
+                    left = sign == '+'
+                               ? left + right
+                               : sign == '-'
+                                     ? left - right
+                                     : sign == '*'
+                                           ? left * right
+                                           : left / right;
                 }
                 return left;
             }
@@ -53,7 +57,8 @@ namespace render::primitives {
                 // TikZ's `r` after a value: radians, turned to the degrees
                 // the functions take -- `sin(\x r)`.
                 if (at < text.size() && text[at] == 'r' &&
-                    (at + 1 >= text.size() || !((text[at + 1] >= 'a' && text[at + 1] <= 'z') || (text[at + 1] >= 'A' && text[at + 1] <= 'Z')))) {
+                    (at + 1 >= text.size() || !((text[at + 1] >= 'a' && text[at + 1] <= 'z') || (
+                                                    text[at + 1] >= 'A' && text[at + 1] <= 'Z')))) {
                     ++at;
                     base /= degree;
                     blank();
@@ -94,17 +99,20 @@ namespace render::primitives {
                 // A unit after it, as TikZ's formulas take one: the length in
                 // points, and the whole formula a length -- `\x1+1cm`. An em
                 // is ten points here, an ex 4.3.
-                static constexpr std::array<std::pair<std::string_view, double>, 11> units{{
-                    {"pt", 1.0}, {"cm", 72.27 / 2.54}, {"mm", 72.27 / 25.4}, {"in", 72.27}, {"bp", 72.27 / 72.0},
-                    {"pc", 12.0}, {"dd", 1238.0 / 1157.0}, {"cc", 12.0 * 1238.0 / 1157.0}, {"sp", 1.0 / 65536.0},
-                    {"em", 10.0}, {"ex", 4.3},
-                }};
+                static constexpr std::array<std::pair<std::string_view, double>, 11> units{
+                    {
+                        {"pt", 1.0}, {"cm", 72.27 / 2.54}, {"mm", 72.27 / 25.4}, {"in", 72.27}, {"bp", 72.27 / 72.0},
+                        {"pc", 12.0}, {"dd", 1238.0 / 1157.0}, {"cc", 12.0 * 1238.0 / 1157.0}, {"sp", 1.0 / 65536.0},
+                        {"em", 10.0}, {"ex", 4.3},
+                    }
+                };
                 std::size_t after = at;
                 while (after < text.size() && text[after] == ' ') ++after;
-                for (const auto& [name, points] : units) {
+                for (const auto &[name, points]: units) {
                     const std::size_t end = after + name.size();
                     if (text.substr(after, name.size()) != name) continue;
-                    if (end < text.size() && ((text[end] >= 'a' && text[end] <= 'z') || (text[end] >= 'A' && text[end] <= 'Z'))) {
+                    if (end < text.size() && ((text[end] >= 'a' && text[end] <= 'z') || (
+                                                  text[end] >= 'A' && text[end] <= 'Z'))) {
                         continue;
                     }
                     at = end;
@@ -182,20 +190,22 @@ namespace render::primitives {
         return result;
     }
 
-    Plots::Plots(syntax::Lexicon& lexicon) noexcept {
+    Plots::Plots(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\addplot");
         lexicon.intern("\\addlegendentry");
         lexicon.intern("\\legend");
     }
 
-    void Plots::operator()(syntax::Parser& parser, Context& context) const {
+    void Plots::operator()(syntax::Parser &parser, Context &context) const {
         using Category = syntax::Catcodes::Category;
-        using Pairs = std::vector<std::pair<std::string_view, std::string_view>>;
+        using Pairs = std::vector<std::pair<std::string_view, std::string_view> >;
 
         // Text without the blanks around it, or the braces around the whole.
         const auto trim = [](std::string_view text) {
-            while (!text.empty() && (text.front() == ' ' || text.front() == '\n' || text.front() == '\r')) text.remove_prefix(1);
-            while (!text.empty() && (text.back() == ' ' || text.back() == '\n' || text.back() == '\r')) text.remove_suffix(1);
+            while (!text.empty() && (text.front() == ' ' || text.front() == '\n' || text.front() == '\r')) text.
+                    remove_prefix(1);
+            while (!text.empty() && (text.back() == ' ' || text.back() == '\n' || text.back() == '\r')) text.
+                    remove_suffix(1);
             if (text.size() >= 2 && text.front() == '{' && text.back() == '}') text = text.substr(1, text.size() - 2);
             return text;
         };
@@ -217,7 +227,7 @@ namespace render::primitives {
         // Options as keys and their values, a value's braces taken off.
         const auto read = [trim, split](const std::string_view list) {
             Pairs found;
-            for (const std::string_view piece : split(list)) {
+            for (const std::string_view piece: split(list)) {
                 int depth = 0;
                 std::size_t equals = std::string_view::npos;
                 for (std::size_t at = 0; at < piece.size() && equals == std::string_view::npos; ++at) {
@@ -227,12 +237,14 @@ namespace render::primitives {
                 }
                 const std::string_view key = trim(piece.substr(0, equals));
                 if (key.empty()) continue;
-                found.emplace_back(key, equals == std::string_view::npos ? std::string_view{} : trim(piece.substr(equals + 1)));
+                found.emplace_back(key, equals == std::string_view::npos
+                                            ? std::string_view{}
+                                            : trim(piece.substr(equals + 1)));
             }
             return found;
         };
-        const auto find = [](const Pairs& pairs, const std::string_view key) -> std::optional<std::string_view> {
-            for (const auto & pair : std::views::reverse(pairs)) {
+        const auto find = [](const Pairs &pairs, const std::string_view key) -> std::optional<std::string_view> {
+            for (const auto &pair: std::views::reverse(pairs)) {
                 if (pair.first == key) return pair.second;
             }
             return std::nullopt;
@@ -246,29 +258,31 @@ namespace render::primitives {
         };
         // What an argument holds, a control word keeping the space that
         // ended it so the text reads back as the tokens it was.
-        const auto spelled = [](const std::vector<syntax::Token>& tokens) {
+        const auto spelled = [](const std::vector<syntax::Token> &tokens) {
             std::string text;
-            for (const syntax::Token& token : tokens) {
+            for (const syntax::Token &token: tokens) {
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
             return text;
         };
 
-        for (const std::string_view kind : {"axis", "semilogxaxis", "semilogyaxis", "loglogaxis"}) {
+        for (const std::string_view kind: {"axis", "semilogxaxis", "semilogyaxis", "loglogaxis"}) {
             context.blocks.watch(
                 kind,
-                [this, kind, spelled](syntax::Mouth& mouth) {
-                    axes.push_back({.kind = std::string(kind),
-                                    .options = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))});
+                [this, kind, spelled](syntax::Mouth &mouth) {
+                    axes.push_back({
+                        .kind = std::string(kind),
+                        .options = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))
+                    });
                 },
-                [this, &context, trim, split, read, find, number](syntax::Mouth& mouth) {
+                [this, &context, trim, split, read, find, number](syntax::Mouth &mouth) {
                     if (axes.empty()) return;
                     const Axis axis = std::move(axes.back());
                     axes.pop_back();
                     const Pairs settings = read(axis.options);
                     const auto has = [&settings](const std::string_view key) {
-                        return std::ranges::any_of(settings, [key](const auto& pair) { return pair.first == key; });
+                        return std::ranges::any_of(settings, [key](const auto &pair) { return pair.first == key; });
                     };
 
                     // The box: what is left of pgfplots' 240 by 207 points
@@ -280,7 +294,8 @@ namespace render::primitives {
                         return written ? measure(std::string(*written), mouth, context) : fallback;
                     };
                     const bool only = has("scale only axis");
-                    const double across = length("width", has("height") ? length("height", 207.0f) * 240.0f / 207.0f : 240.0f);
+                    const double across = length(
+                        "width", has("height") ? length("height", 207.0f) * 240.0f / 207.0f : 240.0f);
                     const double upward = length("height", static_cast<float>(across) * 207.0f / 240.0f);
                     const double wide = std::max(40.0, across - (only ? 0.0 : 45.0));
                     const double tall = std::max(30.0, upward - (only ? 0.0 : 45.0));
@@ -301,12 +316,12 @@ namespace render::primitives {
                     // (`explicit`), one amount for all (`fixed`), either a
                     // share of the value (`relative`); none for a direction
                     // not drawn.
-                    const auto whiskers = [&](const Plot& plot) {
+                    const auto whiskers = [&](const Plot &plot) {
                         std::array<std::string_view, 2> way{"none", "none"};
                         std::array<bool, 2> given{};
                         std::array<std::optional<double>, 2> same{};
                         std::array<bool, 2> relative{};
-                        for (const auto& [key, value] : read(plot.options)) {
+                        for (const auto &[key, value]: read(plot.options)) {
                             const std::string_view name = key.starts_with("error bars/") ? key.substr(11) : key;
                             if (name.size() < 3 || (name[0] != 'x' && name[0] != 'y') || name[1] != ' ') continue;
                             const std::size_t axle = name[0] == 'x' ? 0 : 1;
@@ -316,7 +331,7 @@ namespace render::primitives {
                             if (rest == "fixed" || rest == "fixed relative") same[axle] = number(value);
                             if (rest.ends_with("relative")) relative[axle] = true;
                         }
-                        std::vector<std::array<double, 4>> found(plot.points.size(), std::array<double, 4>{});
+                        std::vector<std::array<double, 4> > found(plot.points.size(), std::array<double, 4>{});
                         for (std::size_t index = 0; index < plot.points.size(); ++index) {
                             for (std::size_t axle = 0; axle < 2; ++axle) {
                                 if (way[axle] == "none") continue;
@@ -324,7 +339,8 @@ namespace render::primitives {
                                 for (std::size_t side = 0; side < 2; ++side) {
                                     if (way[axle] == (side == 0 ? "plus" : "minus")) continue;
                                     double amount = same[axle].value_or(0.0);
-                                    if (given[axle] && index < plot.errors.size()) amount = plot.errors[index][2 * axle + side];
+                                    if (given[axle] && index < plot.errors.size())
+                                        amount = plot.errors[index][2 * axle + side];
                                     if (!std::isfinite(amount)) amount = 0.0;
                                     found[index][2 * axle + side] = std::abs(relative[axle] ? amount * value : amount);
                                 }
@@ -337,18 +353,19 @@ namespace render::primitives {
                     // options set, and the margin `enlargelimits` asks for on
                     // those they did not.
                     double xlo = std::numeric_limits<double>::infinity(), xhi = -xlo, ylo = xlo, yhi = -xlo;
-                    for (const Plot& plot : axis.plots) {
-                        const std::vector<std::array<double, 4>> reach = whiskers(plot);
+                    for (const Plot &plot: axis.plots) {
+                        const std::vector<std::array<double, 4> > reach = whiskers(plot);
                         for (std::size_t index = 0; index < plot.points.size(); ++index) {
                             const auto [x, y] = plot.points[index];
-                            if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
-                            const std::array<double, 4>& error = reach[index];
-                            for (const double along : {x - error[0], x, x + error[1]}) {
+                            if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0))
+                                continue;
+                            const std::array<double, 4> &error = reach[index];
+                            for (const double along: {x - error[0], x, x + error[1]}) {
                                 if (xlog && along <= 0.0) continue;
                                 xlo = std::min(xlo, tx(along));
                                 xhi = std::max(xhi, tx(along));
                             }
-                            for (const double up : {y - error[2], y, y + error[3]}) {
+                            for (const double up: {y - error[2], y, y + error[3]}) {
                                 if (ylog && up <= 0.0) continue;
                                 ylo = std::min(ylo, ty(up));
                                 yhi = std::max(yhi, ty(up));
@@ -367,17 +384,20 @@ namespace render::primitives {
                         ylo = 0.0;
                         yhi = 1.0;
                     }
-                    const auto enlarge = [&](const std::string_view axle, double& lo, double& hi, const bool low,
+                    const auto enlarge = [&](const std::string_view axle, double &lo, double &hi, const bool low,
                                              const bool high) {
                         auto written = find(settings, std::format("enlarge {} limits", axle));
                         if (!written) written = find(settings, "enlargelimits");
-                        double share = written ? (*written == "true" || written->empty() ? 0.1 : number(*written).value_or(0.0))
-                                               : 0.0;
+                        double share = written
+                                           ? (*written == "true" || written->empty()
+                                                  ? 0.1
+                                                  : number(*written).value_or(0.0))
+                                           : 0.0;
                         const double span = hi - lo;
                         if (low) lo -= share * span;
                         if (high) hi += share * span;
                     };
-                    const auto fixed = [&](const std::string_view key, double& limit, const bool log) {
+                    const auto fixed = [&](const std::string_view key, double &limit, const bool log) {
                         const auto written = find(settings, key);
                         const auto value = written ? number(*written) : std::nullopt;
                         if (!value || (log && *value <= 0.0)) return false;
@@ -399,20 +419,23 @@ namespace render::primitives {
 
                     const auto px = [&](const double v) { return (tx(v) - xlo) / (xhi - xlo) * wide; };
                     const auto py = [&](const double v) { return (ty(v) - ylo) / (yhi - ylo) * tall; };
-                    const auto point = [](const double x, const double y) { return std::format("({:.2f}pt,{:.2f}pt)", x, y); };
+                    const auto point = [](const double x, const double y) {
+                        return std::format("({:.2f}pt,{:.2f}pt)", x, y);
+                    };
 
                     // Ticks: the list the options give -- `data` for the x
                     // the plots have, `a,b,...,c` counted out -- or round
                     // numbers no more than about 35 points apart, or powers
                     // of ten on a logarithmic axis. Each in the axis's own
                     // units, as the value it stands for.
-                    const auto ticks = [&](const std::string_view key, const double lo, const double hi, const double span,
+                    const auto ticks = [&](const std::string_view key, const double lo, const double hi,
+                                           const double span,
                                            const bool log) {
                         std::vector<double> found;
                         if (const auto written = find(settings, key)) {
                             if (*written == "data") {
-                                for (const Plot& plot : axis.plots) {
-                                    for (const auto& pair : plot.points) found.push_back(pair.first);
+                                for (const Plot &plot: axis.plots) {
+                                    for (const auto &pair: plot.points) found.push_back(pair.first);
                                 }
                                 std::ranges::sort(found);
                                 found.erase(std::ranges::unique(found).begin(), found.end());
@@ -424,7 +447,8 @@ namespace render::primitives {
                                     const auto a = number(items[index - 2]), b = number(items[index - 1]);
                                     const auto c = number(items[index + 1]);
                                     if (a && b && c && *b > *a) {
-                                        for (double v = *b + (*b - *a); v < *c - 1e-9 * (*b - *a); v += *b - *a) found.push_back(v);
+                                        for (double v = *b + (*b - *a); v < *c - 1e-9 * (*b - *a); v += *b - *a) found.
+                                                push_back(v);
                                     }
                                     continue;
                                 }
@@ -433,13 +457,20 @@ namespace render::primitives {
                             return found;
                         }
                         if (log) {
-                            for (double k = std::ceil(lo - 1e-9); k <= hi + 1e-9; k += 1.0) found.push_back(std::pow(10.0, k));
+                            for (double k = std::ceil(lo - 1e-9); k <= hi + 1e-9; k += 1.0) found.push_back(
+                                std::pow(10.0, k));
                             return found;
                         }
                         const double raw = (hi - lo) / std::max(1.0, span / 35.0);
                         const double magnitude = std::pow(10.0, std::floor(std::log10(raw)));
                         const double normal = raw / magnitude;
-                        const double step = magnitude * (normal < 1.414 ? 1.0 : normal < 3.162 ? 2.0 : normal < 7.071 ? 5.0 : 10.0);
+                        const double step = magnitude * (normal < 1.414
+                                                             ? 1.0
+                                                             : normal < 3.162
+                                                                   ? 2.0
+                                                                   : normal < 7.071
+                                                                         ? 5.0
+                                                                         : 10.0);
                         for (double v = std::ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) {
                             found.push_back(std::abs(v) < step * 1e-9 ? 0.0 : v);
                         }
@@ -473,7 +504,8 @@ namespace render::primitives {
 
                     std::string out;
                     const bool hidden = has("hide axis");
-                    std::string_view lines = find(settings, "axis lines").value_or(find(settings, "axis lines*").value_or("box"));
+                    std::string_view lines = find(settings, "axis lines").value_or(
+                        find(settings, "axis lines*").value_or("box"));
                     if (hidden) lines = "none";
                     const bool boxed = lines == "box";
                     const bool crossing = lines == "middle" || lines == "center";
@@ -482,21 +514,21 @@ namespace render::primitives {
 
                     // Whether it is drawn in three dimensions, below, and
                     // none of what follows in two.
-                    const bool deep = has("view") || std::ranges::any_of(axis.plots, [](const Plot& plot) {
-                                          return !plot.solid.empty();
-                                      });
+                    const bool deep = has("view") || std::ranges::any_of(axis.plots, [](const Plot &plot) {
+                        return !plot.solid.empty();
+                    });
 
                     // The grid, under everything else.
                     const std::string_view grid = find(settings, "grid").value_or("");
                     const bool xgrid = !deep && (grid == "major" || grid == "both" || has("xmajorgrids"));
                     const bool ygrid = !deep && (grid == "major" || grid == "both" || has("ymajorgrids"));
-                    for (const double v : xs) {
+                    for (const double v: xs) {
                         const double at = px(v);
                         if (xgrid && at > 0.01 && at < wide - 0.01) {
                             out += std::format("\\draw[black!25] {} -- {};", point(at, 0.0), point(at, tall));
                         }
                     }
-                    for (const double v : ys) {
+                    for (const double v: ys) {
                         const double at = py(v);
                         if (ygrid && at > 0.01 && at < tall - 0.01) {
                             out += std::format("\\draw[black!25] {} -- {};", point(0.0, at), point(wide, at));
@@ -505,9 +537,12 @@ namespace render::primitives {
 
                     // The plots, each in the colors and marks it asks for or
                     // pgfplots' next ones, clipped to the box.
-                    static constexpr std::array<std::pair<std::string_view, std::string_view>, 5> cycle{{
-                        {"blue", "*"}, {"red", "square*"}, {"brown!60!black", "o"}, {"black", "star"}, {"blue", "diamond*"},
-                    }};
+                    static constexpr std::array<std::pair<std::string_view, std::string_view>, 5> cycle{
+                        {
+                            {"blue", "*"}, {"red", "square*"}, {"brown!60!black", "o"}, {"black", "star"},
+                            {"blue", "diamond*"},
+                        }
+                    };
                     const double bar = find(settings, "bar width") ? length("bar width", 10.0f) : 10.0;
                     const std::size_t bars = barred ? axis.plots.size() : 0;
                     struct Legend {
@@ -529,12 +564,15 @@ namespace render::primitives {
                             out += std::format("{} {} -- {} -- {} -- cycle;", how, point(x, y + 1.2 * r),
                                                point(x - r, y - 0.8 * r), point(x + r, y - 0.8 * r));
                         } else if (shape == "diamond") {
-                            out += std::format("{} {} -- {} -- {} -- {} -- cycle;", how, point(x, y + r), point(x + r, y),
+                            out += std::format("{} {} -- {} -- {} -- {} -- cycle;", how, point(x, y + r),
+                                               point(x + r, y),
                                                point(x, y - r), point(x - r, y));
                         } else if (shape == "x" || shape == "star" || shape == "asterisk" || shape == "+") {
                             if (shape != "+") {
-                                out += std::format("\\draw[{}] {} -- {};\\draw[{}] {} -- {};", color, point(x - r, y - r),
-                                                   point(x + r, y + r), color, point(x - r, y + r), point(x + r, y - r));
+                                out += std::format("\\draw[{}] {} -- {};\\draw[{}] {} -- {};", color,
+                                                   point(x - r, y - r),
+                                                   point(x + r, y + r), color, point(x - r, y + r),
+                                                   point(x + r, y - r));
                             }
                             if (shape != "x") {
                                 out += std::format("\\draw[{}] {} -- {};\\draw[{}] {} -- {};", color, point(x - r, y),
@@ -542,7 +580,7 @@ namespace render::primitives {
                             }
                         } else if (shape == "|" || shape == "-") {
                             out += std::format("\\draw[{}] {} -- {};", color, point(x - (shape == "-" ? r : 0.0),
-                                               y - (shape == "|" ? r : 0.0)),
+                                                   y - (shape == "|" ? r : 0.0)),
                                                point(x + (shape == "-" ? r : 0.0), y + (shape == "|" ? r : 0.0)));
                         } else {
                             out += std::format("{} {} circle (2pt);", how, point(x, y));
@@ -566,7 +604,8 @@ namespace render::primitives {
                             std::vector<double> angles;
                             for (std::size_t at = 0; at < view->size();) {
                                 double value = 0.0;
-                                const auto [stop, failure] = patch::decimal(view->data() + at, view->data() + view->size(), value);
+                                const auto [stop, failure] = patch::decimal(
+                                    view->data() + at, view->data() + view->size(), value);
                                 if (failure != std::errc{}) {
                                     ++at;
                                     continue;
@@ -578,16 +617,19 @@ namespace render::primitives {
                             if (angles.size() > 1) elevation = angles[1];
                         }
                         if (const auto turned = find(settings, "view/h")) azimuth = number(*turned).value_or(azimuth);
-                        if (const auto raised = find(settings, "view/v")) elevation = number(*raised).value_or(elevation);
+                        if (const auto raised = find(settings, "view/v"))
+                            elevation = number(*raised).value_or(elevation);
 
                         // The data's box: its least and most each way, or what
                         // the options set.
                         constexpr double unbounded = std::numeric_limits<double>::infinity();
                         std::array<double, 3> least{unbounded, unbounded, unbounded};
                         std::array<double, 3> most{-unbounded, -unbounded, -unbounded};
-                        for (const Plot& plot : axis.plots) {
-                            for (const std::array<double, 3>& spot : plot.solid) {
-                                if (!std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); })) continue;
+                        for (const Plot &plot: axis.plots) {
+                            for (const std::array<double, 3> &spot: plot.solid) {
+                                if (!std::ranges::all_of(spot, [](const double value) {
+                                    return std::isfinite(value);
+                                })) continue;
                                 for (std::size_t axle = 0; axle < 3; ++axle) {
                                     least[axle] = std::min(least[axle], spot[axle]);
                                     most[axle] = std::max(most[axle], spot[axle]);
@@ -615,37 +657,45 @@ namespace render::primitives {
                         // along (sin a cos e, -cos a cos e, sin e).
                         const double a = azimuth * std::numbers::pi / 180.0;
                         const double e = elevation * std::numbers::pi / 180.0;
-                        const auto share = [&](const std::array<double, 3>& spot) {
+                        const auto share = [&](const std::array<double, 3> &spot) {
                             std::array<double, 3> found{};
                             for (std::size_t axle = 0; axle < 3; ++axle) {
                                 found[axle] = (spot[axle] - least[axle]) / (most[axle] - least[axle]);
                             }
                             return found;
                         };
-                        const auto plane = [&](const std::array<double, 3>& part) {
-                            return std::pair{part[0] * std::cos(a) + part[1] * std::sin(a),
-                                             -part[0] * std::sin(a) * std::sin(e) + part[1] * std::cos(a) * std::sin(e) +
-                                                 part[2] * std::cos(e)};
+                        const auto plane = [&](const std::array<double, 3> &part) {
+                            return std::pair{
+                                part[0] * std::cos(a) + part[1] * std::sin(a),
+                                -part[0] * std::sin(a) * std::sin(e) + part[1] * std::cos(a) * std::sin(e) +
+                                part[2] * std::cos(e)
+                            };
                         };
-                        const std::array<double, 3> eye{std::sin(a) * std::cos(e), -std::cos(a) * std::cos(e), std::sin(e)};
-                        const auto nearness = [&eye](const std::array<double, 3>& part) {
+                        const std::array<double, 3> eye{
+                            std::sin(a) * std::cos(e), -std::cos(a) * std::cos(e), std::sin(e)
+                        };
+                        const auto nearness = [&eye](const std::array<double, 3> &part) {
                             return part[0] * eye[0] + part[1] * eye[1] + part[2] * eye[2];
                         };
                         double left = unbounded, right = -unbounded, bottom = unbounded, top = -unbounded;
                         for (int corner = 0; corner < 8; ++corner) {
-                            const auto [p, q] = plane({static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
-                                                       static_cast<double>((corner >> 2) & 1)});
+                            const auto [p, q] = plane({
+                                static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
+                                static_cast<double>((corner >> 2) & 1)
+                            });
                             left = std::min(left, p);
                             right = std::max(right, p);
                             bottom = std::min(bottom, q);
                             top = std::max(top, q);
                         }
-                        const auto place = [&](const std::array<double, 3>& part) {
+                        const auto place = [&](const std::array<double, 3> &part) {
                             const auto [p, q] = plane(part);
-                            return std::pair{(p - left) / std::max(right - left, 1e-9) * wide,
-                                             (q - bottom) / std::max(top - bottom, 1e-9) * tall};
+                            return std::pair{
+                                (p - left) / std::max(right - left, 1e-9) * wide,
+                                (q - bottom) / std::max(top - bottom, 1e-9) * tall
+                            };
                         };
-                        const auto at = [&](const std::array<double, 3>& part) {
+                        const auto at = [&](const std::array<double, 3> &part) {
                             const auto [p, q] = place(part);
                             return point(p, q);
                         };
@@ -653,35 +703,43 @@ namespace render::primitives {
                         // The colormap: pgfplots' `hot` unless the options
                         // name another, its stops each a colour defined once,
                         // and a height's colour the two stops around it mixed.
-                        static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> maps{{
-                            {"hot", "0 0 0 1;0.33 1 1 0;0.67 1 0.5 0;1 1 0 0"},
-                            {"hot2", "0 0 0 0;0.33 1 0 0;0.67 1 1 0;1 1 1 1"},
-                            {"jet", "0 0 0 0.5;0.125 0 0 1;0.375 0 1 1;0.625 1 1 0;0.875 1 0 0;1 0.5 0 0"},
-                            {"viridis", "0 0.267 0.005 0.329;0.25 0.231 0.322 0.545;0.5 0.129 0.569 0.553;"
-                                        "0.75 0.369 0.788 0.384;1 0.992 0.906 0.145"},
-                            {"cool", "0 0 1 1;1 1 0 1"},
-                            {"blackwhite", "0 0 0 0;1 1 1 1"},
-                            {"bluered", "0 0 0 0.7;0.2 0 0 1;0.4 0 1 1;0.6 1 1 0;0.8 1 0 0;1 0.5 0 0"},
-                            {"greenyellow", "0 0 0.5 0;1 1 1 0"},
-                            {"redyellow", "0 1 0 0;1 1 1 0"},
-                            {"violet", "0 0.1 0.1 0.4;0.5 0.5 0.1 0.6;1 0.9 0.9 1"},
-                        }};
+                        static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> maps{
+                            {
+                                {"hot", "0 0 0 1;0.33 1 1 0;0.67 1 0.5 0;1 1 0 0"},
+                                {"hot2", "0 0 0 0;0.33 1 0 0;0.67 1 1 0;1 1 1 1"},
+                                {"jet", "0 0 0 0.5;0.125 0 0 1;0.375 0 1 1;0.625 1 1 0;0.875 1 0 0;1 0.5 0 0"},
+                                {
+                                    "viridis", "0 0.267 0.005 0.329;0.25 0.231 0.322 0.545;0.5 0.129 0.569 0.553;"
+                                    "0.75 0.369 0.788 0.384;1 0.992 0.906 0.145"
+                                },
+                                {"cool", "0 0 1 1;1 1 0 1"},
+                                {"blackwhite", "0 0 0 0;1 1 1 1"},
+                                {"bluered", "0 0 0 0.7;0.2 0 0 1;0.4 0 1 1;0.6 1 1 0;0.8 1 0 0;1 0.5 0 0"},
+                                {"greenyellow", "0 0 0.5 0;1 1 1 0"},
+                                {"redyellow", "0 1 0 0;1 1 1 0"},
+                                {"violet", "0 0.1 0.1 0.4;0.5 0.5 0.1 0.6;1 0.9 0.9 1"},
+                            }
+                        };
                         std::string_view named = find(settings, "colormap name").value_or("hot");
-                        for (const auto& [key, value] : settings) {
+                        for (const auto &[key, value]: settings) {
                             if (key.starts_with("colormap/") && value.empty()) named = key.substr(9);
                         }
-                        const auto chosen = std::ranges::find(maps, named, &std::pair<std::string_view, std::string_view>::first);
+                        const auto chosen = std::ranges::find(maps, named,
+                                                              &std::pair<std::string_view, std::string_view>::first);
                         std::vector<double> stops;
-                        for (const auto piece : std::views::split(chosen != maps.end() ? chosen->second : maps.front().second, ';')) {
+                        for (const auto piece: std::views::split(
+                                 chosen != maps.end() ? chosen->second : maps.front().second, ';')) {
                             const std::string_view stop(piece.begin(), piece.end());
                             std::array<double, 4> values{};
                             std::size_t from = 0;
-                            for (double& value : values) {
+                            for (double &value: values) {
                                 while (from < stop.size() && stop[from] == ' ') ++from;
-                                from = static_cast<std::size_t>(patch::decimal(stop.data() + from, stop.data() + stop.size(), value).ptr -
+                                from = static_cast<std::size_t>(patch::decimal(stop.data() + from,
+                                                                               stop.data() + stop.size(), value).ptr -
                                                                 stop.data());
                             }
-                            out += std::format("\\definecolor{{pgfplotsmap{}}}{{rgb}}{{{:.3f},{:.3f},{:.3f}}}", stops.size(), values[1],
+                            out += std::format("\\definecolor{{pgfplotsmap{}}}{{rgb}}{{{:.3f},{:.3f},{:.3f}}}",
+                                               stops.size(), values[1],
                                                values[2], values[3]);
                             stops.push_back(values[0]);
                         }
@@ -691,16 +749,21 @@ namespace render::primitives {
                             while (index + 2 < stops.size() && t > stops[index + 1]) ++index;
                             const double span = std::max(stops[index + 1] - stops[index], 1e-9);
                             return std::format("pgfplotsmap{}!{}!pgfplotsmap{}", index + 1,
-                                               std::lround(std::clamp((t - stops[index]) / span, 0.0, 1.0) * 100.0), index);
+                                               std::lround(std::clamp((t - stops[index]) / span, 0.0, 1.0) * 100.0),
+                                               index);
                         };
 
                         // The box's corner nearest the eye; its back edges,
                         // every one not meeting that corner.
-                        const std::array<double, 3> front{eye[0] > 0.0 ? 1.0 : 0.0, eye[1] > 0.0 ? 1.0 : 0.0, eye[2] > 0.0 ? 1.0 : 0.0};
+                        const std::array<double, 3> front{
+                            eye[0] > 0.0 ? 1.0 : 0.0, eye[1] > 0.0 ? 1.0 : 0.0, eye[2] > 0.0 ? 1.0 : 0.0
+                        };
                         const double floor = 1.0 - front[2];
                         for (int corner = 0; corner < 8; ++corner) {
-                            const std::array<double, 3> from{static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
-                                                             static_cast<double>((corner >> 2) & 1)};
+                            const std::array<double, 3> from{
+                                static_cast<double>(corner & 1), static_cast<double>((corner >> 1) & 1),
+                                static_cast<double>((corner >> 2) & 1)
+                            };
                             for (std::size_t axle = 0; axle < 3; ++axle) {
                                 if (from[axle] != 0.0) continue;
                                 std::array<double, 3> to = from;
@@ -714,17 +777,20 @@ namespace render::primitives {
                         // along the bottom's front, y along its side, z up
                         // the leftmost upright edge.
                         std::array<double, 2> upright{0.0, 0.0};
-                        for (const double u : {0.0, 1.0}) {
-                            for (const double v : {0.0, 1.0}) {
-                                if (place({u, v, 0.0}).first < place({upright[0], upright[1], 0.0}).first - 1e-9) upright = {u, v};
+                        for (const double u: {0.0, 1.0}) {
+                            for (const double v: {0.0, 1.0}) {
+                                if (place({u, v, 0.0}).first < place({upright[0], upright[1], 0.0}).first - 1e-9)
+                                    upright = {u, v};
                             }
                         }
-                        const std::array<std::array<std::array<double, 3>, 2>, 3> edges{{
-                            {{{0.0, front[1], floor}, {1.0, front[1], floor}}},
-                            {{{front[0], 0.0, floor}, {front[0], 1.0, floor}}},
-                            {{{upright[0], upright[1], 0.0}, {upright[0], upright[1], 1.0}}},
-                        }};
-                        const auto extent = [&](const std::array<std::array<double, 3>, 2>& edge) {
+                        const std::array<std::array<std::array<double, 3>, 2>, 3> edges{
+                            {
+                                {{{0.0, front[1], floor}, {1.0, front[1], floor}}},
+                                {{{front[0], 0.0, floor}, {front[0], 1.0, floor}}},
+                                {{{upright[0], upright[1], 0.0}, {upright[0], upright[1], 1.0}}},
+                            }
+                        };
+                        const auto extent = [&](const std::array<std::array<double, 3>, 2> &edge) {
                             const auto [p, q] = place(edge[0]);
                             const auto [r, s] = place(edge[1]);
                             return std::hypot(r - p, s - q);
@@ -732,13 +798,16 @@ namespace render::primitives {
                         const auto anchored = [](const double dx, const double dy) -> std::string_view {
                             if (std::abs(dx) > 1.5 * std::abs(dy)) return dx > 0.0 ? "west" : "east";
                             if (std::abs(dy) > 1.5 * std::abs(dx)) return dy > 0.0 ? "south" : "north";
-                            return dy > 0.0 ? (dx > 0.0 ? "south west" : "south east") : (dx > 0.0 ? "north west" : "north east");
+                            return dy > 0.0
+                                       ? (dx > 0.0 ? "south west" : "south east")
+                                       : (dx > 0.0 ? "north west" : "north east");
                         };
                         const std::string_view grid3 = find(settings, "grid").value_or("");
                         const bool gridded = grid3 == "major" || grid3 == "both";
                         for (std::size_t axle = 0; axle < 3; ++axle) {
-                            const std::array<std::array<double, 3>, 2>& edge = edges[axle];
-                            const std::vector<double> marks = ticks(std::format("{}tick", letters[axle]), least[axle], most[axle],
+                            const std::array<std::array<double, 3>, 2> &edge = edges[axle];
+                            const std::vector<double> marks = ticks(std::format("{}tick", letters[axle]), least[axle],
+                                                                    most[axle],
                                                                     extent(edge), false);
                             // Outward: from the floor's middle to the edge's,
                             // leaning down, so a bottom edge's numbers stand
@@ -746,7 +815,8 @@ namespace render::primitives {
                             // share; z's to the left.
                             std::array<double, 3> middle{0.5, 0.5, floor};
                             std::array<double, 3> halfway{};
-                            for (std::size_t index = 0; index < 3; ++index) halfway[index] = (edge[0][index] + edge[1][index]) / 2.0;
+                            for (std::size_t index = 0; index < 3; ++index)
+                                halfway[index] = (edge[0][index] + edge[1][index]) / 2.0;
                             const auto [mx, my] = place(middle);
                             const auto [hx, hy] = place(halfway);
                             const double lateral = hx - mx;
@@ -775,8 +845,10 @@ namespace render::primitives {
                                     }
                                 }
                                 const auto [px3, py3] = place(spot);
-                                out += std::format("\\draw {} -- {};", point(px3, py3), point(px3 - dx * 3.0, py3 - dy * 3.0));
-                                const std::string text = labelled(std::format("{}ticklabels", letters[axle]), marks[index], index, false);
+                                out += std::format("\\draw {} -- {};", point(px3, py3),
+                                                   point(px3 - dx * 3.0, py3 - dy * 3.0));
+                                const std::string text = labelled(std::format("{}ticklabels", letters[axle]),
+                                                                  marks[index], index, false);
                                 if (!text.empty()) {
                                     out += std::format("\\node[anchor={}] at {} {{{}}};", anchored(dx, dy),
                                                        point(px3 + dx * 3.0, py3 + dy * 3.0), text);
@@ -786,8 +858,9 @@ namespace render::primitives {
                                 // z's label upright, beside its numbers.
                                 const auto [lx, ly] = place(halfway);
                                 const double apart = axle == 2 ? 26.0 : 18.0;
-                                const std::string written = axle == 2 ? std::format("\\rotatebox{{90}}{{{}}}", *label)
-                                                                      : std::string(*label);
+                                const std::string written = axle == 2
+                                                                ? std::format("\\rotatebox{{90}}{{{}}}", *label)
+                                                                : std::string(*label);
                                 out += std::format("\\node[anchor={}] at {} {{{}}};", anchored(dx, dy),
                                                    point(lx + dx * apart, ly + dy * apart), written);
                             }
@@ -796,15 +869,15 @@ namespace render::primitives {
                         // The surfaces' faces and the meshes' lines, the
                         // farthest first; then each curve, its marks on it.
                         struct Face {
-                            double near;                                   // how near its middle is to the eye
-                            std::vector<std::array<double, 3>> corners;   // in the box's shares
-                            std::string color;                             // from the colormap
-                            bool filled;                                   // a surface's face, or a mesh's line
-                            bool faceted;                                  // its edges drawn darker
+                            double near; // how near its middle is to the eye
+                            std::vector<std::array<double, 3> > corners; // in the box's shares
+                            std::string color; // from the colormap
+                            bool filled; // a surface's face, or a mesh's line
+                            bool faceted; // its edges drawn darker
                         };
                         std::vector<Face> faces;
                         for (std::size_t index = 0; index < axis.plots.size(); ++index) {
-                            const Plot& plot = axis.plots[index];
+                            const Plot &plot = axis.plots[index];
                             if (plot.solid.empty()) continue;
                             const Pairs own = read(plot.options);
                             const bool surface = find(own, "surf").has_value();
@@ -812,7 +885,9 @@ namespace render::primitives {
                             const std::string_view shader = find(own, "shader").value_or("faceted");
                             const std::size_t stride = plot.columns;
                             const auto whole = [&](const std::size_t at) {
-                                return std::ranges::all_of(plot.solid[at], [](const double value) { return std::isfinite(value); });
+                                return std::ranges::all_of(plot.solid[at], [](const double value) {
+                                    return std::isfinite(value);
+                                });
                             };
                             if ((surface || mesh) && stride > 1) {
                                 const std::size_t down = plot.solid.size() / stride;
@@ -823,16 +898,18 @@ namespace render::primitives {
                                         if (surface && row + 1 < down && column + 1 < stride) {
                                             taken = {here, here + 1, here + stride + 1, here + stride};
                                         }
-                                        std::vector<std::vector<std::size_t>> strokes;
+                                        std::vector<std::vector<std::size_t> > strokes;
                                         if (mesh && column + 1 < stride) strokes.push_back({here, here + 1});
                                         if (mesh && row + 1 < down) strokes.push_back({here, here + stride});
                                         if (!taken.empty()) strokes.push_back(std::move(taken));
-                                        for (const std::vector<std::size_t>& corners : strokes) {
+                                        for (const std::vector<std::size_t> &corners: strokes) {
                                             if (!std::ranges::all_of(corners, whole)) continue;
-                                            Face face{.near = 0.0, .corners = {}, .color = {}, .filled = corners.size() == 4,
-                                                      .faceted = shader == "faceted"};
+                                            Face face{
+                                                .near = 0.0, .corners = {}, .color = {}, .filled = corners.size() == 4,
+                                                .faceted = shader == "faceted"
+                                            };
                                             double height = 0.0;
-                                            for (const std::size_t corner : corners) {
+                                            for (const std::size_t corner: corners) {
                                                 face.corners.push_back(share(plot.solid[corner]));
                                                 face.near += nearness(face.corners.back());
                                                 height += plot.solid[corner][2];
@@ -846,26 +923,29 @@ namespace render::primitives {
                             }
                         }
                         std::ranges::sort(faces, {}, &Face::near);
-                        for (const Face& face : faces) {
+                        for (const Face &face: faces) {
                             if (face.filled) {
-                                out += face.faceted ? std::format("\\filldraw[fill={0},draw={0}!70!black,very thin] ", face.color)
-                                                    : std::format("\\fill[{}] ", face.color);
+                                out += face.faceted
+                                           ? std::format("\\filldraw[fill={0},draw={0}!70!black,very thin] ",
+                                                         face.color)
+                                           : std::format("\\fill[{}] ", face.color);
                             } else {
                                 out += std::format("\\draw[{}] ", face.color);
                             }
-                            for (const std::array<double, 3>& corner : face.corners) out += at(corner) + " -- ";
+                            for (const std::array<double, 3> &corner: face.corners) out += at(corner) + " -- ";
                             out.resize(out.size() - 4);
                             out += face.filled ? " -- cycle;" : ";";
                         }
                         for (std::size_t index = 0; index < axis.plots.size(); ++index) {
-                            const Plot& plot = axis.plots[index];
+                            const Plot &plot = axis.plots[index];
                             const Pairs own = read(plot.options);
-                            if (plot.solid.empty() || ((find(own, "surf") || find(own, "mesh")) && plot.columns > 1)) continue;
+                            if (plot.solid.empty() || ((find(own, "surf") || find(own, "mesh")) && plot.columns > 1))
+                                continue;
                             std::string color = plot.cycled ? std::string(cycle[index % cycle.size()].first) : "black";
                             std::string mark = plot.cycled ? std::string(cycle[index % cycle.size()].second) : "";
                             std::string kept;
                             bool line = true;
-                            for (const auto& [key, value] : own) {
+                            for (const auto &[key, value]: own) {
                                 if (key == "color" || key == "draw") color = value;
                                 else if (key.contains("thick") || key.contains("thin") || key.contains("dash") ||
                                          key.contains("dot") || key == "solid" || key == "line width") {
@@ -882,18 +962,25 @@ namespace render::primitives {
                             const std::size_t run = plot.columns > 1 ? plot.columns : plot.solid.size();
                             for (std::size_t begin = 0; line && begin < plot.solid.size(); begin += run) {
                                 std::string path;
-                                for (std::size_t step = begin; step < std::min(begin + run, plot.solid.size()); ++step) {
-                                    if (!std::ranges::all_of(plot.solid[step], [](const double value) { return std::isfinite(value); })) {
-                                        if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};", color, kept, path);
+                                for (std::size_t step = begin; step < std::min(begin + run, plot.solid.size()); ++
+                                     step) {
+                                    if (!std::ranges::all_of(plot.solid[step], [](const double value) {
+                                        return std::isfinite(value);
+                                    })) {
+                                        if (path.find(" -- ") != std::string::npos) out += std::format(
+                                            "\\draw[{}{}] {};", color, kept, path);
                                         path.clear();
                                         continue;
                                     }
                                     path += (path.empty() ? "" : " -- ") + at(share(plot.solid[step]));
                                 }
-                                if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};", color, kept, path);
+                                if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};",
+                                                                                color, kept, path);
                             }
-                            for (const std::array<double, 3>& spot : plot.solid) {
-                                if (mark.empty() || !std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); })) continue;
+                            for (const std::array<double, 3> &spot: plot.solid) {
+                                if (mark.empty() || !std::ranges::all_of(spot, [](const double value) {
+                                    return std::isfinite(value);
+                                })) continue;
                                 const auto [mx, my] = place(share(spot));
                                 dot(mark, color, mx, my);
                             }
@@ -911,12 +998,14 @@ namespace render::primitives {
                                                    mapped(least[2] + (most[2] - least[2]) * (slice + 0.5) / 40.0),
                                                    point(wide + gap3, from), point(wide + gap3 + thick, to));
                             }
-                            out += std::format("\\draw {} rectangle {};", point(wide + gap3, 0.0), point(wide + gap3 + thick, tall));
+                            out += std::format("\\draw {} rectangle {};", point(wide + gap3, 0.0),
+                                               point(wide + gap3 + thick, tall));
                             const std::vector<double> heights = ticks("ztick", least[2], most[2], tall, false);
                             for (std::size_t index = 0; index < heights.size(); ++index) {
                                 const double up = (heights[index] - least[2]) / (most[2] - least[2]) * tall;
                                 if (up < -0.01 || up > tall + 0.01) continue;
-                                out += std::format("\\draw {} -- {};", point(wide + gap3 + thick, up), point(wide + gap3 + thick - 3.0, up));
+                                out += std::format("\\draw {} -- {};", point(wide + gap3 + thick, up),
+                                                   point(wide + gap3 + thick - 3.0, up));
                                 out += std::format("\\node[right] at {} {{{}}};", point(wide + gap3 + thick, up),
                                                    labelled("zticklabels", heights[index], index, false));
                             }
@@ -935,43 +1024,49 @@ namespace render::primitives {
                     // colour is the one it names, pgfplots' next one paled
                     // when it names none, and an opacity paler still.
                     for (std::size_t index = 0; index < axis.plots.size(); ++index) {
-                        const Plot& region = axis.plots[index];
+                        const Plot &region = axis.plots[index];
                         if (region.between.empty()) continue;
                         const Pairs asked = read(region.between);
                         const std::string_view of = find(asked, "of").value_or("");
                         const std::size_t also = of.find(" and ");
                         if (also == std::string_view::npos) continue;
-                        const std::array<std::string_view, 2> names{trim(of.substr(0, also)), trim(of.substr(also + 5))};
+                        const std::array<std::string_view, 2> names{
+                            trim(of.substr(0, also)), trim(of.substr(also + 5))
+                        };
                         double from = -std::numeric_limits<double>::infinity();
                         double to = std::numeric_limits<double>::infinity();
                         if (const auto clip = find(asked, "soft clip")) {
                             if (const auto domain = find(read(*clip), "domain")) {
                                 const std::size_t colon = domain->find(':');
                                 from = number(domain->substr(0, colon)).value_or(from);
-                                if (colon != std::string_view::npos) to = number(domain->substr(colon + 1)).value_or(to);
+                                if (colon != std::string_view::npos)
+                                    to = number(domain->substr(colon + 1)).value_or(to);
                             }
                         }
-                        std::vector<std::pair<double, double>> outline;
+                        std::vector<std::pair<double, double> > outline;
                         bool whole = true;
                         for (std::size_t side = 0; side < 2 && whole; ++side) {
-                            const auto named = std::ranges::find_if(axis.plots, [&](const Plot& plot) {
+                            const auto named = std::ranges::find_if(axis.plots, [&](const Plot &plot) {
                                 const Pairs own = read(plot.options);
-                                return find(own, "name path") == names[side] || find(own, "name path global") == names[side];
+                                return find(own, "name path") == names[side] || find(own, "name path global") == names[
+                                           side];
                             });
                             if (named == axis.plots.end()) {
                                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, memory::Location{},
-                                                         std::format("fill between: no plot named '{}'", names[side]));
+                                                        std::format("fill between: no plot named '{}'", names[side]));
                                 whole = false;
                                 break;
                             }
-                            std::vector<std::pair<double, double>> kept;
+                            std::vector<std::pair<double, double> > kept;
                             for (std::size_t at = 0; at < named->points.size(); ++at) {
                                 const auto [x, y] = named->points[at];
-                                if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
+                                if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0))
+                                    continue;
                                 if (at > 0) {
                                     const auto [a, b] = named->points[at - 1];
-                                    for (const double edge : {from, to}) {
-                                        if (!std::isfinite(edge) || !std::isfinite(a) || !std::isfinite(b) || (a < edge) == (x < edge)) continue;
+                                    for (const double edge: {from, to}) {
+                                        if (!std::isfinite(edge) || !std::isfinite(a) || !std::isfinite(b) || (a < edge)
+                                            == (x < edge)) continue;
                                         kept.emplace_back(edge, b + (y - b) * (edge - a) / (x - a));
                                     }
                                 }
@@ -982,9 +1077,11 @@ namespace render::primitives {
                         }
                         if (!whole || outline.size() < 3) continue;
 
-                        std::string paint = region.cycled ? std::string(cycle[index % cycle.size()].first) + "!40!white" : "";
+                        std::string paint = region.cycled
+                                                ? std::string(cycle[index % cycle.size()].first) + "!40!white"
+                                                : "";
                         std::optional<double> shade;
-                        for (const auto& [key, value] : read(region.options)) {
+                        for (const auto &[key, value]: read(region.options)) {
                             if (key == "fill" || key == "color") paint = value;
                             else if (key == "opacity" || key == "fill opacity") shade = number(value);
                             else if (value.empty() && !key.contains(' ') && !key.contains('/')) paint = key;
@@ -993,24 +1090,25 @@ namespace render::primitives {
                         if (shade) {
                             // A mixture ending in its share, `blue!20`, is on white.
                             if (std::ranges::count(paint, '!') % 2 == 1) paint += "!white";
-                            paint = std::format("{}!{}!white", paint, std::lround(std::clamp(*shade, 0.0, 1.0) * 100.0));
+                            paint = std::format("{}!{}!white", paint,
+                                                std::lround(std::clamp(*shade, 0.0, 1.0) * 100.0));
                         }
                         out += std::format("\\fill[{}] ", paint);
-                        for (const auto& [x, y] : outline) {
+                        for (const auto &[x, y]: outline) {
                             out += point(std::clamp(px(x), 0.0, wide), std::clamp(py(y), 0.0, tall)) + " -- ";
                         }
                         out += "cycle;";
                     }
 
                     for (std::size_t index = 0; index < axis.plots.size(); ++index) {
-                        const Plot& plot = axis.plots[index];
+                        const Plot &plot = axis.plots[index];
                         std::string color = plot.cycled ? std::string(cycle[index % cycle.size()].first) : "black";
                         std::string mark = plot.cycled ? std::string(cycle[index % cycle.size()].second) : "";
                         std::string fill;
                         std::string kept;
                         bool line = true;
                         bool forgotten = false;
-                        for (const auto& [key, value] : read(plot.options)) {
+                        for (const auto &[key, value]: read(plot.options)) {
                             if (key == "mark") {
                                 mark = value == "none" ? "" : std::string(value);
                             } else if (key == "only marks") {
@@ -1021,7 +1119,8 @@ namespace render::primitives {
                             else if (key == "color" || key == "draw") color = value;
                             else if (key == "fill") fill = value;
                             else if (key.contains("thick") || key.contains("thin") || key.contains("dash") ||
-                                     key.contains("dot") || key == "solid" || key == "line width" || key.contains("opacity")) {
+                                     key.contains("dot") || key == "solid" || key == "line width" || key.contains(
+                                         "opacity")) {
                                 kept += std::format(",{}{}{}", key, value.empty() ? "" : "=", value);
                             } else if (value.empty() && !key.contains(' ') && !key.contains('/') && key != "smooth" &&
                                        key != "sharp plot" && key != "ybar" && key != "const plot") {
@@ -1043,17 +1142,18 @@ namespace render::primitives {
                         if (!forgotten) samples.push_back({color, mark, line && !histogram, histogram});
 
                         if (histogram) {
-                            const double shift = (static_cast<double>(index) - (static_cast<double>(bars) - 1.0) / 2.0) *
-                                                 (bar + 2.0);
+                            const double shift =
+                                    (static_cast<double>(index) - (static_cast<double>(bars) - 1.0) / 2.0) *
+                                    (bar + 2.0);
                             const double base = std::clamp(ylog ? 0.0 : py(0.0), 0.0, tall);
                             const std::string paint = fill.empty() ? color + "!30!white" : fill;
-                            for (const auto& [x, y] : plot.points) {
+                            for (const auto &[x, y]: plot.points) {
                                 if (!std::isfinite(x) || !std::isfinite(y)) continue;
                                 const double centre = px(x) + shift;
                                 if (centre < -0.01 || centre > wide + 0.01) continue;
                                 out += std::format("\\filldraw[fill={},draw={}] {} rectangle {};", paint, color,
                                                    point(centre - bar / 2.0, base), point(centre + bar / 2.0,
-                                                   std::clamp(py(y), 0.0, tall)));
+                                                       std::clamp(py(y), 0.0, tall)));
                             }
                             continue;
                         }
@@ -1062,7 +1162,7 @@ namespace render::primitives {
                         // a run carrying on while the next starts where the
                         // last one ended.
                         if (line) {
-                            std::vector<std::pair<double, double>> run;
+                            std::vector<std::pair<double, double> > run;
                             const auto flush = [&] {
                                 if (run.size() >= 2) {
                                     out += std::format("\\draw[{}{}] ", color, kept);
@@ -1085,8 +1185,10 @@ namespace render::primitives {
                                 double t0 = 0.0, t1 = 1.0;
                                 const double dx = x1 - x0, dy = y1 - y0;
                                 bool seen = true;
-                                for (const auto [p, q] : {std::pair{-dx, x0 + 0.01}, std::pair{dx, wide + 0.01 - x0},
-                                                          std::pair{-dy, y0 + 0.01}, std::pair{dy, tall + 0.01 - y0}}) {
+                                for (const auto [p, q]: {
+                                         std::pair{-dx, x0 + 0.01}, std::pair{dx, wide + 0.01 - x0},
+                                         std::pair{-dy, y0 + 0.01}, std::pair{dy, tall + 0.01 - y0}
+                                     }) {
                                     if (std::abs(p) < 1e-12) {
                                         if (q < 0.0) seen = false;
                                         continue;
@@ -1113,35 +1215,45 @@ namespace render::primitives {
 
                         // Its error bars, in its color: a line each way the
                         // options draw, a short bar across each end.
-                        const std::vector<std::array<double, 4>> reach = whiskers(plot);
+                        const std::vector<std::array<double, 4> > reach = whiskers(plot);
                         for (std::size_t at = 0; at < plot.points.size(); ++at) {
                             const auto [x, y] = plot.points[at];
-                            if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
-                            const std::array<double, 4>& error = reach[at];
+                            if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0))
+                                continue;
+                            const std::array<double, 4> &error = reach[at];
                             constexpr double cap = 2.0;
                             if (error[2] > 0.0 || error[3] > 0.0) {
                                 const double centre = px(x);
-                                const double low = ylog && y - error[2] <= 0.0 ? 0.0 : std::clamp(py(y - error[2]), 0.0, tall);
+                                const double low = ylog && y - error[2] <= 0.0
+                                                       ? 0.0
+                                                       : std::clamp(py(y - error[2]), 0.0, tall);
                                 const double high = std::clamp(py(y + error[3]), 0.0, tall);
-                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(centre, low), point(centre, high));
-                                for (const double end : {low, high}) {
-                                    out += std::format("\\draw[{}] {} -- {};", color, point(centre - cap, end), point(centre + cap, end));
+                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(centre, low),
+                                                   point(centre, high));
+                                for (const double end: {low, high}) {
+                                    out += std::format("\\draw[{}] {} -- {};", color, point(centre - cap, end),
+                                                       point(centre + cap, end));
                                 }
                             }
                             if (error[0] > 0.0 || error[1] > 0.0) {
                                 const double up = py(y);
-                                const double low = xlog && x - error[0] <= 0.0 ? 0.0 : std::clamp(px(x - error[0]), 0.0, wide);
+                                const double low = xlog && x - error[0] <= 0.0
+                                                       ? 0.0
+                                                       : std::clamp(px(x - error[0]), 0.0, wide);
                                 const double high = std::clamp(px(x + error[1]), 0.0, wide);
-                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(low, up), point(high, up));
-                                for (const double end : {low, high}) {
-                                    out += std::format("\\draw[{}] {} -- {};", color, point(end, up - cap), point(end, up + cap));
+                                out += std::format("\\draw[{}{}] {} -- {};", color, kept, point(low, up),
+                                                   point(high, up));
+                                for (const double end: {low, high}) {
+                                    out += std::format("\\draw[{}] {} -- {};", color, point(end, up - cap),
+                                                       point(end, up + cap));
                                 }
                             }
                         }
 
                         if (!mark.empty()) {
-                            for (const auto& [x, y] : plot.points) {
-                                if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0)) continue;
+                            for (const auto &[x, y]: plot.points) {
+                                if (!std::isfinite(x) || !std::isfinite(y) || (xlog && x <= 0.0) || (ylog && y <= 0.0))
+                                    continue;
                                 const double a = px(x), b = py(y);
                                 if (a < -0.5 || a > wide + 0.5 || b < -0.5 || b > tall + 0.5) continue;
                                 dot(mark, color, a, b);
@@ -1152,10 +1264,11 @@ namespace render::primitives {
                     // The axis: its box, or its lines; the ticks, inward, and
                     // their labels outside it -- or beside its lines where
                     // they cross.
-                    constexpr double tick = 4.27;   // pgfplots' 0.15cm
+                    constexpr double tick = 4.27; // pgfplots' 0.15cm
                     if (boxed) out += std::format("\\draw {} rectangle {};", point(0.0, 0.0), point(wide, tall));
                     if (lines == "left") {
-                        out += std::format("\\draw[->] {} -- {};\\draw[->] {} -- {};", point(0.0, 0.0), point(wide, 0.0),
+                        out += std::format("\\draw[->] {} -- {};\\draw[->] {} -- {};", point(0.0, 0.0),
+                                           point(wide, 0.0),
                                            point(0.0, 0.0), point(0.0, tall));
                     }
                     if (crossing) {
@@ -1188,7 +1301,8 @@ namespace render::primitives {
 
                     // Its labels and title.
                     if (const auto xlabel = find(settings, "xlabel")) {
-                        out += std::format("\\node[below] at {} {{{}}};", point(wide / 2.0, crossing ? -2.0 : -13.0), *xlabel);
+                        out += std::format("\\node[below] at {} {{{}}};", point(wide / 2.0, crossing ? -2.0 : -13.0),
+                                           *xlabel);
                     }
                     if (const auto ylabel = find(settings, "ylabel")) {
                         out += std::format("\\node[left] at {} {{\\rotatebox{{90}}{{{}}}}};",
@@ -1204,13 +1318,16 @@ namespace render::primitives {
                     if (entries > 0) {
                         std::string rows;
                         for (std::size_t index = 0; index < entries; ++index) {
-                            const Legend& sample = samples[index];
-                            std::string image = sample.bar ? "\\rule{0.8em}{0.8em}"
-                                                : sample.line && !sample.mark.empty()
-                                                    ? "\\rule[0.55ex]{0.5em}{0.6pt}$\\bullet$\\rule[0.55ex]{0.5em}{0.6pt}"
-                                                : sample.line ? "\\rule[0.55ex]{1.2em}{0.6pt}"
-                                                              : "$\\bullet$";
-                            rows += std::format("\\textcolor{{{}}}{{{}}} & {}\\\\", sample.color, image, axis.legends[index]);
+                            const Legend &sample = samples[index];
+                            std::string image = sample.bar
+                                                    ? "\\rule{0.8em}{0.8em}"
+                                                    : sample.line && !sample.mark.empty()
+                                                          ? "\\rule[0.55ex]{0.5em}{0.6pt}$\\bullet$\\rule[0.55ex]{0.5em}{0.6pt}"
+                                                          : sample.line
+                                                                ? "\\rule[0.55ex]{1.2em}{0.6pt}"
+                                                                : "$\\bullet$";
+                            rows += std::format("\\textcolor{{{}}}{{{}}} & {}\\\\", sample.color, image,
+                                                axis.legends[index]);
                         }
                         const std::string_view where = find(settings, "legend pos").value_or("north east");
                         const bool outer = where.starts_with("outer");
@@ -1218,8 +1335,10 @@ namespace render::primitives {
                         const bool south = where.starts_with("south");
                         const double x = outer ? wide + 5.0 : west ? 3.0 : wide - 3.0;
                         const double y = south ? 3.0 : tall - 3.0;
-                        const std::string anchor = outer ? "north west"
-                                                         : std::format("{} {}", south ? "south" : "north", west ? "west" : "east");
+                        const std::string anchor = outer
+                                                       ? "north west"
+                                                       : std::format("{} {}", south ? "south" : "north",
+                                                                     west ? "west" : "east");
                         out += std::format("\\node[draw, fill=white, inner sep=2pt, anchor={}] at {} "
                                            "{{\\small\\begin{{tabular}}{{@{{}}c@{{\\ }}l@{{}}}}{}\\end{{tabular}}}};",
                                            anchor, point(x, outer ? tall : y), rows);
@@ -1231,325 +1350,378 @@ namespace render::primitives {
         // \addplot[options] and what it plots, to its semicolon: its
         // coordinates, a table inline or in a file, or a function of x --
         // or two, as a parametric curve.
-        parser.mouth.bind("\\addplot", [this, &context, trim, split, read, find, number, spelled](syntax::Mouth& mouth) {
-            const memory::Location origin = mouth.lookahead().location;
-            // `\addplot3`: the control word, then its 3.
-            const bool three = mouth.lookahead().is('3');
-            if (three) mouth.read();
-            bool cycled = true;
-            if (mouth.lookahead().is('+')) {
-                mouth.read();
-            } else if (mouth.lookahead().is('[')) {
-                cycled = false;
-            }
-            const std::string options = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-            std::string text;
-            int depth = 0;
-            for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
-                if (depth == 0 && token.is(Category::Other, ';')) break;
-                if (token.is(Category::Group, '{')) ++depth;
-                if (token.is(Category::Group, '}')) --depth;
-                text += token.text;
-                if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
-            }
-            if (axes.empty()) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin, "\\addplot outside an axis");
-                return;
-            }
-            Axis& axis = axes.back();
-            Plot plot{.options = options, .cycled = cycled};
-            const Pairs own = read(options);
-            const Pairs settings = read(axis.options);
-            constexpr double gap = std::numeric_limits<double>::quiet_NaN();
+        parser.mouth.bind("\\addplot",
+                          [this, &context, trim, split, read, find, number, spelled](syntax::Mouth &mouth) {
+                              const memory::Location origin = mouth.lookahead().location;
+                              // `\addplot3`: the control word, then its 3.
+                              const bool three = mouth.lookahead().is('3');
+                              if (three) mouth.read();
+                              bool cycled = true;
+                              if (mouth.lookahead().is('+')) {
+                                  mouth.read();
+                              } else if (mouth.lookahead().is('[')) {
+                                  cycled = false;
+                              }
+                              const std::string options = spelled(
+                                  mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                              std::string text;
+                              int depth = 0;
+                              for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
+                                  if (depth == 0 && token.is(Category::Other, ';')) break;
+                                  if (token.is(Category::Group, '{')) ++depth;
+                                  if (token.is(Category::Group, '}')) --depth;
+                                  text += token.text;
+                                  if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
+                              }
+                              if (axes.empty()) {
+                                  tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
+                                                          "\\addplot outside an axis");
+                                  return;
+                              }
+                              Axis &axis = axes.back();
+                              Plot plot{.options = options, .cycled = cycled};
+                              const Pairs own = read(options);
+                              const Pairs settings = read(axis.options);
+                              constexpr double gap = std::numeric_limits<double>::quiet_NaN();
 
-            // The braced group a part of it starts with, its braces taken off.
-            const auto braced = [](const std::string_view from) -> std::string_view {
-                const std::size_t open = from.find('{');
-                if (open == std::string_view::npos) return {};
-                int level = 0;
-                for (std::size_t at = open; at < from.size(); ++at) {
-                    if (from[at] == '{') ++level;
-                    if (from[at] == '}' && --level == 0) return from.substr(open + 1, at - open - 1);
-                }
-                return from.substr(open + 1);
-            };
-            // An x as the data write it: a number, or one of the axis's
-            // symbolic coordinates, counted from 0.
-            const std::vector<std::string_view> symbols = split(find(settings, "symbolic x coords").value_or(""));
-            const auto abscissa = [&](const std::string_view written) -> std::optional<double> {
-                if (const auto value = number(written)) return value;
-                for (std::size_t index = 0; index < symbols.size(); ++index) {
-                    if (trim(symbols[index]) == trim(written)) return static_cast<double>(index);
-                }
-                return std::nullopt;
-            };
+                              // The braced group a part of it starts with, its braces taken off.
+                              const auto braced = [](const std::string_view from) -> std::string_view {
+                                  const std::size_t open = from.find('{');
+                                  if (open == std::string_view::npos) return {};
+                                  int level = 0;
+                                  for (std::size_t at = open; at < from.size(); ++at) {
+                                      if (from[at] == '{') ++level;
+                                      if (from[at] == '}' && --level == 0) return from.substr(open + 1, at - open - 1);
+                                  }
+                                  return from.substr(open + 1);
+                              };
+                              // An x as the data write it: a number, or one of the axis's
+                              // symbolic coordinates, counted from 0.
+                              const std::vector<std::string_view> symbols = split(
+                                  find(settings, "symbolic x coords").value_or(""));
+                              const auto abscissa = [&](const std::string_view written) -> std::optional<double> {
+                                  if (const auto value = number(written)) return value;
+                                  for (std::size_t index = 0; index < symbols.size(); ++index) {
+                                      if (trim(symbols[index]) == trim(written)) return static_cast<double>(index);
+                                  }
+                                  return std::nullopt;
+                              };
 
-            std::string_view spec = trim(text);
-            if (three && spec.starts_with("coordinates")) {
-                // Each point in three dimensions, `(x,y,z)`.
-                const std::string_view inside = braced(spec);
-                for (std::size_t open = inside.find('('); open != std::string_view::npos; open = inside.find('(', open + 1)) {
-                    const std::size_t close = inside.find(')', open);
-                    if (close == std::string_view::npos) break;
-                    const std::vector<std::string_view> parts = split(inside.substr(open + 1, close - open - 1));
-                    open = close;
-                    if (parts.size() != 3) continue;
-                    const auto x = number(parts[0]), y = number(parts[1]), z = number(parts[2]);
-                    if (x && y && z) plot.solid.push_back({*x, *y, *z});
-                }
-            } else if (spec.starts_with("coordinates")) {
-                // Each point, and after one an error written `+- (dx,dy)`:
-                // as much below as above, or `+=` above alone and `-=` below.
-                const std::string_view inside = braced(spec);
-                std::string_view pending;
-                for (std::size_t open = inside.find('('); open != std::string_view::npos;) {
-                    const std::size_t close = inside.find(')', open);
-                    if (close == std::string_view::npos) break;
-                    const std::string_view pair = inside.substr(open + 1, close - open - 1);
-                    const std::size_t next = inside.find('(', close);
-                    const std::string_view sign = trim(inside.substr(close + 1, std::min(next, inside.size()) - close - 1));
-                    const std::size_t comma = pair.find(',');
-                    const auto x = comma == std::string_view::npos ? std::nullopt
-                                   : pending.empty()               ? abscissa(pair.substr(0, comma))
-                                                                   : number(pair.substr(0, comma));
-                    const auto y = comma == std::string_view::npos ? std::nullopt : number(pair.substr(comma + 1));
-                    if (x && y && pending.empty()) {
-                        plot.points.emplace_back(*x, *y);
-                        plot.errors.push_back({gap, gap, gap, gap});
-                    } else if (x && y && !plot.errors.empty()) {
-                        std::array<double, 4>& error = plot.errors.back();
-                        if (pending != "+=") {
-                            error[0] = *x;
-                            error[2] = *y;
-                        }
-                        if (pending != "-=") {
-                            error[1] = *x;
-                            error[3] = *y;
-                        }
-                    }
-                    pending = sign == "+-" || sign == "+=" || sign == "-=" ? sign : std::string_view{};
-                    open = next;
-                }
-            } else if (spec.starts_with("table")) {
-                spec.remove_prefix(5);
-                while (!spec.empty() && spec.front() == ' ') spec.remove_prefix(1);
-                Pairs table;
-                if (spec.starts_with('[')) {
-                    const std::size_t close = spec.find(']');
-                    table = read(spec.substr(1, close == std::string_view::npos ? spec.size() - 1 : close - 1));
-                    spec = close == std::string_view::npos ? std::string_view{} : spec.substr(close + 1);
-                }
-                const std::string_view inside = braced(spec);
-                std::string data(inside);
-                const bool named = !inside.empty() && inside.find_first_of(" \n\\") == std::string_view::npos &&
-                                   !number(inside.substr(0, 1));
-                if (named) {
-                    const std::string* file = context.disk ? context.disk(inside) : nullptr;
-                    if (!file) {
-                        tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                                 std::format("\\addplot: no table file named '{}'", inside));
-                    }
-                    data = file ? *file : std::string{};
-                }
-                // A first row of names is the header.
-                std::vector<std::vector<std::string>> rows = Plots::rows(data, find(table, "col sep") == "comma");
-                // A whole table on one line -- written inline, its line ends
-                // read as blanks -- is its names, as many as stand before
-                // the first number, then rows as wide as they are, or of two
-                // cells with no names.
-                std::vector<std::string> header;
-                if (rows.size() == 1) {
-                    std::vector<std::string>& all = rows.front();
-                    const auto first = std::ranges::find_if(all, [&](const std::string& item) { return number(item).has_value(); });
-                    header.assign(all.begin(), first);
-                    const std::size_t across = header.empty() ? 2 : header.size();
-                    std::vector<std::vector<std::string>> cut;
-                    for (auto at = first; all.end() - at >= static_cast<std::ptrdiff_t>(across);
-                         at += static_cast<std::ptrdiff_t>(across)) {
-                        cut.emplace_back(at, at + static_cast<std::ptrdiff_t>(across));
-                    }
-                    rows = std::move(cut);
-                } else if (!rows.empty() && !number(rows.front().front())) {
-                    header = std::move(rows.front());
-                    rows.erase(rows.begin());
-                }
-                const auto column = [&](const std::string_view axle, const std::size_t fallback) {
-                    if (const auto name = find(table, axle)) {
-                        for (std::size_t index = 0; index < header.size(); ++index) {
-                            if (header[index] == *name) return index;
-                        }
-                    }
-                    if (const auto index = find(table, std::format("{} index", axle))) {
-                        return static_cast<std::size_t>(number(*index).value_or(static_cast<double>(fallback)));
-                    }
-                    return fallback;
-                };
-                const std::size_t xi = column("x", 0), yi = column("y", 1);
-                if (three) {
-                    // In three dimensions, z from its column too, and no
-                    // row read again in two.
-                    const std::size_t zi = column("z", 2);
-                    for (const std::vector<std::string>& row : rows) {
-                        if (xi >= row.size() || yi >= row.size() || zi >= row.size()) continue;
-                        const auto x = number(row[xi]), y = number(row[yi]), z = number(row[zi]);
-                        if (x && y && z) plot.solid.push_back({*x, *y, *z});
-                    }
-                    rows.clear();
-                }
-                // The columns errors are read from: `y error=dy` by name or
-                // `y error index=2`, as much below as above, or `y error
-                // plus` and `y error minus` each its own.
-                const auto errant = [&](const std::string_view key) -> std::optional<std::size_t> {
-                    if (!find(table, key) && !find(table, std::format("{} index", key))) return std::nullopt;
-                    return column(key, std::numeric_limits<std::size_t>::max());
-                };
-                std::array<std::optional<std::size_t>, 4> erring{};
-                for (std::size_t axle = 0; axle < 2; ++axle) {
-                    const std::string letter = axle == 0 ? "x" : "y";
-                    const auto both = errant(letter + " error");
-                    erring[2 * axle] = errant(letter + " error minus").has_value() ? errant(letter + " error minus") : both;
-                    erring[2 * axle + 1] = errant(letter + " error plus").has_value() ? errant(letter + " error plus") : both;
-                }
-                for (const std::vector<std::string>& row : rows) {
-                    if (xi >= row.size() || yi >= row.size()) continue;
-                    const auto x = abscissa(row[xi]);
-                    const auto y = number(row[yi]);
-                    if (!x || !y) continue;
-                    plot.points.emplace_back(*x, *y);
-                    std::array<double, 4> error{gap, gap, gap, gap};
-                    for (std::size_t side = 0; side < 4; ++side) {
-                        if (erring[side] && *erring[side] < row.size()) error[side] = number(row[*erring[side]]).value_or(gap);
-                    }
-                    plot.errors.push_back(error);
-                }
-            } else if (spec.starts_with("fill between")) {
-                // The region between two named plots, worked out when the
-                // axis has them all.
-                spec = trim(spec.substr(12));
-                const std::size_t close = spec.starts_with('[') ? spec.rfind(']') : std::string_view::npos;
-                plot.between = close == std::string_view::npos ? std::string{} : std::string(spec.substr(1, close - 1));
-                if (!find(read(plot.between), "of")) {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                             "\\addplot: fill between needs the plots it lies between, of=f and g");
-                }
-            } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with("file")) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                         "\\addplot: a plot from gnuplot, a shell or a file of points is not drawn here");
-            } else {
-                // A function of x, sampled across its domain; or two, for a
-                // parametric curve, `({cos(x)}, {sin(x)})`.
-                if (spec.starts_with("expression")) spec = trim(spec.substr(10));
-                std::string_view across;
-                std::string_view along = spec;
-                if (spec.starts_with('(')) {
-                    const std::vector<std::string_view> parts = split(spec.substr(1, spec.rfind(')') - 1));
-                    if (parts.size() == 2) {
-                        across = trim(parts[0]);
-                        along = trim(parts[1]);
-                    }
-                } else if (spec.starts_with('{')) {
-                    along = braced(spec);
-                }
-                const std::string_view domain =
-                    find(own, "domain").value_or(find(settings, "domain").value_or("-5:5"));
-                const std::size_t colon = domain.find(':');
-                const double low = number(domain.substr(0, colon)).value_or(-5.0);
-                const double high = colon == std::string_view::npos ? 5.0 : number(domain.substr(colon + 1)).value_or(5.0);
-                const double count = std::clamp(
-                    number(find(own, "samples").value_or(find(settings, "samples").value_or("25"))).value_or(25.0), 2.0,
-                    2000.0);
-                bool any = false;
-                if (three) {
-                    // In three dimensions: z a function of x and y over the
-                    // domain and `y domain`, `samples` by `samples y` points
-                    // a row at a time -- or three functions of them,
-                    // `({cos(x)}, {sin(x)}, {x})`, a curve with `samples y=0`.
-                    std::vector<std::string_view> parts{along};
-                    if (spec.starts_with('(')) parts = split(spec.substr(1, spec.rfind(')') - 1));
-                    for (std::string_view& part : parts) part = trim(part);
-                    const std::string_view upward = find(own, "y domain").value_or(find(own, "domain y").value_or(
-                        find(settings, "y domain").value_or(find(settings, "domain y").value_or(domain))));
-                    const std::size_t mark = upward.find(':');
-                    const double bottom = number(upward.substr(0, mark)).value_or(low);
-                    const double top = mark == std::string_view::npos ? high : number(upward.substr(mark + 1)).value_or(high);
-                    const double rows = std::clamp(
-                        number(find(own, "samples y").value_or(find(settings, "samples y").value_or(""))).value_or(count),
-                        0.0, 2000.0);
-                    const bool curve = rows < 1.0 || (parts.size() == 3 && std::ranges::none_of(parts, [](const std::string_view part) {
-                                           return part.find('y') != std::string_view::npos;
-                                       }));
-                    for (double row = 0.0; row < (curve ? 1.0 : rows); row += 1.0) {
-                        const double y = curve ? gap : bottom + (top - bottom) * row / std::max(rows - 1.0, 1.0);
-                        for (double step = 0.0; step < count; step += 1.0) {
-                            const double x = low + (high - low) * step / (count - 1.0);
-                            std::array<double, 3> spot{x, y, gap};
-                            if (parts.size() == 3) {
-                                for (std::size_t axle = 0; axle < 3; ++axle) {
-                                    spot[axle] = calculate(parts[axle], x, y).value_or(gap);
-                                }
-                            } else {
-                                spot[2] = calculate(parts.front(), x, y).value_or(gap);
-                            }
-                            any = any || std::ranges::all_of(spot, [](const double value) { return std::isfinite(value); });
-                            plot.solid.push_back(spot);
-                        }
-                    }
-                    if (!curve) plot.columns = static_cast<std::size_t>(count);
-                }
-                for (double step = 0.0; step < count && !three; step += 1.0) {
-                    const double x = low + (high - low) * step / (count - 1.0);
-                    const auto y = calculate(along, x);
-                    const auto t = across.empty() ? std::optional<double>(x) : calculate(across, x);
-                    plot.points.emplace_back(t && y ? *t : gap, t && y ? *y : gap);
-                    any = any || (t && y);
-                }
-                if (!any) {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                             std::format("\\addplot: '{}' is not a function this can work out", along));
-                }
-            }
-            // Points in three dimensions are a surface's grid as `mesh/cols`
-            // says, or when the first of them share their y and the rest
-            // come as many at a time: a row while y holds, as pgfplots reads
-            // a grid.
-            if (three && plot.columns == 0) {
-                if (const auto columns = number(find(own, "mesh/cols").value_or(""))) {
-                    plot.columns = static_cast<std::size_t>(std::max(*columns, 0.0));
-                } else if (plot.solid.size() > 2) {
-                    std::size_t first = 1;
-                    while (first < plot.solid.size() && plot.solid[first][1] == plot.solid[0][1]) ++first;
-                    if (first > 1 && first < plot.solid.size() && plot.solid.size() % first == 0) plot.columns = first;
-                }
-            }
-            axis.plots.push_back(std::move(plot));
-        });
+                              std::string_view spec = trim(text);
+                              if (three && spec.starts_with("coordinates")) {
+                                  // Each point in three dimensions, `(x,y,z)`.
+                                  const std::string_view inside = braced(spec);
+                                  for (std::size_t open = inside.find('('); open != std::string_view::npos;
+                                       open = inside.find('(', open + 1)) {
+                                      const std::size_t close = inside.find(')', open);
+                                      if (close == std::string_view::npos) break;
+                                      const std::vector<std::string_view> parts = split(
+                                          inside.substr(open + 1, close - open - 1));
+                                      open = close;
+                                      if (parts.size() != 3) continue;
+                                      const auto x = number(parts[0]), y = number(parts[1]), z = number(parts[2]);
+                                      if (x && y && z) plot.solid.push_back({*x, *y, *z});
+                                  }
+                              } else if (spec.starts_with("coordinates")) {
+                                  // Each point, and after one an error written `+- (dx,dy)`:
+                                  // as much below as above, or `+=` above alone and `-=` below.
+                                  const std::string_view inside = braced(spec);
+                                  std::string_view pending;
+                                  for (std::size_t open = inside.find('('); open != std::string_view::npos;) {
+                                      const std::size_t close = inside.find(')', open);
+                                      if (close == std::string_view::npos) break;
+                                      const std::string_view pair = inside.substr(open + 1, close - open - 1);
+                                      const std::size_t next = inside.find('(', close);
+                                      const std::string_view sign = trim(
+                                          inside.substr(close + 1, std::min(next, inside.size()) - close - 1));
+                                      const std::size_t comma = pair.find(',');
+                                      const auto x = comma == std::string_view::npos
+                                                         ? std::nullopt
+                                                         : pending.empty()
+                                                               ? abscissa(pair.substr(0, comma))
+                                                               : number(pair.substr(0, comma));
+                                      const auto y = comma == std::string_view::npos
+                                                         ? std::nullopt
+                                                         : number(pair.substr(comma + 1));
+                                      if (x && y && pending.empty()) {
+                                          plot.points.emplace_back(*x, *y);
+                                          plot.errors.push_back({gap, gap, gap, gap});
+                                      } else if (x && y && !plot.errors.empty()) {
+                                          std::array<double, 4> &error = plot.errors.back();
+                                          if (pending != "+=") {
+                                              error[0] = *x;
+                                              error[2] = *y;
+                                          }
+                                          if (pending != "-=") {
+                                              error[1] = *x;
+                                              error[3] = *y;
+                                          }
+                                      }
+                                      pending = sign == "+-" || sign == "+=" || sign == "-="
+                                                    ? sign
+                                                    : std::string_view{};
+                                      open = next;
+                                  }
+                              } else if (spec.starts_with("table")) {
+                                  spec.remove_prefix(5);
+                                  while (!spec.empty() && spec.front() == ' ') spec.remove_prefix(1);
+                                  Pairs table;
+                                  if (spec.starts_with('[')) {
+                                      const std::size_t close = spec.find(']');
+                                      table = read(spec.substr(
+                                          1, close == std::string_view::npos ? spec.size() - 1 : close - 1));
+                                      spec = close == std::string_view::npos
+                                                 ? std::string_view{}
+                                                 : spec.substr(close + 1);
+                                  }
+                                  const std::string_view inside = braced(spec);
+                                  std::string data(inside);
+                                  const bool named =
+                                          !inside.empty() && inside.find_first_of(" \n\\") == std::string_view::npos &&
+                                          !number(inside.substr(0, 1));
+                                  if (named) {
+                                      const std::string *file = context.disk ? context.disk(inside) : nullptr;
+                                      if (!file) {
+                                          tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
+                                                                  std::format(
+                                                                      "\\addplot: no table file named '{}'", inside));
+                                      }
+                                      data = file ? *file : std::string{};
+                                  }
+                                  // A first row of names is the header.
+                                  std::vector<std::vector<std::string> > rows = Plots::rows(
+                                      data, find(table, "col sep") == "comma");
+                                  // A whole table on one line -- written inline, its line ends
+                                  // read as blanks -- is its names, as many as stand before
+                                  // the first number, then rows as wide as they are, or of two
+                                  // cells with no names.
+                                  std::vector<std::string> header;
+                                  if (rows.size() == 1) {
+                                      std::vector<std::string> &all = rows.front();
+                                      const auto first = std::ranges::find_if(all, [&](const std::string &item) {
+                                          return number(item).has_value();
+                                      });
+                                      header.assign(all.begin(), first);
+                                      const std::size_t across = header.empty() ? 2 : header.size();
+                                      std::vector<std::vector<std::string> > cut;
+                                      for (auto at = first; all.end() - at >= static_cast<std::ptrdiff_t>(across);
+                                           at += static_cast<std::ptrdiff_t>(across)) {
+                                          cut.emplace_back(at, at + static_cast<std::ptrdiff_t>(across));
+                                      }
+                                      rows = std::move(cut);
+                                  } else if (!rows.empty() && !number(rows.front().front())) {
+                                      header = std::move(rows.front());
+                                      rows.erase(rows.begin());
+                                  }
+                                  const auto column = [&](const std::string_view axle, const std::size_t fallback) {
+                                      if (const auto name = find(table, axle)) {
+                                          for (std::size_t index = 0; index < header.size(); ++index) {
+                                              if (header[index] == *name) return index;
+                                          }
+                                      }
+                                      if (const auto index = find(table, std::format("{} index", axle))) {
+                                          return static_cast<std::size_t>(number(*index).value_or(
+                                              static_cast<double>(fallback)));
+                                      }
+                                      return fallback;
+                                  };
+                                  const std::size_t xi = column("x", 0), yi = column("y", 1);
+                                  if (three) {
+                                      // In three dimensions, z from its column too, and no
+                                      // row read again in two.
+                                      const std::size_t zi = column("z", 2);
+                                      for (const std::vector<std::string> &row: rows) {
+                                          if (xi >= row.size() || yi >= row.size() || zi >= row.size()) continue;
+                                          const auto x = number(row[xi]), y = number(row[yi]), z = number(row[zi]);
+                                          if (x && y && z) plot.solid.push_back({*x, *y, *z});
+                                      }
+                                      rows.clear();
+                                  }
+                                  // The columns errors are read from: `y error=dy` by name or
+                                  // `y error index=2`, as much below as above, or `y error
+                                  // plus` and `y error minus` each its own.
+                                  const auto errant = [&](const std::string_view key) -> std::optional<std::size_t> {
+                                      if (!find(table, key) && !find(table, std::format("{} index", key))) return
+                                              std::nullopt;
+                                      return column(key, std::numeric_limits<std::size_t>::max());
+                                  };
+                                  std::array<std::optional<std::size_t>, 4> erring{};
+                                  for (std::size_t axle = 0; axle < 2; ++axle) {
+                                      const std::string letter = axle == 0 ? "x" : "y";
+                                      const auto both = errant(letter + " error");
+                                      erring[2 * axle] = errant(letter + " error minus").has_value()
+                                                             ? errant(letter + " error minus")
+                                                             : both;
+                                      erring[2 * axle + 1] = errant(letter + " error plus").has_value()
+                                                                 ? errant(letter + " error plus")
+                                                                 : both;
+                                  }
+                                  for (const std::vector<std::string> &row: rows) {
+                                      if (xi >= row.size() || yi >= row.size()) continue;
+                                      const auto x = abscissa(row[xi]);
+                                      const auto y = number(row[yi]);
+                                      if (!x || !y) continue;
+                                      plot.points.emplace_back(*x, *y);
+                                      std::array<double, 4> error{gap, gap, gap, gap};
+                                      for (std::size_t side = 0; side < 4; ++side) {
+                                          if (erring[side] && *erring[side] < row.size())
+                                              error[side] = number(row[*erring[side]]).value_or(gap);
+                                      }
+                                      plot.errors.push_back(error);
+                                  }
+                              } else if (spec.starts_with("fill between")) {
+                                  // The region between two named plots, worked out when the
+                                  // axis has them all.
+                                  spec = trim(spec.substr(12));
+                                  const std::size_t close = spec.starts_with('[')
+                                                                ? spec.rfind(']')
+                                                                : std::string_view::npos;
+                                  plot.between = close == std::string_view::npos
+                                                     ? std::string{}
+                                                     : std::string(spec.substr(1, close - 1));
+                                  if (!find(read(plot.between), "of")) {
+                                      tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                                              "\\addplot: fill between needs the plots it lies between, of=f and g");
+                                  }
+                              } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with(
+                                             "file")) {
+                                  tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
+                                                          "\\addplot: a plot from gnuplot, a shell or a file of points is not drawn here");
+                              } else {
+                                  // A function of x, sampled across its domain; or two, for a
+                                  // parametric curve, `({cos(x)}, {sin(x)})`.
+                                  if (spec.starts_with("expression")) spec = trim(spec.substr(10));
+                                  std::string_view across;
+                                  std::string_view along = spec;
+                                  if (spec.starts_with('(')) {
+                                      const std::vector<std::string_view> parts = split(
+                                          spec.substr(1, spec.rfind(')') - 1));
+                                      if (parts.size() == 2) {
+                                          across = trim(parts[0]);
+                                          along = trim(parts[1]);
+                                      }
+                                  } else if (spec.starts_with('{')) {
+                                      along = braced(spec);
+                                  }
+                                  const std::string_view domain =
+                                          find(own, "domain").value_or(find(settings, "domain").value_or("-5:5"));
+                                  const std::size_t colon = domain.find(':');
+                                  const double low = number(domain.substr(0, colon)).value_or(-5.0);
+                                  const double high = colon == std::string_view::npos
+                                                          ? 5.0
+                                                          : number(domain.substr(colon + 1)).value_or(5.0);
+                                  const double count = std::clamp(
+                                      number(find(own, "samples").value_or(find(settings, "samples").value_or("25"))).
+                                      value_or(25.0), 2.0,
+                                      2000.0);
+                                  bool any = false;
+                                  if (three) {
+                                      // In three dimensions: z a function of x and y over the
+                                      // domain and `y domain`, `samples` by `samples y` points
+                                      // a row at a time -- or three functions of them,
+                                      // `({cos(x)}, {sin(x)}, {x})`, a curve with `samples y=0`.
+                                      std::vector<std::string_view> parts{along};
+                                      if (spec.starts_with('(')) parts = split(spec.substr(1, spec.rfind(')') - 1));
+                                      for (std::string_view &part: parts) part = trim(part);
+                                      const std::string_view upward = find(own, "y domain").value_or(
+                                          find(own, "domain y").value_or(
+                                              find(settings, "y domain").value_or(
+                                                  find(settings, "domain y").value_or(domain))));
+                                      const std::size_t mark = upward.find(':');
+                                      const double bottom = number(upward.substr(0, mark)).value_or(low);
+                                      const double top = mark == std::string_view::npos
+                                                             ? high
+                                                             : number(upward.substr(mark + 1)).value_or(high);
+                                      const double rows = std::clamp(
+                                          number(find(own, "samples y").value_or(
+                                              find(settings, "samples y").value_or(""))).value_or(count),
+                                          0.0, 2000.0);
+                                      const bool curve = rows < 1.0 || (parts.size() == 3 && std::ranges::none_of(
+                                                                            parts, [](const std::string_view part) {
+                                                                                return part.find('y') !=
+                                                                                    std::string_view::npos;
+                                                                            }));
+                                      for (double row = 0.0; row < (curve ? 1.0 : rows); row += 1.0) {
+                                          const double y = curve
+                                                               ? gap
+                                                               : bottom + (top - bottom) * row / std::max(
+                                                                     rows - 1.0, 1.0);
+                                          for (double step = 0.0; step < count; step += 1.0) {
+                                              const double x = low + (high - low) * step / (count - 1.0);
+                                              std::array<double, 3> spot{x, y, gap};
+                                              if (parts.size() == 3) {
+                                                  for (std::size_t axle = 0; axle < 3; ++axle) {
+                                                      spot[axle] = calculate(parts[axle], x, y).value_or(gap);
+                                                  }
+                                              } else {
+                                                  spot[2] = calculate(parts.front(), x, y).value_or(gap);
+                                              }
+                                              any = any || std::ranges::all_of(spot, [](const double value) {
+                                                  return std::isfinite(value);
+                                              });
+                                              plot.solid.push_back(spot);
+                                          }
+                                      }
+                                      if (!curve) plot.columns = static_cast<std::size_t>(count);
+                                  }
+                                  for (double step = 0.0; step < count && !three; step += 1.0) {
+                                      const double x = low + (high - low) * step / (count - 1.0);
+                                      const auto y = calculate(along, x);
+                                      const auto t = across.empty() ? std::optional<double>(x) : calculate(across, x);
+                                      plot.points.emplace_back(t && y ? *t : gap, t && y ? *y : gap);
+                                      any = any || (t && y);
+                                  }
+                                  if (!any) {
+                                      tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                                              std::format(
+                                                                  "\\addplot: '{}' is not a function this can work out",
+                                                                  along));
+                                  }
+                              }
+                              // Points in three dimensions are a surface's grid as `mesh/cols`
+                              // says, or when the first of them share their y and the rest
+                              // come as many at a time: a row while y holds, as pgfplots reads
+                              // a grid.
+                              if (three && plot.columns == 0) {
+                                  if (const auto columns = number(find(own, "mesh/cols").value_or(""))) {
+                                      plot.columns = static_cast<std::size_t>(std::max(*columns, 0.0));
+                                  } else if (plot.solid.size() > 2) {
+                                      std::size_t first = 1;
+                                      while (first < plot.solid.size() && plot.solid[first][1] == plot.solid[0][1]) ++
+                                              first;
+                                      if (first > 1 && first < plot.solid.size() && plot.solid.size() % first == 0)
+                                          plot.columns = first;
+                                  }
+                              }
+                              axis.plots.push_back(std::move(plot));
+                          });
 
         // A plot's entry in the legend, and every entry at once.
         // pgfplotstable's \\pgfplotstabletypeset[options]{table or file}: the
         // table set as a tabular, its names -- a first row holding any word
         // -- as its head, each cell as written.
-        parser.mouth.bind("\\pgfplotstabletypeset", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\pgfplotstabletypeset", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
-            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
             }
             std::string data;
-            for (const syntax::Token& token : mouth.argument({}, 0)) data += token.text;
+            for (const syntax::Token &token: mouth.argument({}, 0)) data += token.text;
             if (!data.empty() && data.find_first_of(" \n\\") == std::string::npos) {
-                if (const std::string* file = context.disk ? context.disk(data) : nullptr) {
+                if (const std::string *file = context.disk ? context.disk(data) : nullptr) {
                     data = *file;
                 } else if (context.files && context.files->contains(data)) {
                     data = context.files->at(data);
                 } else {
                     tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                             std::format("\\pgfplotstabletypeset: no table file named '{}'", data));
+                                            std::format("\\pgfplotstabletypeset: no table file named '{}'", data));
                     return;
                 }
             }
-            const std::vector<std::vector<std::string>> table = rows(data, options.contains("col sep=comma"));
+            const std::vector<std::vector<std::string> > table = rows(data, options.contains("col sep=comma"));
             std::size_t across = 0;
-            for (const std::vector<std::string>& row : table) across = std::max(across, row.size());
+            for (const std::vector<std::string> &row: table) across = std::max(across, row.size());
             if (across == 0) return;
             std::string written = "\\begin{tabular}{" + std::string(across, 'c') + "}";
             for (std::size_t index = 0; index < table.size(); ++index) {
@@ -1557,7 +1729,7 @@ namespace render::primitives {
                     written += (cell == 0 ? "" : " & ") + table[index][cell];
                 }
                 written += "\\\\";
-                const bool named = index == 0 && std::ranges::any_of(table[index], [](const std::string& item) {
+                const bool named = index == 0 && std::ranges::any_of(table[index], [](const std::string &item) {
                     double value = 0.0;
                     const auto [end, fault] = patch::decimal(item.data(), item.data() + item.size(), value);
                     return fault != std::errc{} || end != item.data() + item.size();
@@ -1568,23 +1740,23 @@ namespace render::primitives {
             mouth.ingest(mouth.arena.copy(written), memory::Location{});
         });
 
-        parser.mouth.bind("\\addlegendentry", [this, spelled](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\addlegendentry", [this, spelled](syntax::Mouth &mouth) {
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             const std::string entry = spelled(mouth.argument({}, 0));
             if (!axes.empty()) axes.back().legends.push_back(entry);
         });
-        parser.mouth.bind("\\legend", [this, trim, split, spelled](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\legend", [this, trim, split, spelled](syntax::Mouth &mouth) {
             const std::string entries = spelled(mouth.argument({}, 0));
             if (axes.empty()) return;
             axes.back().legends.clear();
-            for (const std::string_view entry : split(entries)) axes.back().legends.emplace_back(trim(entry));
+            for (const std::string_view entry: split(entries)) axes.back().legends.emplace_back(trim(entry));
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound plot primitives");
     }
 
-    std::vector<std::vector<std::string>> Plots::rows(const std::string_view data, const bool commas) {
-        std::vector<std::vector<std::string>> table;
+    std::vector<std::vector<std::string> > Plots::rows(const std::string_view data, const bool commas) {
+        std::vector<std::vector<std::string> > table;
         std::vector<std::string> cells;
         std::string cell;
         const auto stash = [&] {
@@ -1612,5 +1784,4 @@ namespace render::primitives {
         commit();
         return table;
     }
-
 }

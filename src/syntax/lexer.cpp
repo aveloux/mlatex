@@ -15,8 +15,7 @@
 #include <utility>
 
 namespace syntax {
-
-    Lexer::Lexer(const std::string_view source, Catcodes& codes, Lexicon& lexicon)
+    Lexer::Lexer(const std::string_view source, Catcodes &codes, Lexicon &lexicon)
         : sources(source), table(codes), lexicon(lexicon) {
         Logger::log(Logger::Type::Lexer, Logger::Level::Informative,
                     "Lexer bound to {} byte buffer", source.size());
@@ -30,7 +29,7 @@ namespace syntax {
         // Read through a plain pointer: this loop runs once per character of
         // every buffer the engine lexes, and a checked accessor per character
         // costs more than the character does.
-        const char* const text = sources.data();
+        const char *const text = sources.data();
         const std::size_t size = sources.size();
 
         // The text of a \verb, read along with the command itself.
@@ -46,7 +45,9 @@ namespace syntax {
                 while (first < body.size() && (body[first] == ' ' || body[first] == '\t')) ++first;
                 if (first < body.size() && ending(body[first])) {
                     body.remove_prefix(first + (body[first] == '\r' && first + 1 < body.size() &&
-                                                body[first + 1] == '\n' ? 2 : 1));
+                                                body[first + 1] == '\n'
+                                                    ? 2
+                                                    : 1));
                 }
                 const std::size_t last = body.find_last_not_of(" \t");
                 body = last == std::string_view::npos ? std::string_view{} : body.substr(0, last + 1);
@@ -124,8 +125,8 @@ namespace syntax {
 
             if (category == Catcodes::Category::Invalid) {
                 tracebacks.emplace_back(Traceback::Type::Token, position,
-                                    std::format("Illegal byte 0x{:02X} in input",
-                                                static_cast<unsigned>(static_cast<unsigned char>(symbol))));
+                                        std::format("Illegal byte 0x{:02X} in input",
+                                                    static_cast<unsigned>(static_cast<unsigned char>(symbol))));
                 Logger::log(Logger::Type::Lexer, Logger::Level::Warning,
                             "Illegal byte 0x{:02X} at {}:{} discarded",
                             static_cast<unsigned>(static_cast<unsigned char>(symbol)),
@@ -219,9 +220,11 @@ namespace syntax {
                         std::size_t last = at + 1;
                         while (last < size && text[last] != close && !ending(text[last])) ++last;
                         if (last < size && text[last] == close) {
-                            held = Token{none, Catcodes::Category::Other,
-                                         {location.line, location.column + static_cast<std::uint32_t>(at + 1 - offset)},
-                                         std::string_view(text + at + 1, last - at - 1)};
+                            held = Token{
+                                none, Catcodes::Category::Other,
+                                {location.line, location.column + static_cast<std::uint32_t>(at + 1 - offset)},
+                                std::string_view(text + at + 1, last - at - 1)
+                            };
                             location.column += static_cast<std::uint32_t>(last + 1 - offset);
                             offset = last + 1;
                             type = Type::Middle;
@@ -245,7 +248,7 @@ namespace syntax {
                         "{filecontents*}", "{CCSXML}", "{luacode}", "{luacode*}",
                     };
                     const std::string_view rest = sources.substr(offset);
-                    for (const std::string_view name : blocks) {
+                    for (const std::string_view name: blocks) {
                         if (!rest.starts_with(name)) continue;
                         std::size_t begin = offset + name.size();
                         if (begin < size && text[begin] == '[') {
@@ -287,5 +290,4 @@ namespace syntax {
 
         return {};
     }
-
 }

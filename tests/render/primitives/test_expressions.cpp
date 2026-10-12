@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -59,8 +59,8 @@ int main() {
     }
     {
         const Result result = article("", "\\[ \\sum_{i=1}^{n} i = \\frac{n(n+1)}{2} \\]"
-                                          "\\begin{equation} E = mc^2 \\label{e}\\end{equation}"
-                                          "\\begin{equation*} a \\end{equation*} See (\\ref{e}).");
+                                      "\\begin{equation} E = mc^2 \\label{e}\\end{equation}"
+                                      "\\begin{equation*} a \\end{equation*} See (\\ref{e}).");
         assert((result.clean && holds(result.text, "E=mc2(1)") && holds(result.text, "See(1).")) &&
                "displayed formulas, a numbered one referred to");
     }
@@ -69,13 +69,13 @@ int main() {
                                       "\\begin{align} a &= b \\\\ c &= d \\notag \\\\ e &= f \\end{align}"
                                       "\\begin{get*} g \\end{get*}");
         assert((result.clean && holds(result.text, "a=b(1)") && holds(result.text, "e=f(2)") &&
-               !holds(result.text, "(3)")) && "an align numbers each row, but one marked \\notag");
+                !holds(result.text, "(3)")) && "an align numbers each row, but one marked \\notag");
     }
     {
         const Result result = article("", "\\[ \\left( \\frac{a}{b} \\right) \\left[ x \\right] \\left\\{ y \\right\\} "
-                                          "\\pmatrix{a & b \\\\ c & d} \\cases{a & b \\\\ c & d} \\]"
-                                          "$\\hat{a} \\bar{b} \\vec{c} \\overline{fg} \\mathbb{R} \\mathcal{C} "
-                                          "\\alpha \\le \\infty$");
+                                      "\\pmatrix{a & b \\\\ c & d} \\cases{a & b \\\\ c & d} \\]"
+                                      "$\\hat{a} \\bar{b} \\vec{c} \\overline{fg} \\mathbb{R} \\mathcal{C} "
+                                      "\\alpha \\le \\infty$");
         assert((result.clean && holds(result.text, "(ab)[x]{y}")) && "fences of every kind, a fraction inside one");
         assert((holds(result.text, "(abcd){abcd")) && "a matrix in its parentheses, and cases behind a brace");
         assert((holds(result.text, "fgRC\xCE\xB1\xE2\x89\xA4\xE2\x88\x9E")) &&

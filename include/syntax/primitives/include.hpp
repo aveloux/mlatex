@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Pulls in another file of the language, and whole packages of
     ///        them: `\\include`, `\\input`, `\\usepackage`, `\\requirepackage`,
     ///        `\\ifpackageloaded`, `\\providepackage`.
@@ -67,13 +66,13 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Include(Lexicon& lexicon) noexcept;
+        explicit Include(Lexicon &lexicon) noexcept;
 
         /// @brief Installs every file and package primitive.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services: the variables a package's options
         ///                become, and the files handed in from memory.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Has a package been loaded -- or begun loading -- already?
         /// @param name The package, as `\\usepackage` names it.
@@ -81,7 +80,7 @@ namespace syntax::primitives {
         [[nodiscard]] bool loaded(std::string_view name) const;
 
         /// @brief Errors this module has recorded: a name found nowhere embedded.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
@@ -99,14 +98,14 @@ namespace syntax::primitives {
         /// @param key    The file's path below `src/modules`.
         /// @param text   The file's contents.
         /// @complexity O(n) in the file's length, to lex it.
-        void read(Mouth& mouth, std::string_view key, std::string_view text) const;
+        void read(Mouth &mouth, std::string_view key, std::string_view text) const;
 
         /// @brief Loads a package by name, unless it was loaded already.
         /// @param mouth   Expander to read into.
         /// @param context Engine services, for the files handed in.
         /// @param name    The package, as `\\usepackage` names it.
         /// @param origin  Where it was asked for, for a report.
-        void load(Mouth& mouth, const Context& context, std::string_view name, memory::Location origin) const;
+        void load(Mouth &mouth, const Context &context, std::string_view name, memory::Location origin) const;
 
         /// @brief Finds a file by the key it is stored under.
         ///
@@ -119,21 +118,20 @@ namespace syntax::primitives {
         /// @param key     Path below the modules directory, as `core/main.mtex`.
         /// @return The file's text, or nothing when neither has it.
         /// @complexity O(log n) in the files handed in, then O(1).
-        [[nodiscard]] static std::optional<std::string_view> get(const Context& context, std::string_view key);
+        [[nodiscard]] static std::optional<std::string_view> get(const Context &context, std::string_view key);
 
         /// @brief The names in a comma-separated list, trimmed, empty ones left out.
         /// @param list As `amsmath, amssymb`.
         /// @complexity O(n) in the list's length.
         [[nodiscard]] static std::vector<std::string> split(std::string_view list);
 
-        Symbol leave{};   ///< The marker that ends a file's folder; see read().
+        Symbol leave{}; ///< The marker that ends a file's folder; see read().
 
         /// The folder of each file being read, innermost last; empty for the
         /// top of `src/modules`.
         mutable std::vector<std::string> folders{};
 
-        mutable memory::Names packages{};   ///< Every package loaded so far.
-        mutable std::vector<Traceback> tracebacks{};         ///< Errors this module found.
+        mutable memory::Names packages{}; ///< Every package loaded so far.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

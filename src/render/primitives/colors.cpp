@@ -20,7 +20,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Text without the spaces around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
         while (!text.empty() && text.front() == ' ') text.remove_prefix(1);
@@ -28,22 +27,22 @@ namespace render::primitives {
         return text;
     }
 
-    Colors::Colors(syntax::Lexicon& lexicon) noexcept {
+    Colors::Colors(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\textcolor");
         lexicon.intern("\\definecolor");
         lexicon.intern("\\colorlet");
     }
 
-    std::string Colors::write(const graphics::Color& color) {
+    std::string Colors::write(const graphics::Color &color) {
         return std::format("rgba({},{},{},{})", color.r * 255.0f, color.g * 255.0f, color.b * 255.0f, color.alpha);
     }
 
-    graphics::Color Colors::resolve(const std::string_view text, const syntax::primitives::Variables& variables) {
+    graphics::Color Colors::resolve(const std::string_view text, const syntax::primitives::Variables &variables) {
         // One name: the document's own first, so it may give `red` a red of
         // its own, then whatever the parser reads.
         const auto named = [&variables](const std::string_view name) {
             const std::string_view bare = trim(name);
-            if (const std::string* defined = variables.get("color." + std::string(bare))) {
+            if (const std::string *defined = variables.get("color." + std::string(bare))) {
                 return graphics::Color::parse(*defined);
             }
             return graphics::Color::parse(bare);
@@ -52,7 +51,7 @@ namespace render::primitives {
         // xcolor's mixtures, read left to right: `a!p!b` is p percent of a
         // on b, and a missing b is white. Each result is the next one's a.
         std::vector<std::string_view> parts;
-        for (const auto part : std::views::split(text, '!')) parts.emplace_back(part.begin(), part.end());
+        for (const auto part: std::views::split(text, '!')) parts.emplace_back(part.begin(), part.end());
         if (parts.empty()) return graphics::Color::parse(text);
 
         graphics::Color color = named(parts[0]);
@@ -64,10 +63,13 @@ namespace render::primitives {
             }
             const float part = std::clamp(share / 100.0f, 0.0f, 1.0f);
 
-            const graphics::Color other = index + 1 < parts.size() ? named(parts[index + 1])
-                                                                  : graphics::Color{1.0f, 1.0f, 1.0f, 1.0f};
-            color = {color.r * part + other.r * (1.0f - part), color.g * part + other.g * (1.0f - part),
-                     color.b * part + other.b * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)};
+            const graphics::Color other = index + 1 < parts.size()
+                                              ? named(parts[index + 1])
+                                              : graphics::Color{1.0f, 1.0f, 1.0f, 1.0f};
+            color = {
+                color.r * part + other.r * (1.0f - part), color.g * part + other.g * (1.0f - part),
+                color.b * part + other.b * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)
+            };
         }
         return color;
     }
@@ -84,9 +86,9 @@ namespace render::primitives {
             return "#" + std::string(value);
         }
 
-        std::array<float, 4> numbers{};
+        std::array < float, 4 > numbers{};
         std::size_t count = 0;
-        for (const auto piece : std::views::split(value, ',')) {
+        for (const auto piece: std::views::split(value, ',')) {
             if (count == numbers.size()) return std::nullopt;
             const std::string_view number = trim(std::string_view(piece.begin(), piece.end()));
             const auto [stop, failure] = patch::decimal(number.data(), number.data() + number.size(), numbers[count]);
@@ -112,14 +114,14 @@ namespace render::primitives {
         return std::nullopt;
     }
 
-    void Colors::operator()(syntax::Parser& parser, Context& context) const {
+    void Colors::operator()(syntax::Parser &parser, Context &context) const {
         // Neither makes anything to set, so both are the expander's: they
         // run where they are read and leave only the variable behind. xcolor
         // lets a list of target models stand first in brackets; there is
         // only the one target here, so it is read and set aside.
-        parser.mouth.bind("\\definecolor", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\definecolor", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
-            (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+            (void) mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
             const std::string name = syntax::Argument::text(mouth);
             const std::string model = syntax::Argument::text(mouth);
@@ -127,7 +129,7 @@ namespace render::primitives {
 
             if (trim(name).empty()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                         "\\definecolor needs a name for the color");
+                                        "\\definecolor needs a name for the color");
                 return;
             }
             const std::optional<std::string> color = convert(model, value);
@@ -140,15 +142,15 @@ namespace render::primitives {
             context.variables.define("color." + std::string(trim(name)), *color);
         });
 
-        parser.mouth.bind("\\colorlet", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\colorlet", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
-            (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+            (void) mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
             const std::string name = syntax::Argument::text(mouth);
             const std::string value = syntax::Argument::expanded(mouth);
             if (trim(name).empty()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                         "\\colorlet needs a name for the color");
+                                        "\\colorlet needs a name for the color");
                 return;
             }
 
@@ -161,39 +163,40 @@ namespace render::primitives {
         // its own, as \definecolor would read it, or a name or a mixture as
         // written -- kept in the arena, since the text it colors is set long
         // after it is read.
-        const auto tint = [&context](syntax::Mouth& mouth) {
+        const auto tint = [&context](syntax::Mouth &mouth) {
             std::string model;
-            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 model += token.text;
             }
             const std::string written = syntax::Argument::text(mouth);
             const std::optional<std::string> converted = model.empty() ? std::nullopt : convert(model, written);
-            const graphics::Color color = converted ? graphics::Color::parse(*converted)
-                                                    : resolve(written, context.variables);
-            auto* kept = context.arena.compose<layout::Node::Color>();
+            const graphics::Color color = converted
+                                              ? graphics::Color::parse(*converted)
+                                              : resolve(written, context.variables);
+            auto *kept = context.arena.compose<layout::Node::Color>();
             *kept = {color.r, color.g, color.b, color.alpha};
             return kept;
         };
 
         // \color: the text from here to the end of the group or block it is
         // written in, in a color -- which the text keeps as it is read.
-        parser.bind("\\color", [&context, tint](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\color", [&context, tint](syntax::Parser &parser) -> syntax::Node * {
             context.selection.color(tint(parser.mouth));
             return nullptr;
         });
-        parser.bind("\\normalcolor", [&context](syntax::Parser&) -> syntax::Node* {
+        parser.bind("\\normalcolor", [&context](syntax::Parser &) -> syntax::Node * {
             context.selection.color(nullptr);
             return nullptr;
         });
 
         // \textcolor{red}{...}: the same, around one group, which a line may
         // still break inside as it would anywhere else.
-        parser.bind("\\textcolor", [this, &context, tint](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\textcolor", [this, &context, tint](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
-            const layout::Node::Color* color = tint(mouth);
+            const layout::Node::Color *color = tint(mouth);
             syntax::Token open = mouth.read();
             while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
@@ -205,19 +208,18 @@ namespace render::primitives {
             const Selection kept = context.selection;
             context.selection.color(color);
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node*> content = parser.parse('}');
+            const memory::Slice<syntax::Node *> content = parser.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
             context.selection = kept;
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, content);
         });
 
         // \pagecolor: what every page is painted in behind its text.
-        parser.bind("\\pagecolor", [&context, tint](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\pagecolor", [&context, tint](syntax::Parser &parser) -> syntax::Node * {
             context.document.furniture.background = *tint(parser.mouth);
             return nullptr;
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound color primitives");
     }
-
 }

@@ -4,7 +4,6 @@
 #include "syntax/parser.hpp"
 
 namespace render::primitives {
-
     /// @brief Rules: solid rectangles of ink.
     ///
     /// A rule is the only mark the engine makes that is not a glyph. It is how
@@ -26,12 +25,11 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Rules(syntax::Lexicon& lexicon) noexcept;
+        explicit Rules(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the rule primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; dimensions scan against its registers.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
     };
-
 }

@@ -12,7 +12,6 @@
 /// `\httppost` all reach the same two functions, so a change to how a
 /// request is built is made once.
 namespace protocols {
-
     /// @brief One HTTP response: a status code and a body.
     struct Response {
         int status{0};
@@ -56,9 +55,8 @@ namespace protocols {
     /// @param source Where to read from.
     /// @param base   A directory to resolve a relative path against.
     /// @return The bytes, or nullopt when neither reading nor a request worked.
-    [[nodiscard]] std::optional<std::vector<std::uint8_t>> get(
+    [[nodiscard]] std::optional<std::vector<std::uint8_t> > get(
         std::string_view source,
         std::string_view base = {}
     );
-
 }

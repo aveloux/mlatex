@@ -8,7 +8,7 @@
 #include <string_view>
 
 #if !defined(_WIN32)
-    #include <sys/wait.h>
+#include <sys/wait.h>
 #endif
 
 // The command line: the executable run as a person runs it -- a document in,
@@ -18,8 +18,9 @@
 // the built executable's path, which the build hands this test.
 
 /// Runs the executable on a document with some options; its exit status.
-static int run(const std::filesystem::path& document, const std::string_view options) {
-    std::string command = "\"" BINARY "\" \"" + document.string() + "\" " + std::string(options);
+static int run(const std::filesystem::path &document, const std::string_view options) {
+    std::string command = "\"" BINARY
+    "\" \"" + document.string() + "\" " + std::string(options);
 #if defined(_WIN32)
     // cmd.exe drops the first and last quote of a command that starts with one.
     command = "\"" + command + " > NUL 2>&1\"";
@@ -35,7 +36,7 @@ static int run(const std::filesystem::path& document, const std::string_view opt
 }
 
 /// Writes a file where the executable can read it.
-static std::filesystem::path write(const std::filesystem::path& path, const std::string_view text) {
+static std::filesystem::path write(const std::filesystem::path &path, const std::string_view text) {
     std::filesystem::create_directories(path.parent_path());
     std::ofstream(path, std::ios::binary) << text;
     return path;
@@ -44,7 +45,7 @@ static std::filesystem::path write(const std::filesystem::path& path, const std:
 int main() {
     const std::filesystem::path temporary = std::filesystem::temp_directory_path();
     const std::filesystem::path document =
-        write(temporary / "main-plain.mtex", "\\documentclass{article}\\begin{document}Hello.\\end{document}");
+            write(temporary / "main-plain.mtex", "\\documentclass{article}\\begin{document}Hello.\\end{document}");
     std::filesystem::path pdf = document;
     pdf.replace_extension(".pdf");
     std::filesystem::remove(pdf);
@@ -54,7 +55,8 @@ int main() {
     assert((run(temporary / "no-such-document.mtex", "") == 1) && "a document that is not there fails the run");
 
     const std::filesystem::path broken =
-        write(temporary / "main-broken.mtex", "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
+            write(temporary / "main-broken.mtex",
+                  "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
     assert((run(broken, "") == 1) && "a document with a mistake fails the run");
 
     // TeX's options, with one dash or two, and the engine's own.
@@ -82,7 +84,9 @@ int main() {
     std::filesystem::remove(pdf);
     assert((run(document, "--target=aot -q") == 0 && std::filesystem::exists(pdf)) && "--target=aot makes the PDF");
     std::filesystem::remove(pdf);
-    assert((run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) && "--target=jit is taken, and does nothing yet");
+    assert(
+        (run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) &&
+        "--target=jit is taken, and does nothing yet");
     assert((run(document, "--target=wasm") == 0 && !std::filesystem::exists(pdf)) &&
            "--target=wasm is taken, and does nothing yet");
     assert((run(document, "--target=fortran") == 2) && "a target there is none of");
@@ -100,7 +104,8 @@ int main() {
     const std::filesystem::path folder = temporary / "main-output";
     std::filesystem::remove_all(folder);
     assert((run(document, "-q --output-directory=\"" + folder.string() + "\" -jobname=final") == 0 &&
-            std::filesystem::exists(folder / "final.pdf")) && "--output-directory and --jobname place and name the PDF");
+            std::filesystem::exists(folder / "final.pdf")) &&
+           "--output-directory and --jobname place and name the PDF");
     assert((run(document, "-q -o \"" + folder.string() + "\" --job-name=again") == 0 &&
             std::filesystem::exists(folder / "again.pdf")) && "-o and --job-name the same");
 
@@ -108,7 +113,8 @@ int main() {
     bare.replace_extension();
     assert((run(bare, "-q") == 0) && "a document named without its extension is found as .mtex");
     const std::filesystem::path entries =
-        write(temporary / "main-entries.bib", "@misc{one, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n");
+            write(temporary / "main-entries.bib",
+                  "@misc{one, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n");
     std::filesystem::path listed = entries;
     std::filesystem::remove(listed.replace_extension(".pdf"));
     assert((run(temporary / "main-entries", "-q") == 0 && std::filesystem::exists(listed)) &&

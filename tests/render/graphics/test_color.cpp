@@ -9,7 +9,7 @@
 namespace graphics = render::graphics;
 
 /// @brief Two colors the same to within a rounding.
-static bool same(const graphics::Color& one, const graphics::Color& other) {
+static bool same(const graphics::Color &one, const graphics::Color &other) {
     return std::abs(one.r - other.r) < 0.01f && std::abs(one.g - other.g) < 0.01f &&
            std::abs(one.b - other.b) < 0.01f && std::abs(one.alpha - other.alpha) < 0.01f;
 }

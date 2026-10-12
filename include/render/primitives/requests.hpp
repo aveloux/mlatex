@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief HTTP requests, read straight into the document: `\\httpget`,
     ///        `\\httppost`.
     ///
@@ -31,24 +30,23 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Requests(syntax::Lexicon& lexicon) noexcept;
+        explicit Requests(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the request primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services: whether the run is offline.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

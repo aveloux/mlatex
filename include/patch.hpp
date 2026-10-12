@@ -21,14 +21,13 @@
 /// a host embedding the engine that calls std::setlocale itself is the one
 /// case this would read differently.
 namespace patch {
-
     /// @brief Reads a float the way std::from_chars would.
     /// @param first Start of the text.
     /// @param last  End of the text; nothing at or past it is read.
     /// @param value Receives the value on success; left unchanged otherwise.
     /// @return Where the number ended, and std::errc{} -- or @p first again
     ///         and std::errc::invalid_argument when no number was there at all.
-    std::from_chars_result decimal(const char* first, const char* last, float& value) noexcept;
+    std::from_chars_result decimal(const char *first, const char *last, float &value) noexcept;
 
     /// @brief Reads a double the way std::from_chars would.
     /// @param first Start of the text.
@@ -36,6 +35,5 @@ namespace patch {
     /// @param value Receives the value on success; left unchanged otherwise.
     /// @return Where the number ended, and std::errc{} -- or @p first again
     ///         and std::errc::invalid_argument when no number was there at all.
-    std::from_chars_result decimal(const char* first, const char* last, double& value) noexcept;
-
+    std::from_chars_result decimal(const char *first, const char *last, double &value) noexcept;
 }

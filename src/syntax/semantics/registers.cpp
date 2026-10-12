@@ -3,13 +3,12 @@
 #include "syntax/semantics/registers.hpp"
 
 namespace syntax::semantics {
-
     void Registers::pop() {
         if (marks.empty()) return;
         for (std::size_t index = records.size(); index > marks.back(); --index) {
-            const Record& record = records[index - 1];
+            const Record &record = records[index - 1];
             const auto bank = static_cast<std::size_t>(record.type);
-            if (levels[bank][record.slot] == 0) continue;   // made global since
+            if (levels[bank][record.slot] == 0) continue; // made global since
             levels[bank][record.slot] = record.level;
             values[bank][record.slot] = record.value;
         }
@@ -22,7 +21,8 @@ namespace syntax::semantics {
         const auto bank = static_cast<std::size_t>(type);
         if (global) {
             levels[bank][slot] = 0;
-        } else if (const auto depth = static_cast<std::uint32_t>(marks.size()); depth != 0 && levels[bank][slot] != depth) {
+        } else if (const auto depth = static_cast<std::uint32_t>(marks.size());
+            depth != 0 && levels[bank][slot] != depth) {
             records.push_back(Record{type, static_cast<std::uint8_t>(slot), values[bank][slot], levels[bank][slot]});
             levels[bank][slot] = depth;
         }
@@ -33,8 +33,9 @@ namespace syntax::semantics {
                          const bool character) {
         if (slot && *slot >= slots) return;
         if (symbol >= names.size()) names.resize(symbol + 1);
-        names[symbol] = slot ? Name{type, static_cast<std::uint8_t>(*slot), static_cast<std::uint8_t>(character ? 3 : 2)}
-                             : Name{type, 0, 1};
+        names[symbol] = slot
+                            ? Name{type, static_cast<std::uint8_t>(*slot), static_cast<std::uint8_t>(character ? 3 : 2)}
+                            : Name{type, 0, 1};
     }
 
     std::optional<Registers::Type> Registers::bank(const Symbol symbol) const noexcept {
@@ -46,5 +47,4 @@ namespace syntax::semantics {
         if (symbol >= names.size() || names[symbol].role < 2) return std::nullopt;
         return Target{names[symbol].type, names[symbol].slot, names[symbol].role == 3};
     }
-
 }

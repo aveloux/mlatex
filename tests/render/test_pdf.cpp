@@ -27,13 +27,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -72,11 +72,11 @@ static std::string dot() {
         0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
         0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     };
-    return std::string(reinterpret_cast<const char*>(bytes), sizeof bytes);
+    return std::string(reinterpret_cast<const char *>(bytes), sizeof bytes);
 }
 
 /// @brief Is this a PDF a reader can open: its every cross-reference right?
-static bool valid(const std::string& pdf) {
+static bool valid(const std::string &pdf) {
     if (!pdf.starts_with("%PDF-1.") || !pdf.ends_with("%%EOF\n")) return false;
 
     const std::size_t pointer = pdf.rfind("startxref\n");
@@ -93,7 +93,7 @@ static bool valid(const std::string& pdf) {
     const std::size_t first = static_cast<std::size_t>(end - pdf.data()) + 1 + 20;
     for (std::size_t object = 1; object < entries; ++object) {
         std::size_t offset = 0;
-        const char* entry = pdf.data() + first + (object - 1) * 20;
+        const char *entry = pdf.data() + first + (object - 1) * 20;
         if (std::from_chars(entry, entry + 10, offset).ec != std::errc{}) return false;
         const std::string head = std::to_string(object) + " 0 obj";
         if (pdf.compare(offset, head.size(), head) != 0) return false;
@@ -127,7 +127,7 @@ int main() {
                                       "\\includegraphics{dot.png}\\end{document}",
                                       host);
         assert((result.clean && valid(result.pdf) && holds(result.pdf, "/Subtype /Image") &&
-               holds(result.pdf, "/FlateDecode")) && "a picture embedded, compressed");
+                holds(result.pdf, "/FlateDecode")) && "a picture embedded, compressed");
     }
     {
         const Result once = article("", "The same words.");
@@ -140,8 +140,8 @@ int main() {
     }
     {
         const Result result = typeset("\\DocumentMetadata{pdfstandard=A-2b}\\documentclass{article}"
-                                      "\\usepackage{hyperref}\\hypersetup{pdftitle={A Title}, pdfauthor={A. Writer}}"
-                                      "\\begin{document}Archived.\\end{document}");
+            "\\usepackage{hyperref}\\hypersetup{pdftitle={A Title}, pdfauthor={A. Writer}}"
+            "\\begin{document}Archived.\\end{document}");
         assert((result.clean && valid(result.pdf)) && "a PDF/A document is a valid PDF");
         assert((holds(result.pdf, "/OutputIntents") && holds(result.pdf, "<pdfaid:part>2</pdfaid:part>") &&
                 holds(result.pdf, "/Metadata") && holds(result.pdf, "/ID [<")) &&

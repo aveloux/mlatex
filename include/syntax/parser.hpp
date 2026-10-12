@@ -16,7 +16,6 @@
 #include <vector>
 
 namespace syntax {
-
     /// @brief Turns the expander's tokens into a flat list of nodes.
     ///
     /// The parser is the other half of the pair the Mouth starts: the Mouth
@@ -45,7 +44,7 @@ namespace syntax {
     class Parser {
     public:
         /// Implementation of a bound control sequence: whatever node it stands for.
-        using Handler = std::function<Node*(Parser&)>;
+        using Handler = std::function<Node * (Parser &)>;
 
         /// @brief Binds a parser to an expander and an allocator.
         /// @param mouth Where tokens come from; must outlive the parser.
@@ -55,11 +54,13 @@ namespace syntax {
         /// `\\ifdefined` see the commands bound here; the destructor empties
         /// it again. The reader holds this parser's address, which is why a
         /// parser can be neither copied nor moved.
-        Parser(Mouth& mouth, memory::Arena& arena);
+        Parser(Mouth &mouth, memory::Arena &arena);
+
         ~Parser();
 
-        Parser(const Parser&) = delete;
-        Parser& operator=(const Parser&) = delete;
+        Parser(const Parser &) = delete;
+
+        Parser &operator=(const Parser &) = delete;
 
         /// @brief Parses until a closing character or the end of input.
         ///
@@ -70,7 +71,7 @@ namespace syntax {
         ///                to the end of input.
         /// @return The nodes, in order, allocated in the arena.
         /// @complexity O(n) in the tokens read.
-        [[nodiscard]] memory::Slice<Node*> parse(char closing);
+        [[nodiscard]] memory::Slice<Node *> parse(char closing);
 
         /// @brief Parses until one of several control sequences, a closing
         ///        character, or the end of input.
@@ -86,46 +87,46 @@ namespace syntax {
         ///                something else did.
         /// @return The nodes read before the stop, in order.
         /// @complexity O(n) in the tokens read, times the number of stops.
-        [[nodiscard]] memory::Slice<Node*> parse(char closing, std::span<const Symbol> stops, Symbol& matched);
+        [[nodiscard]] memory::Slice<Node *> parse(char closing, std::span<const Symbol> stops, Symbol &matched);
 
         /// @brief Attaches a handler to a control sequence.
         /// @param name    Control sequence, interned on the caller's behalf.
         /// @param handler Implementation.
         void bind(std::string_view name, Handler handler);
+
         /// @brief Attaches a handler to an interned symbol.
         /// @param symbol  Interned control sequence.
         /// @param handler Implementation.
         void bind(Symbol symbol, Handler handler);
 
         /// @brief Errors recorded so far; the expander keeps its own.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
-        static constexpr std::size_t tolerance = 100;   ///< Errors before giving up, as in TeX.
+        static constexpr std::size_t tolerance = 100; ///< Errors before giving up, as in TeX.
 
         /// @brief Marks each run of text as it starts with what it is to be
         ///        set in -- the face and the color in use at that moment,
         ///        which the render layer fills in -- so a style changed part
         ///        way through a paragraph changes only what follows it.
-        std::function<void(Node&)> stamp{};
+        std::function<void(Node &)> stamp{};
 
         /// @brief A count the render layer raises whenever the face or the
         ///        color changes, or none: a run of text ends where it moves,
         ///        since a primitive run inside the expander -- a block's end
         ///        putting its face back -- may change either between two
         ///        letters the parser reads one after the other.
-        const std::uint64_t* changes{nullptr};
+        const std::uint64_t *changes{nullptr};
 
-        Mouth& mouth;                           ///< The expander tokens come from.
-        memory::Arena& arena;                   ///< The allocator nodes are composed in.
+        Mouth &mouth; ///< The expander tokens come from.
+        memory::Arena &arena; ///< The allocator nodes are composed in.
 
     private:
         /// Handler per symbol, each in an allocation of its own so the table can
         /// grow while one runs without moving it; null means none.
-        std::vector<std::unique_ptr<const Handler>> handlers{};
-        std::vector<Traceback> tracebacks{};    ///< Errors recorded so far.
-        Symbol paragraph = none;      ///< `\\par`, the one name the parser knows by itself.
-        Symbol assign = none;         ///< `\\@set`, which a register's name standing alone is read through.
-        std::size_t nesting = 0;                ///< How many parse() calls are in progress.
+        std::vector<std::unique_ptr<const Handler> > handlers{};
+        std::vector<Traceback> tracebacks{}; ///< Errors recorded so far.
+        Symbol paragraph = none; ///< `\\par`, the one name the parser knows by itself.
+        Symbol assign = none; ///< `\\@set`, which a register's name standing alone is read through.
+        std::size_t nesting = 0; ///< How many parse() calls are in progress.
     };
-
 }

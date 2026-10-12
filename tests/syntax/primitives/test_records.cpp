@@ -19,7 +19,7 @@
 // datatool read one, and a database built in the document itself.
 
 /// The file every document here may read.
-static const char* const prices = "Item,Price\nTea,2\n\"Cake, lemon\",3.5\nScone,1\n";
+static const char *const prices = "Item,Price\nTea,2\n\"Cake, lemon\",3.5\nScone,1\n";
 
 /// What a document sets, runs of blanks folded to one, and everything it
 /// reported: read by the expander and the parser with the syntax primitives
@@ -40,8 +40,8 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Parser parser(mouth, arena);
 
     std::string text;
-    const auto get = [&text](this const auto& self, const memory::Slice<syntax::Node*> nodes) -> void {
-        for (const syntax::Node* node : nodes) {
+    const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
+        for (const syntax::Node *node: nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -49,7 +49,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter : text) {
+    for (const char letter: text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -59,14 +59,14 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
+    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
 
 /// A document must set exactly this text, and report nothing.
-static void sets(const std::string_view document, const std::string_view expected, const char* what) {
+static void sets(const std::string_view document, const std::string_view expected, const char *what) {
     const auto [text, errors] = expand(document);
     if (text != expected || !errors.empty()) {
         std::fprintf(stderr, "%s\n  document: %.*s\n  expected: [%.*s]\n  got:      [%s]\n%s", what,
@@ -77,7 +77,7 @@ static void sets(const std::string_view document, const std::string_view expecte
 }
 
 /// A document must report an error naming this.
-static void reports(const std::string_view document, const std::string_view needle, const char* what) {
+static void reports(const std::string_view document, const std::string_view needle, const char *what) {
     const auto [text, errors] = expand(document);
     if (errors.find(needle) == std::string::npos) {
         std::fprintf(stderr, "%s\n  document: %.*s\n  expected an error naming: %.*s\n  got: %s\n", what,
@@ -114,7 +114,8 @@ int main() {
          "a value found by another, and one by its place");
     sets("\\DTLloaddb{p}{prices.csv}\\DTLsort{Price=descending}{p}\\DTLforeach{p}{\\i=Item}{\\i;}",
          "Cake, lemon;Tea;Scone;", "rows ordered by a column of numbers");
-    sets("\\DTLloaddb{p}{prices.csv}\\DTLsumcolumn{p}{Price}{\\t}\\DTLmeanforcolumn{p}{Price}{\\m}(\\t) (\\m)", "(6.5) (2.1666666666666665)",
+    sets("\\DTLloaddb{p}{prices.csv}\\DTLsumcolumn{p}{Price}{\\t}\\DTLmeanforcolumn{p}{Price}{\\m}(\\t) (\\m)",
+         "(6.5) (2.1666666666666665)",
          "a column's total and its mean");
     sets("\\DTLnewdb{e}\\DTLifdbexists{e}{yes}{no} \\DTLifdbexists{f}{yes}{no}", "yes no", "whether a database exists");
     reports("\\DTLrowcount{none}", "No database named 'none'", "a database never made");

@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Font selection: which face the document is set in.
     ///
     /// @par Language
@@ -40,12 +39,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Typeface(syntax::Lexicon& lexicon) noexcept;
+        explicit Typeface(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the font primitives.
         /// @param parser  Parser whose expander to bind into.
         /// @param context Engine services; faces come from its registry.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -54,12 +53,11 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

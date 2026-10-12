@@ -15,8 +15,8 @@
 using Category = syntax::Catcodes::Category;
 
 /// @brief Every token a text lexes into.
-static std::vector<syntax::Token> lex(syntax::Lexicon& lexicon, const std::string_view text,
-                                      std::size_t* errors = nullptr) {
+static std::vector<syntax::Token> lex(syntax::Lexicon &lexicon, const std::string_view text,
+                                      std::size_t *errors = nullptr) {
     syntax::Catcodes codes;
     syntax::Lexer lexer(text, codes, lexicon);
     std::vector<syntax::Token> tokens;
@@ -28,9 +28,9 @@ static std::vector<syntax::Token> lex(syntax::Lexicon& lexicon, const std::strin
 }
 
 /// @brief The tokens' text, one after another, a bar between each.
-static std::string spell(const std::vector<syntax::Token>& tokens) {
+static std::string spell(const std::vector<syntax::Token> &tokens) {
     std::string text;
-    for (const syntax::Token& token : tokens) {
+    for (const syntax::Token &token: tokens) {
         if (!text.empty()) text += '|';
         text += token.text;
     }
@@ -121,7 +121,7 @@ int main() {
         assert((block.size() > 12 && block[12].text == "\\end") && "and the block's \\end lexed as usual after it");
 
         const auto listing = lex(lexicon, "\\begin{lstlisting}[language=C]\nint x;\n\\end{lstlisting}");
-        const auto body = std::ranges::find_if(listing, [](const syntax::Token& token) {
+        const auto body = std::ranges::find_if(listing, [](const syntax::Token &token) {
             return token.symbol == syntax::none;
         });
         assert((body != listing.end() && body->text == "int x;") && "a listing's body after its options");

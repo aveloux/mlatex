@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Pseudocode: the `algorithmic` block and the lines inside it.
     ///
     /// @par Language
@@ -34,13 +33,13 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Algorithms(syntax::Lexicon& lexicon) noexcept;
+        explicit Algorithms(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the `algorithmic` block, `\\State`, `\\Statex` and
         ///        the two depth primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -49,16 +48,16 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief One `algorithmic` block being read.
         struct Block {
-            int every{0};    ///< Number every this many lines; 0 numbers none.
-            int lines{0};    ///< How many numbered lines it has had.
-            int depth{0};    ///< How many steps in its lines sit.
+            int every{0}; ///< Number every this many lines; 0 numbers none.
+            int lines{0}; ///< How many numbered lines it has had.
+            int depth{0}; ///< How many steps in its lines sit.
         };
 
         /// @brief One line: the paragraph it opens, its margin, and its number.
@@ -66,14 +65,13 @@ namespace render::primitives {
         /// @param context  Engine services.
         /// @param numbered True for a `\\State`, false for a `\\Statex`.
         /// @return The nodes that open the line.
-        [[nodiscard]] syntax::Node* line(syntax::Parser& parser, Context& context, bool numbered) const;
+        [[nodiscard]] syntax::Node *line(syntax::Parser &parser, Context &context, bool numbered) const;
 
         /// How far each block steps its lines in, in ems: algorithmicx's
         /// `\\algorithmicindent`.
         static constexpr float indent = 1.5f;
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Block> blocks{};                    ///< The blocks being read, innermost last.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Block> blocks{}; ///< The blocks being read, innermost last.
     };
-
 }

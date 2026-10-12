@@ -10,17 +10,16 @@
 #include <bit>
 
 namespace render::layout {
-
-    bool Ledger::Key::operator==(const Key& other) const noexcept {
+    bool Ledger::Key::operator==(const Key &other) const noexcept {
         return font == other.font && size == other.size && text == other.text;
     }
 
-    std::size_t Ledger::digest(const Key& key) noexcept {
+    std::size_t Ledger::digest(const Key &key) noexcept {
         // FNV-1a over the text, then the font and size folded in. The font is
         // a pointer into the arena and the size a float, so both are taken as
         // bits rather than as values.
         std::size_t value = 1469598103934665603ull;
-        for (const char letter : key.text) {
+        for (const char letter: key.text) {
             value ^= static_cast<std::size_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }
@@ -30,7 +29,7 @@ namespace render::layout {
         return value;
     }
 
-    Ledger::Ledger(memory::Arena& arena, const std::size_t size) noexcept {
+    Ledger::Ledger(memory::Arena &arena, const std::size_t size) noexcept {
         // A power of two so a probe masks instead of dividing.
         this->limit = std::bit_ceil(size > 0 ? size : 2048);
         slots = arena.allocate<Entry>(this->limit);
@@ -39,12 +38,12 @@ namespace render::layout {
         }
     }
 
-    memory::Slice<Node*> Ledger::get(const Key& key) const noexcept {
+    memory::Slice<Node *> Ledger::get(const Key &key) const noexcept {
         if (entries == 0) return {};
 
         const std::size_t start = digest(key) & (limit - 1);
         for (std::size_t step = 0; step < limit; ++step) {
-            const Entry& slot = slots[(start + step) & (limit - 1)];
+            const Entry &slot = slots[(start + step) & (limit - 1)];
             // An empty slot ends the probe: anything with this key would have
             // been placed here or before.
             if (!slot.occupied) return {};
@@ -53,7 +52,7 @@ namespace render::layout {
         return {};
     }
 
-    void Ledger::set(const Key& key, const memory::Slice<Node*> nodes) noexcept {
+    void Ledger::set(const Key &key, const memory::Slice<Node *> nodes) noexcept {
         // A full table stops caching rather than evicting. Evicting would mean
         // re-shaping something a caller may still be holding glyphs from.
         // Full is three quarters, not every slot: past that a lookup that
@@ -63,7 +62,7 @@ namespace render::layout {
 
         const std::size_t start = digest(key) & (limit - 1);
         for (std::size_t step = 0; step < limit; ++step) {
-            Entry& slot = slots[(start + step) & (limit - 1)];
+            Entry &slot = slots[(start + step) & (limit - 1)];
 
             if (!slot.occupied) {
                 slot = Entry{.key = key, .nodes = nodes, .occupied = true};
@@ -84,5 +83,4 @@ namespace render::layout {
         }
         entries = 0;
     }
-
 }

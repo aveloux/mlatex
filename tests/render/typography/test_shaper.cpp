@@ -18,13 +18,13 @@ static std::filesystem::path assets() {
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena};          ///< The indexed tree.
+    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena}; ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
-    const render::typography::Font* text{nullptr};            ///< Latin Modern Roman.
-    const render::typography::Font* maths{nullptr};           ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
+    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -39,23 +39,23 @@ struct Fonts {
 namespace layout = render::layout;
 
 /// @brief How many of a run's nodes are of one kind.
-static std::size_t kind(const memory::Slice<layout::Node*> nodes, const layout::Node::Type type) {
+static std::size_t kind(const memory::Slice<layout::Node *> nodes, const layout::Node::Type type) {
     std::size_t found = 0;
-    for (const layout::Node* node : nodes) found += node && node->type == type;
+    for (const layout::Node *node: nodes) found += node && node->type == type;
     return found;
 }
 
 int main() {
     Fonts fonts;
     if (!fonts.text) return 0;
-    const render::typography::Shaper& shaper = fonts.shaper;
-    const render::typography::Font* text[] = {fonts.text};
-    const memory::Slice<const render::typography::Font*> one{text, 1uz};
+    const render::typography::Shaper &shaper = fonts.shaper;
+    const render::typography::Font *text[] = {fonts.text};
+    const memory::Slice<const render::typography::Font *> one{text, 1uz};
 
     const auto office = shaper.shape(one, "office", {});
     assert((kind(office, layout::Node::Type::Glyph) < 6) && "the face's ligatures join letters");
     bool spelled = false;
-    for (const layout::Node* node : office) spelled = spelled || node->glyph().letters == "ffi";
+    for (const layout::Node *node: office) spelled = spelled || node->glyph().letters == "ffi";
     assert((spelled) && "and a ligature still spells the letters it stands for");
 
     assert((kind(shaper.shape(one, "\xC3\xA9t\xC3\xA9", {}), layout::Node::Type::Glyph) == 3) &&
@@ -63,11 +63,11 @@ int main() {
     assert((kind(shaper.shape(one, "a b", {}), layout::Node::Type::Glue) == 1) && "a space is glue");
 
     float plain = 0.0f;
-    for (const layout::Node* node : shaper.shape(one, "AV", {})) plain += node->glyph().width;
+    for (const layout::Node *node: shaper.shape(one, "AV", {})) plain += node->glyph().width;
     const float apart = fonts.text->advance(fonts.text->index('A')) + fonts.text->advance(fonts.text->index('V'));
     assert((plain < apart) && "a kerned pair sits closer than its letters' own advances");
 
-    const render::typography::Font* both[] = {fonts.text, fonts.maths};
+    const render::typography::Font *both[] = {fonts.text, fonts.maths};
     const auto sum = shaper.shape(memory::Slice{both, 2uz}, "\xE2\x88\x91", {});
     assert((kind(sum, layout::Node::Type::Glyph) == 1 && sum[0]->glyph().font == fonts.maths) &&
            "a character the first face lacks comes from the next");
@@ -78,7 +78,7 @@ int main() {
     const render::typography::Shaper covering(fonts.arena, &fonts.registry);
     const auto russian = covering.shape(one, "\xD0\x96\xD1\x83\xD0\xBA", {});
     bool drawn = kind(russian, layout::Node::Type::Glyph) == 3;
-    for (const layout::Node* node : russian) {
+    for (const layout::Node *node: russian) {
         drawn = drawn && node->glyph().code != 0 && node->glyph().font->family() == "newcm10-regular" &&
                 node->glyph().height == fonts.text->metrics().ascent;
     }

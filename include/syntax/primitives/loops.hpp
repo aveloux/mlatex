@@ -9,7 +9,6 @@
 #include <cstddef>
 
 namespace syntax::primitives {
-
     /// @brief Iteration and explicit grouping.
     ///
     /// @par Language
@@ -33,16 +32,16 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Loops(Lexicon& lexicon) noexcept;
+        explicit Loops(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\repeat`, `\\group`, `\\ungroup` and `\\@foreach`,
         ///        pgffor's loop over a list.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; the count scans against its registers.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
-        static constexpr std::int32_t passes = 65536;        ///< Most repetitions one \\repeat may ask for.
-        static constexpr std::size_t production = 1u << 22;  ///< Most tokens one \\repeat may produce.
+        static constexpr std::int32_t passes = 65536; ///< Most repetitions one \\repeat may ask for.
+        static constexpr std::size_t production = 1u << 22; ///< Most tokens one \\repeat may produce.
 
         /// @brief Errors this module has recorded.
         ///
@@ -51,12 +50,11 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
-        Symbol integer{};   ///< `\\integer`, so the count may be a register.
+        Symbol integer{}; ///< `\\integer`, so the count may be a register.
     };
-
 }

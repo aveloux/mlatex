@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -64,21 +64,21 @@ static std::size_t count(const std::string_view text, const std::string_view par
 int main() {
     {
         const Result result = article("", "\\textbf{bold} \\textit{italic} \\texttt{mono} \\textsc{caps} "
-                                          "\\textsf{sans} \\textsl{slant} \\emph{stress} \\textup{up} \\textmd{md} "
-                                          "\\textrm{rm} \\textnormal{normal}");
+                                      "\\textsf{sans} \\textsl{slant} \\emph{stress} \\textup{up} \\textmd{md} "
+                                      "\\textrm{rm} \\textnormal{normal}");
         assert((result.clean && holds(result.text, "bolditalicmonocapssansslantstressupmdrmnormal")) &&
                "every style, small capitals copied as the letters typed");
         assert((count(result.pdf, "/BaseFont") >= 6) && "each in a face of its own");
     }
     {
         const Result result = article("", "{\\bfseries bold \\itshape both} {\\ttfamily mono} {\\scshape caps} "
-                                          "\\textit{outer \\emph{inner}}");
+                                      "\\textit{outer \\emph{inner}}");
         assert((result.clean && holds(result.text, "boldbothmonocapsouterinner")) &&
                "the switches, and emphasis in italic");
     }
     {
         const Result result = article("", "{\\tiny a}{\\scriptsize b}{\\footnotesize c}{\\small d}{\\normalsize e}"
-                                          "{\\large f}{\\Large g}{\\LARGE h}{\\huge i}{\\Huge j}");
+                                      "{\\large f}{\\Large g}{\\LARGE h}{\\huge i}{\\Huge j}");
         assert((result.clean && holds(result.text, "abcdefghij")) && "every size");
         assert((holds(result.pdf, " 5 Tf") && holds(result.pdf, " 24.88 Tf")) &&
                "from \\tiny's five points to \\Huge's");

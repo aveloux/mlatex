@@ -18,28 +18,28 @@ using Command = layout::Node::Directive::Command;
 
 /// @brief The column a document's blocks make, built up block by block.
 struct Column {
-    memory::Arena& arena;
-    std::vector<layout::Node*> blocks{};
+    memory::Arena &arena;
+    std::vector<layout::Node *> blocks{};
 
     /// @brief A block so tall.
-    Column& block(const float height) {
-        auto* node = arena.compose<layout::Node>(layout::Node::Type::Box);
+    Column &block(const float height) {
+        auto *node = arena.compose<layout::Node>(layout::Node::Type::Box);
         node->box({.width = 100.0f, .height = height});
         blocks.push_back(node);
         return *this;
     }
 
     /// @brief An instruction of no height.
-    Column& order(const layout::Node::Directive& directive) {
-        auto* node = arena.compose<layout::Node>(layout::Node::Type::Directive);
+    Column &order(const layout::Node::Directive &directive) {
+        auto *node = arena.compose<layout::Node>(layout::Node::Type::Directive);
         node->directive(directive);
         blocks.push_back(node);
         return *this;
     }
 
     /// @brief A page break: \\newpage, or \\clearpage for the whole sheet.
-    Column& pause(const bool sheet = false) {
-        auto* node = arena.compose<layout::Node>(layout::Node::Type::Pause);
+    Column &pause(const bool sheet = false) {
+        auto *node = arena.compose<layout::Node>(layout::Node::Type::Pause);
         node->pause({.penalty = {.value = -10000, .flag = sheet}});
         blocks.push_back(node);
         return *this;
@@ -47,7 +47,7 @@ struct Column {
 
     /// @brief The pages, at so many columns a page.
     memory::Slice<layout::Pager::Page> paginate(const std::size_t columns = 1) const {
-        const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(blocks.size());
+        const memory::Slice<layout::Node *> list = arena.allocate<layout::Node *>(blocks.size());
         for (std::size_t index = 0; index < blocks.size(); ++index) list[index] = blocks[index];
         const layout::Pager pager(arena);
         return pager.paginate(layout::Line::vertical(arena, list, 0.0f),
@@ -56,9 +56,9 @@ struct Column {
 };
 
 /// @brief How many of a page's top-level nodes are boxes.
-static std::size_t boxes(const layout::Pager::Page& page) {
+static std::size_t boxes(const layout::Pager::Page &page) {
     std::size_t found = 0;
-    for (const layout::Node* node : page.nodes) found += node->type == layout::Node::Type::Box;
+    for (const layout::Node *node: page.nodes) found += node->type == layout::Node::Type::Box;
     return found;
 }
 
@@ -89,7 +89,7 @@ int main() {
     {
         Column column{arena};
         column.block(150).order({.command = Command::Hold, .fixed = true}).block(180)
-            .order({.command = Command::Release}).block(50);
+                .order({.command = Command::Release}).block(50);
         const auto pages = column.paginate();
         assert((pages.size() == 2 && boxes(pages[0]) == 1 && boxes(pages[1]) == 2) && "[H] is set where written");
     }
@@ -97,9 +97,9 @@ int main() {
         // A long table's rows: a page ends between two of them, the foot
         // under the last row of each page the table breaks off, the head
         // atop each page it carries on to, and no row lost.
-        auto* head = arena.compose<layout::Node>(layout::Node::Type::Box);
+        auto *head = arena.compose<layout::Node>(layout::Node::Type::Box);
         head->box({.width = 100.0f, .height = 10.0f});
-        auto* foot = arena.compose<layout::Node>(layout::Node::Type::Box);
+        auto *foot = arena.compose<layout::Node>(layout::Node::Type::Box);
         foot->box({.width = 100.0f, .height = 5.0f});
         Column column{arena};
         column.block(20).order({.command = Command::Repeat, .head = head, .foot = foot});
@@ -110,13 +110,13 @@ int main() {
 
         std::size_t rows = 0;
         for (std::size_t index = 0; index < pages.size(); ++index) {
-            std::vector<const layout::Node*> set;
-            for (const layout::Node* node : pages[index].nodes) {
+            std::vector<const layout::Node *> set;
+            for (const layout::Node *node: pages[index].nodes) {
                 if (node->type == layout::Node::Type::Box) set.push_back(node);
             }
             assert((index == 0 || set.front() == head) && "the head atop every page after the first");
             assert((index + 1 == pages.size() || set.back() == foot) && "the foot closing every page but the last");
-            rows += static_cast<std::size_t>(std::ranges::count_if(set, [&](const layout::Node* node) {
+            rows += static_cast<std::size_t>(std::ranges::count_if(set, [&](const layout::Node *node) {
                 return node != head && node != foot;
             }));
         }
@@ -125,16 +125,16 @@ int main() {
 
     // --- Floats as LaTeX places them ----------------------------------------------------
     using Directive = layout::Node::Directive;
-    const auto height = [](const layout::Node* node) { return layout::Line::extent(node); };
+    const auto height = [](const layout::Node *node) { return layout::Line::extent(node); };
     {
         // Written after text on a page with room, a float goes to its head.
         Column column{arena};
         column.block(50).order({.command = Command::Hold, .place = Directive::Top}).block(60)
-            .order({.command = Command::Release}).block(50);
+                .order({.command = Command::Release}).block(50);
         const auto pages = column.paginate();
         assert((pages.size() == 1 && pages[0].nodes.size() >= 4) && "one page");
-        const layout::Node* first = nullptr;
-        for (const layout::Node* node : pages[0].nodes) {
+        const layout::Node *first = nullptr;
+        for (const layout::Node *node: pages[0].nodes) {
             if (node->type == layout::Node::Type::Box) {
                 first = node;
                 break;
@@ -147,10 +147,10 @@ int main() {
         // Asked for the foot, it stands at the foot, below the text after it.
         Column column{arena};
         column.block(50).order({.command = Command::Hold, .place = Directive::Bottom}).block(40)
-            .order({.command = Command::Release}).block(50);
+                .order({.command = Command::Release}).block(50);
         const auto pages = column.paginate();
-        const layout::Node* last = nullptr;
-        for (const layout::Node* node : pages[0].nodes) {
+        const layout::Node *last = nullptr;
+        for (const layout::Node *node: pages[0].nodes) {
             if (node->type == layout::Node::Type::Box) last = node;
         }
         assert((pages.size() == 1 && last && height(last) == 40.0f) && "a float asked for the foot is set last");
@@ -175,11 +175,11 @@ int main() {
         Column column{arena};
         column.block(150);
         column.order({.command = Command::Hold, .place = Directive::Top, .index = 0}).block(120)
-            .order({.command = Command::Release});
+                .order({.command = Command::Release});
         column.order({.command = Command::Hold, .place = Directive::Here, .index = 0}).block(20)
-            .order({.command = Command::Release});
+                .order({.command = Command::Release});
         column.order({.command = Command::Hold, .place = Directive::Here, .index = 1}).block(10)
-            .order({.command = Command::Release});
+                .order({.command = Command::Release});
         const auto pages = column.paginate();
         assert((!pages.empty() && boxes(pages[0]) == 2) &&
                "the second figure waits behind the first; the table goes where it is written");
@@ -188,7 +188,7 @@ int main() {
         // A barrier sets what waits before the text after it.
         Column column{arena};
         column.block(200).order({.command = Command::Hold, .place = Directive::Top}).block(100)
-            .order({.command = Command::Release});
+                .order({.command = Command::Release});
         column.order({.command = Command::Barrier}).block(30);
         const auto pages = column.paginate();
         assert((pages.size() == 3 && boxes(pages[1]) == 1 && boxes(pages[2]) == 1) &&
@@ -200,7 +200,7 @@ int main() {
         const auto pages = Column{arena}.block(100).block(100).block(100).block(100).block(100).paginate(2);
         assert((pages.size() == 2) && "a page of two columns takes four blocks where one takes two");
         assert((!pages.empty() && boxes(pages[0]) == 1 &&
-               pages[0].nodes[pages[0].nodes.size() - 1]->box().list.size() == 3) &&
+                pages[0].nodes[pages[0].nodes.size() - 1]->box().list.size() == 3) &&
                "the two set side by side, the gap between them");
     }
     {
@@ -219,8 +219,8 @@ int main() {
         const auto pages = column.paginate();
         assert((pages.size() == 1) && "a balanced region leaves room below it");
         if (pages.size() == 1) {
-            const layout::Node* region = nullptr;
-            for (const layout::Node* node : pages[0].nodes) {
+            const layout::Node *region = nullptr;
+            for (const layout::Node *node: pages[0].nodes) {
                 if (node->type == layout::Node::Type::Box && node->box().list.size() == 3) region = node;
             }
             assert((region && layout::Line::extent(region) == 60.0f) && "its four blocks two to a column, level");

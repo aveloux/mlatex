@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Text taken apart and tested: xstring's commands, under its
     ///        own names.
     ///
@@ -45,7 +44,7 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Strings(Lexicon& lexicon) noexcept;
+        explicit Strings(Lexicon &lexicon) noexcept;
 
         /// @brief Installs the tests -- `\\IfSubStr`, `\\IfBeginWith`,
         ///        `\\IfEndWith`, `\\IfStrEq`, `\\IfEq`, `\\IfInteger`,
@@ -56,14 +55,13 @@ namespace syntax::primitives {
         ///        `\\StrCount`, `\\StrPosition`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; unused by this module.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error this module has recorded: a count that is no
         ///        number. Wrapper::traceback() gathers them when a run finishes.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

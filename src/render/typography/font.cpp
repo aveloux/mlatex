@@ -12,7 +12,6 @@
 #include <utility>
 
 namespace render::typography {
-
     /// HarfBuzz's fixed-point denominator: 26.6 means sixty-fourths.
     static constexpr float grain = 1.0f / 64.0f;
 
@@ -20,16 +19,17 @@ namespace render::typography {
         dispose();
     }
 
-    Font::Font(Font&& input) noexcept
+    Font::Font(Font &&input) noexcept
         : parent(std::exchange(input.parent, nullptr)),
           name(std::exchange(input.name, {})),
           shaper(std::exchange(input.shaper, nullptr)),
           points(std::exchange(input.points, 0.0f)),
           ascent(std::exchange(input.ascent, 0.0f)),
           descent(std::exchange(input.descent, 0.0f)),
-          gap(std::exchange(input.gap, 0.0f)) {}
+          gap(std::exchange(input.gap, 0.0f)) {
+    }
 
-    Font& Font::operator=(Font&& input) noexcept {
+    Font &Font::operator=(Font &&input) noexcept {
         if (this != &input) {
             dispose();
             parent = std::exchange(input.parent, nullptr);
@@ -43,7 +43,7 @@ namespace render::typography {
         return *this;
     }
 
-    bool Font::compose(const Face& face, const float size, const std::string_view family) noexcept {
+    bool Font::compose(const Face &face, const float size, const std::string_view family) noexcept {
         if (!face.handle() || size <= 0.0f) {
             Logger::log(Logger::Type::Layout, Logger::Level::Error,
                         "Cannot build a font from an unopened face");
@@ -129,5 +129,4 @@ namespace render::typography {
         if (!shaper) return 0.0f;
         return static_cast<float>(hb_font_get_glyph_h_advance(shaper, glyph)) * grain;
     }
-
 }

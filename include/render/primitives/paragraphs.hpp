@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief The shape of a paragraph: its indentation, alignment and margins.
     ///
     /// None of these draw anything. Each becomes a layout::Node::Directive in
@@ -59,27 +58,26 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Paragraphs(syntax::Lexicon& lexicon) noexcept;
+        explicit Paragraphs(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the paragraph primitives and hooks the alignment blocks.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the blocks are hooked through its
         ///                block module, and `\\leftskip` scans against its registers.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a `\\leftskip` with no
         ///        dimension after it.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
 
         /// What each open alignment block opened with, innermost last: the
         /// source that ends the paragraph and sets that block's alignment,
         /// which is also exactly what closing the block inside it restores.
         mutable std::vector<std::string_view> openings{};
     };
-
 }

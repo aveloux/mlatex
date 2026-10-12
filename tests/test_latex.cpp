@@ -29,13 +29,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -65,7 +65,7 @@ static std::string dot() {
         0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
         0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     };
-    return std::string(reinterpret_cast<const char*>(bytes), sizeof bytes);
+    return std::string(reinterpret_cast<const char *>(bytes), sizeof bytes);
 }
 
 int main() {
@@ -84,16 +84,20 @@ int main() {
         assert((session.host.variables.size() == 1) && "a value is taken back, and taking back none is nothing");
 
         int calls = 0;
-        session.define({.name = "\\shout", .arity = 1, .handler = [&calls](auto arguments) {
-            ++calls;
-            return arguments[0] + "!";
-        }});
+        session.define({
+            .name = "\\shout", .arity = 1, .handler = [&calls](auto arguments) {
+                ++calls;
+                return arguments[0] + "!";
+            }
+        });
         assert((session.host.commands.size() == 1 && session.host.commands[0].name == "shout") &&
                "a command is kept by its bare name");
-        session.define({.name = "shout", .arity = 1, .handler = [&calls](auto arguments) {
-            calls += 10;
-            return arguments[0];
-        }});
+        session.define({
+            .name = "shout", .arity = 1, .handler = [&calls](auto arguments) {
+                calls += 10;
+                return arguments[0];
+            }
+        });
         assert((session.host.commands.size() == 1) &&
                "defining it again, with or without its backslash, replaces it");
 
@@ -103,7 +107,7 @@ int main() {
                "a file handed in again replaces it");
 
         const bool made = session.typeset("\\usepackage{house}\\begin{document}\\motto\\ \\shout{\\variable{customer}}"
-                                          "\\end{document}");
+            "\\end{document}");
         assert((made && session.error.empty() && session.pdf.starts_with("%PDF-")) &&
                "a document uses everything the session holds, and makes a PDF");
         assert((calls == 10) && "the command called is the one defined last");
@@ -113,7 +117,7 @@ int main() {
         assert((session.host.commands.empty() && session.host.files.empty()) &&
                "commands and files are taken back");
         assert((session.typeset("\\usepackage{house}\\begin{document}x\\end{document}") &&
-               holds(session.error, "warning: File `house.sty' not found")) &&
+                holds(session.error, "warning: File `house.sty' not found")) &&
                "and missed by name once they are, as a warning");
 
         latex::Session lost(latex::locate(__FILE__).parent_path() / "no-such-assets");
@@ -126,10 +130,12 @@ int main() {
         std::string asked;
         latex::Host host;
         host.variables.emplace_back("account", "A-1042");
-        host.commands.push_back({.name = "balance", .arity = 1, .handler = [&asked](const auto arguments) {
-            asked = arguments[0];
-            return std::string("\\textbf{12.50}");
-        }});
+        host.commands.push_back({
+            .name = "balance", .arity = 1, .handler = [&asked](const auto arguments) {
+                asked = arguments[0];
+                return std::string("\\textbf{12.50}");
+            }
+        });
         host.files["letterhead/main.mtex"] = "\\define\\company{Acme Ltd.}\n";
         host.files["dot.png"] = dot();
 
@@ -153,15 +159,15 @@ int main() {
     {
         const std::filesystem::path bib = std::filesystem::temp_directory_path() / "latex-entries.bib";
         std::ofstream(bib, std::ios::binary)
-            << "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX}, publisher = {Addison-Wesley}, year = 1994}\n"
-               "@misc{never, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n";
+                << "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX}, publisher = {Addison-Wesley}, year = 1994}\n"
+                "@misc{never, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n";
         std::filesystem::path pdf = bib;
         pdf.replace_extension(".pdf");
         std::ostringstream errors;
         std::vector<std::string> pages;
         const bool clean = latex::compose(latex::locate(__FILE__), bib, pdf, {}, nullptr, errors, &pages);
         std::string text;
-        for (const std::string& page : pages) text += page;
+        for (const std::string &page: pages) text += page;
         std::erase_if(text, [](const char letter) { return letter == ' ' || letter == '\n'; });
         if (!clean) std::fprintf(stderr, "%s", errors.str().c_str());
         assert((clean && std::filesystem::exists(pdf)) && "a .bib file sets as a document");
@@ -174,9 +180,11 @@ int main() {
         const Result undefined = article("", "\\nosuchcommand");
         assert((!undefined.clean && holds(undefined.errors, "\\nosuchcommand")) && "an undefined command is named");
         const Result open = typeset("\\documentclass{article}\\begin{document}\\begin{quote}a\\end{document}");
-        assert((holds(open.errors, "ended by \\end{document}") || holds(open.errors, "no legal \\end found")) && "a block left open is reported");
+        assert(
+            (holds(open.errors, "ended by \\end{document}") || holds(open.errors, "no legal \\end found")) &&
+            "a block left open is reported");
         const Result wrong = typeset("\\documentclass{article}\\begin{document}\\begin{quote}a\\end{center}"
-                                     "\\end{document}");
+            "\\end{document}");
         assert((holds(wrong.errors, "ended by \\end")) && "a block closed as another");
         const Result partial = article("", "before \\nosuchcommand after");
         assert((partial.pdf.starts_with("%PDF-") && holds(partial.text, "beforeafter")) &&
@@ -191,7 +199,7 @@ int main() {
         const std::filesystem::path folder = latex::locate(__FILE__).parent_path() / "tests" / "packages";
         std::size_t read = 0;
         std::string failed;
-        for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder)) {
+        for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(folder)) {
             if (entry.path().extension() != ".mtex") continue;
             std::ifstream file(entry.path(), std::ios::binary);
             const std::string source{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
@@ -217,7 +225,7 @@ int main() {
         assert((result.clean) && "the paper typesets without a report");
         if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
         assert((result.pages.size() == 11) && "and runs to eleven pages, its appendices of checks with it");
-        assert((std::ranges::none_of(result.pages, [](const std::string& page) { return page.size() < 40; })) &&
+        assert((std::ranges::none_of(result.pages, [](const std::string &page) { return page.size() < 40; })) &&
                "no page left all but empty");
         assert((holds(result.text, "EnergyEstimatesandNumericalEvidence")) && "its title");
         assert((holds(result.text, "Definition2.1(Weaksolution).")) && "a definition, numbered within its section");
@@ -233,7 +241,7 @@ int main() {
         assert((!holds(result.text, "ReferencesReferences") && holds(result.text, "References[1]J.T.Beale")) &&
                "the bibliography under one heading");
         assert((holds(result.text, "Figure1:Observed")) && "the figure's caption");
-        const auto algorithm = std::ranges::find_if(result.pages, [](const std::string& page) {
+        const auto algorithm = std::ranges::find_if(result.pages, [](const std::string &page) {
             return holds(page, "Algorithm1Incremental");
         });
         assert((algorithm != result.pages.end() && holds(*algorithm, "endfor")) &&
@@ -242,7 +250,7 @@ int main() {
         // The appendix of typesetting checks.
         assert((holds(result.text, "BTypesettingchecks")) && "the second appendix, lettered");
         assert((holds(result.text, "Courant\xE2\x80\x93" "Friedrichs\xE2\x80\x93"
-                                   "Lewy(CFL)condition,andafterthatsimplybytheCFL")) &&
+                      "Lewy(CFL)condition,andafterthatsimplybytheCFL")) &&
                "an acronym spelled out once, short after");
         assert((holds(result.text, "Listing1isthestepofalgorithm1")) &&
                "cleveref's names for a listing and an algorithm");

@@ -11,7 +11,6 @@
 #include <utility>
 
 namespace render::primitives {
-
     std::string Numeral::arabic(const int value) {
         return std::to_string(value);
     }
@@ -19,13 +18,15 @@ namespace render::primitives {
     std::string Numeral::roman(int value, const bool upper) {
         if (value <= 0) return {};
 
-        static constexpr std::array<std::pair<int, std::string_view>, 13> table{{
-            {1000, "m"}, {900, "cm"}, {500, "d"}, {400, "cd"}, {100, "c"}, {90, "xc"},
-            {50, "l"}, {40, "xl"}, {10, "x"}, {9, "ix"}, {5, "v"}, {4, "iv"}, {1, "i"},
-        }};
+        static constexpr std::array<std::pair<int, std::string_view>, 13> table{
+            {
+                {1000, "m"}, {900, "cm"}, {500, "d"}, {400, "cd"}, {100, "c"}, {90, "xc"},
+                {50, "l"}, {40, "xl"}, {10, "x"}, {9, "ix"}, {5, "v"}, {4, "iv"}, {1, "i"},
+            }
+        };
 
         std::string result;
-        for (const auto& [amount, numeral] : table) {
+        for (const auto &[amount, numeral]: table) {
             while (value >= amount) {
                 result += numeral;
                 value -= amount;
@@ -34,7 +35,7 @@ namespace render::primitives {
 
         if (upper) {
             std::ranges::transform(result, result.begin(),
-                                    [](const char letter) { return static_cast<char>(std::toupper(letter)); });
+                                   [](const char letter) { return static_cast<char>(std::toupper(letter)); });
         }
         return result;
     }
@@ -57,12 +58,14 @@ namespace render::primitives {
         static constexpr std::array<std::string_view, 10> tens{
             "", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
         };
-        static constexpr std::array<std::pair<std::int64_t, std::string_view>, 3> scales{{
-            {1'000'000'000, "billion"}, {1'000'000, "million"}, {1'000, "thousand"},
-        }};
+        static constexpr std::array<std::pair<std::int64_t, std::string_view>, 3> scales{
+            {
+                {1'000'000'000, "billion"}, {1'000'000, "million"}, {1'000, "thousand"},
+            }
+        };
 
         // The cardinal, a group of three digits at a time.
-        std::string written = [](this const auto& self, const std::int64_t number) -> std::string {
+        std::string written = [](this const auto &self, const std::int64_t number) -> std::string {
             if (number < 0) return "minus " + self(-number);
             if (number < 20) return std::string(ones[static_cast<std::size_t>(number)]);
             if (number < 100) {
@@ -75,10 +78,11 @@ namespace render::primitives {
                 if (number % 100 != 0) text += " and " + self(number % 100);
                 return text;
             }
-            for (const auto& [size, name] : scales) {
+            for (const auto &[size, name]: scales) {
                 if (number < size) continue;
                 std::string text = self(number / size) + " " + std::string(name);
-                if (const std::int64_t rest = number % size; rest != 0) text += (rest < 100 ? " and " : " ") + self(rest);
+                if (const std::int64_t rest = number % size; rest != 0)
+                    text += (rest < 100 ? " and " : " ") + self(rest);
                 return text;
             }
             return {};
@@ -86,11 +90,13 @@ namespace render::primitives {
         if (!ordinal) return written;
 
         // The ordinal: the last word's own, `-th` for the rest.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 7> irregular{{
-            {"one", "first"}, {"two", "second"}, {"three", "third"}, {"five", "fifth"},
-            {"eight", "eighth"}, {"nine", "ninth"}, {"twelve", "twelfth"},
-        }};
-        for (const auto& [cardinal, spelled] : irregular) {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 7> irregular{
+            {
+                {"one", "first"}, {"two", "second"}, {"three", "third"}, {"five", "fifth"},
+                {"eight", "eighth"}, {"nine", "ninth"}, {"twelve", "twelfth"},
+            }
+        };
+        for (const auto &[cardinal, spelled]: irregular) {
             if (written.ends_with(cardinal)) {
                 written.replace(written.size() - cardinal.size(), cardinal.size(), spelled);
                 return written;
@@ -102,5 +108,4 @@ namespace render::primitives {
         }
         return written + "th";
     }
-
 }

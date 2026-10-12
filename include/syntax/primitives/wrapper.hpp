@@ -19,7 +19,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Every core primitive, installed in one call.
     ///
     /// Each module is a Primitive -- a callable taking `(Mouth&, Context&)` --
@@ -52,12 +51,12 @@ namespace syntax::primitives {
     public:
         /// @brief Constructs every module against one interning table.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Wrapper(Lexicon& lexicon) noexcept;
+        explicit Wrapper(Lexicon &lexicon) noexcept;
 
         /// @brief Installs every module.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services, passed through to each module.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error the core reported, gathered from each module.
         ///
@@ -71,21 +70,21 @@ namespace syntax::primitives {
 
         // Declared first because Context is built from the relay and the
         // other modules are handed that same Context.
-        Relay relay;       ///< Conditionals; Context holds a reference to this.
-        Blocks blocks;     ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
-        Macros macros;     ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
-        Values values;     ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
-        Compute compute;   ///< `\\evaluate`.
-        Loops loops;       ///< `\\repeat`, `\\group`, `\\ungroup`.
-        Include include;   ///< `\\include`, `\\input` and the package primitives.
-        Variables variables;    ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`: what a
+        Relay relay; ///< Conditionals; Context holds a reference to this.
+        Blocks blocks; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
+        Macros macros; ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
+        Values values; ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
+        Compute compute; ///< `\\evaluate`.
+        Loops loops; ///< `\\repeat`, `\\group`, `\\ungroup`.
+        Include include; ///< `\\include`, `\\input` and the package primitives.
+        Variables variables;
+        ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`: what a
                                 ///< Context reads and a caller hands values in through before a run.
-        Decimals decimals;      ///< `\\calculate`, `\\amount`, `\\separators`.
-        Hooks hooks;            ///< `\\addtohook`, `\\usehook`.
-        Strings strings;        ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
-        Records records;        ///< csvsimple's CSV files and datatool's databases.
+        Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
+        Hooks hooks; ///< `\\addtohook`, `\\usehook`.
+        Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
+        Records records; ///< csvsimple's CSV files and datatool's databases.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");
-
 }

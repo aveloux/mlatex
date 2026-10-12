@@ -19,22 +19,21 @@
 #include <string>
 
 #if defined(_WIN32)
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #ifndef NOMINMAX
-        #define NOMINMAX
-    #endif
-    #include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
-    #include <fcntl.h>
-    #include <sys/mman.h>
-    #include <sys/stat.h>
-    #include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 namespace render::typography {
-
     /// @brief Folds one byte to lower case, ASCII only.
     ///
     /// Deliberately not std::tolower: that consults the current locale,
@@ -57,7 +56,7 @@ namespace render::typography {
     /// @complexity O(n) in the name's length, which is a file name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
         std::size_t value = 1469598103934665603ull;
-        for (const char letter : name) {
+        for (const char letter: name) {
             value ^= static_cast<std::size_t>(static_cast<unsigned char>(fold(letter)));
             value *= 1099511628211ull;
         }
@@ -76,11 +75,11 @@ namespace render::typography {
         return true;
     }
 
-    Collection::Collection(memory::Arena& arena, const std::size_t buckets) noexcept : arena(arena) {
+    Collection::Collection(memory::Arena &arena, const std::size_t buckets) noexcept : arena(arena) {
         // Rounded to a power of two so that a lookup masks instead of dividing.
         // A modulo on the hot path costs more than the comparison after it.
         this->slots = std::bit_ceil(buckets > 0 ? buckets : 512);
-        table = arena.allocate<Entry*>(this->slots).data;
+        table = arena.allocate<Entry *>(this->slots).data;
         for (std::size_t index = 0; index < this->slots; ++index) table[index] = nullptr;
     }
 
@@ -88,12 +87,12 @@ namespace render::typography {
         // The views, not the entries: an entry an alias took over no longer
         // names the bytes it once held, and a Face may be reading them still
         // right up to this point.
-        for (const View& view : views) {
-        #if defined(_WIN32)
+        for (const View &view: views) {
+#if defined(_WIN32)
             UnmapViewOfFile(view.data);
-        #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
-            munmap(const_cast<void*>(view.data), view.size);
-        #endif
+#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+            munmap(const_cast<void *>(view.data), view.size);
+#endif
         }
     }
 
@@ -139,7 +138,7 @@ namespace render::typography {
             // tree's author has to resolve; preferring the later one silently
             // would make the choice depend on the order the walk happened to
             // hand them over, which is not the same on two machines.
-            for (const Entry* entry = table[slot]; entry; entry = entry->next) {
+            for (const Entry *entry = table[slot]; entry; entry = entry->next) {
                 if (same(stem, entry->family)) return;
             }
 
@@ -155,7 +154,7 @@ namespace render::typography {
             std::memcpy(path.data, name.data(), name.size());
             path[name.size()] = '\0';
 
-            auto* entry = arena.compose<Entry>();
+            auto *entry = arena.compose<Entry>();
             entry->family = std::string_view(family.data, family.count);
             entry->path = std::string_view(path.data, name.size());
             entry->next = table[slot];
@@ -176,8 +175,8 @@ namespace render::typography {
             const std::string_view folder(name.data() + head, cut - head);
             if (folder.empty() || same(folder, entry->family)) return;
 
-            const Entry* named = nullptr;
-            for (const Entry* step = table[digest(folder) & (slots - 1)]; step; step = step->next) {
+            const Entry *named = nullptr;
+            for (const Entry *step = table[digest(folder) & (slots - 1)]; step; step = step->next) {
                 if (same(folder, step->family)) {
                     named = step;
                     break;
@@ -197,7 +196,7 @@ namespace render::typography {
             while (!path.empty() && (path.back() == '/' || path.back() == '\\')) path.pop_back();
             path += '/';
             const std::size_t base = path.size();
-            for (const std::string_view file : files) {
+            for (const std::string_view file: files) {
                 path.resize(base);
                 path += file;
                 enter(path);
@@ -207,7 +206,7 @@ namespace render::typography {
             return indexed;
         }
 
-    #if defined(_WIN32)
+#if defined(_WIN32)
         // The tree as the system lists it: one search per directory, asked
         // for its whole listing in one go and for names and attributes alone.
         // The path is kept twice while the walk runs -- wide for the search,
@@ -231,7 +230,7 @@ namespace render::typography {
         // which is the order std::filesystem's recursive walk hands them over
         // in. A link to a directory elsewhere is not followed, as it is not
         // there either.
-        const auto descend = [&](const auto& self) -> void {
+        const auto descend = [&](const auto &self) -> void {
             const std::size_t wide = search.size();
             const std::size_t narrow = text.size();
 
@@ -266,13 +265,13 @@ namespace render::typography {
             FindClose(listing);
         };
         descend(descend);
-    #else
+#else
         for (std::filesystem::recursive_directory_iterator walk(root, failure), stop;
              !failure && walk != stop; walk.increment(failure)) {
             if (!walk->is_regular_file(failure) || failure) continue;
             enter(walk->path().string());
         }
-    #endif
+#endif
 
         Logger::log(Logger::Type::Layout, Logger::Level::Informative,
                     "Indexed {} font files under {}", indexed, directory);
@@ -288,30 +287,31 @@ namespace render::typography {
         // its user added since. A folder that is not there is passed over
         // without a word: most of these exist on one system in three.
         std::vector<std::filesystem::path> folders;
-    #if defined(_WIN32)
+#if defined(_WIN32)
         if (wchar_t windows[MAX_PATH]; GetWindowsDirectoryW(windows, MAX_PATH) > 0) {
             folders.emplace_back(std::filesystem::path(windows) / "Fonts");
         }
         if (wchar_t local[MAX_PATH]; GetEnvironmentVariableW(L"LOCALAPPDATA", local, MAX_PATH) > 0) {
             folders.emplace_back(std::filesystem::path(local) / "Microsoft" / "Windows" / "Fonts");
         }
-    #elif defined(__APPLE__)
+#elif defined(__APPLE__)
         folders = {"/System/Library/Fonts", "/Library/Fonts"};
-        if (const char* home = std::getenv("HOME")) folders.emplace_back(std::filesystem::path(home) / "Library" / "Fonts");
-    #elif defined(__unix__) && !defined(__EMSCRIPTEN__)
+        if (const char *home = std::getenv("HOME")) folders.emplace_back(
+            std::filesystem::path(home) / "Library" / "Fonts");
+#elif defined(__unix__) && !defined(__EMSCRIPTEN__)
         folders = {"/usr/share/fonts", "/usr/local/share/fonts"};
-        if (const char* home = std::getenv("HOME")) {
+        if (const char *home = std::getenv("HOME")) {
             folders.emplace_back(std::filesystem::path(home) / ".local" / "share" / "fonts");
             folders.emplace_back(std::filesystem::path(home) / ".fonts");
         }
-    #endif
+#endif
 
         std::size_t indexed = 0;
         std::error_code failure;
-        for (const std::filesystem::path& folder : folders) {
+        for (const std::filesystem::path &folder: folders) {
             if (!std::filesystem::is_directory(folder, failure) || failure) continue;
             const std::u8string written = folder.u8string();
-            indexed += post(std::string_view(reinterpret_cast<const char*>(written.data()), written.size()));
+            indexed += post(std::string_view(reinterpret_cast<const char *>(written.data()), written.size()));
         }
         return indexed;
     }
@@ -321,8 +321,8 @@ namespace render::typography {
 
         const std::size_t slot = digest(name) & (slots - 1);
 
-        Entry* entry = nullptr;
-        for (Entry* step = table[slot]; step; step = step->next) {
+        Entry *entry = nullptr;
+        for (Entry *step = table[slot]; step; step = step->next) {
             if (same(name, step->family)) {
                 entry = step;
                 break;
@@ -348,7 +348,7 @@ namespace render::typography {
         entry->bytes = {};
         entry->target = nullptr;
 
-        for (Entry* step = table[digest(family) & (slots - 1)]; step; step = step->next) {
+        for (Entry *step = table[digest(family) & (slots - 1)]; step; step = step->next) {
             if (same(family, step->family) && step != entry) {
                 entry->target = step;
                 break;
@@ -356,14 +356,14 @@ namespace render::typography {
         }
     }
 
-    const Collection::Entry* Collection::get(const std::string_view family) const {
+    const Collection::Entry *Collection::get(const std::string_view family) const {
         const std::scoped_lock lock(guard);
         if (family.empty() || !table) return nullptr;
 
         // The family's entry, and through an alias the entry it names: the
         // chain is one link deep in practice, but a document that aliases in
         // a circle must not spin, so the walk is bounded rather than trusted.
-        Entry* entry = table[digest(family) & (slots - 1)];
+        Entry *entry = table[digest(family) & (slots - 1)];
         while (entry && !same(family, entry->family)) entry = entry->next;
         for (int hops = 0; entry && entry->target && hops < 8; ++hops) entry = entry->target;
         if (!entry || entry->path.empty()) return nullptr;
@@ -372,17 +372,17 @@ namespace render::typography {
         // Mapped wherever the system will map it; see the class notes for
         // why. A mapping outlives the handles that made it, so they are
         // closed at once and only the view is kept.
-        const void* view = nullptr;
+        const void *view = nullptr;
         std::size_t size = 0;
 
-    #if defined(_WIN32)
+#if defined(_WIN32)
         std::wstring wide(entry->path.size(), L'\0');
         const int length = MultiByteToWideChar(CP_UTF8, 0, entry->path.data(), static_cast<int>(entry->path.size()),
                                                wide.data(), static_cast<int>(wide.size()));
         wide.resize(static_cast<std::size_t>(length > 0 ? length : 0));
 
         if (const HANDLE file = CreateFileW(wide.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-                                           FILE_ATTRIBUTE_NORMAL, nullptr);
+                                            FILE_ATTRIBUTE_NORMAL, nullptr);
             file != INVALID_HANDLE_VALUE) {
             LARGE_INTEGER extent{};
             if (GetFileSizeEx(file, &extent) && extent.QuadPart > 0) {
@@ -395,11 +395,12 @@ namespace render::typography {
             }
             CloseHandle(file);
         }
-    #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
         if (const int file = open(entry->path.data(), O_RDONLY | O_CLOEXEC); file >= 0) {
             struct stat status{};
             if (fstat(file, &status) == 0 && status.st_size > 0) {
-                if (void* mapped = mmap(nullptr, static_cast<std::size_t>(status.st_size), PROT_READ, MAP_PRIVATE, file, 0);
+                if (void *mapped = mmap(nullptr, static_cast<std::size_t>(status.st_size), PROT_READ, MAP_PRIVATE, file,
+                                        0);
                     mapped != MAP_FAILED) {
                     view = mapped;
                     size = static_cast<std::size_t>(status.st_size);
@@ -407,12 +408,12 @@ namespace render::typography {
             }
             close(file);
         }
-    #endif
+#endif
 
         if (view) {
             views.push_back(View{.data = view, .size = size});
 
-            entry->bytes = std::span<const std::uint8_t>(static_cast<const std::uint8_t*>(view), size);
+            entry->bytes = std::span<const std::uint8_t>(static_cast<const std::uint8_t *>(view), size);
             bytes += size;
 
             Logger::log(Logger::Type::Layout, Logger::Level::Debug,
@@ -423,7 +424,7 @@ namespace render::typography {
         // Read, where it would not map: the path is UTF-8, which is what the
         // stream is told it is rather than left to guess.
         std::ifstream file(std::filesystem::path(std::u8string_view(
-                               reinterpret_cast<const char8_t*>(entry->path.data()), entry->path.size())),
+                               reinterpret_cast<const char8_t *>(entry->path.data()), entry->path.size())),
                            std::ios::binary | std::ios::ate);
         if (!file) {
             Logger::log(Logger::Type::Layout, Logger::Level::Error,
@@ -439,7 +440,7 @@ namespace render::typography {
         // taking a copy, so a second size of the same family costs nothing.
         const auto count = static_cast<std::size_t>(extent);
         auto storage = std::make_unique_for_overwrite<std::uint8_t[]>(count);
-        if (!file.read(reinterpret_cast<char*>(storage.get()), extent)) return nullptr;
+        if (!file.read(reinterpret_cast<char *>(storage.get()), extent)) return nullptr;
 
         entry->bytes = std::span<const std::uint8_t>(storage.get(), count);
         bytes += count;
@@ -449,5 +450,4 @@ namespace render::typography {
                     "Loaded {} bytes for family '{}'", count, entry->family);
         return entry;
     }
-
 }

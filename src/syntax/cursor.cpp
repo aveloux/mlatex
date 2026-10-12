@@ -18,7 +18,6 @@
 #include <utility>
 
 namespace syntax {
-
     Cursor::Cursor(std::vector<Token> stream) {
         if (!stream.empty()) {
             this->tokens = std::move(stream);
@@ -49,8 +48,8 @@ namespace syntax {
     void Cursor::inject(const std::span<const Token> batch) {
         if (batch.empty()) return;
 
-        const Token* first = this->tokens.data();
-        const Token* last = first + this->tokens.size();
+        const Token *first = this->tokens.data();
+        const Token *last = first + this->tokens.size();
 
         // Guard against a caller handing us a span into our own storage --
         // spent entries included, since those are about to be cut away:
@@ -69,7 +68,7 @@ namespace syntax {
                     "Cursor injected {} token(s), {} now pending", batch.size(), this->depth);
     }
 
-    void Cursor::adopt(std::vector<Token>&& incoming) {
+    void Cursor::adopt(std::vector<Token> &&incoming) {
         if (incoming.empty()) return;
 
         if (this->depth == 0) {
@@ -89,7 +88,7 @@ namespace syntax {
         return {this->tokens.rend() - static_cast<std::ptrdiff_t>(this->unread), this->tokens.rend()};
     }
 
-    void Cursor::source(const std::vector<Token>& replacement) {
+    void Cursor::source(const std::vector<Token> &replacement) {
         // Beneath what was injected over it, and held reversed as the rest is.
         std::vector<Token> rebuilt(replacement.rbegin(), replacement.rend());
         rebuilt.insert(rebuilt.end(), this->tokens.begin() + static_cast<std::ptrdiff_t>(this->unread),
@@ -112,5 +111,4 @@ namespace syntax {
         this->depth = 0;
         this->unread = 0;
     }
-
 }

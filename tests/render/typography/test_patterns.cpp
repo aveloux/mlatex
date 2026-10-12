@@ -17,8 +17,8 @@
 
 int main() {
     const std::filesystem::path source =
-        std::filesystem::path(__FILE__).lexically_normal().parent_path().parent_path().parent_path().parent_path() /
-        "assets" / "hyphens" / "hyph-en-us.pat.txt";
+            std::filesystem::path(__FILE__).lexically_normal().parent_path().parent_path().parent_path().parent_path() /
+            "assets" / "hyphens" / "hyph-en-us.pat.txt";
 
     memory::Arena arena(1u << 20);
     memory::Arena scratch(1u << 22);
@@ -41,7 +41,7 @@ int main() {
     std::ifstream file(source, std::ios::binary);
     for (std::string pattern; file >> pattern;) {
         std::string letters;
-        for (const char letter : pattern) {
+        for (const char letter: pattern) {
             if (letter >= 'a' && letter <= 'z') letters += letter;
         }
         if (letters.size() >= 2) {
@@ -55,12 +55,12 @@ int main() {
     std::uniform_int_distribution<int> letter('a', 'z');
     for (int count = 0; count < 20000; ++count) {
         std::string word(static_cast<std::size_t>(length(random)), 'a');
-        for (char& place : word) place = static_cast<char>(letter(random));
+        for (char &place: word) place = static_cast<char>(letter(random));
         words.push_back(word);
     }
 
     std::size_t broken = 0;
-    for (const std::string& word : words) {
+    for (const std::string &word: words) {
         const memory::Slice<std::uint32_t> codes = scratch.allocate<std::uint32_t>(word.size());
         for (std::size_t index = 0; index < word.size(); ++index) {
             codes[index] = static_cast<unsigned char>(word[index]);

@@ -3,7 +3,6 @@
 #include <string>
 
 namespace render::primitives {
-
     /// @brief Formats a counter's value the way LaTeX's numbering commands do.
     ///
     /// `\arabic`, `\roman`/`\Roman` and `\alph`/`\Alph` all reduce to the same
@@ -33,5 +32,4 @@ namespace render::primitives {
         /// @complexity O(log n) in the value.
         [[nodiscard]] static std::string words(int value, bool ordinal);
     };
-
 }

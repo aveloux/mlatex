@@ -23,21 +23,25 @@ int main() {
     core(mouth, context);
 
     // Each module's names are bound: one from each of several.
-    for (const char* name : {"\\define", "\\set", "\\ifnum", "\\begin", "\\repeat", "\\evaluate", "\\calculate",
-                             "\\setvariable", "\\addtohook", "\\usepackage"}) {
+    for (const char *name: {
+             "\\define", "\\set", "\\ifnum", "\\begin", "\\repeat", "\\evaluate", "\\calculate",
+             "\\setvariable", "\\addtohook", "\\usepackage"
+         }) {
         mouth.ingest(name);
         const syntax::Token token = mouth.read();
         assert((mouth.known(token.symbol)) && name);
-        while (!mouth.read().empty()) {}
+        while (!mouth.read().empty()) {
+        }
     }
 
     // Faults from two modules arrive in one list.
     mouth.ingest("\\end{a}\\variable{never}");
-    while (!mouth.expand().empty()) {}
-    const std::vector<syntax::Traceback>& faults = core.traceback();
+    while (!mouth.expand().empty()) {
+    }
+    const std::vector<syntax::Traceback> &faults = core.traceback();
     bool block = false;
     bool variable = false;
-    for (const syntax::Traceback& fault : faults) {
+    for (const syntax::Traceback &fault: faults) {
         block = block || fault.format().find("Extra \\end") != std::string::npos;
         variable = variable || fault.format().find("never") != std::string::npos;
     }

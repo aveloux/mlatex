@@ -18,7 +18,7 @@ int main() {
     const std::vector<std::uint8_t> written{0x00, 0x01, 0xFF, 'a', '\r', '\n', 'b'};
     {
         std::ofstream output(file, std::ios::binary);
-        output.write(reinterpret_cast<const char*>(written.data()), static_cast<std::streamsize>(written.size()));
+        output.write(reinterpret_cast<const char *>(written.data()), static_cast<std::streamsize>(written.size()));
     }
 
     const auto whole = protocols::get(file.string());

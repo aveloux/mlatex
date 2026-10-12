@@ -21,14 +21,13 @@
 #include <vector>
 
 namespace render::primitives {
-
-    Verbatim::Verbatim(syntax::Lexicon& lexicon) noexcept {
+    Verbatim::Verbatim(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\verb");
         // No document can write this name: a colon ends a control word.
         start = lexicon.intern("\\verbatim:start");
     }
 
-    void Verbatim::operator()(syntax::Parser& parser, Context& context) const {
+    void Verbatim::operator()(syntax::Parser &parser, Context &context) const {
         // One of a listing's options: its own, as written between its
         // brackets, and failing that the one \lstset gave every listing. A
         // value in braces loses them, and a key written alone is `true`.
@@ -57,19 +56,19 @@ namespace render::primitives {
                 }
                 return std::string(value);
             }
-            const std::string* set = context.variables.get("lst." + std::string(key));
+            const std::string *set = context.variables.get("lst." + std::string(key));
             return set ? *set : std::string{};
         };
 
         // A line as it stands, in the typewriter face at a size: no
         // ligatures, every space a character wide and never stretched, and
         // a tab as many spaces as reach the next stop.
-        const auto typed = [&context](memory::Arena& arena, const std::string_view text, const float size,
+        const auto typed = [&context](memory::Arena &arena, const std::string_view text, const float size,
                                       const std::size_t tabs) {
             std::string spread;
             spread.reserve(text.size());
             std::size_t column = 0;
-            for (const char letter : text) {
+            for (const char letter: text) {
                 if (letter == '\r') continue;
                 if (letter == '\t') {
                     do {
@@ -82,14 +81,14 @@ namespace render::primitives {
                 if ((static_cast<unsigned char>(letter) & 0xC0) != 0x80) ++column;
             }
 
-            memory::Slice<layout::Node*> shaped{};
-            if (const typography::Font* mono = Styles::resolve(context, Styles::Cut::Mono, size);
+            memory::Slice<layout::Node *> shaped{};
+            if (const typography::Font *mono = Styles::resolve(context, Styles::Cut::Mono, size);
                 mono && !spread.empty()) {
-                const typography::Font* fonts[] = {mono};
+                const typography::Font *fonts[] = {mono};
                 shaped = context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(spread), {});
-                for (layout::Node*& node : shaped) {
+                for (layout::Node *&node: shaped) {
                     if (!node || node->type != layout::Node::Type::Glue) continue;
-                    auto* kern = arena.compose<layout::Node>(layout::Node::Type::Kern);
+                    auto *kern = arena.compose<layout::Node>(layout::Node::Type::Kern);
                     kern->kern({.width = node->glue().width});
                     node = kern;
                 }
@@ -102,15 +101,15 @@ namespace render::primitives {
         };
 
         // Inline: the text after \verb, \Verb, \lstinline or \mintinline, one box.
-        for (const std::string_view name : {"\\verb", "\\Verb", "\\lstinline", "\\mintinline"}) {
-            parser.bind(name, [this, typed, current, name](syntax::Parser& parser) -> syntax::Node* {
-                syntax::Mouth& mouth = parser.mouth;
+        for (const std::string_view name: {"\\verb", "\\Verb", "\\lstinline", "\\mintinline"}) {
+            parser.bind(name, [this, typed, current, name](syntax::Parser &parser) -> syntax::Node * {
+                syntax::Mouth &mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
                 const syntax::Token text = mouth.read();
                 if (text.symbol != syntax::none || text.category != syntax::Catcodes::Category::Other) {
                     if (!text.empty()) mouth.stream().inject(std::span{&text, 1});
                     tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                             std::format("{} needs its text between two of one character", name));
+                                            std::format("{} needs its text between two of one character", name));
                     return nullptr;
                 }
                 return directive(parser.arena, typed(parser.arena, text.text, current(), 8), origin);
@@ -121,15 +120,17 @@ namespace render::primitives {
         // lexer made one token of.
         // minted's block is a listing too, its language read after its
         // options and let go: a listing here is not highlighted.
-        for (const std::string_view name : {"verbatim", "verbatim*", "Verbatim", "Verbatim*", "BVerbatim", "spverbatim",
-                                            "boxedverbatim", "lstlisting", "comment", "minted", "CCSXML", "luacode",
-                                            "luacode*"}) {
+        for (const std::string_view name: {
+                 "verbatim", "verbatim*", "Verbatim", "Verbatim*", "BVerbatim", "spverbatim",
+                 "boxedverbatim", "lstlisting", "comment", "minted", "CCSXML", "luacode",
+                 "luacode*"
+             }) {
             context.blocks.watch(
                 name,
-                [this, name](syntax::Mouth& mouth) {
+                [this, name](syntax::Mouth &mouth) {
                     std::string options;
                     if (name == "lstlisting" || name.contains("Verbatim") || name == "minted") {
-                        for (const syntax::Token& token :
+                        for (const syntax::Token &token:
                              mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                             options += token.text;
                         }
@@ -137,10 +138,14 @@ namespace render::primitives {
                     if (name == "minted") static_cast<void>(mouth.argument({}, 0));
                     const bool listing = name == "lstlisting" || name == "minted";
                     const bool unread = name == "comment" || name == "CCSXML" || name.starts_with("luacode");
-                    openings.push_back({listing ? "lstlisting" : unread ? "comment" : "verbatim",
-                                        std::move(options)});
-                    const syntax::Token mark{.symbol = start, .category = syntax::Catcodes::Category::Escape,
-                                             .text = mouth.lexicon.resolve(start)};
+                    openings.push_back({
+                        listing ? "lstlisting" : unread ? "comment" : "verbatim",
+                        std::move(options)
+                    });
+                    const syntax::Token mark{
+                        .symbol = start, .category = syntax::Catcodes::Category::Escape,
+                        .text = mouth.lexicon.resolve(start)
+                    };
                     mouth.stream().inject(std::span{&mark, 1});
                 },
                 {});
@@ -150,10 +155,10 @@ namespace render::primitives {
         // a `.bib` most often -- kept for the rest of the run, so the
         // \\bibliography or \\input that names it later reads it. Nothing is
         // set where it stands; the lexer made its body one token.
-        for (const std::string_view name : {"filecontents", "filecontents*"}) {
+        for (const std::string_view name: {"filecontents", "filecontents*"}) {
             context.blocks.watch(
                 name,
-                [&context](syntax::Mouth& mouth) {
+                [&context](syntax::Mouth &mouth) {
                     static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                     const std::string file = syntax::Argument::text(mouth);
                     const syntax::Token body = mouth.read();
@@ -167,38 +172,42 @@ namespace render::primitives {
         }
 
         // \lstinputlisting[options]{file}: a listing of a file handed in.
-        parser.bind("\\lstinputlisting", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
+        parser.bind("\\lstinputlisting", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
-            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
             }
             const std::string name = syntax::Argument::text(mouth);
-            const std::string* text = nullptr;
+            const std::string *text = nullptr;
             if (context.files) {
                 if (const auto found = context.files->find(name); found != context.files->end()) text = &found->second;
             }
             if (!text && context.disk) text = context.disk(name);
             if (!text) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                         std::format("\\lstinputlisting: no file named '{}' was handed in", name));
+                                        std::format("\\lstinputlisting: no file named '{}' was handed in", name));
                 return nullptr;
             }
             openings.push_back({"lstlisting", std::move(options)});
             const std::array<syntax::Token, 2> marked{
-                syntax::Token{.symbol = start, .category = syntax::Catcodes::Category::Escape,
-                              .text = mouth.lexicon.resolve(start)},
-                syntax::Token{.symbol = syntax::none, .category = syntax::Catcodes::Category::Other,
-                              .location = origin, .text = *text},
+                syntax::Token{
+                    .symbol = start, .category = syntax::Catcodes::Category::Escape,
+                    .text = mouth.lexicon.resolve(start)
+                },
+                syntax::Token{
+                    .symbol = syntax::none, .category = syntax::Catcodes::Category::Other,
+                    .location = origin, .text = *text
+                },
             };
             mouth.stream().inject(std::span{marked});
             return nullptr;
         });
 
-        parser.bind(start, [this, &context, option, typed, current](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind(start, [this, &context, option, typed, current](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
             if (openings.empty()) return nullptr;
 
@@ -221,8 +230,10 @@ namespace render::primitives {
                 const std::string label = option(options, "label");
                 openings.back().headed = true;
                 if (!caption.empty()) {
-                    const syntax::Token mark{.symbol = start, .category = syntax::Catcodes::Category::Escape,
-                                             .text = mouth.lexicon.resolve(start)};
+                    const syntax::Token mark{
+                        .symbol = start, .category = syntax::Catcodes::Category::Escape,
+                        .text = mouth.lexicon.resolve(start)
+                    };
                     if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                     mouth.stream().inject(std::span{&mark, 1});
                     mouth.ingest(arena.copy("\\captionof{lstlisting}{" + caption + "}" +
@@ -237,12 +248,14 @@ namespace render::primitives {
             float size = current();
             if (listing) {
                 const std::string style = option(options, "basicstyle");
-                static constexpr std::array<std::pair<std::string_view, Styles::Size>, 5> sizes{{
-                    {"\\tiny", Styles::Size::Tiny}, {"\\scriptsize", Styles::Size::Script},
-                    {"\\footnotesize", Styles::Size::Footnote}, {"\\small", Styles::Size::Small},
-                    {"\\normalsize", Styles::Size::Normal},
-                }};
-                for (const auto& [written, step] : sizes) {
+                static constexpr std::array<std::pair<std::string_view, Styles::Size>, 5> sizes{
+                    {
+                        {"\\tiny", Styles::Size::Tiny}, {"\\scriptsize", Styles::Size::Script},
+                        {"\\footnotesize", Styles::Size::Footnote}, {"\\small", Styles::Size::Small},
+                        {"\\normalsize", Styles::Size::Normal},
+                    }
+                };
+                for (const auto &[written, step]: sizes) {
                     if (style.contains(written)) size = Styles::measure(normal, step);
                 }
             }
@@ -255,15 +268,15 @@ namespace render::primitives {
             const std::string frame = listing ? option(options, "frame") : std::string{};
             const bool ruled = !frame.empty() && frame != "none";
 
-            std::vector<syntax::Node*> parts;
-            const auto block = [&](layout::Node* node) { parts.push_back(directive(arena, node, origin, true)); };
+            std::vector<syntax::Node *> parts;
+            const auto block = [&](layout::Node *node) { parts.push_back(directive(arena, node, origin, true)); };
             const auto space = [&](const float amount) {
-                auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                auto *glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
                 glue->glue({.width = amount, .stretch = amount / 3.0f, .shrink = amount / 3.0f});
                 block(glue);
             };
             const auto rule = [&] {
-                auto* bar = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                auto *bar = arena.compose<layout::Node>(layout::Node::Type::Rule);
                 const float width = static_cast<float>(context.registers.get(
                                         syntax::semantics::Registers::Type::Dimension,
                                         syntax::semantics::Registers::reserved + 1)) / 65536.0f;
@@ -289,18 +302,20 @@ namespace render::primitives {
                 rest.remove_prefix(end + 1);
             }
 
-            const typography::Font* small = numbered
-                ? Styles::resolve(context, Styles::Cut::Normal, Styles::measure(normal, Styles::Size::Tiny))
-                : nullptr;
+            const typography::Font *small = numbered
+                                                ? Styles::resolve(context, Styles::Cut::Normal,
+                                                                  Styles::measure(normal, Styles::Size::Tiny))
+                                                : nullptr;
             for (std::size_t index = 0; index < lines.size(); ++index) {
-                layout::Node* code = typed(arena, lines[index], size, tabs);
+                layout::Node *code = typed(arena, lines[index], size, tabs);
                 if (small) {
                     constexpr float separation = 10.0f;
-                    const typography::Font* fonts[] = {small};
-                    layout::Node* number = layout::Line::horizontal(
-                        arena, context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(std::to_string(index + 1)), {}),
+                    const typography::Font *fonts[] = {small};
+                    layout::Node *number = layout::Line::horizontal(
+                        arena, context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(std::to_string(index + 1)),
+                                                    {}),
                         0.0f);
-                    const memory::Slice<layout::Node*> row = arena.allocate<layout::Node*>(4);
+                    const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(4);
                     row[0] = arena.compose<layout::Node>(layout::Node::Type::Kern);
                     row[0]->kern({.width = -(separation + number->box().width)});
                     row[1] = number;
@@ -318,12 +333,11 @@ namespace render::primitives {
             }
             space(listing ? 4.0f : 6.0f);
 
-            const memory::Slice<syntax::Node*> nodes = arena.allocate<syntax::Node*>(parts.size());
+            const memory::Slice<syntax::Node *> nodes = arena.allocate<syntax::Node *>(parts.size());
             std::ranges::copy(parts, nodes.begin());
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, nodes);
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound verbatim primitives");
     }
-
 }

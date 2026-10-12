@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Named values a document reads: `\\variable`, `\\setvariable`,
     ///        `\\unsetvariable`, `\\ifvariable`, `\\ifstrequal` to compare
     ///        two pieces of text, and `\\iftest` to weigh a test as ifthen
@@ -62,13 +61,13 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Variables(Lexicon& lexicon) noexcept;
+        explicit Variables(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\variable`, `\\setvariable`, `\\unsetvariable`,
         ///        `\\ifvariable`, `\\ifstrequal`, `\\iftest` and `\\setkeys`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; unused by this module.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Sets a value, as a calling program does before a document runs.
         /// @param name  What the document calls it.
@@ -99,10 +98,10 @@ namespace syntax::primitives {
         /// @return Its text, or nullptr when nothing was set under that name.
         ///         Valid until that name is set again.
         /// @complexity O(1) average.
-        [[nodiscard]] const std::string* get(std::string_view name) const noexcept;
+        [[nodiscard]] const std::string *get(std::string_view name) const noexcept;
 
         /// @brief Errors this module has recorded: names read that were never set.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// Every value, by name. Mutable because the module is installed as a
@@ -110,7 +109,6 @@ namespace syntax::primitives {
         /// document runs.
         mutable memory::Dictionary<std::string> values{};
 
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

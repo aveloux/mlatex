@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Definition primitives: `\\define`, `\\declare`, `\\switch`,
     ///        `\\forget`, `\\alias`, the names built and expanded out of order
     ///        -- `\\csname`, `\\expandafter` -- and the tests a command makes
@@ -70,14 +69,14 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Macros(Lexicon& lexicon) noexcept;
+        explicit Macros(Lexicon &lexicon) noexcept;
 
         /// @brief Installs the definition primitives.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; the register bank is used to scan `[n]`.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
-        static constexpr int parameters = 9;   ///< Most parameters a definition may declare.
+        static constexpr int parameters = 9; ///< Most parameters a definition may declare.
 
         /// @brief Errors this module has recorded.
         ///
@@ -86,23 +85,22 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
-        Symbol integer{};     ///< Interned `\\integer`, so `[\integer0]` scans.
-        Symbol alias{};       ///< `\\@alias`, which a switch's two macros are written with.
-        Symbol truth{};       ///< `\\iftrue`, what a switch turned on means.
-        Symbol falsehood{};   ///< `\\iffalse`, what a switch turned off means.
-        Symbol terminate{};   ///< `\\endcsname`, the end of a built name.
-        Symbol relax{};       ///< `\\relax`, what a built name means until it is defined.
-        Symbol finish{};      ///< The end of a body being expanded; no document can write it.
+        Symbol integer{}; ///< Interned `\\integer`, so `[\integer0]` scans.
+        Symbol alias{}; ///< `\\@alias`, which a switch's two macros are written with.
+        Symbol truth{}; ///< `\\iftrue`, what a switch turned on means.
+        Symbol falsehood{}; ///< `\\iffalse`, what a switch turned off means.
+        Symbol terminate{}; ///< `\\endcsname`, the end of a built name.
+        Symbol relax{}; ///< `\\relax`, what a built name means until it is defined.
+        Symbol finish{}; ///< The end of a body being expanded; no document can write it.
 
         /// How many bodies are being expanded for an \\edef now: while one
         /// is, \\noexpand and \\unexpanded hold names back rather than let
         /// them mean \\relax.
         mutable int flattening{0};
     };
-
 }

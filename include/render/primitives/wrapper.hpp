@@ -35,7 +35,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Every render primitive, installed in one call.
     ///
     /// Each module is a Primitive -- a callable taking
@@ -74,12 +73,12 @@ namespace render::primitives {
     public:
         /// @brief Constructs every module against one interning table.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Wrapper(syntax::Lexicon& lexicon) noexcept;
+        explicit Wrapper(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs every module.
         /// @param parser  Parser to bind into.
         /// @param context Engine services, passed through to each module.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Every error the layer reported, gathered from each module.
         ///
@@ -92,36 +91,36 @@ namespace render::primitives {
         [[nodiscard]] std::vector<syntax::Traceback> traceback() const;
 
     private:
-        Page page;             ///< `\\documentclass`, the sheet and the margins.
-        Typeface typeface;     ///< `\\textfont`, `\\mathfont` and `\\font`.
-        Styles styles;         ///< `\\textbf`, `\\emph`, `\\large` and the rest.
-        Symbols symbols;       ///< The characters a document cannot type for itself.
-        Groups groups;         ///< The brace group, and the scope it bounds.
-        Boxes boxes;           ///< `\\hbox`, `\\vbox` and `\\vtop`.
-        Spacing spacing;       ///< Glue and kerns.
-        Rules rules;           ///< `\\rule`, `\\hrule` and `\\vrule`.
-        Penalties penalties;   ///< `\\penalty` and the forced breaks.
-        Tables tables;         ///< `\\halign`.
-        Sections sections;     ///< `\\section` and the levels beneath it.
+        Page page; ///< `\\documentclass`, the sheet and the margins.
+        Typeface typeface; ///< `\\textfont`, `\\mathfont` and `\\font`.
+        Styles styles; ///< `\\textbf`, `\\emph`, `\\large` and the rest.
+        Symbols symbols; ///< The characters a document cannot type for itself.
+        Groups groups; ///< The brace group, and the scope it bounds.
+        Boxes boxes; ///< `\\hbox`, `\\vbox` and `\\vtop`.
+        Spacing spacing; ///< Glue and kerns.
+        Rules rules; ///< `\\rule`, `\\hrule` and `\\vrule`.
+        Penalties penalties; ///< `\\penalty` and the forced breaks.
+        Tables tables; ///< `\\halign`.
+        Sections sections; ///< `\\section` and the levels beneath it.
         Paragraphs paragraphs; ///< `\\noindent`, `\\centering` and the alignment blocks.
-        Lists lists;             ///< `\\item` and the three list blocks.
+        Lists lists; ///< `\\item` and the three list blocks.
         Expressions expressions; ///< `$`, `\\(`, `\\[`, `equation` and the matrices.
-        References references;  ///< `\\label`, `\\ref` and `\\eqref`.
-        Citations citations;   ///< `\\cite`, `\\bibitem` and `thebibliography`.
-        Footnotes footnotes;   ///< `\\footnote`.
-        Counters counters;     ///< `\\newcounter`, `\\stepcounter`, `\\setcounter` and their printed forms.
-        Theorems theorems;     ///< `\\newtheorem`, `\\theoremstyle`, the proof block and `\\qed`.
-        Floats floats;         ///< `figure`, `table`, `algorithm`, `\\caption` and `\\captionof`.
+        References references; ///< `\\label`, `\\ref` and `\\eqref`.
+        Citations citations; ///< `\\cite`, `\\bibitem` and `thebibliography`.
+        Footnotes footnotes; ///< `\\footnote`.
+        Counters counters; ///< `\\newcounter`, `\\stepcounter`, `\\setcounter` and their printed forms.
+        Theorems theorems; ///< `\\newtheorem`, `\\theoremstyle`, the proof block and `\\qed`.
+        Floats floats; ///< `figure`, `table`, `algorithm`, `\\caption` and `\\captionof`.
         Algorithms algorithms; ///< The `algorithmic` block, `\\State` and `\\Statex`.
-        Illustrations illustrations;     ///< The `picture`/`overlay` blocks, their line primitives, and `\\includegraphics`/`\\caption`.
-        Colors colors;         ///< `\\textcolor`, `\\definecolor`, `\\colorlet`.
-        Requests requests;      ///< `\\httpget`, `\\httppost`.
-        Verbatim verbatim;      ///< `\\verb`, `verbatim`, `lstlisting` and `\\lstinline`.
-        Plots plots;            ///< pgfplots' axes and what `\\addplot` draws in them.
-        Diagrams diagrams;      ///< tikz-cd's, xy-pic's and amscd's diagrams, circuits and trees, as TikZ.
-        Languages languages;    ///< A language's patterns, direction and captions, and `otherlanguage`.
+        Illustrations illustrations;
+        ///< The `picture`/`overlay` blocks, their line primitives, and `\\includegraphics`/`\\caption`.
+        Colors colors; ///< `\\textcolor`, `\\definecolor`, `\\colorlet`.
+        Requests requests; ///< `\\httpget`, `\\httppost`.
+        Verbatim verbatim; ///< `\\verb`, `verbatim`, `lstlisting` and `\\lstinline`.
+        Plots plots; ///< pgfplots' axes and what `\\addplot` draws in them.
+        Diagrams diagrams; ///< tikz-cd's, xy-pic's and amscd's diagrams, circuits and trees, as TikZ.
+        Languages languages; ///< A language's patterns, direction and captions, and `otherlanguage`.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");
-
 }

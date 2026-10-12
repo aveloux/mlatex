@@ -13,11 +13,11 @@
 #include <cstddef>
 
 namespace syntax {
-
     /// The glossary, as it stands in assets.
     static constexpr char source[] = {
 #embed "../../assets/glossary.mtex" suffix(,)
-        0};
+        0
+    };
 
     /// How many commands it holds: its lines that begin with a backslash.
     /// Everything else -- a blank line, a comment -- is only for its reader.
@@ -35,29 +35,31 @@ namespace syntax {
 
     /// Every line, found by the name it begins with: the backslash and the
     /// letters after it. A line keeps the name, so it can be read whole.
-    static constexpr memory::Catalog<count> catalog{[] {
-        const std::string_view text{source, sizeof source - 1};
-        std::array<memory::Catalog<count>::Entry, count> entries{};
-        std::size_t filled = 0;
-        for (std::size_t start = 0; start < text.size();) {
-            std::size_t stop = text.find('\n', start);
-            if (stop == std::string_view::npos) stop = text.size();
-            std::string_view line = text.substr(start, stop - start);
-            if (line.ends_with('\r')) line.remove_suffix(1);
-            if (line.starts_with('\\')) {
-                std::size_t end = 1;
-                while (end < line.size() && ((line[end] >= 'a' && line[end] <= 'z') ||
-                                             (line[end] >= 'A' && line[end] <= 'Z') || line[end] == '@')) {
-                    ++end;
+    static constexpr memory::Catalog<count> catalog{
+        [] {
+            const std::string_view text{source, sizeof source - 1};
+            std::array < memory::Catalog < count > ::Entry, count > entries{};
+            std::size_t filled = 0;
+            for (std::size_t start = 0; start < text.size();) {
+                std::size_t stop = text.find('\n', start);
+                if (stop == std::string_view::npos) stop = text.size();
+                std::string_view line = text.substr(start, stop - start);
+                if (line.ends_with('\r')) line.remove_suffix(1);
+                if (line.starts_with('\\')) {
+                    std::size_t end = 1;
+                    while (end < line.size() && ((line[end] >= 'a' && line[end] <= 'z') ||
+                                                 (line[end] >= 'A' && line[end] <= 'Z') || line[end] == '@')) {
+                        ++end;
+                    }
+                    entries[filled++] = {line.substr(0, end), line};
                 }
-                entries[filled++] = {line.substr(0, end), line};
+                start = stop + 1;
             }
-            start = stop + 1;
-        }
-        return entries;
-    }()};
+            return entries;
+        }()
+    };
 
-    bool Glossary::define(Mouth& mouth, const Token& token) {
+    bool Glossary::define(Mouth &mouth, const Token &token) {
         if (token.symbol == none) return false;
 
         const auto slot = static_cast<std::size_t>(token.symbol);
@@ -83,5 +85,4 @@ namespace syntax {
     std::optional<std::string_view> Glossary::get(const std::string_view name) noexcept {
         return catalog.get(name);
     }
-
 }

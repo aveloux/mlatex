@@ -20,10 +20,9 @@
 #include <utility>
 
 namespace render::graphics {
-
     std::optional<Drawing> Drawing::decode(const std::span<const std::byte> bytes, const int page) {
         using Type = Value::Type;
-        std::string_view file(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+        std::string_view file(reinterpret_cast<const char *>(bytes.data()), bytes.size());
 
         // A picture in PostScript -- after the header a DOS EPS file with a
         // preview opens with, at the place and the length it names -- or in
@@ -41,7 +40,8 @@ namespace render::graphics {
             if (start < file.size()) file = file.substr(start, std::min(length, file.size() - start));
         }
         if (file.starts_with("%!PS")) return page == 1 ? script(file) : std::nullopt;
-        if (!file.starts_with("%PDF-") && file.substr(0, 8192).contains("<svg")) return page == 1 ? markup(file) : std::nullopt;
+        if (!file.starts_with("%PDF-") && file.substr(0, 8192).contains("<svg")) return
+                page == 1 ? markup(file) : std::nullopt;
 
         if (!file.starts_with("%PDF-") || page < 1) return std::nullopt;
         constexpr std::size_t none = std::string_view::npos;
@@ -49,7 +49,8 @@ namespace render::graphics {
         // --- The file's words ---------------------------------------------------------------
 
         const auto blank = [](const char letter) {
-            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter == '\0';
+            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter ==
+                   '\0';
         };
         const auto boundary = [&blank](const char letter) {
             return blank(letter) || std::string_view("()<>[]{}/%").contains(letter);
@@ -74,7 +75,9 @@ namespace render::graphics {
             return in.substr(std::min(at, in.size()), end - std::min(at, in.size()));
         };
         const auto whole = [](const std::string_view text) {
-            return !text.empty() && std::ranges::all_of(text, [](const char letter) { return letter >= '0' && letter <= '9'; });
+            return !text.empty() && std::ranges::all_of(text, [](const char letter) {
+                return letter >= '0' && letter <= '9';
+            });
         };
         const auto integer = [](const std::string_view text) {
             long long value = 0;
@@ -84,7 +87,8 @@ namespace render::graphics {
 
         // A value, read from `at`, which is left past it. `n g R` is one
         // value, a reference, whose number is the object's in the file.
-        const auto read = [&](this const auto& self, const std::string_view in, std::size_t& at, const int depth) -> Value {
+        const auto read = [&](this const auto &self, const std::string_view in, std::size_t &at,
+                              const int depth) -> Value {
             Value made;
             at = skip(in, at);
             if (depth > 64) {
@@ -186,7 +190,7 @@ namespace render::graphics {
         };
 
         // A dictionary's value under a key, or null.
-        const auto get = [](const Value& table, const std::string_view key) -> const Value* {
+        const auto get = [](const Value &table, const std::string_view key) -> const Value * {
             if (table.type != Type::Table) return nullptr;
             for (std::size_t index = 0; index + 1 < table.items.size(); index += 2) {
                 if (table.items[index].text == key) return &table.items[index + 1];
@@ -201,13 +205,13 @@ namespace render::graphics {
             z_stream stream{};
             if (inflateInit(&stream) != Z_OK) return std::nullopt;
             std::string out(std::max<std::size_t>(data.size() * 4, 1024), '\0');
-            stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(data.data()));
+            stream.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data.data()));
             stream.avail_in = static_cast<uInt>(data.size());
             std::size_t written = 0;
             int status = Z_OK;
             while (status == Z_OK) {
                 if (written == out.size()) out.resize(out.size() * 2);
-                stream.next_out = reinterpret_cast<Bytef*>(out.data() + written);
+                stream.next_out = reinterpret_cast<Bytef *>(out.data() + written);
                 stream.avail_out = static_cast<uInt>(out.size() - written);
                 status = inflate(&stream, Z_NO_FLUSH);
                 written = out.size() - stream.avail_out;
@@ -222,18 +226,20 @@ namespace render::graphics {
         // A stream's bytes, its filter undone -- Flate, and PNG's predictors
         // after it, as cross-reference streams use them -- or std::nullopt
         // for a filter this does not undo.
-        const auto expand = [&](const Value& dictionary, const std::string_view data) -> std::optional<std::string> {
-            const Value* filter = get(dictionary, "/Filter");
+        const auto expand = [&](const Value &dictionary, const std::string_view data) -> std::optional<std::string> {
+            const Value *filter = get(dictionary, "/Filter");
             if (filter && filter->type == Type::List) filter = filter->items.size() == 1 ? &filter->items[0] : nullptr;
             if (!get(dictionary, "/Filter")) return std::string(data);
             if (!filter || (filter->text != "/FlateDecode" && filter->text != "/Fl")) return std::nullopt;
             std::optional<std::string> out = unpack(data);
             if (!out) return std::nullopt;
 
-            const Value* parameters = get(dictionary, "/DecodeParms");
-            if (parameters && parameters->type == Type::List) parameters = parameters->items.empty() ? nullptr : &parameters->items[0];
+            const Value *parameters = get(dictionary, "/DecodeParms");
+            if (parameters && parameters->type == Type::List) parameters = parameters->items.empty()
+                                                                               ? nullptr
+                                                                               : &parameters->items[0];
             const auto parameter = [&](const std::string_view key, const long long fallback) {
-                const Value* found = parameters ? get(*parameters, key) : nullptr;
+                const Value *found = parameters ? get(*parameters, key) : nullptr;
                 return found && found->type == Type::Plain ? integer(found->text) : fallback;
             };
             if (parameter("/Predictor", 1) < 10) return out;
@@ -297,8 +303,10 @@ namespace render::graphics {
             at += 6;
             if (at < file.size() && file[at] == '\r') ++at;
             if (at < file.size() && file[at] == '\n') ++at;
-            const Value* length = get(dictionary, "/Length");
-            std::size_t size = length && length->type == Type::Plain ? static_cast<std::size_t>(integer(length->text)) : none;
+            const Value *length = get(dictionary, "/Length");
+            std::size_t size = length && length->type == Type::Plain
+                                   ? static_cast<std::size_t>(integer(length->text))
+                                   : none;
             if (size == none || at + size > file.size()) {
                 const std::size_t end = file.find("endstream", at);
                 size = (end == none ? file.size() : end) - at;
@@ -312,17 +320,18 @@ namespace render::graphics {
             auto [dictionary, data] = direct(offset);
             if (dictionary.type != Type::Table) return {};
             const std::optional<std::string> table = expand(dictionary, data);
-            const Value* widths = get(dictionary, "/W");
+            const Value *widths = get(dictionary, "/W");
             if (!table || !widths || widths->type != Type::List || widths->items.size() < 3) return {};
             std::size_t width[3];
-            for (std::size_t index = 0; index < 3; ++index) width[index] = static_cast<std::size_t>(integer(widths->items[index].text));
+            for (std::size_t index = 0; index < 3; ++index) width[index] = static_cast<std::size_t>(integer(
+                                                                widths->items[index].text));
             const std::size_t row = width[0] + width[1] + width[2];
             if (row == 0) return {};
 
             std::vector<long long> ranges;
-            if (const Value* index = get(dictionary, "/Index"); index && index->type == Type::List) {
-                for (const Value& item : index->items) ranges.push_back(integer(item.text));
-            } else if (const Value* size = get(dictionary, "/Size")) {
+            if (const Value *index = get(dictionary, "/Index"); index && index->type == Type::List) {
+                for (const Value &item: index->items) ranges.push_back(integer(item.text));
+            } else if (const Value *size = get(dictionary, "/Size")) {
                 ranges = {0, integer(size->text)};
             }
             std::size_t at = 0;
@@ -381,10 +390,12 @@ namespace render::graphics {
                             const char kind = at < file.size() ? file[at] : 'f';
                             ++at;
                             enter(integer(first) + index,
-                                  kind == 'n' ? Entry{1, static_cast<std::size_t>(integer(offset)), 0} : Entry{3, 0, 0});
+                                  kind == 'n'
+                                      ? Entry{1, static_cast<std::size_t>(integer(offset)), 0}
+                                      : Entry{3, 0, 0});
                         }
                     }
-                    if (const Value* hybrid = get(trailer, "/XRefStm"); hybrid && hybrid->type == Type::Plain) {
+                    if (const Value *hybrid = get(trailer, "/XRefStm"); hybrid && hybrid->type == Type::Plain) {
                         crossing(static_cast<std::size_t>(integer(hybrid->text)));
                     }
                 } else {
@@ -393,9 +404,10 @@ namespace render::graphics {
                 if (trailer.type != Type::Table) break;
                 if (get(trailer, "/Encrypt")) return std::nullopt;
                 if (catalog == 0) {
-                    if (const Value* root = get(trailer, "/Root"); root && root->type == Type::Reference) catalog = root->number;
+                    if (const Value *root = get(trailer, "/Root"); root && root->type == Type::Reference)
+                        catalog = root->number;
                 }
-                const Value* prior = get(trailer, "/Prev");
+                const Value *prior = get(trailer, "/Prev");
                 start = prior && prior->type == Type::Plain ? static_cast<std::size_t>(integer(prior->text)) : none;
             }
         }
@@ -451,7 +463,7 @@ namespace render::graphics {
 
         // An object by its number in the file, read the first time it is
         // asked for; null when the file has none by that number.
-        const auto load = [&](this const auto& self, const std::uint32_t number, const int depth) -> const Loaded* {
+        const auto load = [&](this const auto &self, const std::uint32_t number, const int depth) -> const Loaded * {
             if (const auto found = loaded.find(number); found != loaded.end()) return &found->second;
             if (number >= entries.size() || depth > 32) return nullptr;
             const Entry entry = entries[number];
@@ -468,10 +480,10 @@ namespace render::graphics {
                     if (at < file.size() && file[at] == '\r') ++at;
                     if (at < file.size() && file[at] == '\n') ++at;
                     std::size_t size = none;
-                    if (const Value* length = get(made.value, "/Length")) {
-                        const Value* known = length;
+                    if (const Value *length = get(made.value, "/Length")) {
+                        const Value *known = length;
                         if (length->type == Type::Reference) {
-                            const Loaded* held = self(length->number, depth + 1);
+                            const Loaded *held = self(length->number, depth + 1);
                             known = held ? &held->value : nullptr;
                         }
                         if (known && known->type == Type::Plain) size = static_cast<std::size_t>(integer(known->text));
@@ -491,14 +503,14 @@ namespace render::graphics {
                 const auto holder = static_cast<std::uint32_t>(entry.first);
                 auto box = opened.find(holder);
                 if (box == opened.end()) {
-                    const Loaded* stream = self(holder, depth + 1);
+                    const Loaded *stream = self(holder, depth + 1);
                     if (!stream || !stream->streamed) return nullptr;
                     std::optional<std::string> content = expand(stream->value, stream->data);
                     if (!content) return nullptr;
                     Opened fresh;
                     fresh.content = std::move(*content);
-                    const Value* count = get(stream->value, "/N");
-                    const Value* first = get(stream->value, "/First");
+                    const Value *count = get(stream->value, "/N");
+                    const Value *first = get(stream->value, "/First");
                     if (!count || !first) return nullptr;
                     std::size_t at = 0;
                     for (long long index = 0; index < integer(count->text); ++index) {
@@ -520,9 +532,9 @@ namespace render::graphics {
         };
 
         // A value, followed through its references to what they name.
-        const auto resolve = [&](const Value* value) -> const Value* {
+        const auto resolve = [&](const Value *value) -> const Value * {
             for (int guard = 0; value && value->type == Type::Reference && guard < 32; ++guard) {
-                const Loaded* held = load(value->number, 0);
+                const Loaded *held = load(value->number, 0);
                 value = held ? &held->value : nullptr;
             }
             return value;
@@ -532,26 +544,26 @@ namespace render::graphics {
 
         /// What a page takes from the nodes above it in the tree.
         struct Inherited {
-            const Value* resources{nullptr};
-            const Value* media{nullptr};
-            const Value* crop{nullptr};
+            const Value *resources{nullptr};
+            const Value *media{nullptr};
+            const Value *crop{nullptr};
         };
         int remaining = page;
-        const auto find = [&](this const auto& self, const Value* node, Inherited inherited,
-                              const int depth) -> std::optional<std::pair<const Value*, Inherited>> {
+        const auto find = [&](this const auto &self, const Value *node, Inherited inherited,
+                              const int depth) -> std::optional<std::pair<const Value *, Inherited> > {
             node = resolve(node);
             if (!node || node->type != Type::Table || depth > 64) return std::nullopt;
-            if (const Value* found = get(*node, "/Resources")) inherited.resources = found;
-            if (const Value* found = get(*node, "/MediaBox")) inherited.media = found;
-            if (const Value* found = get(*node, "/CropBox")) inherited.crop = found;
-            if (const Value* kids = resolve(get(*node, "/Kids")); kids && kids->type == Type::List) {
+            if (const Value *found = get(*node, "/Resources")) inherited.resources = found;
+            if (const Value *found = get(*node, "/MediaBox")) inherited.media = found;
+            if (const Value *found = get(*node, "/CropBox")) inherited.crop = found;
+            if (const Value *kids = resolve(get(*node, "/Kids")); kids && kids->type == Type::List) {
                 // A subtree before the page asked for is passed whole.
-                if (const Value* count = get(*node, "/Count"); count && count->type == Type::Plain && depth > 0 &&
+                if (const Value *count = get(*node, "/Count"); count && count->type == Type::Plain && depth > 0 &&
                                                                integer(count->text) < remaining) {
                     remaining -= static_cast<int>(integer(count->text));
                     return std::nullopt;
                 }
-                for (const Value& kid : kids->items) {
+                for (const Value &kid: kids->items) {
                     if (auto found = self(&kid, inherited, depth + 1)) return found;
                     if (remaining <= 0) break;
                 }
@@ -561,7 +573,7 @@ namespace render::graphics {
             return std::nullopt;
         };
 
-        const Loaded* root = load(catalog, 0);
+        const Loaded *root = load(catalog, 0);
         if (!root) {
             rescan();
             loaded.clear();
@@ -571,16 +583,16 @@ namespace render::graphics {
         if (!root) return std::nullopt;
         const auto found = find(get(root->value, "/Pages"), {}, 0);
         if (!found) return std::nullopt;
-        const auto& [leaf, inherited] = *found;
+        const auto &[leaf, inherited] = *found;
 
         Drawing made;
 
         // Its box: the crop box a page is seen through, its media box when
         // it has none.
-        const Value* box = resolve(inherited.crop ? inherited.crop : inherited.media);
+        const Value *box = resolve(inherited.crop ? inherited.crop : inherited.media);
         if (!box || box->type != Type::List || box->items.size() < 4) return std::nullopt;
         for (std::size_t index = 0; index < 4; ++index) {
-            const Value* corner = resolve(&box->items[index]);
+            const Value *corner = resolve(&box->items[index]);
             if (!corner || corner->type != Type::Plain) return std::nullopt;
             patch::decimal(corner->text.data(), corner->text.data() + corner->text.size(), made.box[index]);
         }
@@ -589,21 +601,21 @@ namespace render::graphics {
         if (made.width() <= 0.0f || made.height() <= 0.0f) return std::nullopt;
 
         // What it draws: each content stream unpacked, one after another.
-        const Value* contents = get(*leaf, "/Contents");
-        std::vector<const Value*> parts;
+        const Value *contents = get(*leaf, "/Contents");
+        std::vector<const Value *> parts;
         if (contents && contents->type == Type::Reference) {
-            const Loaded* held = load(contents->number, 0);
+            const Loaded *held = load(contents->number, 0);
             if (held && held->value.type == Type::List) {
-                for (const Value& item : held->value.items) parts.push_back(&item);
+                for (const Value &item: held->value.items) parts.push_back(&item);
             } else {
                 parts.push_back(contents);
             }
         } else if (contents && contents->type == Type::List) {
-            for (const Value& item : contents->items) parts.push_back(&item);
+            for (const Value &item: contents->items) parts.push_back(&item);
         }
-        for (const Value* part : parts) {
+        for (const Value *part: parts) {
             if (part->type != Type::Reference) continue;
-            const Loaded* held = load(part->number, 0);
+            const Loaded *held = load(part->number, 0);
             if (!held || !held->streamed) continue;
             const std::optional<std::string> unpacked = expand(held->value, held->data);
             if (!unpacked) return std::nullopt;
@@ -616,7 +628,7 @@ namespace render::graphics {
         // is left behind, so no page tree comes with them.
         std::unordered_map<std::uint32_t, std::uint32_t> local;
         std::vector<std::uint32_t> pending;
-        const auto copy = [&](this const auto& self, const Value& from) -> Value {
+        const auto copy = [&](this const auto &self, const Value &from) -> Value {
             Value to;
             to.type = from.type;
             to.text = from.text;
@@ -637,15 +649,15 @@ namespace render::graphics {
             return to;
         };
         if (inherited.resources) made.resources = copy(*inherited.resources);
-        if (const Value* group = get(*leaf, "/Group")) made.group = copy(*group);
+        if (const Value *group = get(*leaf, "/Group")) made.group = copy(*group);
         for (std::size_t index = 0; index < pending.size(); ++index) {
             Object object;
-            if (const Loaded* source = load(pending[index], 0)) {
+            if (const Loaded *source = load(pending[index], 0)) {
                 object.value = copy(source->value);
                 if (source->streamed) {
                     object.streamed = true;
                     object.stream = std::string(source->data);
-                    std::vector<Value>& items = object.value.items;
+                    std::vector<Value> &items = object.value.items;
                     for (std::size_t at = 0; at + 1 < items.size(); at += 2) {
                         if (items[at].text != "/Length") continue;
                         items.erase(items.begin() + static_cast<std::ptrdiff_t>(at),
@@ -678,24 +690,28 @@ namespace render::graphics {
             500, 500, 333, 389, 278, 500, 500, 722, 500, 500, 444, 480, 200, 480, 541,
         };
         const bool fixed = face.starts_with("Courier");
-        const std::array<short, 95>& table = face.starts_with("Times") ? times : helvetica;
+        const std::array<short, 95> &table = face.starts_with("Times") ? times : helvetica;
         double total = 0.0;
-        for (const char letter : letters) {
+        for (const char letter: letters) {
             const auto code = static_cast<unsigned char>(letter);
             total += fixed ? 600.0 : code >= 32 && code < 127 ? table[code - 32] : 500.0;
         }
         return total;
     }
 
-    Drawing::Value Drawing::faces(const std::vector<std::string>& names) {
+    Drawing::Value Drawing::faces(const std::vector<std::string> &names) {
         using Type = Value::Type;
         if (names.empty()) return {};
         Value fonts{.type = Type::Table};
         for (std::size_t index = 0; index < names.size(); ++index) {
-            Value font{.type = Type::Table,
-                       .items = {{.type = Type::Name, .text = "/Type"}, {.type = Type::Name, .text = "/Font"},
-                                 {.type = Type::Name, .text = "/Subtype"}, {.type = Type::Name, .text = "/Type1"},
-                                 {.type = Type::Name, .text = "/BaseFont"}, {.type = Type::Name, .text = "/" + names[index]}}};
+            Value font{
+                .type = Type::Table,
+                .items = {
+                    {.type = Type::Name, .text = "/Type"}, {.type = Type::Name, .text = "/Font"},
+                    {.type = Type::Name, .text = "/Subtype"}, {.type = Type::Name, .text = "/Type1"},
+                    {.type = Type::Name, .text = "/BaseFont"}, {.type = Type::Name, .text = "/" + names[index]}
+                }
+            };
             // The symbol faces keep their own encoding.
             if (names[index] != "Symbol" && names[index] != "ZapfDingbats") {
                 font.items.push_back({.type = Type::Name, .text = "/Encoding"});
@@ -706,5 +722,4 @@ namespace render::graphics {
         }
         return {.type = Type::Table, .items = {{.type = Type::Name, .text = "/Font"}, std::move(fonts)}};
     }
-
 }

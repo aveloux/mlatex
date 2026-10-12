@@ -6,7 +6,6 @@
 #include <numbers>
 
 namespace render::graphics {
-
     /// @brief Rotates a point by azimuth about z, then by elevation about
     ///        the axis that rotation left as x, and drops what is left as
     ///        depth.
@@ -16,7 +15,7 @@ namespace render::graphics {
     /// @return The point's x and y in the rotated frame; its z is depth,
     ///         which an orthographic view never draws.
     [[nodiscard]] static Point2 rotate(
-        const Point3& point,
+        const Point3 &point,
         const float elevation,
         const float azimuth
     ) noexcept {
@@ -49,11 +48,10 @@ namespace render::graphics {
             rotate({0.0f, 0.0f, 1.0f}, elevation, azimuth));
     }
 
-    Point2 Projection::project(const Point3& point) const noexcept {
+    Point2 Projection::project(const Point3 &point) const noexcept {
         return {
             point.x * x.x + point.y * y.x + point.z * z.x,
             point.x * x.y + point.y * y.y + point.z * z.y,
         };
     }
-
 }

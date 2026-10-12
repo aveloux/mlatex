@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace syntax::semantics {
-
     /// @brief TeX's numbered register banks, with group-scoped assignment.
     ///
     /// Nine banks of 256 slots: integers (`\count`), dimensions (`\dimen`),
@@ -39,29 +38,30 @@ namespace syntax::semantics {
     /// @endcode
     class Registers {
     public:
-        static constexpr std::size_t slots = 256;      ///< Slots per bank.
-        static constexpr std::size_t reserved = 240;   ///< Slots from here up belong to the engine.
+        static constexpr std::size_t slots = 256; ///< Slots per bank.
+        static constexpr std::size_t reserved = 240; ///< Slots from here up belong to the engine.
 
         /// @brief Which bank a slot lives in.
         enum class Type : std::uint8_t {
-            Count,       ///< Integers.
-            Dimension,   ///< Dimensions, in scaled points.
-            Glue,        ///< Glue, by its natural width in scaled points.
-            Width,       ///< A box register's width.
-            Height,      ///< A box register's height.
-            Depth,       ///< A box register's depth.
-            Stretch,     ///< A glue register's stretch: scaled points, or scaled `fil`s at the order #Order says.
-            Shrink,      ///< A glue register's shrink, the same way.
-            Order        ///< A glue register's orders of infinity: its stretch's, and four times its shrink's.
+            Count, ///< Integers.
+            Dimension, ///< Dimensions, in scaled points.
+            Glue, ///< Glue, by its natural width in scaled points.
+            Width, ///< A box register's width.
+            Height, ///< A box register's height.
+            Depth, ///< A box register's depth.
+            Stretch, ///< A glue register's stretch: scaled points, or scaled `fil`s at the order #Order says.
+            Shrink, ///< A glue register's shrink, the same way.
+            Order ///< A glue register's orders of infinity: its stretch's, and four times its shrink's.
         };
 
-        static constexpr std::size_t banks = 9;   ///< How many kinds of register there are.
+        static constexpr std::size_t banks = 9; ///< How many kinds of register there are.
 
         /// @brief A bank and a slot within it.
         struct Target {
-            Type type;          ///< Bank.
-            std::size_t slot;   ///< Slot number.
-            bool character;     ///< Whether the name is a character's, as \\chardef makes one: set as that
+            Type type; ///< Bank.
+            std::size_t slot; ///< Slot number.
+            bool character;
+            ///< Whether the name is a character's, as \\chardef makes one: set as that
                                 ///< character where it is written, read as its number wherever one is read.
         };
 
@@ -112,29 +112,28 @@ namespace syntax::semantics {
         /// @complexity O(1).
         [[nodiscard]] std::optional<Target> target(Symbol symbol) const noexcept;
 
-        std::int32_t quad{10 * 65536};   ///< Width of an em in scaled points: what `1em` scans as.
+        std::int32_t quad{10 * 65536}; ///< Width of an em in scaled points: what `1em` scans as.
 
     private:
         /// @brief One undo record.
         struct Record {
-            Type type;              ///< Bank.
-            std::uint8_t slot;      ///< Slot.
-            std::int32_t value;     ///< Value to restore.
-            std::uint32_t level;    ///< Level stamp to restore.
+            Type type; ///< Bank.
+            std::uint8_t slot; ///< Slot.
+            std::int32_t value; ///< Value to restore.
+            std::uint32_t level; ///< Level stamp to restore.
         };
 
         /// @brief What a symbol names.
         struct Name {
-            Type type{Type::Count};   ///< Bank.
-            std::uint8_t slot{0};     ///< Slot, for a slot name.
-            std::uint8_t role{0};     ///< 0: nothing; 1: a bank; 2: a slot; 3: a slot that is a character.
+            Type type{Type::Count}; ///< Bank.
+            std::uint8_t slot{0}; ///< Slot, for a slot name.
+            std::uint8_t role{0}; ///< 0: nothing; 1: a bank; 2: a slot; 3: a slot that is a character.
         };
 
-        std::array<std::array<std::int32_t, slots>, banks> values{};    ///< Value of each slot.
-        std::array<std::array<std::uint32_t, slots>, banks> levels{};   ///< Level stamp of each slot.
-        std::vector<Record> records{};                             ///< Undo log.
-        std::vector<std::size_t> marks{};                          ///< Undo-log height at each open group.
-        std::vector<Name> names{};                                 ///< What each symbol names.
+        std::array<std::array<std::int32_t, slots>, banks> values{}; ///< Value of each slot.
+        std::array<std::array<std::uint32_t, slots>, banks> levels{}; ///< Level stamp of each slot.
+        std::vector<Record> records{}; ///< Undo log.
+        std::vector<std::size_t> marks{}; ///< Undo-log height at each open group.
+        std::vector<Name> names{}; ///< What each symbol names.
     };
-
 }

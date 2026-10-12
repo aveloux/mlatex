@@ -4,7 +4,6 @@
 #include "syntax/parser.hpp"
 
 namespace render::primitives {
-
     /// @brief Braces, and everything they hold together.
     ///
     /// A brace group does two things at once, and both matter. It keeps its
@@ -37,17 +36,16 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Groups(syntax::Lexicon& lexicon) noexcept;
+        explicit Groups(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the group primitive.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the face comes from its selection.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
     private:
-        mutable std::vector<Selection> kept{};   ///< What each open block was entered with.
-        syntax::Symbol close{};   ///< `\\egroup`, which closes a brace group as `}` does.
-        syntax::Symbol end{};     ///< `\\endgroup`, which closes `\\begingroup`'s.
+        mutable std::vector<Selection> kept{}; ///< What each open block was entered with.
+        syntax::Symbol close{}; ///< `\\egroup`, which closes a brace group as `}` does.
+        syntax::Symbol end{}; ///< `\\endgroup`, which closes `\\begingroup`'s.
     };
-
 }

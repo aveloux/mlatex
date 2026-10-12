@@ -40,77 +40,95 @@
 #include <vector>
 
 #if defined(_WIN32)
-    #include <windows.h>
-    #include <shellapi.h>
+#include <windows.h>
+#include <shellapi.h>
 #else
-    #include <spawn.h>
-    #if defined(__APPLE__)
-        #include <mach-o/dyld.h>
-    #endif
-extern char** environ;
+#include <spawn.h>
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+extern char **environ;
 #endif
 
 #if !defined(LATEX_VERSION)
-    #define LATEX_VERSION "0.1.0"
+#define LATEX_VERSION "0.1.0"
 #endif
 
 /// @brief One option the command line takes, as `--help` lists it.
 struct Option {
-    char letter{'\0'};             ///< Its letter, `-o`; none when '\0'.
-    std::string_view name{};       ///< Its name, `output-directory`.
-    std::string_view alias{};      ///< TeX's spelling it answers to as well, `jobname`; empty for none.
-    std::string_view value{};      ///< What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
-    std::string_view group{};      ///< The heading `--help` lists it under.
-    std::string_view summary{};    ///< What `--help` says of it; a line break starts its next line.
+    char letter{'\0'}; ///< Its letter, `-o`; none when '\0'.
+    std::string_view name{}; ///< Its name, `output-directory`.
+    std::string_view alias{}; ///< TeX's spelling it answers to as well, `jobname`; empty for none.
+    std::string_view value{}; ///< What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
+    std::string_view group{}; ///< The heading `--help` lists it under.
+    std::string_view summary{}; ///< What `--help` says of it; a line break starts its next line.
 };
 
 /// Every option, in the order `--help` lists them. A new one is a row here
 /// and a branch where main() reads its name.
 static constexpr std::array options{
-    Option{'t', "target", "", "TARGET", "Target",
-           "What the document is made into: aot, a PDF now\n"
-           "(the default); jit, just in time; wasm, in\n"
-           "WebAssembly. The last two are taken and do\n"
-           "nothing yet."},
-    Option{'o', "output-directory", "", "DIR", "Output",
-           "Write the PDF into DIR, made if it is not there;\n"
-           "beside the document otherwise."},
+    Option{
+        't', "target", "", "TARGET", "Target",
+        "What the document is made into: aot, a PDF now\n"
+        "(the default); jit, just in time; wasm, in\n"
+        "WebAssembly. The last two are taken and do\n"
+        "nothing yet."
+    },
+    Option{
+        'o', "output-directory", "", "DIR", "Output",
+        "Write the PDF into DIR, made if it is not there;\n"
+        "beside the document otherwise."
+    },
     Option{'j', "job-name", "jobname", "NAME", "Output", "Name the PDF NAME.pdf, not after the document."},
     Option{'n', "draft-mode", "draftmode", "", "Output", "Read and set the document; write no PDF."},
     Option{'\0', "halt-on-error", "", "", "Output", "Leave no PDF when the document has an error."},
     Option{'O', "open", "", "", "Output", "Show the PDF in the system's viewer once written."},
-    Option{'I', "include-directory", "", "DIR", "Input",
-           "Look in DIR, after the document's own folder,\n"
-           "for what it inputs: \\input, \\include,\n"
-           "\\usepackage, \\includegraphics, a bibliography.\n"
-           "Give it again for another folder."},
-    Option{'\0', "assets", "", "DIR", "Input",
-           "Read the fonts and hyphenation patterns from\n"
-           "DIR, not from the assets found above this\n"
-           "program."},
-    Option{'\0', "offline", "", "", "Input",
-           "Reach no network: \\httpget, \\httppost and a\n"
-           "picture from https:// are errors, and nothing is\n"
-           "sent. For a document you did not write."},
-    Option{'w', "watch", "", "", "Input",
-           "Set the document again each time it is saved,\n"
-           "until interrupted."},
-    Option{'i', "interaction", "", "MODE", "Messages",
-           "batch-mode prints nothing but errors;\n"
-           "non-stop-mode, scroll-mode and error-stop-mode\n"
-           "print what was done."},
+    Option{
+        'I', "include-directory", "", "DIR", "Input",
+        "Look in DIR, after the document's own folder,\n"
+        "for what it inputs: \\input, \\include,\n"
+        "\\usepackage, \\includegraphics, a bibliography.\n"
+        "Give it again for another folder."
+    },
+    Option{
+        '\0', "assets", "", "DIR", "Input",
+        "Read the fonts and hyphenation patterns from\n"
+        "DIR, not from the assets found above this\n"
+        "program."
+    },
+    Option{
+        '\0', "offline", "", "", "Input",
+        "Reach no network: \\httpget, \\httppost and a\n"
+        "picture from https:// are errors, and nothing is\n"
+        "sent. For a document you did not write."
+    },
+    Option{
+        'w', "watch", "", "", "Input",
+        "Set the document again each time it is saved,\n"
+        "until interrupted."
+    },
+    Option{
+        'i', "interaction", "", "MODE", "Messages",
+        "batch-mode prints nothing but errors;\n"
+        "non-stop-mode, scroll-mode and error-stop-mode\n"
+        "print what was done."
+    },
     Option{'q', "quiet", "", "", "Messages", "The same as --interaction=batch-mode."},
     Option{'\0', "file-line-error", "", "", "Messages", "Print each error as file:line:column: message."},
     Option{'T', "time", "", "", "Messages", "Print how long each part of the run took."},
-    Option{'\0', "time-statistics", "", "", "Messages",
-           "Print every step the engine took, what it made\n"
-           "and how long each step took."},
+    Option{
+        '\0', "time-statistics", "", "", "Messages",
+        "Print every step the engine took, what it made\n"
+        "and how long each step took."
+    },
     Option{'h', "help", "", "", "Messages", "Print this help and exit."},
     Option{'v', "version", "", "", "Messages", "Print the version and exit."},
-    Option{'d', "debug", "", "[PARTS]", "Diagnostics",
-           "Log the engine's steps: every part, or those\n"
-           "named -- lexer, mouth, parser, layout, memory,\n"
-           "semantics."},
+    Option{
+        'd', "debug", "", "[PARTS]", "Diagnostics",
+        "Log the engine's steps: every part, or those\n"
+        "named -- lexer, mouth, parser, layout, memory,\n"
+        "semantics."
+    },
     Option{'\0', "trace", "", "", "Diagnostics", "Log every step, in full."},
     Option{'\0', "log-level", "", "LEVEL", "Diagnostics", "traceback, debug, info, warn, error or silent."},
     Option{'\0', "log-file", "", "FILE", "Diagnostics", "Write the log to FILE."},
@@ -118,19 +136,21 @@ static constexpr std::array options{
 };
 
 /// The interaction modes, each in words and as TeX runs it together.
-static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> modes{{
-    {"batch-mode", "batchmode"},
-    {"non-stop-mode", "nonstopmode"},
-    {"scroll-mode", "scrollmode"},
-    {"error-stop-mode", "errorstopmode"},
-}};
+static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> modes{
+    {
+        {"batch-mode", "batchmode"},
+        {"non-stop-mode", "nonstopmode"},
+        {"scroll-mode", "scrollmode"},
+        {"error-stop-mode", "errorstopmode"},
+    }
+};
 
 /// @brief Typesets the document the command line names.
 /// @param count     How many arguments there are, the program's own name first.
 /// @param arguments The arguments, as the system handed them over.
 /// @return 0 when the document set cleanly, 1 when it had an error, 2 when
 ///         the command line did.
-int main(int count, char* arguments[]) {
+int main(int count, char *arguments[]) {
     using Clock = std::chrono::steady_clock;
     const Clock::time_point begun = Clock::now();
     Logger::compose(count, arguments);
@@ -141,20 +161,20 @@ int main(int count, char* arguments[]) {
     } ending;
 
     // What the command line asks for.
-    std::string_view target = "aot";   // --target
-    std::filesystem::path source;      // the document, when one is named
-    std::filesystem::path directory;   // --output-directory
-    std::filesystem::path assets;      // --assets
-    std::string job;                   // --job-name
-    bool quiet = false;                // --interaction=batch-mode, --quiet
-    bool halting = false;              // --halt-on-error
-    bool draft = false;                // --draft-mode
-    bool opening = false;              // --open
-    bool watching = false;             // --watch
-    bool placed = false;               // --file-line-error
-    bool timed = false;                // --time
-    bool statistics = false;           // --time-statistics
-    bool ended = false;                // past `--`
+    std::string_view target = "aot"; // --target
+    std::filesystem::path source; // the document, when one is named
+    std::filesystem::path directory; // --output-directory
+    std::filesystem::path assets; // --assets
+    std::string job; // --job-name
+    bool quiet = false; // --interaction=batch-mode, --quiet
+    bool halting = false; // --halt-on-error
+    bool draft = false; // --draft-mode
+    bool opening = false; // --open
+    bool watching = false; // --watch
+    bool placed = false; // --file-line-error
+    bool timed = false; // --time
+    bool statistics = false; // --time-statistics
+    bool ended = false; // past `--`
     latex::Host host;
     std::error_code failure;
 
@@ -187,8 +207,8 @@ int main(int count, char* arguments[]) {
             value = name.substr(equals + 1);
             name = name.substr(0, equals);
         }
-        const Option* option = nullptr;
-        for (const Option& each : options) {
+        const Option *option = nullptr;
+        for (const Option &each: options) {
             const bool lettered = !doubled && name.size() == 1 && each.letter == name.front();
             if (lettered || each.name == name || (!each.alias.empty() && each.alias == name)) {
                 option = &each;
@@ -211,18 +231,19 @@ int main(int count, char* arguments[]) {
             // The options under their headings, each name and value in a
             // column of their own and what it does beside them.
             std::cout << "Usage: mlatex [options] [document]\n\n"
-                         "Typesets a document into a PDF. A document named without an extension is\n"
-                         "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
-                         "set as a list of every entry it holds; with none named, the engine's own\n"
-                         "sample, build/main.mtex, is set.\n";
+                    "Typesets a document into a PDF. A document named without an extension is\n"
+                    "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
+                    "set as a list of every entry it holds; with none named, the engine's own\n"
+                    "sample, build/main.mtex, is set.\n";
             std::string_view heading;
-            for (const Option& each : options) {
+            for (const Option &each: options) {
                 if (each.group != heading) {
                     heading = each.group;
                     std::cout << '\n' << heading << ":\n";
                 }
-                std::string written = each.letter ? std::format("  -{}, --{}", each.letter, each.name)
-                                                  : std::format("      --{}", each.name);
+                std::string written = each.letter
+                                          ? std::format("  -{}, --{}", each.letter, each.name)
+                                          : std::format("      --{}", each.name);
                 if (each.value.starts_with('[')) {
                     written += std::format("[={}]", each.value.substr(1, each.value.size() - 2));
                 } else if (!each.value.empty()) {
@@ -236,15 +257,16 @@ int main(int count, char* arguments[]) {
                 }
             }
             std::cout << "\nOptions start with one dash or two: -interaction=batch-mode is\n"
-                         "--interaction=batch-mode, and TeX's own spellings -- -jobname, -draftmode,\n"
-                         "batchmode -- are taken too. A value follows its option after `=` or as the\n"
-                         "next argument; `--` ends the options. The exit status is 0 when the document\n"
-                         "set cleanly, 1 when it had an error, and 2 when the command line did.\n";
+                    "--interaction=batch-mode, and TeX's own spellings -- -jobname, -draftmode,\n"
+                    "batchmode -- are taken too. A value follows its option after `=` or as the\n"
+                    "next argument; `--` ends the options. The exit status is 0 when the document\n"
+                    "set cleanly, 1 when it had an error, and 2 when the command line did.\n";
             return 0;
         }
         if (called == "version") {
 #if defined(__clang__)
-            const std::string compiler = std::format("Clang {}.{}.{}", __clang_major__, __clang_minor__, __clang_patchlevel__);
+            const std::string compiler = std::format("Clang {}.{}.{}", __clang_major__, __clang_minor__,
+                                                     __clang_patchlevel__);
 #elif defined(__GNUC__)
             const std::string compiler = std::format("GCC {}.{}.{}", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #elif defined(_MSC_VER)
@@ -267,9 +289,9 @@ int main(int count, char* arguments[]) {
             // C++26 is 202400 until the standard is out; past C++23 it is 26.
             constexpr int standard = __cplusplus > 202302L ? 26 : __cplusplus > 202002L ? 23 : 20;
             std::cout << "mlatex " << LATEX_VERSION << '\n'
-                      << "Typesets LaTeX into PDF: one program, no TeX installation behind it.\n"
-                      << "Built with " << compiler << " for " << system << ", C++" << standard << ", " << build
-                      << ".\n";
+                    << "Typesets LaTeX into PDF: one program, no TeX installation behind it.\n"
+                    << "Built with " << compiler << " for " << system << ", C++" << standard << ", " << build
+                    << ".\n";
             return 0;
         }
 
@@ -304,18 +326,18 @@ int main(int count, char* arguments[]) {
             assets = *given;
             if (!std::filesystem::is_directory(assets / "fonts", failure)) {
                 std::cerr << "mlatex: " << assets.string() << " holds no fonts folder; --assets names the engine's "
-                          << "assets, as the source tree's assets folder is\n";
+                        << "assets, as the source tree's assets folder is\n";
                 return 2;
             }
         } else if (called == "interaction") {
             const auto given = take();
             if (!given) return 2;
-            const auto mode = std::ranges::find_if(modes, [&given](const auto& pair) {
+            const auto mode = std::ranges::find_if(modes, [&given](const auto &pair) {
                 return pair.first == *given || pair.second == *given;
             });
             if (mode == modes.end()) {
                 std::cerr << "mlatex: --interaction is batch-mode, non-stop-mode, scroll-mode or error-stop-mode, not "
-                          << *given << '\n';
+                        << *given << '\n';
                 return 2;
             }
             quiet = mode == modes.begin();
@@ -341,7 +363,7 @@ int main(int count, char* arguments[]) {
             // The logger's own are read already, and only with their value
             // after `=`.
             std::cerr << "mlatex: --" << called << " takes its value after `=`: --" << called << '=' << option->value
-                      << '\n';
+                    << '\n';
             return 2;
         }
     }
@@ -397,7 +419,7 @@ int main(int count, char* arguments[]) {
     if (source.empty()) {
         source = assets.parent_path() / "build" / "main.mtex";
     } else if (!source.has_extension() && !std::filesystem::exists(source, failure)) {
-        for (const std::string_view extension : {".mtex", ".tex", ".bib"}) {
+        for (const std::string_view extension: {".mtex", ".tex", ".bib"}) {
             if (std::filesystem::path named = std::filesystem::path(source).replace_extension(extension);
                 std::filesystem::exists(named, failure)) {
                 source = named;
@@ -432,7 +454,7 @@ int main(int count, char* arguments[]) {
         std::ostringstream held;
         std::vector<std::string> pages;
         const bool ok = latex::compose(assets, source, destination, host, statistics ? &std::cout : nullptr,
-                                       placed ? static_cast<std::ostream&>(held) : std::cerr, &pages);
+                                       placed ? static_cast<std::ostream &>(held) : std::cerr, &pages);
         const Clock::time_point finished = Clock::now();
         if (placed) {
             std::istringstream lines(held.str());
@@ -450,7 +472,7 @@ int main(int count, char* arguments[]) {
                 std::cout << "No PDF written: --draft-mode.\n";
             } else if (const std::uintmax_t bytes = std::filesystem::file_size(destination, failure); !failure) {
                 std::cout << "Output written on " << destination.string() << " (" << pages.size()
-                          << (pages.size() == 1 ? " page, " : " pages, ") << bytes << " bytes).\n";
+                        << (pages.size() == 1 ? " page, " : " pages, ") << bytes << " bytes).\n";
             }
         }
 
@@ -465,7 +487,7 @@ int main(int count, char* arguments[]) {
             }
             std::cout << std::format("  {:<36}{:>10.1f} ms\n", "Setting it and writing its PDF",
                                      milliseconds(finished - started))
-                      << std::format("  {:<36}{:>10.1f} ms\n", "In all", milliseconds(finished - since));
+                    << std::format("  {:<36}{:>10.1f} ms\n", "In all", milliseconds(finished - since));
         }
         return ok;
     };
@@ -478,13 +500,13 @@ int main(int count, char* arguments[]) {
 #if defined(_WIN32)
         ShellExecuteW(nullptr, L"open", destination.wstring().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 #else
-    #if defined(__APPLE__)
+#if defined(__APPLE__)
         std::string viewer = "open";
-    #else
+#else
         std::string viewer = "xdg-open";
-    #endif
+#endif
         std::string path = destination.string();
-        std::array<char*, 3> words{viewer.data(), path.data(), nullptr};
+        std::array<char *, 3> words{viewer.data(), path.data(), nullptr};
         pid_t process = 0;
         posix_spawnp(&process, viewer.c_str(), nullptr, nullptr, words.data(), environ);
 #endif

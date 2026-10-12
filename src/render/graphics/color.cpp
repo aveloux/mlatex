@@ -9,15 +9,14 @@
 #include <cstdint>
 
 namespace render::graphics {
-
     /// @brief Reads one byte as two hex digits.
     /// @param text   Two-character slice to decode.
     /// @param value  Receives the byte on success.
     /// @return True when both characters were valid hex digits.
-    [[nodiscard]] static bool byte(const std::string_view text, std::uint8_t& value) noexcept {
+    [[nodiscard]] static bool byte(const std::string_view text, std::uint8_t &value) noexcept {
         unsigned parsed = 0;
         const auto [stop, failure] =
-            std::from_chars(text.data(), text.data() + text.size(), parsed, 16);
+                std::from_chars(text.data(), text.data() + text.size(), parsed, 16);
         if (failure != std::errc{} || stop != text.data() + text.size()) return false;
         value = static_cast<std::uint8_t>(parsed);
         return true;
@@ -37,13 +36,15 @@ namespace render::graphics {
         Color color;
     };
 
-    static constexpr std::array<Named, 20> table{{
-        {"black", black}, {"white", white}, {"red", red}, {"green", green},
-        {"blue", blue}, {"cyan", cyan}, {"magenta", magenta}, {"yellow", yellow},
-        {"gray", gray}, {"grey", gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
-        {"brown", brown}, {"lime", lime}, {"olive", olive}, {"orange", orange},
-        {"pink", pink}, {"purple", purple}, {"teal", teal}, {"violet", violet},
-    }};
+    static constexpr std::array<Named, 20> table{
+        {
+            {"black", black}, {"white", white}, {"red", red}, {"green", green},
+            {"blue", blue}, {"cyan", cyan}, {"magenta", magenta}, {"yellow", yellow},
+            {"gray", gray}, {"grey", gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
+            {"brown", brown}, {"lime", lime}, {"olive", olive}, {"orange", orange},
+            {"pink", pink}, {"purple", purple}, {"teal", teal}, {"violet", violet},
+        }
+    };
 
     Color Color::hex(std::string_view text) noexcept {
         if (text.starts_with('#')) text.remove_prefix(1);
@@ -58,8 +59,10 @@ namespace render::graphics {
             return black;
         }
 
-        return {static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f,
-                static_cast<float>(b) / 255.0f, static_cast<float>(a) / 255.0f};
+        return {
+            static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f,
+            static_cast<float>(b) / 255.0f, static_cast<float>(a) / 255.0f
+        };
     }
 
     Color Color::parse(std::string_view text) noexcept {
@@ -83,7 +86,7 @@ namespace render::graphics {
             }
             if (count != 3 && count != 4) return black;
 
-            std::array<float, 4> channel{0.0f, 0.0f, 0.0f, 1.0f};
+            std::array < float, 4 > channel{0.0f, 0.0f, 0.0f, 1.0f};
             const std::size_t wanted = alpha ? 4 : 3;
             for (std::size_t index = 0; index < wanted; ++index) {
                 const std::string_view part = parts[index];
@@ -95,11 +98,10 @@ namespace render::graphics {
             return {channel[0] / 255.0f, channel[1] / 255.0f, channel[2] / 255.0f, channel[3]};
         }
 
-        for (const auto& [name, color] : table) {
+        for (const auto &[name, color]: table) {
             if (text == name) return color;
         }
 
         return hex(text);
     }
-
 }

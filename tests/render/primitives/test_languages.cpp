@@ -30,7 +30,7 @@ static Result typeset(const std::string_view document) {
     std::vector<std::string> pages;
     result.clean = latex::typeset(assets, document, result.pdf, {}, errors, &pages);
     result.errors = errors.str();
-    for (std::string& page : pages) {
+    for (std::string &page: pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -118,14 +118,17 @@ int main() {
         const Result eastern = article("\\usepackage{polyglossia}\\setmainlanguage{arabic}", "عام 2024");
         assert((eastern.clean && holds(eastern.text, "\xD9\xA2\xD9\xA0\xD9\xA2\xD9\xA4")) &&
                "Arabic's own digits, as polyglossia sets them, a number read left to right");
-        const Result western = article("\\usepackage{polyglossia}\\setmainlanguage[numerals=maghrib]{arabic}", "عام 2024");
+        const Result western = article("\\usepackage{polyglossia}\\setmainlanguage[numerals=maghrib]{arabic}",
+                                       "عام 2024");
         assert((western.clean && holds(western.text, "2024")) && "and the digits as typed when told numerals=maghrib");
         const Result persian = article("\\usepackage{polyglossia}\\setmainlanguage{persian}", "سال 1403");
         assert((persian.clean && holds(persian.text, "\xDB\xB1\xDB\xB4\xDB\xB0\xDB\xB3")) && "Persian's digits");
         const Result quoted = article("\\usepackage{polyglossia}\\setmainlanguage{english}\\setotherlanguage{arabic}",
                                       "Year 2024 \\textarabic{عام 2024}");
-        assert((quoted.clean && holds(quoted.text, "Year2024") && holds(quoted.text, "\xD9\xA2\xD9\xA0\xD9\xA2\xD9\xA4")) &&
-               "an Arabic phrase in English text, its number in Arabic's digits and the rest as typed");
+        assert(
+            (quoted.clean && holds(quoted.text, "Year2024") && holds(quoted.text, "\xD9\xA2\xD9\xA0\xD9\xA2\xD9\xA4"))
+            &&
+            "an Arabic phrase in English text, its number in Arabic's digits and the rest as typed");
         const Result french = article("\\usepackage[french]{babel}", "Vraiment ? Oui : « bien ».");
         assert((french.clean && holds(french.text, "Vraiment?Oui:«bien».")) && "French's marks, set");
     }

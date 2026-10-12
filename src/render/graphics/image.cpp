@@ -14,7 +14,6 @@
 #include <initializer_list>
 
 namespace render::graphics {
-
     [[nodiscard]] static bool signature(
         const std::span<const std::byte> bytes,
         const std::initializer_list<unsigned char> want
@@ -53,7 +52,7 @@ namespace render::graphics {
         // one in pixels to the metre: each chunk its length, its type, its
         // data and a check, the first of them eight bytes in.
         float resolution = 72.0f;
-        const auto* data = reinterpret_cast<const unsigned char*>(bytes.data());
+        const auto *data = reinterpret_cast<const unsigned char *>(bytes.data());
         const auto word = [data](const std::size_t at) {
             return (std::uint32_t{data[at]} << 24) | (std::uint32_t{data[at + 1]} << 16) |
                    (std::uint32_t{data[at + 2]} << 8) | std::uint32_t{data[at + 3]};
@@ -62,7 +61,8 @@ namespace render::graphics {
             const std::uint32_t length = word(at);
             if (std::memcmp(data + at + 4, "IDAT", 4) == 0 || at + 12 + length > bytes.size()) break;
             if (std::memcmp(data + at + 4, "pHYs", 4) == 0 && length == 9 && data[at + 16] == 1) {
-                if (const std::uint32_t across = word(at + 8); across > 0) resolution = static_cast<float>(across) * 0.0254f;
+                if (const std::uint32_t across = word(at + 8); across > 0)
+                    resolution = static_cast<float>(across) * 0.0254f;
                 break;
             }
             at += 12 + length;
@@ -79,10 +79,10 @@ namespace render::graphics {
     // about anything actually wrong here, are silenced for this one
     // struct and function rather than for the file, so a real one
     // elsewhere still surfaces.
-    #if defined(_MSC_VER)
-        #pragma warning(push)
-        #pragma warning(disable: 4324 4611)
-    #endif
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 4324 4611)
+#endif
 
     /// @brief libjpeg's own error path: a longjmp back out of the
     ///        callback it insists on calling rather than returning from.
@@ -92,7 +92,7 @@ namespace render::graphics {
     };
 
     static void abandon(j_common_ptr info) {
-        longjmp(reinterpret_cast<Failure*>(info->err)->point, 1);
+        longjmp(reinterpret_cast<Failure *>(info->err)->point, 1);
     }
 
     [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes) {
@@ -107,8 +107,8 @@ namespace render::graphics {
         }
 
         jpeg_create_decompress(&info);
-        jpeg_mem_src(&info, reinterpret_cast<const unsigned char*>(bytes.data()),
-                    static_cast<unsigned long>(bytes.size()));
+        jpeg_mem_src(&info, reinterpret_cast<const unsigned char *>(bytes.data()),
+                     static_cast<unsigned long>(bytes.size()));
         jpeg_read_header(&info, TRUE);
 
         // Its resolution from the JFIF header, in dots to the inch or to the
@@ -128,7 +128,7 @@ namespace render::graphics {
             const int height = static_cast<int>(info.image_height);
             const int components = info.num_components;
             jpeg_destroy_decompress(&info);
-            const auto* first = reinterpret_cast<const std::uint8_t*>(bytes.data());
+            const auto *first = reinterpret_cast<const std::uint8_t *>(bytes.data());
             return Image(width, height, {}, std::vector<std::uint8_t>(first, first + bytes.size()), components,
                          resolution);
         }
@@ -156,15 +156,15 @@ namespace render::graphics {
         return Image(width, height, std::move(pixels), {}, 3, resolution);
     }
 
-    #if defined(_MSC_VER)
-        #pragma warning(pop)
-    #endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
     [[nodiscard]] static std::optional<Image> webp(const std::span<const std::byte> bytes) {
         int width = 0;
         int height = 0;
-        std::uint8_t* decoded = WebPDecodeRGB(
-            reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size(), &width, &height);
+        std::uint8_t *decoded = WebPDecodeRGB(
+            reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size(), &width, &height);
         if (!decoded) return std::nullopt;
 
         std::vector<std::uint8_t> pixels(
@@ -180,5 +180,4 @@ namespace render::graphics {
         if (riff(bytes)) return webp(bytes);
         return std::nullopt;
     }
-
 }

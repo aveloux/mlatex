@@ -9,7 +9,6 @@
 #include <string_view>
 
 namespace render::typography {
-
     /// @brief A face at one size: what the engine measures glyphs against.
     ///
     /// Everything a Font reports is in points, scaled from the design units in
@@ -30,28 +29,32 @@ namespace render::typography {
     public:
         /// @brief Vertical metrics, in points.
         struct Metric {
-            float ascent{0.0f};    ///< Above the baseline, positive.
-            float descent{0.0f};   ///< Below the baseline, negative as the file reports it.
-            float gap{0.0f};       ///< Extra leading the file asks for between lines.
-            float height{0.0f};    ///< Ascent less descent: the em's full extent.
-            float size{0.0f};      ///< The size this font was built at.
+            float ascent{0.0f}; ///< Above the baseline, positive.
+            float descent{0.0f}; ///< Below the baseline, negative as the file reports it.
+            float gap{0.0f}; ///< Extra leading the file asks for between lines.
+            float height{0.0f}; ///< Ascent less descent: the em's full extent.
+            float size{0.0f}; ///< The size this font was built at.
         };
 
         /// @brief One glyph's ink extent, in points, relative to its origin.
         struct Box {
-            float x{0.0f};        ///< Left bearing.
-            float y{0.0f};        ///< Top of the ink, above the baseline.
-            float width{0.0f};    ///< Ink width.
-            float height{0.0f};   ///< Ink height.
+            float x{0.0f}; ///< Left bearing.
+            float y{0.0f}; ///< Top of the ink, above the baseline.
+            float width{0.0f}; ///< Ink width.
+            float height{0.0f}; ///< Ink height.
         };
 
         Font() noexcept = default;
+
         ~Font() noexcept;
 
-        Font(const Font&) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
-        Font& operator=(const Font&) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
-        Font(Font&& input) noexcept;
-        Font& operator=(Font&& input) noexcept;
+        Font(const Font &) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
+
+        Font &operator=(const Font &) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
+
+        Font(Font &&input) noexcept;
+
+        Font &operator=(Font &&input) noexcept;
 
         /// @brief Builds a font from a face at a size.
         /// @param face   Opened file; must outlive this object.
@@ -60,7 +63,7 @@ namespace render::typography {
         ///               the same face at another size can ask for it without
         ///               having kept the name; must outlive this object.
         /// @return True when HarfBuzz accepted the face.
-        [[nodiscard]] bool compose(const Face& face, float size, std::string_view family = {}) noexcept;
+        [[nodiscard]] bool compose(const Face &face, float size, std::string_view family = {}) noexcept;
 
         /// @brief Releases the HarfBuzz font, leaving the face alone.
         void dispose() noexcept;
@@ -89,10 +92,10 @@ namespace render::typography {
         [[nodiscard]] float advance(std::uint32_t glyph) const noexcept;
 
         /// @brief The HarfBuzz font, for shaping and for the math tables.
-        [[nodiscard]] hb_font_t* handle() const noexcept { return shaper; }
+        [[nodiscard]] hb_font_t *handle() const noexcept { return shaper; }
 
         /// @brief The face this font reads.
-        [[nodiscard]] const Face* face() const noexcept { return parent; }
+        [[nodiscard]] const Face *face() const noexcept { return parent; }
 
         /// @brief The size this font was built at, in points.
         [[nodiscard]] float size() const noexcept { return points; }
@@ -104,14 +107,13 @@ namespace render::typography {
         [[nodiscard]] std::string_view family() const noexcept { return name; }
 
     private:
-        const Face* parent{nullptr};   ///< The file this font reads.
-        std::string_view name{};       ///< Family this face answers to.
-        hb_font_t* shaper{nullptr};    ///< HarfBuzz font, scaled to #points.
-        float points{0.0f};            ///< Size in points.
+        const Face *parent{nullptr}; ///< The file this font reads.
+        std::string_view name{}; ///< Family this face answers to.
+        hb_font_t *shaper{nullptr}; ///< HarfBuzz font, scaled to #points.
+        float points{0.0f}; ///< Size in points.
 
-        float ascent{0.0f};            ///< Above the baseline, in points.
-        float descent{0.0f};           ///< Below the baseline, in points.
-        float gap{0.0f};               ///< Extra leading, in points.
+        float ascent{0.0f}; ///< Above the baseline, in points.
+        float descent{0.0f}; ///< Below the baseline, in points.
+        float gap{0.0f}; ///< Extra leading, in points.
     };
-
 }

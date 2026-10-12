@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace render::graphics {
-
     /// @brief One page of another PDF, kept to be drawn as a form: its box,
     ///        what it draws, and every object what it draws reaches.
     ///
@@ -42,26 +41,26 @@ namespace render::graphics {
         struct Value {
             /// @brief What kind of value.
             enum class Type : std::uint8_t {
-                Null,        ///< `null`, or what could not be read.
-                Plain,       ///< A number or a boolean, #text as written.
-                Name,        ///< `/Name`, #text with its slash.
-                Text,        ///< A string, #text with its delimiters: `(...)` or `<...>`.
-                List,        ///< An array: #items.
-                Table,       ///< A dictionary: #items, keys and values in turn.
-                Reference    ///< An indirect object: #number, one of Drawing::objects.
+                Null, ///< `null`, or what could not be read.
+                Plain, ///< A number or a boolean, #text as written.
+                Name, ///< `/Name`, #text with its slash.
+                Text, ///< A string, #text with its delimiters: `(...)` or `<...>`.
+                List, ///< An array: #items.
+                Table, ///< A dictionary: #items, keys and values in turn.
+                Reference ///< An indirect object: #number, one of Drawing::objects.
             };
 
-            Type type{Type::Null};         ///< What it is.
-            std::string text{};            ///< For Plain, Name and Text: as written.
-            std::vector<Value> items{};    ///< For List and Table.
-            std::uint32_t number{0};       ///< For Reference: its index in Drawing::objects.
+            Type type{Type::Null}; ///< What it is.
+            std::string text{}; ///< For Plain, Name and Text: as written.
+            std::vector<Value> items{}; ///< For List and Table.
+            std::uint32_t number{0}; ///< For Reference: its index in Drawing::objects.
         };
 
         /// @brief One object the page reaches.
         struct Object {
-            Value value{};            ///< Its value; a stream's dictionary, its length left out.
-            std::string stream{};     ///< A stream's bytes, as the file stored them.
-            bool streamed{false};     ///< Whether it is a stream.
+            Value value{}; ///< Its value; a stream's dictionary, its length left out.
+            std::string stream{}; ///< A stream's bytes, as the file stored them.
+            bool streamed{false}; ///< Whether it is a stream.
         };
 
         /// @brief Reads a page of a PDF, or an EPS or SVG file's picture.
@@ -80,11 +79,12 @@ namespace render::graphics {
         /// @brief How tall the page is, in points.
         [[nodiscard]] float height() const noexcept { return box[3] - box[1]; }
 
-        std::array<float, 4> box{0.0f, 0.0f, 0.0f, 0.0f};   ///< The page's box, in its own points: left, bottom, right, top.
-        std::string content{};                                ///< What the page draws: its contents, decompressed and joined.
-        Value resources{};     ///< The page's resources, renumbered: a Table, or a Reference to one, into #objects.
-        Value group{};         ///< The page's transparency group, renumbered, or a Null value for none.
-        std::vector<Object> objects{};                        ///< Every object the resources and the group reach.
+        std::array<float, 4> box{0.0f, 0.0f, 0.0f, 0.0f};
+        ///< The page's box, in its own points: left, bottom, right, top.
+        std::string content{}; ///< What the page draws: its contents, decompressed and joined.
+        Value resources{}; ///< The page's resources, renumbered: a Table, or a Reference to one, into #objects.
+        Value group{}; ///< The page's transparency group, renumbered, or a Null value for none.
+        std::vector<Object> objects{}; ///< Every object the resources and the group reach.
 
     private:
         /// @brief An Encapsulated PostScript file's picture: its program run.
@@ -130,7 +130,6 @@ namespace render::graphics {
         /// @param names The faces' names.
         /// @return A Table holding `/Font`, or a Null value when there are none.
         /// @complexity O(n) in the faces.
-        [[nodiscard]] static Value faces(const std::vector<std::string>& names);
+        [[nodiscard]] static Value faces(const std::vector<std::string> &names);
     };
-
 }

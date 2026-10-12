@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Headings, and the numbering that runs through them.
     ///
     /// @par Language
@@ -54,12 +53,12 @@ namespace render::primitives {
 
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Sections(syntax::Lexicon& lexicon) noexcept;
+        explicit Sections(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the heading primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; headings are shaped with its font.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -68,7 +67,7 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
@@ -78,22 +77,23 @@ namespace render::primitives {
         ///        stands, how its number is written and how far from its
         ///        title, and the space around it.
         struct Look {
-            bool set{false};                          ///< Said at all; the standard classes' look otherwise.
-            std::vector<Styles::Cut> cuts{};          ///< The face, as \\bfseries and the rest change it, from \\normalfont.
-            Styles::Size size{Styles::Size::Normal};  ///< Its size.
-            char align{'l'};                          ///< `l`, `c` or `r`: flush left, centred, flush right.
-            bool upper{false};                        ///< Its title in capitals: `\\MakeUppercase`.
-            bool display{false};                      ///< Its number on a line of its own above the title.
-            bool unlabelled{false};                   ///< No number shown, numbered or not.
-            std::string label{};                      ///< How its number is written, as \\Roman{section} and a full
+            bool set{false}; ///< Said at all; the standard classes' look otherwise.
+            std::vector<Styles::Cut> cuts{}; ///< The face, as \\bfseries and the rest change it, from \\normalfont.
+            Styles::Size size{Styles::Size::Normal}; ///< Its size.
+            char align{'l'}; ///< `l`, `c` or `r`: flush left, centred, flush right.
+            bool upper{false}; ///< Its title in capitals: `\\MakeUppercase`.
+            bool display{false}; ///< Its number on a line of its own above the title.
+            bool unlabelled{false}; ///< No number shown, numbered or not.
+            std::string label{};
+            ///< How its number is written, as \\Roman{section} and a full
                                                       ///< stop write it; empty for the counter's own.
-            float sep{-1.0f};                         ///< Between number and title, in points; below zero for a quad.
-            std::pair<float, float> spacing{-1.0f, -1.0f};   ///< Above and below, in points; below zero for the class's.
-            std::string color{};                      ///< Its color, as `\\color{...}` names it; empty for the text's.
-            float rule{0.0f};                         ///< A rule under it this thick, titlesec's \\titlerule; none at 0.
+            float sep{-1.0f}; ///< Between number and title, in points; below zero for a quad.
+            std::pair<float, float> spacing{-1.0f, -1.0f}; ///< Above and below, in points; below zero for the class's.
+            std::string color{}; ///< Its color, as `\\color{...}` names it; empty for the text's.
+            float rule{0.0f}; ///< A rule under it this thick, titlesec's \\titlerule; none at 0.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
 
         /// Each level's look, chapter to subsubsection.
         mutable std::array<Look, levels> looks{};
@@ -108,17 +108,17 @@ namespace render::primitives {
 
         /// Where each list stands -- 0 the contents, 1 the figures, 2 the
         /// tables, 3 the index -- to be filled as the document ends.
-        mutable std::vector<std::pair<std::size_t, syntax::Node*>> places{};
-        std::array<syntax::Symbol, 4> marks{};     ///< The marks that keep their places; no document can write them.
+        mutable std::vector<std::pair<std::size_t, syntax::Node *> > places{};
+        std::array<syntax::Symbol, 4> marks{}; ///< The marks that keep their places; no document can write them.
 
         /// @brief One `\\index` entry, as makeindex reads one.
         struct Term {
-            std::vector<std::string> keys{};                     ///< What it sorts by, a level each: `a!b`.
-            std::vector<memory::Slice<syntax::Node*>> shown{};   ///< What it prints, a level each: `key@shown`.
-            std::string encap{};                                 ///< After its `|`: `textbf`, `see{...}`, `(` or `)`.
-            std::size_t anchor{0};                               ///< Where it stands, for its page.
+            std::vector<std::string> keys{}; ///< What it sorts by, a level each: `a!b`.
+            std::vector<memory::Slice<syntax::Node *> > shown{}; ///< What it prints, a level each: `key@shown`.
+            std::string encap{}; ///< After its `|`: `textbf`, `see{...}`, `(` or `)`.
+            std::size_t anchor{0}; ///< Where it stands, for its page.
         };
-        mutable std::vector<Term> terms{};   ///< Every \\index entry, in the order written.
-    };
 
+        mutable std::vector<Term> terms{}; ///< Every \\index entry, in the order written.
+    };
 }

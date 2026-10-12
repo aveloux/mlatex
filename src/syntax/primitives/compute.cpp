@@ -16,13 +16,12 @@
 #include <vector>
 
 namespace syntax::primitives {
-
-    Compute::Compute(Lexicon& lexicon) noexcept {
+    Compute::Compute(Lexicon &lexicon) noexcept {
         integer = lexicon.intern("\\integer");
         modulo = lexicon.intern("\\mod");
     }
 
-    Token Compute::lookahead(Pass& pass) {
+    Token Compute::lookahead(Pass &pass) {
         while (!pass.cursor.empty() &&
                pass.cursor.lookahead(0).category == Catcodes::Category::Space) {
             pass.cursor.advance();
@@ -30,14 +29,14 @@ namespace syntax::primitives {
         return pass.cursor.lookahead(0);
     }
 
-    std::int64_t Compute::bound(Pass& pass, const std::int64_t value) {
+    std::int64_t Compute::bound(Pass &pass, const std::int64_t value) {
         if (value > ceiling || value < -ceiling) {
             // Clamped, not malformed: the clamped value is still the most
             // useful answer, so `sound` is left alone and only the report is
             // suppressed after the first one.
             if (!pass.noted) {
                 pass.owner.tracebacks.emplace_back(Traceback::Type::Register, memory::Location{},
-                                  std::format("\\evaluate overflowed ({})", value));
+                                                   std::format("\\evaluate overflowed ({})", value));
                 pass.noted = true;
             }
             return value > 0 ? ceiling : -ceiling;
@@ -45,13 +44,13 @@ namespace syntax::primitives {
         return value;
     }
 
-    std::int64_t Compute::factor(Pass& pass) {
+    std::int64_t Compute::factor(Pass &pass) {
         const Token lead = lookahead(pass);
 
         if (lead.is('(')) {
             if (pass.level >= depth) {
                 pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
-                                  "\\evaluate nesting limit reached");
+                                                   "\\evaluate nesting limit reached");
                 pass.sound = false;
                 return 0;
             }
@@ -65,7 +64,7 @@ namespace syntax::primitives {
                 pass.cursor.advance();
             } else if (pass.sound) {
                 pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
-                                  "\\evaluate is missing a ')'");
+                                                   "\\evaluate is missing a ')'");
                 pass.sound = false;
             }
             return inner;
@@ -75,9 +74,10 @@ namespace syntax::primitives {
         if (!scanned) {
             if (pass.sound) {
                 pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
-                                  lead.empty()
-                                      ? std::string("\\evaluate ended where a number was expected")
-                                      : std::format("\\evaluate expected a number, found '{}'", lead.text));
+                                                   lead.empty()
+                                                       ? std::string("\\evaluate ended where a number was expected")
+                                                       : std::format("\\evaluate expected a number, found '{}'",
+                                                                     lead.text));
                 pass.sound = false;
             }
             return 0;
@@ -85,7 +85,7 @@ namespace syntax::primitives {
         return *scanned;
     }
 
-    std::int64_t Compute::power(Pass& pass) {
+    std::int64_t Compute::power(Pass &pass) {
         const std::int64_t base = factor(pass);
 
         if (!lookahead(pass).is('^')) {
@@ -99,7 +99,7 @@ namespace syntax::primitives {
         if (exponent < 0) {
             if (pass.sound) {
                 pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, memory::Location{},
-                                  "\\evaluate exponent must not be negative");
+                                                   "\\evaluate exponent must not be negative");
                 pass.sound = false;
             }
             return 0;
@@ -115,7 +115,7 @@ namespace syntax::primitives {
         return total;
     }
 
-    std::int64_t Compute::term(Pass& pass) {
+    std::int64_t Compute::term(Pass &pass) {
         std::int64_t left = power(pass);
 
         while (true) {
@@ -134,8 +134,9 @@ namespace syntax::primitives {
             if (right == 0) {
                 if (pass.sound) {
                     pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, next.location,
-                                      remainder ? "\\evaluate takes a remainder by zero"
-                                                : "\\evaluate divides by zero");
+                                                       remainder
+                                                           ? "\\evaluate takes a remainder by zero"
+                                                           : "\\evaluate divides by zero");
                     pass.sound = false;
                 }
                 return 0;
@@ -149,7 +150,7 @@ namespace syntax::primitives {
         return left;
     }
 
-    std::int64_t Compute::expression(Pass& pass) {
+    std::int64_t Compute::expression(Pass &pass) {
         std::int64_t left = term(pass);
 
         while (true) {
@@ -164,8 +165,8 @@ namespace syntax::primitives {
         return left;
     }
 
-    void Compute::operator()(Mouth& mouth, Context& context) const {
-        mouth.bind("\\evaluate", [this, &context, &mouth](Mouth&) {
+    void Compute::operator()(Mouth &mouth, Context &context) const {
+        mouth.bind("\\evaluate", [this, &context, &mouth](Mouth &) {
             // Expanded first, as TeX's own \numexpr is, so a macro or a
             // conditional inside the expression reads as what it comes to --
             // `\evaluate{\month + 12}` and `\evaluate{\ifnum\month<3 13\else 1\fi}`
@@ -182,7 +183,7 @@ namespace syntax::primitives {
 
             if (pass.sound && !lookahead(pass).empty()) {
                 tracebacks.emplace_back(Traceback::Type::Syntax, lookahead(pass).location,
-                              std::format("\\evaluate has trailing '{}'", lookahead(pass).text));
+                                        std::format("\\evaluate has trailing '{}'", lookahead(pass).text));
             }
 
             // Inject the result as ordinary digit tokens, so \evaluate reads
@@ -191,15 +192,16 @@ namespace syntax::primitives {
 
             std::vector<Token> produced;
             produced.reserve(digits.size());
-            for (const char symbol : digits) {
+            for (const char symbol: digits) {
                 const Symbol bound = mouth.lexicon.intern(std::string_view(&symbol, 1));
-                produced.push_back(Token{bound, Catcodes::Category::Other, memory::Location{},
-                                         mouth.lexicon.resolve(bound)});
+                produced.push_back(Token{
+                    bound, Catcodes::Category::Other, memory::Location{},
+                    mouth.lexicon.resolve(bound)
+                });
             }
             mouth.stream().inject(produced);
         });
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Debug, "Bound arithmetic primitives");
     }
-
 }

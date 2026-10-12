@@ -22,7 +22,7 @@ int main() {
     const float across = length({1.0f, 0.0f, 0.0f});
     assert((across > 0.0f) && "an isometric view shows each axis");
     assert((std::abs(length({0.0f, 1.0f, 0.0f}) - across) < 0.001f &&
-           std::abs(length({0.0f, 0.0f, 1.0f}) - across) < 0.001f) && "and foreshortens all three alike");
+            std::abs(length({0.0f, 0.0f, 1.0f}) - across) < 0.001f) && "and foreshortens all three alike");
 
     const graphics::Projection turned = graphics::Projection::orthographic(0.0f, 0.0f);
     const graphics::Point2 origin = turned.project({0.0f, 0.0f, 0.0f});

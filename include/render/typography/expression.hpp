@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace render::typography {
-
     /// @brief The OpenType MATH table, read in points.
     ///
     /// A math font carries the numbers a formula has to be built from: where
@@ -30,55 +29,55 @@ namespace render::typography {
     public:
         /// @brief The constants a formula is laid out against, in points.
         struct Metric {
-            float axis{0.0f};          ///< Height of the maths axis above the baseline.
-            float numerator{0.0f};     ///< How far a display numerator rises.
-            float denominator{0.0f};   ///< How far a display denominator drops.
-            float ascent{0.0f};        ///< How far a numerator rises in a line.
-            float descent{0.0f};       ///< How far a denominator drops in a line.
-            float upper{0.0f};         ///< How far a binomial's top rises in a line.
-            float separation{0.0f};    ///< Least room between a fraction's bar and its parts, in a line.
-            float distance{0.0f};      ///< The same, in a displayed formula.
-            float spacing{0.0f};       ///< Least room between a binomial's two parts, in a line.
-            float spread{0.0f};        ///< The same, in a displayed formula.
-            float thickness{0.0f};     ///< Fraction bar thickness.
-            float gap{0.0f};           ///< Clearance above a radical's contents, in a line.
-            float clearance{0.0f};     ///< The same, in a displayed formula.
-            float rule{0.0f};          ///< Thickness of a radical's bar.
-            float ascender{0.0f};      ///< Room left above a radical's bar.
-            float before{0.0f};        ///< Space before a radical's degree.
-            float after{0.0f};         ///< Space after it: negative, tucking the sign under it.
-            float raise{0.0f};         ///< Height of the degree's baseline, as a fraction of the sign's.
-            float subscript{0.0f};     ///< How far a subscript drops.
-            float superscript{0.0f};   ///< How far a superscript rises.
-            float script{0.0f};        ///< Script size, as a fraction of the base.
-            float scriptscript{0.0f};  ///< Doubly-scripted size, likewise.
-            float display{0.0f};       ///< Least height of a large operator in a displayed formula.
-            float drop{0.0f};          ///< Most a superscript may sit below the top of a tall base.
-            float sink{0.0f};          ///< Least a subscript sits below the bottom of a deep base.
-            float limit{0.0f};         ///< Clearance between a large operator and its limits.
+            float axis{0.0f}; ///< Height of the maths axis above the baseline.
+            float numerator{0.0f}; ///< How far a display numerator rises.
+            float denominator{0.0f}; ///< How far a display denominator drops.
+            float ascent{0.0f}; ///< How far a numerator rises in a line.
+            float descent{0.0f}; ///< How far a denominator drops in a line.
+            float upper{0.0f}; ///< How far a binomial's top rises in a line.
+            float separation{0.0f}; ///< Least room between a fraction's bar and its parts, in a line.
+            float distance{0.0f}; ///< The same, in a displayed formula.
+            float spacing{0.0f}; ///< Least room between a binomial's two parts, in a line.
+            float spread{0.0f}; ///< The same, in a displayed formula.
+            float thickness{0.0f}; ///< Fraction bar thickness.
+            float gap{0.0f}; ///< Clearance above a radical's contents, in a line.
+            float clearance{0.0f}; ///< The same, in a displayed formula.
+            float rule{0.0f}; ///< Thickness of a radical's bar.
+            float ascender{0.0f}; ///< Room left above a radical's bar.
+            float before{0.0f}; ///< Space before a radical's degree.
+            float after{0.0f}; ///< Space after it: negative, tucking the sign under it.
+            float raise{0.0f}; ///< Height of the degree's baseline, as a fraction of the sign's.
+            float subscript{0.0f}; ///< How far a subscript drops.
+            float superscript{0.0f}; ///< How far a superscript rises.
+            float script{0.0f}; ///< Script size, as a fraction of the base.
+            float scriptscript{0.0f}; ///< Doubly-scripted size, likewise.
+            float display{0.0f}; ///< Least height of a large operator in a displayed formula.
+            float drop{0.0f}; ///< Most a superscript may sit below the top of a tall base.
+            float sink{0.0f}; ///< Least a subscript sits below the bottom of a deep base.
+            float limit{0.0f}; ///< Clearance between a large operator and its limits.
         };
 
         /// @brief A stretched delimiter: which glyph to draw, and how wide it got.
         struct Variant {
-            std::uint32_t glyph{0};   ///< Glyph index to draw.
-            float advance{0.0f};      ///< Its extent along the stretch axis, in points.
+            std::uint32_t glyph{0}; ///< Glyph index to draw.
+            float advance{0.0f}; ///< Its extent along the stretch axis, in points.
         };
 
         /// @brief One piece of a glyph built from parts.
         struct Piece {
-            std::uint32_t glyph{0};   ///< Glyph index to draw.
-            float lift{0.0f};         ///< How far its bottom stands above the whole glyph's, in points.
+            std::uint32_t glyph{0}; ///< Glyph index to draw.
+            float lift{0.0f}; ///< How far its bottom stands above the whole glyph's, in points.
         };
 
         /// @brief A glyph built from parts, for a height no single size reaches.
         struct Assembly {
-            std::vector<Piece> pieces{};   ///< Bottom first, extenders repeated as often as needed.
-            float span{0.0f};              ///< Height of the whole, bottom to top, in points.
+            std::vector<Piece> pieces{}; ///< Bottom first, extenders repeated as often as needed.
+            float span{0.0f}; ///< Height of the whole, bottom to top, in points.
         };
 
         /// @brief Reads a font's math table.
         /// @param font Font to read; must outlive this object.
-        explicit Expression(const Font& font) noexcept;
+        explicit Expression(const Font &font) noexcept;
 
         /// @brief Does this font carry a MATH table at all?
         /// @complexity O(1).
@@ -144,9 +143,8 @@ namespace render::typography {
         [[nodiscard]] Assembly assemble(std::uint32_t glyph, float height) const;
 
     private:
-        const Font& parent;          ///< The font this reads.
-        mutable Metric cache{};      ///< Constants, filled on first request.
-        mutable bool ready{false};   ///< False until #cache has been filled.
+        const Font &parent; ///< The font this reads.
+        mutable Metric cache{}; ///< Constants, filled on first request.
+        mutable bool ready{false}; ///< False until #cache has been filled.
     };
-
 }

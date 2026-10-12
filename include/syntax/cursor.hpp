@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace syntax {
-
     /// @brief The token stack the expander reads from.
     ///
     /// Held reversed internally, so the next token is the last live one.
@@ -55,7 +54,7 @@ namespace syntax {
         ///
         /// @param incoming Tokens in reading order; moved from.
         /// @complexity O(n) with no allocation when the stream is empty.
-        void adopt(std::vector<Token>&& incoming);
+        void adopt(std::vector<Token> &&incoming);
 
         /// @brief Is the stream drained?
         /// @complexity O(1).
@@ -86,7 +85,7 @@ namespace syntax {
         ///        whatever has been injected over it.
         /// @param replacement The tokens, in reading order.
         /// @complexity O(n) in the tokens pending.
-        void source(const std::vector<Token>& replacement);
+        void source(const std::vector<Token> &replacement);
 
     private:
         /// Held reversed, so the next token is the last live one. Entries at
@@ -96,8 +95,7 @@ namespace syntax {
         /// per token of every document -- and the next inject() writes over
         /// them anyway.
         std::vector<Token> tokens{};
-        std::size_t depth = 0;    ///< How many of #tokens are still to be read.
-        std::size_t unread = 0;  ///< How many of #tokens, from the first, are the document's unread.
+        std::size_t depth = 0; ///< How many of #tokens are still to be read.
+        std::size_t unread = 0; ///< How many of #tokens, from the first, are the document's unread.
     };
-
 }

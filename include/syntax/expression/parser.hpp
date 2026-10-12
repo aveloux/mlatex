@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace syntax::expression {
-
     /// @brief What a formula is read by: how tightly each operator binds,
     ///        which commands take arguments, which open grids, which are
     ///        read as nothing.
@@ -26,29 +25,29 @@ namespace syntax::expression {
     public:
         /// @brief What one command or character means in a formula.
         struct Rule {
-            Node::Type type = Node::Type::Variable;   ///< What kind of node it makes.
-            int weight = 0;               ///< How tightly it binds as an operator; 0 for none.
-            bool right = false;           ///< True for an operator that groups to the right.
-            bool structural = false;      ///< True when it takes brace arguments, not operands.
-            int arity = -1;               ///< Its arguments; below zero, one brace group if one is present.
-            bool silent = false;          ///< Read and set as nothing: `\\displaystyle`, `\\limits`.
-            std::uint8_t bracket = 0;     ///< Which grid the command opens, counted from one; 0 for none.
+            Node::Type type = Node::Type::Variable; ///< What kind of node it makes.
+            int weight = 0; ///< How tightly it binds as an operator; 0 for none.
+            bool right = false; ///< True for an operator that groups to the right.
+            bool structural = false; ///< True when it takes brace arguments, not operands.
+            int arity = -1; ///< Its arguments; below zero, one brace group if one is present.
+            bool silent = false; ///< Read and set as nothing: `\\displaystyle`, `\\limits`.
+            std::uint8_t bracket = 0; ///< Which grid the command opens, counted from one; 0 for none.
         };
 
         /// @brief One grid command: its interned name, what it fences the
         ///        finished grid with, and how it lines its columns up.
         struct Bracket {
-            Symbol name = none;                     ///< `\\pmatrix`, `\\cases`, `\\aligned` and the rest.
-            std::uint32_t open = 0;                 ///< Left delimiter, 0 for none.
-            std::uint32_t close = 0;                ///< @copydoc open
-            std::string_view preamble = "c";        ///< Column letters; see Node::value.
-            Node::Grid grid = Node::Grid::Spaced;   ///< How its columns are spaced and its cells set.
+            Symbol name = none; ///< `\\pmatrix`, `\\cases`, `\\aligned` and the rest.
+            std::uint32_t open = 0; ///< Left delimiter, 0 for none.
+            std::uint32_t close = 0; ///< @copydoc open
+            std::string_view preamble = "c"; ///< Column letters; see Node::value.
+            Node::Grid grid = Node::Grid::Spaced; ///< How its columns are spaced and its cells set.
         };
 
         /// @brief Interns the names every formula compares against and
         ///        registers the grid commands.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Grammar(Lexicon& lexicon);
+        explicit Grammar(Lexicon &lexicon);
 
         /// @brief Makes a command or character an operator, or a command
         ///        that takes brace arguments.
@@ -85,7 +84,7 @@ namespace syntax::expression {
             return index < rules.size() ? rules[index] : Rule{};
         }
 
-        std::vector<Rule> rules{};   ///< Every rule, indexed by symbol.
+        std::vector<Rule> rules{}; ///< Every rule, indexed by symbol.
 
         /// `\\left` and `\\right`, the two names that fence a sub-formula with
         /// delimiters grown to its height.
@@ -104,10 +103,10 @@ namespace syntax::expression {
         /// their group before them as the numerator and the rest after.
         std::array<Symbol, 3> infixes{};
 
-        Symbol array = none;          ///< `\\array`, whose preamble is its own first argument.
-        Symbol operatorname = none;   ///< `\\operatorname`, which may be starred.
-        Symbol column = none;         ///< `&`, between a grid's cells.
-        Symbol row = none;            ///< `\\\\`, between its rows.
+        Symbol array = none; ///< `\\array`, whose preamble is its own first argument.
+        Symbol operatorname = none; ///< `\\operatorname`, which may be starred.
+        Symbol column = none; ///< `&`, between a grid's cells.
+        Symbol row = none; ///< `\\\\`, between its rows.
     };
 
     /// @brief Reads one formula into a tree, by a Grammar.
@@ -115,9 +114,9 @@ namespace syntax::expression {
     public:
         /// @brief Where a grid's row stands, as a Hook is told it.
         enum class Edge : std::uint8_t {
-            Opened,    ///< A row is about to be read.
-            Closed,    ///< The row just read is kept.
-            Dropped    ///< The row just read was the empty one after a last `\\\\`, and is not.
+            Opened, ///< A row is about to be read.
+            Closed, ///< The row just read is kept.
+            Dropped ///< The row just read was the empty one after a last `\\\\`, and is not.
         };
 
         /// @brief Told about every row of a formula's outermost grid, as it
@@ -132,16 +131,20 @@ namespace syntax::expression {
         /// @param grammar  The rules the formula is read by.
         /// @param arena    Allocator for the node tree.
         /// @param style    Inline or display.
-        Parser(Mouth& mouth, const Unicodes& unicodes, const Grammar& grammar, memory::Arena& arena,
+        Parser(Mouth &mouth, const Unicodes &unicodes, const Grammar &grammar, memory::Arena &arena,
                Node::Style style = Node::Style::Inline);
 
         ~Parser();
 
-        Parser(const Parser&) = delete("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
-        Parser& operator=(const Parser&) = delete("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
+        Parser(const Parser &) = delete(
+            "a formula's parser gives its lookahead back to the expander once, when it is destroyed");
 
-        Node* parse(char closing);
-        Node* parse(Symbol closing);
+        Parser &operator=(const Parser &) = delete(
+            "a formula's parser gives its lookahead back to the expander once, when it is destroyed");
+
+        Node *parse(char closing);
+
+        Node *parse(Symbol closing);
 
         /// @brief Asks to be told about the rows of this formula's outermost grid.
         /// @param value Called as each row opens and as it closes; replaces any earlier one.
@@ -150,7 +153,7 @@ namespace syntax::expression {
         /// @brief Builds an empty node of a kind, carrying this parser's style.
         /// @param type What the node is.
         /// @return The node.
-        [[nodiscard]] Node* compose(Node::Type type) const;
+        [[nodiscard]] Node *compose(Node::Type type) const;
 
         /// @brief Builds a node for an operator token, resolving its symbol.
         ///
@@ -162,13 +165,15 @@ namespace syntax::expression {
         /// @param token The operator, as written.
         /// @return The node, with its code point and class filled in where the
         ///         name was recognised.
-        [[nodiscard]] Node* compose(Node::Type type, const Token& token) const;
+        [[nodiscard]] Node *compose(Node::Type type, const Token &token) const;
+
         [[nodiscard]] Token pending() const noexcept;
 
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         [[nodiscard]] Token lookahead() const noexcept;
+
         Token advance();
 
         /// @brief Reads atoms until one of up to two stop symbols, or a
@@ -183,9 +188,10 @@ namespace syntax::expression {
         ///                 @p alternate actually ended the run, or #none when
         ///                 it ended some other way.
         /// @return One node holding everything read, or nullptr when nothing was.
-        Node* sequence(char closing = 0, Symbol stop = none, Symbol alternate = none,
-                       Symbol* matched = nullptr);
-        Node* step(int priority = 0);
+        Node *sequence(char closing = 0, Symbol stop = none, Symbol alternate = none,
+                       Symbol *matched = nullptr);
+
+        Node *step(int priority = 0);
 
         /// @brief Reads one atom: a symbol, a group, a command over its
         ///        arguments, a grid, a fenced group -- and, unless it is a
@@ -193,9 +199,11 @@ namespace syntax::expression {
         /// @param scripted False where TeX reads a single token: a script,
         ///                 an argument written without braces.
         /// @return The atom, or nullptr at the end of the formula.
-        Node* atom(bool scripted = true);
-        Node* script(Node* base);
-        Node* argument();
+        Node *atom(bool scripted = true);
+
+        Node *script(Node *base);
+
+        Node *argument();
 
         /// @brief Which character a delimiter token stands for.
         ///
@@ -205,7 +213,7 @@ namespace syntax::expression {
         ///
         /// @param token The token after `\\left`, `\\right` or `\\big`.
         /// @return Its code point, or 0 for none.
-        [[nodiscard]] std::uint32_t delimiter(const Token& token) const;
+        [[nodiscard]] std::uint32_t delimiter(const Token &token) const;
 
         /// @brief Reads a grid: a brace group of cells, `&` between columns
         ///        and `\\\\` between rows.
@@ -216,35 +224,35 @@ namespace syntax::expression {
         ///
         /// @param bracket What fences it and how its columns are lined up.
         /// @return The Matrix node, or nullptr when the group was empty.
-        Node* matrix(const Grammar::Bracket& bracket);
+        Node *matrix(const Grammar::Bracket &bracket);
 
-        Mouth& mouth;
-        const Unicodes& unicodes;
-        const Grammar& grammar;
-        memory::Arena& arena;
+        Mouth &mouth;
+        const Unicodes &unicodes;
+        const Grammar &grammar;
+        memory::Arena &arena;
         Node::Style style = Node::Style::Inline;
 
-        mutable Token current{};    ///< filled on demand, returned to the mouth on destruction
+        mutable Token current{}; ///< filled on demand, returned to the mouth on destruction
         mutable bool primed = false;
 
-        std::vector<Traceback> tracebacks{};   ///< Errors found in this formula.
+        std::vector<Traceback> tracebacks{}; ///< Errors found in this formula.
 
-        Hook hook{};              ///< Told about the outermost grid's rows; may be empty.
-        std::size_t grids = 0;    ///< How many grids are open around the token being read.
+        Hook hook{}; ///< Told about the outermost grid's rows; may be empty.
+        std::size_t grids = 0; ///< How many grids are open around the token being read.
 
         /// @brief What ends the innermost run being read: the character it
         ///        was opened to wait for, and the control sequences that stop
         ///        it -- what sequence() was given. A binary sign written last
         ///        in a run looks here, so it takes no operand from past it.
         struct Bound {
-            char closing = 0;           ///< Group character that ends it, or 0.
-            Symbol stop = none;         ///< Control sequence that ends it, or none.
-            Symbol alternate = none;    ///< A second one, or none.
+            char closing = 0; ///< Group character that ends it, or 0.
+            Symbol stop = none; ///< Control sequence that ends it, or none.
+            Symbol alternate = none; ///< A second one, or none.
         };
-        Bound bound{};   ///< The innermost run's ends.
+
+        Bound bound{}; ///< The innermost run's ends.
 
         std::size_t depth = 0;
         std::size_t limit = 256;
     };
-
 }

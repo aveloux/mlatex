@@ -22,28 +22,30 @@
 namespace expression = syntax::expression;
 
 /// @brief One node and everything under it, as `kind(value)[children]`.
-static void print(const expression::Node* node, std::string& text) {
+static void print(const expression::Node *node, std::string &text) {
     if (!node) {
         text += '_';
         return;
     }
     using Type = expression::Node::Type;
-    static constexpr const char* kinds[] = {"var", "bin", "un", "group", "script", "frac", "root", "accent", "seq",
-                                            "grid", "text"};
+    static constexpr const char *kinds[] = {
+        "var", "bin", "un", "group", "script", "frac", "root", "accent", "seq",
+        "grid", "text"
+    };
     text += kinds[static_cast<std::size_t>(node->type)];
     if (!node->value.empty()) {
         text += '(';
         text += node->value;
         text += ')';
     }
-    std::vector<const expression::Node*> children;
+    std::vector<const expression::Node *> children;
     switch (node->type) {
         case Type::Script:
             children = {node->left, node->subscript, node->superscript};
             break;
         case Type::Sequence:
         case Type::Matrix:
-            for (const expression::Node* child : node->arguments) children.push_back(child);
+            for (const expression::Node *child: node->arguments) children.push_back(child);
             break;
         case Type::Variable:
         case Type::Text:
@@ -63,8 +65,8 @@ static void print(const expression::Node* node, std::string& text) {
 
 /// @brief What one formula parsed to, and whether it reported anything.
 struct Tree {
-    std::string text{};    ///< The tree, printed.
-    bool quiet{true};      ///< Nothing reported.
+    std::string text{}; ///< The tree, printed.
+    bool quiet{true}; ///< Nothing reported.
 };
 
 /// @brief Parses a formula as `$...$` holds one.
@@ -86,7 +88,7 @@ static Tree parse(const std::string_view formula, const bool displayed = false) 
 }
 
 /// @brief A formula must parse to exactly this tree, reporting nothing.
-static void reads(const std::string_view formula, const std::string_view expected, const char* what) {
+static void reads(const std::string_view formula, const std::string_view expected, const char *what) {
     const Tree tree = parse(formula);
     const bool held = tree.text == expected && tree.quiet;
     if (!held) {
@@ -124,7 +126,7 @@ int main() {
     {
         const Tree grid = parse("\\pmatrix{a & b \\\\ c & d}");
         assert((grid.quiet && grid.text.starts_with("grid") &&
-               grid.text.find("var(a),var(b),var(c),var(d)") != std::string::npos) && "a matrix holds its four cells");
+                grid.text.find("var(a),var(b),var(c),var(d)") != std::string::npos) && "a matrix holds its four cells");
     }
     {
         const Tree broken = parse("\\frac{a}");

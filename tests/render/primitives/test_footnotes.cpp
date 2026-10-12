@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -67,7 +67,7 @@ int main() {
         for (int index = 0; index < 40; ++index) filler += "Line after line of text to fill the page. ";
         const Result result = article("", filler + "Late.\\footnote{On the page that calls it.} " + filler);
         bool together = false;
-        for (const std::string& page : result.pages) {
+        for (const std::string &page: result.pages) {
             together = together || (holds(page, "Late.1") && holds(page, "1Onthepagethatcallsit."));
         }
         assert((result.clean && together) && "a note lands on the page its call does");

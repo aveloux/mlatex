@@ -20,23 +20,23 @@
 class Logger {
 public:
     enum class Type : std::uint32_t {
-        None      = 0,
-        Lexer     = 1u << 0,
-        Mouth     = 1u << 1,
-        Parser    = 1u << 2,
-        Layout    = 1u << 3,
-        Memory    = 1u << 4,
+        None = 0,
+        Lexer = 1u << 0,
+        Mouth = 1u << 1,
+        Parser = 1u << 2,
+        Layout = 1u << 3,
+        Memory = 1u << 4,
         Semantics = 1u << 5,
-        All       = 0x3Fu
+        All = 0x3Fu
     };
 
     enum class Level : std::uint8_t {
-        Traceback   = 0,
-        Debug       = 1,
+        Traceback = 0,
+        Debug = 1,
         Informative = 2,
-        Warning     = 3,
-        Error       = 4,
-        Silent      = 5
+        Warning = 3,
+        Error = 4,
+        Silent = 5
     };
 
     /// @brief The least severe level this build keeps at all.
@@ -67,18 +67,23 @@ public:
     ///
     /// @param count     How many arguments there are, `argc`.
     /// @param arguments The arguments, `argv`.
-    static void compose(int count, char** arguments);
+    static void compose(int count, char **arguments);
 
     /// @brief Reports these subsystems, and no others.
     static void types(Type target) noexcept;
+
     /// @brief Reports these subsystems as well.
     static void enable(Type target) noexcept;
+
     /// @brief Reports nothing below this level.
     static void level(Level value) noexcept;
+
     /// @brief Colors each report by its level, or leaves it plain.
     static void color(bool flag) noexcept;
+
     /// @brief Copies every report to a file, appending to it.
-    static void file(const std::string& path);
+    static void file(const std::string &path);
+
     /// @brief Closes the file reports are copied to, if there is one.
     static void dispose();
 
@@ -93,17 +98,18 @@ public:
     /// against its arguments when the engine is compiled, exactly as
     /// std::format checks one -- and remembering the call's own place, which
     /// a report copied to a file names for a warning or an error.
-    template <typename... Args>
+    template<typename... Args>
     struct Pattern {
         /// @brief Reads a literal pattern, and where it was written.
         /// @param text  The pattern.
         /// @param where The call's place; left to its default.
-        template <typename Text>
-        consteval Pattern(const Text& text, const std::source_location where = std::source_location::current())
-            : format(text), location(where) {}
+        template<typename Text>
+        consteval Pattern(const Text &text, const std::source_location where = std::source_location::current())
+            : format(text), location(where) {
+        }
 
-        std::format_string<Args...> format;   ///< The pattern, checked.
-        std::source_location location;       ///< Where it was written.
+        std::format_string<Args...> format; ///< The pattern, checked.
+        std::source_location location; ///< Where it was written.
     };
 
     /// @brief Reports something, formatted the way std::format formats.
@@ -122,9 +128,9 @@ public:
     /// @param value   How severe it is.
     /// @param pattern The report, as std::format takes one.
     /// @param args    What its placeholders stand for.
-    template <typename... Args>
+    template<typename... Args>
     static void log(const Type target, const Level value, const Pattern<std::type_identity_t<Args>...> pattern,
-                    Args&&... args) noexcept {
+                    Args &&... args) noexcept {
         if constexpr (floor != Level::Traceback) {
             if (value < floor) return;
         }
@@ -138,6 +144,7 @@ public:
 
     /// @brief A subsystem's name, as a report prints it.
     [[nodiscard]] static std::string_view name(Type target) noexcept;
+
     /// @brief A level's name, as a report prints it.
     [[nodiscard]] static std::string_view name(Level value) noexcept;
 
@@ -148,10 +155,10 @@ private:
     /// @param text     The report, formatted.
     /// @param location Where it was written.
     static void write(Type target, Level value, std::string_view text,
-                      const std::source_location& location) noexcept;
+                      const std::source_location &location) noexcept;
 
     inline static std::mutex mutex{};
-    inline static std::atomic<Type> mask{Type::None};          // read by check() without the lock
+    inline static std::atomic<Type> mask{Type::None}; // read by check() without the lock
     inline static std::atomic<Level> threshold{Level::Error};
     inline static std::atomic<bool> ansi{true};
     inline static std::ofstream stream{};
@@ -165,7 +172,7 @@ private:
     return static_cast<Logger::Type>(static_cast<std::uint32_t>(left) & static_cast<std::uint32_t>(right));
 }
 
-constexpr Logger::Type& operator|=(Logger::Type& left, const Logger::Type right) noexcept {
+constexpr Logger::Type &operator|=(Logger::Type &left, const Logger::Type right) noexcept {
     left = left | right;
     return left;
 }

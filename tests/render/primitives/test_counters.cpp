@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,8 +54,8 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\newcounter{n}\\stepcounter{n}A:\\arabic{n} \\roman{n} \\Roman{n} "
-                                          "\\alph{n} \\Alph{n} \\fnsymbol{n}. \\setcounter{n}{2021}B:\\arabic{n} "
-                                          "\\Roman{n}. \\addtocounter{n}{-2020}C:\\value{n}.");
+                                      "\\alph{n} \\Alph{n} \\fnsymbol{n}. \\setcounter{n}{2021}B:\\arabic{n} "
+                                      "\\Roman{n}. \\addtocounter{n}{-2020}C:\\value{n}.");
         assert((result.clean) && "counters in every style");
         assert((holds(result.text, "A:1iIaA*.")) && "one, written every way");
         assert((holds(result.text, "B:2021MMXXI.")) && "a large number in Roman capitals");

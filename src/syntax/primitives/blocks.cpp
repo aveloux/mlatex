@@ -17,10 +17,10 @@
 #include <utility>
 
 namespace syntax::primitives {
+    Blocks::Blocks(Lexicon &lexicon) noexcept : lexicon(&lexicon) {
+    }
 
-    Blocks::Blocks(Lexicon& lexicon) noexcept : lexicon(&lexicon) {}
-
-    Symbol Blocks::title(Mouth& mouth) const {
+    Symbol Blocks::title(Mouth &mouth) const {
         const std::string joined = Argument::text(mouth);
         if (joined.empty()) return none;
         return mouth.lexicon.intern(joined);
@@ -32,7 +32,7 @@ namespace syntax::primitives {
     }
 
     void Blocks::watch(const std::string_view name, Handler entering, Handler leaving,
-                      const bool transparent) const {
+                       const bool transparent) const {
         if (!lexicon || name.empty()) return;
 
         // Indexed by the interned name, so dispatch is one bounds check and
@@ -40,7 +40,7 @@ namespace syntax::primitives {
         const auto slot = static_cast<std::size_t>(lexicon->intern(name));
         if (slot >= hooks.size()) hooks.resize(slot + 1);
 
-        Hook& hook = hooks[slot];
+        Hook &hook = hooks[slot];
         if (!hook.entering && !hook.leaving) {
             hook = Hook{.entering = std::move(entering), .leaving = std::move(leaving), .transparent = transparent};
             return;
@@ -51,11 +51,11 @@ namespace syntax::primitives {
         // run in the order they were asked for; closings the other way round,
         // and since each puts what it has in front of what is read next, the
         // first one asked for is the first one read either way.
-        hook.entering = [earlier = std::move(hook.entering), later = std::move(entering)](Mouth& mouth) {
+        hook.entering = [earlier = std::move(hook.entering), later = std::move(entering)](Mouth &mouth) {
             if (earlier) earlier(mouth);
             if (later) later(mouth);
         };
-        hook.leaving = [earlier = std::move(hook.leaving), later = std::move(leaving)](Mouth& mouth) {
+        hook.leaving = [earlier = std::move(hook.leaving), later = std::move(leaving)](Mouth &mouth) {
             if (later) later(mouth);
             if (earlier) earlier(mouth);
         };
@@ -67,24 +67,28 @@ namespace syntax::primitives {
         every.leaving = std::move(leaving);
     }
 
-    void Blocks::operator()(Mouth& mouth, Context&) const {
+    void Blocks::operator()(Mouth &mouth, Context &) const {
         // A name as one token, and a character as one: what a definition
         // built here is written in.
-        const auto word = [](Mouth& mouth, const std::string& name) {
+        const auto word = [](Mouth &mouth, const std::string &name) {
             const Symbol symbol = mouth.lexicon.intern(name);
-            return Token{.symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)};
+            return Token{
+                .symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)
+            };
         };
-        const auto brace = [](Mouth& mouth, const char written) {
+        const auto brace = [](Mouth &mouth, const char written) {
             const Symbol symbol = mouth.lexicon.intern(std::string_view(&written, 1));
-            return Token{.symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)};
+            return Token{
+                .symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)
+            };
         };
 
-        const Mouth::Handler entering = [this, word](Mouth& mouth) {
+        const Mouth::Handler entering = [this, word](Mouth &mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
                 tracebacks.emplace_back(Traceback::Type::Environment,
-                                         mouth.lookahead().location,
-                                         "\\begin needs a block name");
+                                        mouth.lookahead().location,
+                                        "\\begin needs a block name");
                 return;
             }
 
@@ -115,17 +119,17 @@ namespace syntax::primitives {
                     mouth.stream().inject(std::span{&call, 1});
                 } else {
                     tracebacks.emplace_back(Traceback::Type::Warning, mouth.lookahead().location,
-                                             std::format("Environment {} undefined", mouth.lexicon.resolve(name)));
+                                            std::format("Environment {} undefined", mouth.lexicon.resolve(name)));
                 }
             }
         };
 
         // A block closed, once whatever its end code opened has been.
-        const auto close = [this](Mouth& mouth, const Symbol name) {
+        const auto close = [this](Mouth &mouth, const Symbol name) {
             if (open.empty()) {
                 tracebacks.emplace_back(Traceback::Type::Environment,
-                                         mouth.lookahead().location,
-                                         std::format("Extra \\end{{{}}}", mouth.lexicon.resolve(name)));
+                                        mouth.lookahead().location,
+                                        std::format("Extra \\end{{{}}}", mouth.lexicon.resolve(name)));
                 return;
             }
 
@@ -154,12 +158,12 @@ namespace syntax::primitives {
             if (!transparent) mouth.pop(semantics::Scope::Type::Environment);
         };
 
-        const Mouth::Handler leaving = [this, word, close](Mouth& mouth) {
+        const Mouth::Handler leaving = [this, word, close](Mouth &mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
                 tracebacks.emplace_back(Traceback::Type::Environment,
-                                         mouth.lookahead().location,
-                                         "\\end needs a block name");
+                                        mouth.lookahead().location,
+                                        "\\end needs a block name");
                 return;
             }
 
@@ -169,8 +173,10 @@ namespace syntax::primitives {
             const auto slot = static_cast<std::size_t>(name);
             if (slot < hooks.size() && hooks[slot].own) {
                 closing.push_back(name);
-                const std::array<Token, 2> code{word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":close"),
-                                                word(mouth, "\\end:finish")};
+                const std::array<Token, 2> code{
+                    word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":close"),
+                    word(mouth, "\\end:finish")
+                };
                 mouth.stream().inject(std::span{code});
                 return;
             }
@@ -186,7 +192,7 @@ namespace syntax::primitives {
             }
             close(mouth, name);
         };
-        mouth.bind("\\end:finish", [this, close](Mouth& mouth) {
+        mouth.bind("\\end:finish", [this, close](Mouth &mouth) {
             if (closing.empty()) return;
             const Symbol name = closing.back();
             closing.pop_back();
@@ -197,8 +203,8 @@ namespace syntax::primitives {
         // definitions a document would write for them, as tokens -- its
         // parameters as \\newcommand reads them, or xparse's letters -- and the
         // block marked the document's own.
-        const auto defining = [this, word, brace](Mouth& mouth, const bool renewing, const bool providing,
-                                                   const bool described) {
+        const auto defining = [this, word, brace](Mouth &mouth, const bool renewing, const bool providing,
+                                                  const bool described) {
             if (mouth.lookahead().is('*')) mouth.read();
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = Argument::text(mouth);
@@ -222,12 +228,13 @@ namespace syntax::primitives {
 
             const auto slot = static_cast<std::size_t>(mouth.lexicon.intern(name));
             if (slot >= hooks.size()) hooks.resize(slot + 1);
-            Hook& hook = hooks[slot];
+            Hook &hook = hooks[slot];
             const bool native = !hook.own && (hook.entering || hook.leaving);
             if (providing && (hook.own || native)) return;
             if (renewing && native) {
                 tracebacks.emplace_back(Traceback::Type::Warning, origin,
-                                         "renewenvironment " + name + ": the engine sets this block itself, and still does");
+                                        "renewenvironment " + name +
+                                        ": the engine sets this block itself, and still does");
                 return;
             }
             hook.own = true;
@@ -250,13 +257,13 @@ namespace syntax::primitives {
             if (described) written.erase(written.begin());
             mouth.stream().inject(std::span{written});
         };
-        mouth.bind("\\newenvironment", [defining](Mouth& mouth) { defining(mouth, false, false, false); });
-        mouth.bind("\\renewenvironment", [defining](Mouth& mouth) { defining(mouth, true, false, false); });
-        mouth.bind("\\provideenvironment", [defining](Mouth& mouth) { defining(mouth, false, true, false); });
-        mouth.bind("\\NewDocumentEnvironment", [defining](Mouth& mouth) { defining(mouth, false, false, true); });
-        mouth.bind("\\RenewDocumentEnvironment", [defining](Mouth& mouth) { defining(mouth, true, false, true); });
-        mouth.bind("\\ProvideDocumentEnvironment", [defining](Mouth& mouth) { defining(mouth, false, true, true); });
-        mouth.bind("\\DeclareDocumentEnvironment", [defining](Mouth& mouth) { defining(mouth, false, false, true); });
+        mouth.bind("\\newenvironment", [defining](Mouth &mouth) { defining(mouth, false, false, false); });
+        mouth.bind("\\renewenvironment", [defining](Mouth &mouth) { defining(mouth, true, false, false); });
+        mouth.bind("\\provideenvironment", [defining](Mouth &mouth) { defining(mouth, false, true, false); });
+        mouth.bind("\\NewDocumentEnvironment", [defining](Mouth &mouth) { defining(mouth, false, false, true); });
+        mouth.bind("\\RenewDocumentEnvironment", [defining](Mouth &mouth) { defining(mouth, true, false, true); });
+        mouth.bind("\\ProvideDocumentEnvironment", [defining](Mouth &mouth) { defining(mouth, false, true, true); });
+        mouth.bind("\\DeclareDocumentEnvironment", [defining](Mouth &mouth) { defining(mouth, false, false, true); });
 
         mouth.bind("\\begin", entering);
         mouth.bind("\\end", leaving);
@@ -267,5 +274,4 @@ namespace syntax::primitives {
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Debug, "Bound block primitives");
     }
-
 }

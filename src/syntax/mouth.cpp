@@ -28,8 +28,7 @@
 #include <vector>
 
 namespace syntax {
-
-    Mouth::Mouth(Cursor stream, semantics::Union& state, Lexicon& lexicon, memory::Arena& arena)
+    Mouth::Mouth(Cursor stream, semantics::Union &state, Lexicon &lexicon, memory::Arena &arena)
         : state(state), lexicon(lexicon), arena(arena), cursor(std::move(stream)) {
         this->paragraph = this->lexicon.intern("\\par");
     }
@@ -49,7 +48,7 @@ namespace syntax {
 
         if (this->marks.empty()) {
             this->tracebacks.emplace_back(Traceback::Type::Scope, location,
-                                           "A group closed that was never opened");
+                                          "A group closed that was never opened");
             return false;
         }
 
@@ -72,8 +71,9 @@ namespace syntax {
         const bool matched = actual == expected;
         if (!matched) {
             this->tracebacks.emplace_back(
-                actual == semantics::Scope::Type::Environment ? Traceback::Type::Environment
-                                                              : Traceback::Type::Group,
+                actual == semantics::Scope::Type::Environment
+                    ? Traceback::Type::Environment
+                    : Traceback::Type::Group,
                 location,
                 std::format("Scope closed as {} but was opened as {}",
                             semantics::Scope::name(expected), semantics::Scope::name(actual)));
@@ -89,11 +89,11 @@ namespace syntax {
         // down from size() makes termination obvious and saves a pop_back per
         // record.
         for (std::size_t index = this->records.size(); index > mark; --index) {
-            Record& record = this->records[index - 1];
+            Record &record = this->records[index - 1];
 
             const auto slot = static_cast<std::size_t>(record.symbol);
             if (slot >= this->macros.size()) continue;
-            if (this->levels[slot] == 0) continue;   // made global since; the record is dead
+            if (this->levels[slot] == 0) continue; // made global since; the record is dead
 
             this->levels[slot] = record.level;
             this->macros[slot] = std::move(record.macro);
@@ -122,7 +122,7 @@ namespace syntax {
 
         this->depth++;
         struct Guard {
-            std::size_t& counter;
+            std::size_t &counter;
             ~Guard() { --counter; }
         } guard{this->depth};
 
@@ -183,13 +183,20 @@ namespace syntax {
                     if (const std::size_t at = token.text.find('@', 2); at != std::string_view::npos) {
                         const Symbol name = this->lexicon.intern(token.text.substr(0, at));
                         if (this->known(name)) {
-                            std::vector<Token> split{Token{name, Catcodes::Category::Escape, token.location,
-                                                           this->lexicon.resolve(name)}};
+                            std::vector<Token> split{
+                                Token{
+                                    name, Catcodes::Category::Escape, token.location,
+                                    this->lexicon.resolve(name)
+                                }
+                            };
                             for (std::size_t index = at; index < token.text.size(); ++index) {
                                 const Symbol letter = this->lexicon.intern(token.text.substr(index, 1));
-                                const bool alphabetic = std::isalpha(static_cast<unsigned char>(token.text[index])) != 0;
-                                split.push_back(Token{letter, alphabetic ? Catcodes::Category::Letter : Catcodes::Category::Other,
-                                                      token.location, this->lexicon.resolve(letter)});
+                                const bool alphabetic =
+                                        std::isalpha(static_cast<unsigned char>(token.text[index])) != 0;
+                                split.push_back(Token{
+                                    letter, alphabetic ? Catcodes::Category::Letter : Catcodes::Category::Other,
+                                    token.location, this->lexicon.resolve(letter)
+                                });
                             }
                             this->cursor.advance();
                             this->cursor.inject(split);
@@ -237,30 +244,30 @@ namespace syntax {
         // What the definition wrote before its first parameter is matched
         // and passed over; a call that does not match it is reported, and
         // read on as though it had.
-        for (const Token& expected : macro->prefix) {
+        for (const Token &expected: macro->prefix) {
             if (this->cursor.empty() || this->cursor.lookahead(0).text != expected.text) {
                 this->tracebacks.emplace_back(Traceback::Type::Argument, token.location,
-                                               std::format("Use of {} does not match its definition", token.text));
+                                              std::format("Use of {} does not match its definition", token.text));
                 break;
             }
             this->cursor.advance();
         }
 
-        std::vector<std::vector<Token>> arguments;
+        std::vector<std::vector<Token> > arguments;
         arguments.reserve(macro->parameters.size());
-        for (const auto& parameter : macro->parameters) {
+        for (const auto &parameter: macro->parameters) {
             arguments.push_back(this->argument(parameter, macro->spanning));
         }
 
         std::vector<Token> output;
-        const auto& body = macro->body;
+        const auto &body = macro->body;
         std::size_t total = body.size();
-        for (const auto& item : arguments) total += item.size();
+        for (const auto &item: arguments) total += item.size();
         output.reserve(total);
 
         for (std::size_t index = 0; index < body.size(); ++index) {
             if (body[index].category == Catcodes::Category::Parameter && index + 1 < body.size()) {
-                const Token& next = body[index + 1];
+                const Token &next = body[index + 1];
 
                 // `##` is one `#`, kept for a definition inside the body.
                 if (next.category == Catcodes::Category::Parameter) {
@@ -269,7 +276,7 @@ namespace syntax {
                     continue;
                 }
 
-                if (const auto& values = next.text;
+                if (const auto &values = next.text;
                     !values.empty() && values[0] >= '1' && values[0] <= '9') {
                     if (const auto place = static_cast<std::size_t>(values[0] - '1');
                         place < arguments.size()) {
@@ -286,7 +293,7 @@ namespace syntax {
         return true;
     }
 
-    std::vector<Token> Mouth::argument(const Parameter& parameter, const int allow) {
+    std::vector<Token> Mouth::argument(const Parameter &parameter, const int allow) {
         std::vector<Token> result;
         if (this->cursor.empty()) return result;
 
@@ -297,10 +304,10 @@ namespace syntax {
 
         // What may not stand inside an argument: a paragraph break unless the
         // macro is `\long`, and an `\outer` macro ever.
-        const auto forbidden = [&](const Token& token) -> bool {
+        const auto forbidden = [&](const Token &token) -> bool {
             if (token.symbol == this->paragraph && !allow) {
                 this->tracebacks.emplace_back(Traceback::Type::Argument, token.location,
-                                               "Paragraph break inside argument of a macro that isn't \\long");
+                                              "Paragraph break inside argument of a macro that isn't \\long");
                 return true;
             }
             if (const auto slot = static_cast<std::size_t>(token.symbol);
@@ -355,7 +362,7 @@ namespace syntax {
                 if (scope == 0) {
                     std::size_t offset = 0;
                     bool found = true;
-                    for (const Token& want : parameter.delimiters) {
+                    for (const Token &want: parameter.delimiters) {
                         if (want.category == Catcodes::Category::Space) {
                             while (offset < this->cursor.size() &&
                                    this->cursor.lookahead(offset).category == Catcodes::Category::Space) {
@@ -439,7 +446,7 @@ namespace syntax {
             }
             if (scope > 0) {
                 this->tracebacks.emplace_back(Traceback::Type::Group, token.location,
-                                               "An argument's group was never closed");
+                                              "An argument's group was never closed");
             }
         } else if (forbidden(token)) {
             this->cursor.inject(std::span{&token, 1});
@@ -454,7 +461,7 @@ namespace syntax {
         Lexer lexer(source, this->state.catcodes, this->lexicon);
 
         std::vector<Token> tokens;
-        tokens.reserve(source.size());   // worst case is one token per byte
+        tokens.reserve(source.size()); // worst case is one token per byte
 
         while (!lexer.empty()) {
             if (Token token = lexer.advance(); !token.empty()) {
@@ -464,7 +471,7 @@ namespace syntax {
         }
 
         this->tracebacks.insert(this->tracebacks.end(),
-                                 lexer.traceback().begin(), lexer.traceback().end());
+                                lexer.traceback().begin(), lexer.traceback().end());
         this->cursor.adopt(std::move(tokens));
     }
 
@@ -483,7 +490,7 @@ namespace syntax {
             const Symbol end = this->lexicon.intern("\\end");
             long nesting = 0;
             for (std::size_t at = 0; at < unread.size(); ++at) {
-                const Token& token = unread[at];
+                const Token &token = unread[at];
                 if (token.is(Category::Group, '{') || token.symbol == begingroup || token.symbol == begin) ++nesting;
                 if (token.is(Category::Group, '}') || token.symbol == endgroup || token.symbol == end) --nesting;
                 if (nesting < 0) {
@@ -493,23 +500,25 @@ namespace syntax {
             }
         }
 
-        const auto mine = [character](const Token& token) {
+        const auto mine = [character](const Token &token) {
             return token.category != Category::Escape && token.text.size() == 1 && token.text[0] == character;
         };
         // The next token stands straight after the one before on its line.
-        const auto follows = [](const Token& token, const std::uint32_t line, const std::uint32_t column) {
+        const auto follows = [](const Token &token, const std::uint32_t line, const std::uint32_t column) {
             return token.location.line == line && token.location.column == column;
         };
         // A control word's name: the letters that follow its escape on its
         // line, and the blanks after them, which TeX reads past.
-        const auto word = [&](std::string& name, std::size_t& at, std::uint32_t column) {
+        const auto word = [&](std::string &name, std::size_t &at, std::uint32_t column) {
             const std::uint32_t line = unread[at].location.line;
             while (at + 1 < reach && follows(unread[at + 1], line, column) &&
-                   (unread[at + 1].category == Category::Letter || (category == Category::Letter && mine(unread[at + 1])))) {
+                   (unread[at + 1].category == Category::Letter || (
+                        category == Category::Letter && mine(unread[at + 1])))) {
                 name += unread[++at].text;
                 ++column;
             }
-            while (at + 1 < reach && unread[at + 1].category == Category::Space && unread[at + 1].location.line == line) ++at;
+            while (at + 1 < reach && unread[at + 1].category == Category::Space && unread[at + 1].location.line == line)
+                ++at;
         };
 
         std::vector<Token> result;
@@ -554,7 +563,7 @@ namespace syntax {
                 case Category::Escape: {
                     // `|textbf` a control word, `|{` a control symbol.
                     std::string name = "\\";
-                    const Token* after = at + 1 < reach ? &unread[at + 1] : nullptr;
+                    const Token *after = at + 1 < reach ? &unread[at + 1] : nullptr;
                     if (after && after->category == Category::Letter &&
                         follows(*after, token.location.line, token.location.column + 1)) {
                         word(name, at, token.location.column + 1);
@@ -600,7 +609,7 @@ namespace syntax {
     }
 
     void Mouth::lend(const Symbol symbol, const Symbol source) {
-        const Handler* handler = this->handler(source);
+        const Handler *handler = this->handler(source);
         if (!handler) return;
         const Symbol origin = this->primitive(source);
         this->bind(symbol, *handler);
@@ -618,7 +627,7 @@ namespace syntax {
         // A body with no parameter reference can be injected as it stands,
         // which is decided once here rather than on every call.
         macro.literal = macro.parameters.empty() && macro.prefix.empty() &&
-                        std::ranges::none_of(macro.body, [](const Token& token) {
+                        std::ranges::none_of(macro.body, [](const Token &token) {
                             return token.category == Catcodes::Category::Parameter;
                         });
 
@@ -633,7 +642,7 @@ namespace syntax {
         if (global) {
             this->levels[slot] = 0;
         } else if (const auto level = static_cast<std::uint32_t>(this->marks.size());
-                   level != 0 && this->levels[slot] != level) {
+            level != 0 && this->levels[slot] != level) {
             this->records.push_back(Record{symbol, this->macros[slot], this->levels[slot]});
             this->levels[slot] = level;
         }
@@ -648,7 +657,7 @@ namespace syntax {
         if (global) {
             this->levels[slot] = 0;
         } else if (const auto level = static_cast<std::uint32_t>(this->marks.size());
-                   level != 0 && this->levels[slot] != level) {
+            level != 0 && this->levels[slot] != level) {
             this->records.push_back(Record{symbol, this->macros[slot], this->levels[slot]});
             this->levels[slot] = level;
         }
@@ -660,14 +669,13 @@ namespace syntax {
         return this->cursor.lookahead(offset);
     }
 
-    const Mouth::Macro* Mouth::macro(const Symbol symbol) const noexcept {
+    const Mouth::Macro *Mouth::macro(const Symbol symbol) const noexcept {
         const auto slot = static_cast<std::size_t>(symbol);
         return slot < this->macros.size() ? this->macros[slot].get() : nullptr;
     }
 
-    const Mouth::Handler* Mouth::handler(const Symbol symbol) const noexcept {
+    const Mouth::Handler *Mouth::handler(const Symbol symbol) const noexcept {
         const auto slot = static_cast<std::size_t>(symbol);
         return slot < this->handlers.size() ? this->handlers[slot].get() : nullptr;
     }
-
 }

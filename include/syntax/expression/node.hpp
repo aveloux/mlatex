@@ -7,7 +7,6 @@
 #include <string_view>
 
 namespace syntax::expression {
-
     /// @brief One node of a formula's tree.
     ///
     /// A formula is parsed into a tree before anything is measured, because
@@ -27,39 +26,41 @@ namespace syntax::expression {
     struct Node {
         /// @brief Whether the formula sits in a line or on a line of its own.
         enum class Style : std::uint8_t {
-            Inline,   ///< In the run of the text: `$...$` and `\\(...\\)`.
-            Display   ///< On a line of its own: `\\[...\\]` and `$$...$$`.
+            Inline, ///< In the run of the text: `$...$` and `\\(...\\)`.
+            Display ///< On a line of its own: `\\[...\\]` and `$$...$$`.
         };
 
         /// @brief What a node is, which says which of its fields mean anything.
         enum class Type : std::uint8_t {
-            Variable,   ///< A symbol, letter or digit: uses #codepoint or #value.
-            Binary,     ///< An infix operator: #left, #right, and the operator in #value.
-            Unary,      ///< A prefix or postfix operator: #left, and the operator in #value.
-            Group,      ///< A sub-formula in #left, fenced by #open and #close when they are set.
-            Script,     ///< A base in #left with a #subscript, a #superscript, or both.
-            Fraction,   ///< #left over #right; #value names the kind, as `\\binom` does.
-            Radical,    ///< A root of #right, with an optional degree in #left.
-            Accent,     ///< A mark over #left; #value names which mark.
-            Sequence,   ///< A run of #arguments, or a named command with them.
-            Matrix,     ///< A grid of #arguments, #columns wide, fenced by #open and #close.
-            Text        ///< Words set as written, spaces and all, in #value: what `\\text` holds.
+            Variable, ///< A symbol, letter or digit: uses #codepoint or #value.
+            Binary, ///< An infix operator: #left, #right, and the operator in #value.
+            Unary, ///< A prefix or postfix operator: #left, and the operator in #value.
+            Group, ///< A sub-formula in #left, fenced by #open and #close when they are set.
+            Script, ///< A base in #left with a #subscript, a #superscript, or both.
+            Fraction, ///< #left over #right; #value names the kind, as `\\binom` does.
+            Radical, ///< A root of #right, with an optional degree in #left.
+            Accent, ///< A mark over #left; #value names which mark.
+            Sequence, ///< A run of #arguments, or a named command with them.
+            Matrix, ///< A grid of #arguments, #columns wide, fenced by #open and #close.
+            Text ///< Words set as written, spaces and all, in #value: what `\\text` holds.
         };
 
         /// @brief How a Matrix spaces its columns; unused otherwise.
         enum class Grid : std::uint8_t {
-            Spaced,     ///< A quad between every two columns, each cell in text style:
+            Spaced,
+            ///< A quad between every two columns, each cell in text style:
                         ///< the matrices, `cases` and `array`.
-            Displayed,  ///< The same, each cell a displayed line: `gathered`, `dcases`.
-            Paired      ///< Columns in right-and-left pairs, touching within a pair and two
+            Displayed, ///< The same, each cell a displayed line: `gathered`, `dcases`.
+            Paired
+            ///< Columns in right-and-left pairs, touching within a pair and two
                         ///< quads apart between pairs, each cell a displayed line:
                         ///< `aligned`, and the `align` displays.
         };
 
-        Type type = Type::Variable;                                    ///< What the node is.
-        Unicodes::Category category = Unicodes::Category::Ordinary;    ///< Its class, for spacing.
-        Style style = Style::Inline;                                   ///< Inline or displayed.
-        std::uint32_t codepoint = 0;                                   ///< The character, when known.
+        Type type = Type::Variable; ///< What the node is.
+        Unicodes::Category category = Unicodes::Category::Ordinary; ///< Its class, for spacing.
+        Style style = Style::Inline; ///< Inline or displayed.
+        std::uint32_t codepoint = 0; ///< The character, when known.
 
         /// @brief Its text as written.
         ///
@@ -74,13 +75,13 @@ namespace syntax::expression {
         /// bracket or a floor as easily as a parenthesis. A brace group has
         /// neither, which is how it groups without printing anything.
         std::uint32_t open = 0;
-        std::uint32_t close = 0;   ///< @copydoc open
+        std::uint32_t close = 0; ///< @copydoc open
 
-        Node* left = nullptr;                ///< First operand, or the only one.
-        Node* right = nullptr;               ///< Second operand.
-        Node* subscript = nullptr;           ///< What sits below and after.
-        Node* superscript = nullptr;         ///< What sits above and after.
-        memory::Slice<Node*> arguments{};    ///< Every argument, in order.
+        Node *left = nullptr; ///< First operand, or the only one.
+        Node *right = nullptr; ///< Second operand.
+        Node *subscript = nullptr; ///< What sits below and after.
+        Node *superscript = nullptr; ///< What sits above and after.
+        memory::Slice<Node *> arguments{}; ///< Every argument, in order.
 
         /// @brief How many columns wide a Matrix is; unused otherwise.
         ///
@@ -90,7 +91,6 @@ namespace syntax::expression {
         /// nothing else ever needs to address one on its own.
         std::size_t columns = 0;
 
-        Grid grid = Grid::Spaced;   ///< How a Matrix spaces its columns and sets its cells.
+        Grid grid = Grid::Spaced; ///< How a Matrix spaces its columns and sets its cells.
     };
-
 }

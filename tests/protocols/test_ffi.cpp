@@ -13,13 +13,13 @@
 
 /// @brief What the balance command saw, for the checks to read.
 struct Ledger {
-    int calls{0};             ///< How many times the document asked.
-    std::string account{};    ///< The last account it asked about.
+    int calls{0}; ///< How many times the document asked.
+    std::string account{}; ///< The last account it asked about.
 };
 
 /// @brief A command implemented by the program: the balance of an account.
-static void balance(void* data, const char* const* arguments, const size_t count, protocols::Output* output) {
-    auto* ledger = static_cast<Ledger*>(data);
+static void balance(void *data, const char *const*arguments, const size_t count, protocols::Output *output) {
+    auto *ledger = static_cast<Ledger *>(data);
     ++ledger->calls;
     if (count == 1) ledger->account = arguments[0];
 
@@ -30,15 +30,15 @@ static void balance(void* data, const char* const* arguments, const size_t count
 
 /// @brief A document, typeset through the library.
 struct Result {
-    int clean{0};                         ///< What typeset returned.
-    const unsigned char* pdf{nullptr};    ///< The PDF, if one was made.
-    size_t size{0};                       ///< How long it is.
-    std::string error{};                  ///< What went wrong.
+    int clean{0}; ///< What typeset returned.
+    const unsigned char *pdf{nullptr}; ///< The PDF, if one was made.
+    size_t size{0}; ///< How long it is.
+    std::string error{}; ///< What went wrong.
 };
 
 /// @brief Typesets one document with a session.
-static Result typeset(protocols::Session* session, const std::string_view document) {
-    const protocols::Latex* table = protocols::engine();
+static Result typeset(protocols::Session *session, const std::string_view document) {
+    const protocols::Latex *table = protocols::engine();
     Result result;
     result.clean = table->typeset(session, document.data(), document.size(), &result.pdf, &result.size);
     result.error = table->error(session);
@@ -46,13 +46,13 @@ static Result typeset(protocols::Session* session, const std::string_view docume
 }
 
 int main() {
-    const protocols::Latex* table = protocols::engine();
+    const protocols::Latex *table = protocols::engine();
     assert((table != nullptr) && "the library hands out its operations");
     assert((table == protocols::engine()) && "the same struct every time");
     if (!table) return 1;
 
     assert((table->compose("no such folder") == nullptr) && "a session needs an assets folder");
-    protocols::Session* session = table->compose(nullptr);
+    protocols::Session *session = table->compose(nullptr);
     assert((session != nullptr) && "the library finds its own assets");
     if (!session) return 1;
 
@@ -78,9 +78,9 @@ int main() {
     assert((table->provide(session, "broken.mtex", nullptr, 4) == 0) && "bytes that are not there are refused");
 
     const std::string_view document =
-        "\\usepackage{letterhead}\n\\begin{document}\n"
-        "Billed to \\variable{customer}, \\company{}: \\owing{\\variable{account}}.\n"
-        "\\input{empty}\n\\end{document}\n";
+            "\\usepackage{letterhead}\n\\begin{document}\n"
+            "Billed to \\variable{customer}, \\company{}: \\owing{\\variable{account}}.\n"
+            "\\input{empty}\n\\end{document}\n";
 
     const Result made = typeset(session, document);
     assert((made.clean == 1) && "the document is made with nothing reported");

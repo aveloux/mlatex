@@ -15,27 +15,30 @@
 #include <fstream>
 
 #if defined(_WIN32)
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #ifndef NOMINMAX
-        #define NOMINMAX
-    #endif
-    #include <windows.h>
-    #include <winhttp.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <winhttp.h>
 #elif defined(LATEX_CURL)
-    #include <curl/curl.h>
-    #include <string>
+#include <curl/curl.h>
+#include <string>
 #endif
 
 namespace protocols {
-
 #if defined(_WIN32)
     /// @brief Closes a WinHTTP handle when it goes out of scope.
     struct Handle {
-        explicit Handle(const HINTERNET handle) noexcept : value(handle) {}
-        Handle(const Handle&) = delete("a handle closes its connection when it is destroyed, once");
-        Handle& operator=(const Handle&) = delete("a handle closes its connection when it is destroyed, once");
+        explicit Handle(const HINTERNET handle) noexcept : value(handle) {
+        }
+
+        Handle(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
+
+        Handle &operator=(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
+
         ~Handle() { if (value) WinHttpCloseHandle(value); }
 
         operator HINTERNET() const noexcept { return value; }
@@ -65,7 +68,7 @@ namespace protocols {
         // every platform, rather than left to whichever client would try it.
         if (!url.starts_with("https://")) return std::nullopt;
 
-    #if defined(_WIN32)
+#if defined(_WIN32)
         // WinHTTP is wide throughout; a URL and a method are both pure
         // ASCII, so widening them byte for byte is exact rather than a real
         // transcoding.
@@ -87,28 +90,32 @@ namespace protocols {
 
         const bool secure = parts.nScheme == INTERNET_SCHEME_HTTPS;
 
-        const Handle session{WinHttpOpen(
-            L"latex-engine/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-            nullptr, nullptr, 0)};
+        const Handle session{
+            WinHttpOpen(
+                L"latex-engine/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                nullptr, nullptr, 0)
+        };
         if (!session.ok()) return std::nullopt;
 
         const Handle connection{WinHttpConnect(session, host, parts.nPort, 0)};
         if (!connection.ok()) return std::nullopt;
 
-        const Handle request{WinHttpOpenRequest(
-            connection, verb.c_str(), path, nullptr, nullptr,
-            nullptr, secure ? WINHTTP_FLAG_SECURE : 0)};
+        const Handle request{
+            WinHttpOpenRequest(
+                connection, verb.c_str(), path, nullptr, nullptr,
+                nullptr, secure ? WINHTTP_FLAG_SECURE : 0)
+        };
         if (!request.ok()) return std::nullopt;
 
         // A body is sent as raw bytes exactly as given; a document asking
         // for JSON or form encoding writes the header itself, as \\httppost
         // does with its own Content-Type.
         const auto sent = body.empty()
-            ? WinHttpSendRequest(request, nullptr, 0,
-                                 nullptr, 0, 0, 0)
-            : WinHttpSendRequest(request, nullptr, 0,
-                                 const_cast<void*>(static_cast<const void*>(body.data())),
-                                 static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
+                              ? WinHttpSendRequest(request, nullptr, 0,
+                                                   nullptr, 0, 0, 0)
+                              : WinHttpSendRequest(request, nullptr, 0,
+                                                   const_cast<void *>(static_cast<const void *>(body.data())),
+                                                   static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
 
         if (!sent || !WinHttpReceiveResponse(request, nullptr)) return std::nullopt;
 
@@ -132,10 +139,10 @@ namespace protocols {
         }
 
         return response;
-    #elif defined(LATEX_CURL)
+#elif defined(LATEX_CURL)
         // Handed the method, the URL and the body as separate options, as
         // WinHTTP is; libcurl is what puts them on the wire.
-        CURL* handle = curl_easy_init();
+        CURL *handle = curl_easy_init();
         if (!handle) return std::nullopt;
 
         const std::string address(url);
@@ -143,10 +150,10 @@ namespace protocols {
         Response response;
 
         // Each piece of the body as it arrives, onto the end of the last.
-        const curl_write_callback keep = [](char* data, const std::size_t size, const std::size_t count,
-                                            void* target) -> std::size_t {
-            auto* received = static_cast<std::vector<std::uint8_t>*>(target);
-            const auto* start = reinterpret_cast<const std::uint8_t*>(data);
+        const curl_write_callback keep = [](char *data, const std::size_t size, const std::size_t count,
+                                            void *target) -> std::size_t {
+            auto *received = static_cast<std::vector<std::uint8_t> *>(target);
+            const auto *start = reinterpret_cast<const std::uint8_t *>(data);
             received->insert(received->end(), start, start + size * count);
             return size * count;
         };
@@ -170,15 +177,15 @@ namespace protocols {
         if (code != CURLE_OK) return std::nullopt;
         response.status = static_cast<int>(status);
         return response;
-    #else
+#else
         // No HTTP client on this platform: refused as a request that could
         // not be sent would be.
         static_cast<void>(body);
         return std::nullopt;
-    #endif
+#endif
     }
 
-    std::optional<std::vector<std::uint8_t>> get(
+    std::optional<std::vector<std::uint8_t> > get(
         const std::string_view source,
         const std::string_view base
     ) {
@@ -198,8 +205,7 @@ namespace protocols {
         file.seekg(0);
 
         std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
-        if (size > 0 && !file.read(reinterpret_cast<char*>(bytes.data()), size)) return std::nullopt;
+        if (size > 0 && !file.read(reinterpret_cast<char *>(bytes.data()), size)) return std::nullopt;
         return bytes;
     }
-
 }

@@ -43,22 +43,22 @@ namespace typography = render::typography;
 
 /// @brief An inked rectangle on the page, measured downwards.
 struct Ink {
-    float left{0.0f};     ///< Left edge.
-    float right{0.0f};    ///< Right edge.
-    float top{0.0f};      ///< Top edge; smaller is higher.
-    float bottom{0.0f};   ///< Bottom edge.
+    float left{0.0f}; ///< Left edge.
+    float right{0.0f}; ///< Right edge.
+    float top{0.0f}; ///< Top edge; smaller is higher.
+    float bottom{0.0f}; ///< Bottom edge.
 };
 
 /// @brief Everything a formula drew, sorted into what a radical is made of.
 struct Drawing {
-    std::vector<Ink> sign{};     ///< The outermost radical sign's pieces.
-    std::size_t pieces{0};       ///< How many glyphs drew that sign.
-    std::vector<Ink> glyphs{};   ///< Every other glyph.
-    std::vector<Ink> rules{};    ///< Every bar.
+    std::vector<Ink> sign{}; ///< The outermost radical sign's pieces.
+    std::size_t pieces{0}; ///< How many glyphs drew that sign.
+    std::vector<Ink> glyphs{}; ///< Every other glyph.
+    std::vector<Ink> rules{}; ///< Every bar.
 };
 
 /// @brief The glyph's ink, where the page draws it.
-static Ink ink(const layout::Node::Glyph& mark, const float x, const float baseline) {
+static Ink ink(const layout::Node::Glyph &mark, const float x, const float baseline) {
     const typography::Font::Box box = mark.font->bounds(mark.code);
     const float origin = baseline + mark.y;
     return Ink{
@@ -70,7 +70,7 @@ static Ink ink(const layout::Node::Glyph& mark, const float x, const float basel
 }
 
 /// @brief The height a column steps down by to reach a child's reference point.
-static float height(const layout::Node* item) {
+static float height(const layout::Node *item) {
     switch (item->type) {
         case layout::Node::Type::Box: return item->box().height;
         case layout::Node::Type::Glyph: return item->glyph().height;
@@ -80,7 +80,7 @@ static float height(const layout::Node* item) {
 }
 
 /// @brief Walks a box the way the composer draws it, collecting every mark.
-static void walk(const layout::Node* node, const float x, const float baseline, Drawing& drawing) {
+static void walk(const layout::Node *node, const float x, const float baseline, Drawing &drawing) {
     if (!node) return;
 
     switch (node->type) {
@@ -88,9 +88,11 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
             drawing.glyphs.push_back(ink(node->glyph(), x, baseline));
             return;
         case layout::Node::Type::Rule: {
-            const layout::Node::Rule& bar = node->rule();
-            drawing.rules.push_back({.left = x, .right = x + bar.width, .top = baseline - bar.height,
-                                     .bottom = baseline + bar.depth});
+            const layout::Node::Rule &bar = node->rule();
+            drawing.rules.push_back({
+                .left = x, .right = x + bar.width, .top = baseline - bar.height,
+                .bottom = baseline + bar.depth
+            });
             return;
         }
         case layout::Node::Type::Box:
@@ -99,7 +101,7 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
             return;
     }
 
-    const layout::Node::Box& box = node->box();
+    const layout::Node::Box &box = node->box();
     const float left = x + box.offset;
     const float line = baseline + box.shift;
 
@@ -109,7 +111,7 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
         const bool radical = drawing.sign.empty() && box.list.count > 0 &&
                              box.list[0]->type == layout::Node::Type::Glyph &&
                              box.list[0]->glyph().point == 0x221A;
-        for (const layout::Node* child : box.list) {
+        for (const layout::Node *child: box.list) {
             if (radical && child->type == layout::Node::Type::Glyph) {
                 drawing.sign.push_back(ink(child->glyph(), left, line));
                 ++drawing.pieces;
@@ -122,7 +124,7 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
 
     if (box.alignment == layout::Node::Alignment::Horizontal) {
         float pen = left;
-        for (const layout::Node* child : box.list) {
+        for (const layout::Node *child: box.list) {
             walk(child, pen, line, drawing);
             pen += layout::Line::advance(child);
         }
@@ -130,7 +132,7 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
     }
 
     float down = line;
-    for (const layout::Node* child : box.list) {
+    for (const layout::Node *child: box.list) {
         if (!child) continue;
         down += height(child);
         walk(child, left, down, drawing);
@@ -139,10 +141,12 @@ static void walk(const layout::Node* node, const float x, const float baseline, 
 }
 
 /// @brief The smallest rectangle around several.
-static Ink around(const std::vector<Ink>& inks) {
-    Ink whole{.left = std::numeric_limits<float>::max(), .right = std::numeric_limits<float>::lowest(),
-              .top = std::numeric_limits<float>::max(), .bottom = std::numeric_limits<float>::lowest()};
-    for (const Ink& part : inks) {
+static Ink around(const std::vector<Ink> &inks) {
+    Ink whole{
+        .left = std::numeric_limits<float>::max(), .right = std::numeric_limits<float>::lowest(),
+        .top = std::numeric_limits<float>::max(), .bottom = std::numeric_limits<float>::lowest()
+    };
+    for (const Ink &part: inks) {
         whole.left = std::min(whole.left, part.left);
         whole.right = std::max(whole.right, part.right);
         whole.top = std::min(whole.top, part.top);
@@ -153,19 +157,19 @@ static Ink around(const std::vector<Ink>& inks) {
 
 /// @brief What one radical measured.
 struct Measure {
-    bool found{false};         ///< A sign and its bar were both drawn.
-    float span{0.0f};          ///< The sign's height, top to bottom.
-    std::size_t pieces{0};     ///< How many glyphs drew the sign.
-    float meeting{0.0f};       ///< How far the sign's top is from the bar's.
-    float joint{0.0f};         ///< How far the bar starts from the sign's ink.
-    float above{0.0f};         ///< From the bar's underside down to the contents' ink.
-    float below{0.0f};         ///< From the contents' ink bottom down to the sign's.
-    float beside{0.0f};        ///< From the sign's ink across to the contents'.
+    bool found{false}; ///< A sign and its bar were both drawn.
+    float span{0.0f}; ///< The sign's height, top to bottom.
+    std::size_t pieces{0}; ///< How many glyphs drew the sign.
+    float meeting{0.0f}; ///< How far the sign's top is from the bar's.
+    float joint{0.0f}; ///< How far the bar starts from the sign's ink.
+    float above{0.0f}; ///< From the bar's underside down to the contents' ink.
+    float below{0.0f}; ///< From the contents' ink bottom down to the sign's.
+    float beside{0.0f}; ///< From the sign's ink across to the contents'.
 };
 
 /// @brief Lays a formula out and measures its outermost radical.
-static Measure measure(const std::string& formula, const bool displayed, const typography::Font& font,
-                       const layout::Typesetter& typesetter, memory::Arena& arena) {
+static Measure measure(const std::string &formula, const bool displayed, const typography::Font &font,
+                       const layout::Typesetter &typesetter, memory::Arena &arena) {
     syntax::Lexicon lexicon(arena);
     syntax::semantics::Union state{};
     const syntax::expression::Unicodes unicodes;
@@ -174,13 +178,14 @@ static Measure measure(const std::string& formula, const bool displayed, const t
 
     const render::primitives::Expressions expressions(lexicon);
     syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
-                                      displayed ? syntax::expression::Node::Style::Display
-                                                : syntax::expression::Node::Style::Inline);
-    const syntax::expression::Node* tree = parser.parse('$');
+                                      displayed
+                                          ? syntax::expression::Node::Style::Display
+                                          : syntax::expression::Node::Style::Inline);
+    const syntax::expression::Node *tree = parser.parse('$');
     assert((tree != nullptr) && "the formula parses");
     if (!tree) return {};
 
-    const layout::Node* box = typesetter.lower(tree, font, 0.0f);
+    const layout::Node *box = typesetter.lower(tree, font, 0.0f);
     assert((box != nullptr) && "the formula lowers into a box");
     if (!box) return {};
 
@@ -191,16 +196,16 @@ static Measure measure(const std::string& formula, const bool displayed, const t
     const Ink sign = around(drawing.sign);
 
     // The radical's own bar is the rule whose top is nearest the sign's.
-    const Ink bar = *std::ranges::min_element(drawing.rules, {}, [&sign](const Ink& rule) {
+    const Ink bar = *std::ranges::min_element(drawing.rules, {}, [&sign](const Ink &rule) {
         return std::abs(rule.top - sign.top) + (rule.left < sign.left ? 1000.0f : 0.0f);
     });
 
     // The contents are whatever was drawn under the bar, other bars included.
     std::vector<Ink> covered;
-    for (const Ink& glyph : drawing.glyphs) {
+    for (const Ink &glyph: drawing.glyphs) {
         if (glyph.left >= bar.left - 0.5f && glyph.right <= bar.right + 0.5f) covered.push_back(glyph);
     }
-    for (const Ink& rule : drawing.rules) {
+    for (const Ink &rule: drawing.rules) {
         if (rule.top > bar.top + 0.01f && rule.left >= bar.left - 0.5f) covered.push_back(rule);
     }
     if (covered.empty()) return {};
@@ -225,8 +230,8 @@ static Measure measure(const std::string& formula, const bool displayed, const t
 
 int main() {
     const std::filesystem::path assets =
-        std::filesystem::path(__FILE__).lexically_normal().parent_path().parent_path().parent_path().parent_path() /
-        "assets";
+            std::filesystem::path(__FILE__).lexically_normal().parent_path().parent_path().parent_path().parent_path() /
+            "assets";
 
     memory::Arena arena(1u << 24);
     memory::Arena scratch(1u << 22);
@@ -237,7 +242,7 @@ int main() {
     collection.set("expression", "NewCMMath-Regular");
 
     typography::Registry registry(arena, collection);
-    const typography::Font* font = registry.get({.family = "expression", .size = 12.0f});
+    const typography::Font *font = registry.get({.family = "expression", .size = 12.0f});
     assert((font != nullptr) && "the maths face opens");
     if (!font) return 1;
 
@@ -253,9 +258,9 @@ int main() {
 
     // Everything any radical must do, in a line and on a line of its own.
     const float least = font->size() / 36.0f - 0.001f;
-    for (const bool displayed : {false, true}) {
+    for (const bool displayed: {false, true}) {
         const float gap = displayed ? table.clearance : table.gap;
-        for (const std::string& formula : formulas) {
+        for (const std::string &formula: formulas) {
             const Measure radical = measure(formula, displayed, *font, typesetter, arena);
             assert((radical.found) && "the radical draws a sign and a bar");
             if (!radical.found) continue;
@@ -272,8 +277,8 @@ int main() {
     // room it has to spare is shared above and below, never all hung below
     // the line -- so there is always at least as much air over the contents
     // as there is sign under them.
-    for (const bool displayed : {false, true}) {
-        for (const std::string formula : {"\\sqrt{x}", "\\sqrt{2}", "\\sqrt{y}", "\\sqrt{\\frac{a}{b}}"}) {
+    for (const bool displayed: {false, true}) {
+        for (const std::string formula: {"\\sqrt{x}", "\\sqrt{2}", "\\sqrt{y}", "\\sqrt{\\frac{a}{b}}"}) {
             const Measure radical = measure(formula, displayed, *font, typesetter, arena);
             assert((radical.above >= radical.below) && "what the sign has to spare is shared, not all hung below");
         }
@@ -281,7 +286,7 @@ int main() {
 
     // In a line, contents that fill the sign get more than the font's
     // narrowest gap, so a superscript or a fraction never meets the bar.
-    for (const std::string formula : {"\\sqrt{a^2+b^2}", "\\sqrt{\\frac{1}{2}}"}) {
+    for (const std::string formula: {"\\sqrt{a^2+b^2}", "\\sqrt{\\frac{1}{2}}"}) {
         const Measure radical = measure(formula, false, *font, typesetter, arena);
         assert((radical.above >= 2.0f * table.gap) && "a tall term in a line has room above it");
     }
@@ -310,23 +315,24 @@ int main() {
         const syntax::expression::Unicodes unicodes;
         syntax::Mouth mouth(syntax::Cursor(std::vector<syntax::Token>{}), state, lexicon, arena);
         const render::primitives::Expressions expressions(lexicon);
-        const auto parse = [&](const std::string& formula, const bool displayed) {
+        const auto parse = [&](const std::string &formula, const bool displayed) {
             mouth.ingest(arena.copy(formula + "$"));
             syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
-                                              displayed ? syntax::expression::Node::Style::Display
-                                                        : syntax::expression::Node::Style::Inline);
+                                              displayed
+                                                  ? syntax::expression::Node::Style::Display
+                                                  : syntax::expression::Node::Style::Inline);
             return parser.parse('$');
         };
 
-        const layout::Node* fraction = typesetter.lower(parse("\\frac{a}{b}", false), *font, 0.0f);
+        const layout::Node *fraction = typesetter.lower(parse("\\frac{a}{b}", false), *font, 0.0f);
         assert((fraction && fraction->box().height > table.axis && fraction->box().depth > 0.0f) &&
                "a fraction stands on the axis, its numerator above and its denominator below the baseline");
 
-        const layout::Node* shown = typesetter.lower(parse("x = 1", true), *font, 300.0f);
+        const layout::Node *shown = typesetter.lower(parse("x = 1", true), *font, 300.0f);
         assert((shown && std::abs(layout::Line::advance(shown) - 300.0f) < 0.5f) &&
                "a display is as wide as its column");
 
-        const memory::Slice<layout::Node*> pieces = typesetter.unfold(parse("a+b=c", false), *font);
+        const memory::Slice<layout::Node *> pieces = typesetter.unfold(parse("a+b=c", false), *font);
         assert((pieces.size() > 1) && "an inline formula opens into pieces a line may break between");
 
         // A fraction's parts stand clear of its bar as TeX's rule 15 has it:
@@ -334,32 +340,32 @@ int main() {
         // times that in a display -- whatever hangs from the numerator or
         // rises from the denominator, a descender, a limit, a large operator.
         struct Clear {
-            float above{0.0f};   ///< From the numerator's lowest ink down to the bar.
-            float below{0.0f};   ///< From the bar down to the denominator's highest ink.
-            float least{0.0f};   ///< The smallest glyph's height, top to bottom.
+            float above{0.0f}; ///< From the numerator's lowest ink down to the bar.
+            float below{0.0f}; ///< From the bar down to the denominator's highest ink.
+            float least{0.0f}; ///< The smallest glyph's height, top to bottom.
             std::size_t bars{0}; ///< Rules drawn with any width.
-            std::size_t glyphs{0};   ///< Glyphs drawn.
+            std::size_t glyphs{0}; ///< Glyphs drawn.
         };
-        const auto clear = [&](const std::string& formula, const bool displayed) {
-            const layout::Node* box = typesetter.lower(parse(formula, displayed), *font, 0.0f);
+        const auto clear = [&](const std::string &formula, const bool displayed) {
+            const layout::Node *box = typesetter.lower(parse(formula, displayed), *font, 0.0f);
             assert((box != nullptr) && "the fraction lowers");
             Drawing drawing;
             walk(box, 0.0f, 0.0f, drawing);
             Clear result{.least = std::numeric_limits<float>::max(), .glyphs = drawing.glyphs.size()};
-            const Ink* bar = nullptr;
-            for (const Ink& rule : drawing.rules) {
+            const Ink *bar = nullptr;
+            for (const Ink &rule: drawing.rules) {
                 if (rule.right - rule.left <= 0.01f) continue;
                 ++result.bars;
                 if (!bar || rule.right - rule.left > bar->right - bar->left) bar = &rule;
             }
-            for (const Ink& glyph : drawing.glyphs) result.least = std::min(result.least, glyph.bottom - glyph.top);
+            for (const Ink &glyph: drawing.glyphs) result.least = std::min(result.least, glyph.bottom - glyph.top);
             if (!bar) return result;
             // A glyph whose middle is over the bar's is the numerator's, one
             // under it the denominator's.
             float lowest = std::numeric_limits<float>::lowest();
             float highest = std::numeric_limits<float>::max();
             const float middle = (bar->top + bar->bottom) * 0.5f;
-            for (const Ink& glyph : drawing.glyphs) {
+            for (const Ink &glyph: drawing.glyphs) {
                 if ((glyph.top + glyph.bottom) * 0.5f < middle) lowest = std::max(lowest, glyph.bottom);
                 else highest = std::min(highest, glyph.top);
             }
@@ -369,11 +375,14 @@ int main() {
                          formula.c_str(), result.above, result.below);
             return result;
         };
-        for (const bool displayed : {false, true}) {
+        for (const bool displayed: {false, true}) {
             const float room = displayed ? table.distance : table.separation;
-            for (const std::string formula :
-                 {"\\frac{p}{q}", "\\frac{g}{h}", "\\frac{f}{g}", "\\frac{x^2}{y_1}", "\\frac{\\partial f}{\\partial x}",
-                  "\\frac{\\sqrt{x}}{\\pi}", "\\frac{\\sum_i a_i}{\\prod_j b_j}", "{a \\over b}"}) {
+            for (const std::string formula:
+                 {
+                     "\\frac{p}{q}", "\\frac{g}{h}", "\\frac{f}{g}", "\\frac{x^2}{y_1}",
+                     "\\frac{\\partial f}{\\partial x}",
+                     "\\frac{\\sqrt{x}}{\\pi}", "\\frac{\\sum_i a_i}{\\prod_j b_j}", "{a \\over b}"
+                 }) {
                 const Clear measured = clear(formula, displayed);
                 assert((measured.bars >= 1) && "a fraction draws its bar");
                 assert((measured.above >= room - 0.02f && measured.below >= room - 0.02f) &&

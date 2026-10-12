@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace render {
-
     /// @brief Writes laid-out pages out as a PDF.
     ///
     /// A PDF is a list of numbered objects, a table saying where each one
@@ -63,7 +62,7 @@ namespace render {
         /// @return The whole file, or nothing when there were no pages or the
         ///         page has no size.
         /// @complexity O(n) in the marks on the pages, plus the fonts embedded.
-        [[nodiscard]] static std::string render(Composer& composer, memory::Slice<layout::Pager::Page> pages);
+        [[nodiscard]] static std::string render(Composer &composer, memory::Slice<layout::Pager::Page> pages);
 
         /// @brief Draws every page and writes the file.
         /// @param composer Composer holding the document; it describes each page.
@@ -72,7 +71,7 @@ namespace render {
         /// @return True when the file was written.
         /// @complexity O(n) in the marks on the pages, plus the fonts embedded.
         [[nodiscard]] static bool compose(
-            Composer& composer,
+            Composer &composer,
             memory::Slice<layout::Pager::Page> pages,
             std::string_view path
         );
@@ -84,8 +83,8 @@ namespace render {
         /// byte offset is recorded, because the cross-reference table at the
         /// end of the file is a list of exactly those offsets.
         struct File {
-            std::string bytes{};                   ///< The file so far.
-            std::vector<std::size_t> offsets{};    ///< Where each object starts.
+            std::string bytes{}; ///< The file so far.
+            std::vector<std::size_t> offsets{}; ///< Where each object starts.
 
             /// @brief Reserves the next object number without writing it yet.
             ///
@@ -109,5 +108,4 @@ namespace render {
             void stream(std::size_t number, std::string_view extra, std::string_view payload);
         };
     };
-
 }

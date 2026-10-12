@@ -6,7 +6,6 @@
 #include <string_view>
 
 namespace render::typography {
-
     /// @brief One OpenType feature, turned on or off for a whole run.
     ///
     /// A feature is a rule inside the font: ligatures, old-style figures,
@@ -22,7 +21,7 @@ namespace render::typography {
     /// shaper.shape(fonts, text, memory::Slice{features, 2});
     /// @endcode
     struct Feature {
-        hb_feature_t feature{};   ///< The tag and value, as the shaper wants them.
+        hb_feature_t feature{}; ///< The tag and value, as the shaper wants them.
 
         constexpr Feature() noexcept = default;
 
@@ -48,5 +47,4 @@ namespace render::typography {
             feature.end = HB_FEATURE_GLOBAL_END;
         }
     };
-
 }

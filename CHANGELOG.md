@@ -77,8 +77,8 @@ sees, newest work last within each group.
   Boadilla, CambridgeUS, Warsaw, Copenhagen, Luebeck, Malmoe, Berlin,
   Darmstadt, Ilmenau, Frankfurt, Dresden, Singapore, Szeged, Antibes,
   JuanLesPins, Montpellier, Rochester, Pittsburgh, the sidebar themes and
-  metropolis -- as an outer theme's head and foot at the slide's edges
-  (infolines' author, title, date and page; split's author and title; the
+  metropolis -- as an outer theme's head and foot at the slide's edges (infolines' author, title, date and page; split's
+  author and title; the
   section's and subsection's names above), a frame title on a band or in
   the structure's colour, an inner theme's bullets (triangles, balls,
   circles, squares) and a colour theme's colours (whale, dolphin,
@@ -245,8 +245,8 @@ sees, newest work last within each group.
   `\StrSubstitute`, `\StrDel`, `\StrCount` and `\StrPosition`, each worked out
   in one pass on the expanded text, UTF-8 characters counted whole, a result
   set where it stands or kept in the macro named after it.
-- **csvsimple and datatool** are one native module
-  (`syntax::primitives::Records`): `\csvreader` with `head to column names`,
+- **csvsimple and datatool** are one native module (`syntax::primitives::Records`): `\csvreader` with
+  `head to column names`,
   `tabular=` and `table head=`, `\csvautotabular`, `\csvautobooktabular`;
   `\DTLnewdb`, `\DTLnewrow`, `\DTLnewdbentry`, `\DTLloaddb`, `\DTLforeach`,
   `\DTLdisplaydb`, `\DTLrowcount`, `\DTLcolumncount`, `\DTLgetvalue`,
@@ -329,8 +329,8 @@ sees, newest work last within each group.
   document in the last language named (or `main=`); `\selectlanguage`,
   `\foreignlanguage`, `otherlanguage`, `otherlanguage*` and `hyphenrules`
   choose another; polyglossia's `\setmainlanguage`, `\setotherlanguage(s)`
-  give each language a `\textrussian{...}` command and a block of its own
-  (Arabic's is `Arabic`, as polyglossia names it).
+  give each language a `\textrussian{...}` command and a block of its own (Arabic's is `Arabic`, as polyglossia names
+  it).
 - **Captions and dates** for 26 languages, from babel's own words: English,
   German, French, Spanish, Italian, Portuguese, Brazilian, Dutch, Russian,
   Ukrainian, Bulgarian, Polish, Czech, Croatian, Hungarian, Romanian, Greek,
@@ -405,8 +405,8 @@ sees, newest work last within each group.
   the baseline to over the x-height that way; it is the thin stroke on the
   baseline it draws. A face with no such point measures as it did.
 - **Fractions clear their bar as TeX's rule 15 has it**, with the font's own
-  numbers: a fraction in a line rises and falls by the MATH table's text shifts
-  (`FractionNumeratorShiftUp`, `…DenominatorShiftDown`) and keeps the bar's
+  numbers: a fraction in a line rises and falls by the MATH table's text shifts (`FractionNumeratorShiftUp`,
+  `…DenominatorShiftDown`) and keeps the bar's
   thickness clear; a displayed one uses the display shifts and three times the
   thickness; a binomial or `\atop` keeps three or seven times it between its
   parts. The parts used to sit half a point from the bar whatever hung from
@@ -434,9 +434,8 @@ sees, newest work last within each group.
 - `\setmainfont` and `\setmathfont` set the nearest carried face: STIX Two for
   Times and its kind, New Computer Modern, Latin Modern, the TeX Gyre maths.
 - The page builder was rewritten; two-column pages, `\twocolumn[...]`,
-  `\onecolumn` and `multicols` balance their columns; TeX's glue registers
-  (`\newskip`) hold stretch and shrink; tables, headings, lists, citations
-  (natbib and biblatex styles, author–year labels), counters and numerals,
+  `\onecolumn` and `multicols` balance their columns; TeX's glue registers (`\newskip`) hold stretch and shrink; tables,
+  headings, lists, citations (natbib and biblatex styles, author–year labels), counters and numerals,
   groups, colours and TikZ pictures (paths, nodes, grids, circles, arcs,
   labels, colours) were extended through the cycle, and appendix B of
   `build/main.mtex` checks them on the page.
@@ -652,8 +651,8 @@ sees, newest work last within each group.
   passed over, a font's encrypted part skipped, and a program that never
   ends stopped where it stands.
 - **SVG pictures are drawn**: `\includesvg{shape}` and
-  `\includegraphics{shape.svg}` read the file's elements -- rectangles
-  (rounded too), circles, ellipses, lines, polylines, polygons and paths,
+  `\includegraphics{shape.svg}` read the file's elements -- rectangles (rounded too), circles, ellipses, lines,
+  polylines, polygons and paths,
   every command of `d` -- through each group's and each element's
   `transform`, filled and stroked as their attributes, the `<style>` rules
   naming their element, class or id, and their `style` say, with
@@ -778,8 +777,8 @@ page's text goes.
   between runs. The Windows runners install WiX 7 and accept its EULA, so
   each makes an MSI; every runner collects its packages from `bin/`,
   and a pushed `v*` tag attaches them all to a GitHub release.
-  The Windows runners are the Visual Studio 2026 images
-  (`windows-2025-vs2026`, `windows-11-vs2026-arm`): the 2022 image's Clang
+  The Windows runners are the Visual Studio 2026 images (`windows-2025-vs2026`, `windows-11-vs2026-arm`): the 2022
+  image's Clang
   19 and CMake 3.31 cannot ask for C++26 between them. vcpkg's toolchain is
   handed over as `TOOLCHAIN`, not `VCPKG_ROOT`, which loading Visual
   Studio's environment points at the empty vcpkg Visual Studio ships.
@@ -825,13 +824,13 @@ page's text goes.
 
 Release build, clang-cl, one run each, median of thirty:
 
-| Document | Pages | Time |
-| --- | --- | --- |
-| a one-line article | 1 | 3.2 ms |
-| a Russian article with babel, its contents and a bibliography, two passes | 1 | 4.6 ms |
-| two tikz-cd diagrams, an xy-pic and an amscd one, a matrix, an automaton, a circuit and two trees | 1 | 4.7 ms |
-| an Arabic article with polyglossia, right to left | 1 | 5.8 ms |
-| the paper in `build/main.mtex` | 8 | 11.9 ms |
+| Document                                                                                          | Pages | Time    |
+|---------------------------------------------------------------------------------------------------|-------|---------|
+| a one-line article                                                                                | 1     | 3.2 ms  |
+| a Russian article with babel, its contents and a bibliography, two passes                         | 1     | 4.6 ms  |
+| two tikz-cd diagrams, an xy-pic and an amscd one, a matrix, an automaton, a circuit and two trees | 1     | 4.7 ms  |
+| an Arabic article with polyglossia, right to left                                                 | 1     | 5.8 ms  |
+| the paper in `build/main.mtex`                                                                    | 8     | 11.9 ms |
 
 Rewriting a category change into the tokens ahead costs nothing until a
 document makes one; links, bookmarks and the index are made only for a
@@ -853,8 +852,7 @@ font folders are listed only for a script the engine carries no face for.
 - `\unexpanded\expandafter{…}` took the `\expandafter` as its text; what
   stands before the brace is now expanded first, as e-TeX has it.
 - The logger's floor could differ between the engine and a program linked
-  against it; a release engine now tells everything linking it
-  (`LATEX_RELEASE`).
+  against it; a release engine now tells everything linking it (`LATEX_RELEASE`).
 - A package's accumulating lists (`authblk`'s affiliations) referred to
   themselves unexpanded and looped when set.
 - A fraction's numerator or denominator could touch its bar (see Typesetting).
@@ -1023,8 +1021,8 @@ font folders are listed only for a script the engine carries no face for.
 - **One verb for each thing done.** Every lookup is `get` -- the catalog's,
   the glossary's, the modules', the ledger's, a language's, the symbol
   table's (gperf's `Lookup::get`), a variable's -- and every store `set`
-  (the ledger's); what `compose` starts `dispose` ends, the logger included
-  (`Logger::dispose`, which was `close`); the expander's `forget` takes back
+  (the ledger's); what `compose` starts `dispose` ends, the logger included (`Logger::dispose`, which was `close`); the
+  expander's `forget` takes back
   what `define` gave, as the language's `\forget` does (`undefine`).
 - `CatCodes` is `Catcodes`, and the last snake_case names (in the plots
   module) are single words.

@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Theorems and proofs, as amsthm has them.
     ///
     /// @par Language
@@ -47,12 +46,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Theorems(syntax::Lexicon& lexicon) noexcept;
+        explicit Theorems(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\newtheorem`, `\\theoremstyle`, the proof block and `\\qed`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; numbers come from its counters.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///
@@ -61,29 +60,28 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief amsthm's three styles.
         enum class Style : std::uint8_t {
-            Plain,        ///< Bold head, italic body: theorems, lemmas, corollaries.
-            Definition,   ///< Bold head, upright body: definitions, examples.
-            Remark        ///< Italic head, upright body: remarks, notes.
+            Plain, ///< Bold head, italic body: theorems, lemmas, corollaries.
+            Definition, ///< Bold head, upright body: definitions, examples.
+            Remark ///< Italic head, upright body: remarks, notes.
         };
 
         /// @brief One environment `\\newtheorem` declared.
         struct Kind {
-            std::string title{};     ///< What its head calls it: `Theorem`.
-            std::string counter{};   ///< The counter it numbers by, or empty for none.
-            Style style{Style::Plain};   ///< How it is set.
+            std::string title{}; ///< What its head calls it: `Theorem`.
+            std::string counter{}; ///< The counter it numbers by, or empty for none.
+            Style style{Style::Plain}; ///< How it is set.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks{};    ///< Errors this module found.
-        mutable memory::Dictionary<Kind> kinds{};                ///< Every environment declared, by name.
-        mutable memory::Dictionary<Style> styles{};              ///< Styles by name, amsthm's and a document's.
-        mutable Style style{Style::Plain};                       ///< The style the next declaration takes.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable memory::Dictionary<Kind> kinds{}; ///< Every environment declared, by name.
+        mutable memory::Dictionary<Style> styles{}; ///< Styles by name, amsthm's and a document's.
+        mutable Style style{Style::Plain}; ///< The style the next declaration takes.
     };
-
 }

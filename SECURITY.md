@@ -10,10 +10,10 @@ protect against.
 mLaTeX is pre-release software. Security fixes go to the `main` branch and
 ship in the next release.
 
-| Version | Supported |
-| --- | --- |
-| 0.1.x (`main`) | :white_check_mark: |
-| Earlier snapshots | :x: |
+| Version           | Supported          |
+|-------------------|--------------------|
+| 0.1.x (`main`)    | :white_check_mark: |
+| Earlier snapshots | :x:                |
 
 ## Reporting a vulnerability
 
@@ -36,10 +36,10 @@ Please include:
 
 ### What to expect
 
-| Step | Target |
-| --- | --- |
-| Acknowledgement of your report | within 3 business days |
-| Initial assessment and severity | within 10 business days |
+| Step                                                | Target                                      |
+|-----------------------------------------------------|---------------------------------------------|
+| Acknowledgement of your report                      | within 3 business days                      |
+| Initial assessment and severity                     | within 10 business days                     |
 | Fix for a confirmed critical or high-severity issue | as soon as possible, usually within 30 days |
 
 You will be kept informed while the issue is being fixed. Please allow up to
@@ -94,15 +94,15 @@ engine's own language.
   module, runs with the host program's privileges, and the document chooses
   its arguments. Validate them as you would any other untrusted input.
 - **Third-party libraries.** Fonts and pictures are parsed by HarfBuzz,
-  FreeType, libpng, libjpeg-turbo, libwebp and zlib. Keep them up to date
-  (through your vcpkg baseline, or the system's packages on Linux). Report a
+  FreeType, libpng, libjpeg-turbo, libwebp and zlib. Keep them up to date (through your vcpkg baseline, or the system's
+  packages on Linux). Report a
   flaw in one of them to its own project as well; how mLaTeX uses them is in
   scope here.
 
 ## Scope
 
-In scope: the engine (`core`), the `mlatex` command line, the C library
-(`latex_ffi`), the WebAssembly module, the packages under `src/modules`, and
+In scope: the engine (`core`), the `mlatex` command line, the C library (`latex_ffi`), the WebAssembly module, the
+packages under `src/modules`, and
 the build and packaging scripts in this repository.
 
 Out of scope: denial of service caused only by a document's size or

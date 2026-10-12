@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Colored text, and the colors a document names: `\\textcolor`,
     ///        `\\definecolor` and `\\colorlet`.
     ///
@@ -49,17 +48,17 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Colors(syntax::Lexicon& lexicon) noexcept;
+        explicit Colors(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the color primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; text is shaped with its selection,
         ///                and named colors are kept among its variables.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a color model it does not
         ///        know, or a value that does not fit its model.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief Reads a color as a document writes one: a name it defined,
         ///        any form graphics::Color::parse() reads, or an xcolor mixture
@@ -72,7 +71,7 @@ namespace render::primitives {
         /// @param variables Where the document's own names are kept.
         /// @complexity O(n) in the text's length.
         [[nodiscard]] static graphics::Color resolve(std::string_view text,
-                                                     const syntax::primitives::Variables& variables);
+                                                     const syntax::primitives::Variables &variables);
 
         /// @brief Converts a value in one of xcolor's models to the form
         ///        graphics::Color::parse() reads: what `[gray]{0.9}` is,
@@ -85,9 +84,8 @@ namespace render::primitives {
 
     private:
         /// @brief A color as text graphics::Color::parse() reads back exactly.
-        [[nodiscard]] static std::string write(const graphics::Color& color);
+        [[nodiscard]] static std::string write(const graphics::Color &color);
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

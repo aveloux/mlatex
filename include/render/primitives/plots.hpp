@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief pgfplots: an axis in a TikZ picture, and the plots drawn in it
     ///        -- from points, from a table, or from a function of x.
     ///
@@ -62,12 +61,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Plots(syntax::Lexicon& lexicon) noexcept;
+        explicit Plots(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the axes, `\\addplot`, `\\addlegendentry` and `\\legend`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; a table's file is read through its reader.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Works out a function of x -- and of y, for a surface -- as
         ///        pgfplots writes one.
@@ -85,10 +84,10 @@ namespace render::primitives {
         /// @complexity O(n) in the text.
         [[nodiscard]] static std::optional<double> calculate(std::string_view text, double x,
                                                              double y = std::numeric_limits<double>::quiet_NaN(),
-                                                             bool* measured = nullptr);
+                                                             bool *measured = nullptr);
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief A table of data as pgfplots reads one: rows at line ends or
         ///        `\\\\`, cells at blanks -- or at commas, for `col sep=comma`
@@ -97,19 +96,19 @@ namespace render::primitives {
         /// @param commas True when cells are parted by commas.
         /// @return Its rows, each its cells, the first the names if written.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string>> rows(std::string_view data, bool commas);
+        [[nodiscard]] static std::vector<std::vector<std::string> > rows(std::string_view data, bool commas);
 
     private:
         /// @brief One plot, as `\\addplot` gave it.
         struct Plot {
-            std::string options{};                        ///< As written.
-            bool cycled{false};                           ///< Takes the next of pgfplots' colors and marks.
-            std::vector<std::pair<double, double>> points{};   ///< Its data: x and y, NaN for a gap.
+            std::string options{}; ///< As written.
+            bool cycled{false}; ///< Takes the next of pgfplots' colors and marks.
+            std::vector<std::pair<double, double> > points{}; ///< Its data: x and y, NaN for a gap.
 
             /// Each point's errors as its data gave them -- `+- (0,0.2)`, a
             /// table's `y error` column -- below and above across, then below
             /// and above up; NaN where none was given. Empty for a function.
-            std::vector<std::array<double, 4>> errors{};
+            std::vector<std::array<double, 4> > errors{};
 
             /// For `fill between[of=f and g]`, what its brackets hold: the
             /// region between two plots named with `name path`. Empty for a
@@ -118,7 +117,7 @@ namespace render::primitives {
 
             /// `\\addplot3`'s points: x, y and z, NaN for a gap. Empty for a
             /// plot in two dimensions.
-            std::vector<std::array<double, 3>> solid{};
+            std::vector<std::array<double, 3> > solid{};
 
             /// How many of #solid stand in each row of a surface's grid -- a
             /// function's samples across, or the points of a table or a list
@@ -128,14 +127,13 @@ namespace render::primitives {
 
         /// @brief One axis being read: its kind, its options and its plots.
         struct Axis {
-            std::string kind{};                   ///< `axis`, `semilogyaxis` and the rest.
-            std::string options{};                ///< As written.
-            std::vector<Plot> plots{};            ///< In the order given.
-            std::vector<std::string> legends{};   ///< Each plot's entry, in order.
+            std::string kind{}; ///< `axis`, `semilogyaxis` and the rest.
+            std::string options{}; ///< As written.
+            std::vector<Plot> plots{}; ///< In the order given.
+            std::vector<std::string> legends{}; ///< Each plot's entry, in order.
         };
 
-        mutable std::vector<Axis> axes{};                        ///< The axes open, innermost last.
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Axis> axes{}; ///< The axes open, innermost last.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

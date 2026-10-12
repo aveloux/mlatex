@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,8 +54,8 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\smallskip a \\medskip b \\bigskip c \\vskip 12pt d \\hskip 1em e "
-                                          "\\hfill f \\quad g \\qquad h \\, i \\enskip j \\kern 3pt k \\hfil l "
-                                          "\\vfill m \\hspace{2em} n \\vspace{1ex} o \\hspace*{1pt} p");
+                                      "\\hfill f \\quad g \\qquad h \\, i \\enskip j \\kern 3pt k \\hfil l "
+                                      "\\vfill m \\hspace{2em} n \\vspace{1ex} o \\hspace*{1pt} p");
         assert((result.clean && holds(result.text, "abcdefghijklmnop")) && "every kind of space, the words all kept");
     }
     {

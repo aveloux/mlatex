@@ -12,23 +12,21 @@
 #include <string>
 
 namespace patch {
-
-    std::from_chars_result decimal(const char* first, const char* last, float& value) noexcept {
+    std::from_chars_result decimal(const char *first, const char *last, float &value) noexcept {
         const std::string held(first, last);
-        char* stop = nullptr;
+        char *stop = nullptr;
         const float read = std::strtof(held.c_str(), &stop);
         if (stop == held.c_str()) return {.ptr = first, .ec = std::errc::invalid_argument};
         value = read;
         return {.ptr = first + (stop - held.c_str()), .ec = std::errc{}};
     }
 
-    std::from_chars_result decimal(const char* first, const char* last, double& value) noexcept {
+    std::from_chars_result decimal(const char *first, const char *last, double &value) noexcept {
         const std::string held(first, last);
-        char* stop = nullptr;
+        char *stop = nullptr;
         const double read = std::strtod(held.c_str(), &stop);
         if (stop == held.c_str()) return {.ptr = first, .ec = std::errc::invalid_argument};
         value = read;
         return {.ptr = first + (stop - held.c_str()), .ec = std::errc{}};
     }
-
 }

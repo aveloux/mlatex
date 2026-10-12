@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Named counters, as LaTeX keeps them: `\\newcounter`,
     ///        `\\stepcounter`, `\\refstepcounter`, `\\setcounter`,
     ///        `\\addtocounter`, `\\value`, and their printed forms.
@@ -44,12 +43,12 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Counters(syntax::Lexicon& lexicon) noexcept;
+        explicit Counters(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the counter primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; unused beyond what every module takes.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Creates a counter, or moves one that exists under a new parent.
         ///
@@ -62,7 +61,7 @@ namespace render::primitives {
         /// @param numeral What prints its own value: `\\arabic`, `\\Roman`, `\\Alph`;
         ///                empty to leave its printed form as it is.
         /// @complexity O(1) amortized, plus the length of the old parent's list.
-        void define(syntax::Mouth& mouth, std::string_view name, std::string_view parent = {},
+        void define(syntax::Mouth &mouth, std::string_view name, std::string_view parent = {},
                     std::string_view numeral = "\\arabic") const;
 
         /// @brief Adds one, and resets every counter numbered within it.
@@ -85,7 +84,7 @@ namespace render::primitives {
         /// @param mouth Expander, which expands the macro.
         /// @param name  The counter.
         /// @return What it prints, such as `2.1`.
-        [[nodiscard]] static std::string print(syntax::Mouth& mouth, std::string_view name);
+        [[nodiscard]] static std::string print(syntax::Mouth &mouth, std::string_view name);
 
         /// @brief Errors this module has recorded.
         ///
@@ -94,15 +93,15 @@ namespace render::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
     private:
         /// @brief One named counter.
         struct Counter {
-            int value{0};                        ///< What it stands at.
-            std::string parent{};                ///< What it is numbered within, or empty.
+            int value{0}; ///< What it stands at.
+            std::string parent{}; ///< What it is numbered within, or empty.
             std::vector<std::string> children{}; ///< What is numbered within it.
         };
 
@@ -112,7 +111,7 @@ namespace render::primitives {
         /// @param name    The counter.
         /// @param parent  Its parent, or empty.
         /// @param numeral What prints its value.
-        static void spell(syntax::Mouth& mouth, std::string_view name, std::string_view parent,
+        static void spell(syntax::Mouth &mouth, std::string_view name, std::string_view parent,
                           std::string_view numeral);
 
         /// @brief Sets every counter numbered within one back to zero, and
@@ -120,10 +119,9 @@ namespace render::primitives {
         /// @param name  The counter that stepped.
         /// @param depth How deep this is, so a counter made its own ancestor
         ///              cannot recurse forever.
-        void reset(const std::string& name, int depth) const;
+        void reset(const std::string &name, int depth) const;
 
-        mutable std::vector<syntax::Traceback> tracebacks{};                ///< Errors this module found.
-        mutable memory::Dictionary<Counter> counters{};   ///< Every counter, by name.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable memory::Dictionary<Counter> counters{}; ///< Every counter, by name.
     };
-
 }

@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Diagrams the packages for them write: tikz-cd's, xy-pic's and
     ///        amscd's commutative diagrams, quantikz's and Qcircuit's
     ///        circuits, and forest's, qtree's and tikz-qtree's trees.
@@ -56,35 +55,35 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Diagrams(syntax::Lexicon& lexicon) noexcept;
+        explicit Diagrams(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the diagrams' blocks and commands.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; its arena keeps what is written out.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One arrow: the cells it joins, counted from 1, how it is
         ///        drawn, and its labels, each a TikZ node on it.
         struct Arrow {
-            std::size_t row{0};                   ///< The row it leaves.
-            std::size_t column{0};                ///< The column it leaves.
-            std::size_t down{0};                  ///< The row it reaches.
-            std::size_t across{0};                ///< The column it reaches.
-            std::string style{};                  ///< The `\\draw` options.
-            std::vector<std::string> labels{};    ///< `node[...] {...}`, each.
+            std::size_t row{0}; ///< The row it leaves.
+            std::size_t column{0}; ///< The column it leaves.
+            std::size_t down{0}; ///< The row it reaches.
+            std::size_t across{0}; ///< The column it reaches.
+            std::string style{}; ///< The `\\draw` options.
+            std::vector<std::string> labels{}; ///< `node[...] {...}`, each.
         };
 
         /// @brief A grid of objects, formulas each, and the arrows between them.
         struct Diagram {
-            std::vector<std::vector<std::string>> cells{};   ///< Row by row; an empty one holds nothing.
-            std::vector<Arrow> arrows{};                     ///< In the order written.
-            std::string columns{"2.4em"};                    ///< Between two columns' edges.
-            std::string rows{"1.8em"};                       ///< Between two rows' edges.
-            std::string nodes{};                             ///< Options every object's node takes.
+            std::vector<std::vector<std::string> > cells{}; ///< Row by row; an empty one holds nothing.
+            std::vector<Arrow> arrows{}; ///< In the order written.
+            std::string columns{"2.4em"}; ///< Between two columns' edges.
+            std::string rows{"1.8em"}; ///< Between two rows' edges.
+            std::string nodes{}; ///< Options every object's node takes.
         };
 
         /// @brief The TikZ picture a diagram is.
@@ -92,7 +91,7 @@ namespace render::primitives {
         /// @param origin  Where it was written, for a warning.
         /// @return Its source: a matrix and a `\\draw` for each arrow.
         /// @complexity O(n) in its cells and arrows.
-        [[nodiscard]] std::string picture(const Diagram& diagram, memory::Location origin) const;
+        [[nodiscard]] std::string picture(const Diagram &diagram, memory::Location origin) const;
 
         /// @brief What a block holds, as written, up to the `\\end` that
         ///        closes it -- which is left to be read, so the block closes
@@ -100,7 +99,7 @@ namespace render::primitives {
         /// @param mouth Expander to read from.
         /// @param name  The block.
         /// @complexity O(n) in its tokens.
-        [[nodiscard]] static std::string body(syntax::Mouth& mouth, std::string_view name);
+        [[nodiscard]] static std::string body(syntax::Mouth &mouth, std::string_view name);
 
         /// @brief A grid's text cut into its rows, at each `\\\\`, and each
         ///        row into its cells at the separator, neither inside braces.
@@ -108,15 +107,15 @@ namespace render::primitives {
         /// @param separator What stands between two cells: `&`, or what
         ///                  `ampersand replacement` names.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string>> grid(std::string_view text,
-                                                                        std::string_view separator);
+        [[nodiscard]] static std::vector<std::vector<std::string> > grid(std::string_view text,
+                                                                         std::string_view separator);
 
         /// @brief One node of a tree: its label and its children.
         struct Branch {
-            std::string label{};              ///< Its text.
-            std::vector<Branch> children{};   ///< Left to right.
-            float width{0.0f};                ///< How wide its subtree stands, in points.
-            float x{0.0f};                    ///< Its centre across, in points.
+            std::string label{}; ///< Its text.
+            std::vector<Branch> children{}; ///< Left to right.
+            float width{0.0f}; ///< How wide its subtree stands, in points.
+            float x{0.0f}; ///< Its centre across, in points.
         };
 
         /// @brief Reads one bracketed node of a tree and everything under it:
@@ -126,7 +125,7 @@ namespace render::primitives {
         /// @param at   Where to read; left past the node.
         /// @return The node.
         /// @complexity O(n) in the text read.
-        [[nodiscard]] static Branch branch(std::string_view text, std::size_t& at);
+        [[nodiscard]] static Branch branch(std::string_view text, std::size_t &at);
 
         /// @brief Places a tree's nodes, each parent centred over its
         ///        children, and writes each node and each edge to it.
@@ -136,9 +135,8 @@ namespace render::primitives {
         /// @param count The nodes written so far, for their names; grown.
         /// @param out   The picture's source; appended to.
         /// @return The name of its root's node.
-        static std::string plant(Branch& tree, float left, int depth, int& count, std::string& out);
+        static std::string plant(Branch &tree, float left, int depth, int &count, std::string &out);
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

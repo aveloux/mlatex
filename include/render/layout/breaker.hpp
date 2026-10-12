@@ -5,7 +5,6 @@
 #include "memory/slice.hpp"
 
 namespace render::layout {
-
     /// @brief Breaks a run of glyphs into lines, optimally.
     ///
     /// This is Knuth and Plass's algorithm, and what separates it from
@@ -47,20 +46,22 @@ namespace render::layout {
     public:
         /// @brief How lines are to be judged.
         struct Configuration {
-            float target{400.0f};      ///< Column width in points.
-            float pretolerance{100.0f};   ///< Worst badness on the first pass, which hyphenates nothing: `\\pretolerance`.
-            float tolerance{200.0f};      ///< Worst badness on the second, which hyphenates: `\\tolerance`.
-            float emergency{30.0f};       ///< Stretch every line is granted on a last pass, when neither finds
+            float target{400.0f}; ///< Column width in points.
+            float pretolerance{100.0f};
+            ///< Worst badness on the first pass, which hyphenates nothing: `\\pretolerance`.
+            float tolerance{200.0f}; ///< Worst badness on the second, which hyphenates: `\\tolerance`.
+            float emergency{30.0f};
+            ///< Stretch every line is granted on a last pass, when neither finds
                                           ///< lines that fit: `\\emergencystretch`, three ems at ten points.
-            float penalty{10.0f};      ///< Added to every break, to prefer fewer lines.
-            Node::Justification justification{Node::Justification::Full};   ///< How lines sit in the column.
+            float penalty{10.0f}; ///< Added to every break, to prefer fewer lines.
+            Node::Justification justification{Node::Justification::Full}; ///< How lines sit in the column.
         };
 
         /// @brief Binds a breaker to its allocators and its rules.
         /// @param arena Allocator for the lines produced.
         /// @param scratch Allocator for the pass's own arrays.
         /// @param configuration How lines are to be judged.
-        Breaker(memory::Arena& arena, memory::Arena& scratch, const Configuration& configuration) noexcept;
+        Breaker(memory::Arena &arena, memory::Arena &scratch, const Configuration &configuration) noexcept;
 
         /// @brief Breaks a run into lines.
         /// @param input Glyphs, glue and penalties, in reading order.
@@ -68,12 +69,11 @@ namespace render::layout {
         ///         except where the alignment sets a line at its natural one.
         /// @complexity O(n) in the input for ordinary text, where only a
         ///             line's worth of breaks is ever active at once.
-        [[nodiscard]] memory::Slice<Node*> compose(memory::Slice<Node*> input) const;
+        [[nodiscard]] memory::Slice<Node *> compose(memory::Slice<Node *> input) const;
 
     private:
-        memory::Arena& arena;      ///< Allocator for the lines.
-        memory::Arena& scratch;    ///< Allocator for the pass's arrays.
-        Configuration rules{};     ///< How lines are judged.
+        memory::Arena &arena; ///< Allocator for the lines.
+        memory::Arena &scratch; ///< Allocator for the pass's arrays.
+        Configuration rules{}; ///< How lines are judged.
     };
-
 }

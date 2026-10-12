@@ -6,24 +6,24 @@
 #include <utility>
 
 namespace syntax {
-
     /// @brief FNV-1a hash of a name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
         std::size_t value = 14695981039346656037ull;
-        for (const char letter : name) {
+        for (const char letter: name) {
             value ^= static_cast<unsigned char>(letter);
             value *= 1099511628211ull;
         }
         return value;
     }
 
-    Lexicon::Lexicon(memory::Arena& arena) : arena(arena), names{std::string_view{}}, table(1024, none) {}
+    Lexicon::Lexicon(memory::Arena &arena) : arena(arena), names{std::string_view{}}, table(1024, none) {
+    }
 
     Symbol Lexicon::intern(const std::string_view name) {
         if (name.empty()) return none;
 
         if (name.size() == 1) {
-            Symbol& single = singles[static_cast<unsigned char>(name[0])];
+            Symbol &single = singles[static_cast<unsigned char>(name[0])];
             if (single == none) {
                 single = static_cast<Symbol>(names.size());
                 names.push_back(arena.copy(name));
@@ -46,7 +46,7 @@ namespace syntax {
             if (names.size() * 2 > table.size()) {
                 std::vector<Symbol> larger(table.size() * 2, none);
                 mask = larger.size() - 1;
-                for (const Symbol existing : table) {
+                for (const Symbol existing: table) {
                     if (existing == none) continue;
                     std::size_t target = digest(names[existing]) & mask;
                     while (larger[target] != none) target = (target + 1) & mask;
@@ -57,5 +57,4 @@ namespace syntax {
             return symbol;
         }
     }
-
 }

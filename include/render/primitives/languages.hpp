@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Languages: how a language's words break, which way its
     ///        paragraphs read, and the words LaTeX prints in it.
     ///
@@ -49,47 +48,46 @@ namespace render::primitives {
         /// @brief One language: what babel and polyglossia call it, and
         ///        what choosing it sets.
         struct Language {
-            std::string_view name;       ///< Its name as a package option: `ngerman`.
-            std::string_view captions;   ///< The file of its captions and date, under `babel/`; empty for none.
-            std::string_view patterns;   ///< Its patterns' file, between `hyph-` and `.pat.txt`; empty for none.
-            std::uint8_t left;           ///< Least letters a break leaves: `\\lefthyphenmin`.
-            std::uint8_t right;          ///< Least it carries over: `\\righthyphenmin`.
-            bool reversed;               ///< Whether it reads right to left.
+            std::string_view name; ///< Its name as a package option: `ngerman`.
+            std::string_view captions; ///< The file of its captions and date, under `babel/`; empty for none.
+            std::string_view patterns; ///< Its patterns' file, between `hyph-` and `.pat.txt`; empty for none.
+            std::uint8_t left; ///< Least letters a break leaves: `\\lefthyphenmin`.
+            std::uint8_t right; ///< Least it carries over: `\\righthyphenmin`.
+            bool reversed; ///< Whether it reads right to left.
         };
 
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Languages(syntax::Lexicon& lexicon) noexcept;
+        explicit Languages(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the language primitives and the `otherlanguage` blocks.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the patterns are read from its folder of them.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief A language by any of the names it goes by.
         /// @param name Its name, as a document writes it.
         /// @return The language, or null for one not known.
         /// @complexity O(n) in the languages known, which is a few dozen.
-        [[nodiscard]] static const Language* get(std::string_view name) noexcept;
+        [[nodiscard]] static const Language *get(std::string_view name) noexcept;
 
         /// @brief What was reported while the document was read.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// Every language's patterns read so far, each kept for the whole
         /// run, since the words set in it point at it until the end.
         mutable std::deque<typography::Hyphenator> hyphenators{};
-        mutable std::vector<std::string_view> read{};          ///< Which patterns each of #hyphenators holds.
-        mutable std::vector<std::string_view> captioned{};     ///< The caption files already read.
-        mutable std::string current{"english"};                ///< The language chosen.
-        mutable std::vector<std::string> kept{};               ///< What each open language block will go back to.
-        mutable std::vector<std::string_view> watched{};       ///< The languages polyglossia's commands made a block for.
+        mutable std::vector<std::string_view> read{}; ///< Which patterns each of #hyphenators holds.
+        mutable std::vector<std::string_view> captioned{}; ///< The caption files already read.
+        mutable std::string current{"english"}; ///< The language chosen.
+        mutable std::vector<std::string> kept{}; ///< What each open language block will go back to.
+        mutable std::vector<std::string_view> watched{}; ///< The languages polyglossia's commands made a block for.
 
         /// The numerals each language was told to be written with, as
         /// polyglossia's `numerals=` names them: `maghrib` or `western` for
         /// the digits as typed, `mashriq` or `eastern` for its own.
-        mutable std::vector<std::pair<std::string, std::string>> numerals{};
-        mutable std::vector<syntax::Traceback> tracebacks{};  ///< What was reported.
+        mutable std::vector<std::pair<std::string, std::string> > numerals{};
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< What was reported.
     };
-
 }

@@ -7,14 +7,14 @@ cmake_minimum_required(VERSION 3.25)
 # and a bare `cmake -B build` all find them. Installed, because a Visual
 # Studio shell points VCPKG_ROOT at the copy Visual Studio ships, which holds
 # no libraries of its own.
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    foreach(root "$ENV{VCPKG_ROOT}" "C:/vcpkg")
-        if(NOT root STREQUAL "" AND EXISTS "${root}/scripts/buildsystems/vcpkg.cmake" AND IS_DIRECTORY "${root}/installed")
+if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    foreach (root "$ENV{VCPKG_ROOT}" "C:/vcpkg")
+        if (NOT root STREQUAL "" AND EXISTS "${root}/scripts/buildsystems/vcpkg.cmake" AND IS_DIRECTORY "${root}/installed")
             set(CMAKE_TOOLCHAIN_FILE "${root}/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "vcpkg's toolchain")
             break()
-        endif()
-    endforeach()
-endif()
+        endif ()
+    endforeach ()
+endif ()
 
 # On Windows the engine is built with the clang-cl Visual Studio installs
 # beside cl, under VC/Tools/Llvm, whatever compiler an IDE's profile names.
@@ -25,46 +25,46 @@ endif()
 # instead, found through vswhere in the newest Visual Studio that has it,
 # previews included; a Clang it names is kept. Decided here, before
 # project(), the one place a compiler can still be chosen.
-if(CMAKE_HOST_WIN32)
+if (CMAKE_HOST_WIN32)
     get_filename_component(named "${CMAKE_CXX_COMPILER}" NAME_WE)
     string(TOLOWER "${named}" named)
-    if(named STREQUAL "" OR named STREQUAL "cl" OR named MATCHES "^(g\\+\\+|gcc|c\\+\\+|cc)(-[0-9.]+)?$")
+    if (named STREQUAL "" OR named STREQUAL "cl" OR named MATCHES "^(g\\+\\+|gcc|c\\+\\+|cc)(-[0-9.]+)?$")
         set(programs "ProgramFiles(x86)")
         find_program(vswhere vswhere HINTS "$ENV{${programs}}/Microsoft Visual Studio/Installer" NO_CACHE)
         set(studio "")
-        if(vswhere)
+        if (vswhere)
             execute_process(COMMAND "${vswhere}" -latest -prerelease -products *
-                                    -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
-                            OUTPUT_VARIABLE studio OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-        endif()
+                    -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+                    OUTPUT_VARIABLE studio OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        endif ()
         find_program(clang clang-cl HINTS "${studio}/VC/Tools/Llvm/x64/bin" NO_CACHE)
-        if(clang)
-            if(NOT named STREQUAL "")
+        if (clang)
+            if (NOT named STREQUAL "")
                 message(STATUS "${named} cannot build this project (C++26, #embed, vcpkg's x64-windows); "
-                               "compiling with ${clang} instead")
-            endif()
+                        "compiling with ${clang} instead")
+            endif ()
             set(CMAKE_C_COMPILER "${clang}" CACHE FILEPATH "C compiler" FORCE)
             set(CMAKE_CXX_COMPILER "${clang}" CACHE FILEPATH "C++ compiler" FORCE)
             # The MinGW toolchain's windres, if one was named, reads no
             # manifest clang-cl's linker hands it.
             unset(CMAKE_RC_COMPILER CACHE)
-            if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+            if (NOT DEFINED VCPKG_TARGET_TRIPLET)
                 set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "vcpkg's triplet")
-            endif()
-        endif()
-    endif()
+            endif ()
+        endif ()
+    endif ()
 
     # clang-cl's own resource compiler, which links every program's manifest
     # in: the SDK's `rc` is on the path only inside a Visual Studio shell, and
     # neither a MinGW profile nor a preset run outside one is.
-    if(CMAKE_CXX_COMPILER MATCHES "clang-cl" AND NOT DEFINED CMAKE_RC_COMPILER)
+    if (CMAKE_CXX_COMPILER MATCHES "clang-cl" AND NOT DEFINED CMAKE_RC_COMPILER)
         get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
         find_program(resources llvm-rc HINTS "${tools}" NO_CACHE)
-        if(resources)
+        if (resources)
             set(CMAKE_RC_COMPILER "${resources}" CACHE FILEPATH "Resource compiler")
-        endif()
-    endif()
-endif()
+        endif ()
+    endif ()
+endif ()
 
 project(latex VERSION 0.1.0 LANGUAGES C CXX)
 
@@ -100,11 +100,11 @@ static constexpr char bytes[] = {
 #embed \"${binary}/embedding.txt\"
 };
 int main() { return bytes[0] == 'x' ? 0 : 1; }" embedding)
-if(NOT embedding)
+if (NOT embedding)
     message(FATAL_ERROR "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} has no #embed. Build with "
             "Clang 19 or later (on Windows, the clang-cl under Visual Studio's VC/Tools/Llvm/x64/bin) "
             "or GCC 15 or later.")
-endif()
+endif ()
 
 # Warnings are errors waiting to be read. Third-party headers and the
 # generated lookup table are marked external, so their own noise -- none of
@@ -113,18 +113,18 @@ endif()
 # Clang still calls #embed an extension of its own under C++26, which it is
 # not: that one warning is turned off here rather than around each file that
 # embeds, so no source carries a block of compiler-specific pragmas.
-if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # clang-cl: MSVC's spellings, and Clang's own shadowing check beside them.
     add_compile_options(/W4 /permissive- /external:W0 "/external:I${binary}/include" -Wshadow
             -Wno-c23-extensions)
-elseif(MSVC)
+elseif (MSVC)
     add_compile_options(/W4 /permissive- /external:W0 /external:anglebrackets
             "/external:I${binary}/include")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wshadow -Wno-c23-extensions)
-else()
+else ()
     add_compile_options(-Wall -Wextra -Wshadow)
-endif()
+endif ()
 
 # A release build carries nothing it does not run. No debug information is
 # written, every function and constant nothing reaches is dropped at link
@@ -136,30 +136,30 @@ endif()
 # Emscripten strips a release module itself -- names, debug information and
 # the runtime's own assertions all go at -O3 -- and reads `-s` as the start
 # of one of its settings, so it is left to do that its own way.
-if(MSVC)
+if (MSVC)
     add_compile_options($<$<CONFIG:Release>:/Gy> $<$<CONFIG:Release>:/Gw>)
     add_link_options($<$<CONFIG:Release>:/DEBUG:NONE> $<$<CONFIG:Release>:/OPT:REF>
             $<$<CONFIG:Release>:/OPT:ICF>)
-elseif(EMSCRIPTEN)
+elseif (EMSCRIPTEN)
     add_link_options($<$<CONFIG:Release>:-sASSERTIONS=0>)
-else()
+else ()
     add_compile_options($<$<CONFIG:Release>:-ffunction-sections> $<$<CONFIG:Release>:-fdata-sections>)
-    if(APPLE)
+    if (APPLE)
         add_link_options($<$<CONFIG:Release>:-Wl,-dead_strip> $<$<CONFIG:Release>:-Wl,-S>)
-    else()
+    else ()
         add_link_options($<$<CONFIG:Release>:-Wl,--gc-sections> $<$<CONFIG:Release>:-Wl,--strip-all>)
-    endif()
-endif()
+    endif ()
+endif ()
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT whole LANGUAGES CXX)
-if(whole)
+if (whole)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-endif()
+endif ()
 
 find_package(Doxygen)
 
-if(DOXYGEN_FOUND)
+if (DOXYGEN_FOUND)
     set(DOXYGEN_PROJECT_NAME "mLaTeX")
     set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
     set(DOXYGEN_PROJECT_BRIEF "A LaTeX typesetting engine")
@@ -213,7 +213,7 @@ if(DOXYGEN_FOUND)
     doxygen_add_docs(docs "${source}/README.md" "${source}/include" "${source}/src"
             "${source}/SECURITY.md" "${source}/CHANGELOG.md" "${source}/CODE_OF_CONDUCT.md"
             COMMENT "Generating documentation")
-endif()
+endif ()
 
 find_program(GPERF_EXECUTABLE gperf REQUIRED)
 
@@ -230,10 +230,10 @@ find_program(GPERF_EXECUTABLE gperf REQUIRED)
 # pixels, and re-compressed with zlib on the way into the PDF, which is the
 # one part of this that is cheap to do once rather than fast to skip.
 find_package(harfbuzz CONFIG QUIET)
-if(NOT harfbuzz_FOUND)
+if (NOT harfbuzz_FOUND)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(HARFBUZZ REQUIRED harfbuzz harfbuzz-subset)
-endif()
+endif ()
 
 # HarfBuzz is most of a run: every word goes through its shaper and every
 # embedded face through its subsetter. Its debug build is several times slower
@@ -245,30 +245,30 @@ endif()
 # copies the release ones back over them afterwards, together with the
 # FreeType, zlib, bzip2, libpng and Brotli builds they load in turn.
 set(dependencies "")
-if(TARGET harfbuzz::harfbuzz AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+if (TARGET harfbuzz::harfbuzz AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
     get_target_property(shaping harfbuzz::harfbuzz ALIASED_TARGET)
-    if(NOT shaping)
+    if (NOT shaping)
         set(shaping harfbuzz::harfbuzz)
-    endif()
+    endif ()
     set_target_properties(${shaping} harfbuzz::harfbuzz-subset PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 
-    foreach(library harfbuzz harfbuzz-subset freetype z bz2 libpng16 brotlidec brotlicommon)
+    foreach (library harfbuzz harfbuzz-subset freetype z bz2 libpng16 brotlidec brotlicommon)
         set(file "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/${library}.dll")
-        if(EXISTS "${file}")
+        if (EXISTS "${file}")
             list(APPEND dependencies "${file}")
-        endif()
-    endforeach()
+        endif ()
+    endforeach ()
 
     # The JPEG and WebP libraries are delay-loaded (see below), which hides
     # them from vcpkg's copy: without these, the first WebP picture a document
     # drew ended the program. Each build's own, debug or release.
-    foreach(library jpeg62 libwebp libsharpyuv)
-        if(EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/${library}.dll")
+    foreach (library jpeg62 libwebp libsharpyuv)
+        if (EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/${library}.dll")
             list(APPEND dependencies
                     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/$<$<CONFIG:Debug>:debug/>bin/${library}.dll")
-        endif()
-    endforeach()
-endif()
+        endif ()
+    endforeach ()
+endif ()
 
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
@@ -304,12 +304,12 @@ list(LENGTH files count)
 set(listing "// Written by CMakeLists.txt: every file under src/modules, embedded whole.\n")
 set(entries "")
 set(index 0)
-foreach(file IN LISTS files)
+foreach (file IN LISTS files)
     file(RELATIVE_PATH name "${modules}" "${file}")
     string(APPEND listing "static constexpr char file${index}[] = {\n#embed \"${file}\" suffix(,)\n0};\n")
     string(APPEND entries "    {\"${name}\", {file${index}, sizeof file${index} - 1}},\n")
     math(EXPR index "${index} + 1")
-endforeach()
+endforeach ()
 string(APPEND listing "\nstatic constexpr memory::Catalog<${count}> catalog{{{\n${entries}}}};\n")
 
 # Rewritten only when the list of files changes, so a configure run does not
@@ -329,9 +329,9 @@ list(SORT faces)
 list(LENGTH faces total)
 set(roster "// Written by CMakeLists.txt: every font file under assets/fonts.\n")
 string(APPEND roster "static constexpr std::array<std::string_view, ${total}> faces{{\n")
-foreach(face IN LISTS faces)
+foreach (face IN LISTS faces)
     string(APPEND roster "    \"${face}\",\n")
-endforeach()
+endforeach ()
 string(APPEND roster "}};\n")
 file(CONFIGURE OUTPUT "${binary}/include/fonts.inc" CONTENT "${roster}" @ONLY)
 
@@ -362,11 +362,11 @@ set(includes
         "${binary}/include"
 )
 
-foreach(item ${tree})
-    if(IS_DIRECTORY ${item})
+foreach (item ${tree})
+    if (IS_DIRECTORY ${item})
         list(APPEND includes ${item})
-    endif()
-endforeach()
+    endif ()
+endforeach ()
 
 # English hyphenation is compiled in the same way: src/render/typography/
 # patterns.cpp embeds the pattern file as it stands in assets/hyphens, and the
@@ -375,13 +375,13 @@ endforeach()
 # one expression by default. Any other language is read from assets/hyphens
 # at run time.
 set(evaluation "")
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     set(evaluation "/clang:-fconstexpr-steps=100000000")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(evaluation "-fconstexpr-steps=100000000")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(evaluation "-fconstexpr-ops-limit=4294967296" "-fconstexpr-loop-limit=1048576")
-endif()
+endif ()
 set_source_files_properties("${source}/src/render/typography/patterns.cpp" PROPERTIES
         OBJECT_DEPENDS "${source}/assets/hyphens/hyph-en-us.pat.txt"
         COMPILE_OPTIONS "${evaluation}")
@@ -401,18 +401,18 @@ set_source_files_properties("${source}/src/syntax/glossary.cpp" PROPERTIES
 # except under Emscripten, which links everything into one module.
 add_library(core STATIC ${engine} ${headers} ${output})
 add_dependencies(core lookup)
-if(NOT EMSCRIPTEN)
+if (NOT EMSCRIPTEN)
     set_target_properties(core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endif()
+endif ()
 
 target_include_directories(core PUBLIC ${includes})
 
-if(TARGET harfbuzz::harfbuzz)
+if (TARGET harfbuzz::harfbuzz)
     target_link_libraries(core PUBLIC harfbuzz::harfbuzz harfbuzz::harfbuzz-subset)
-else()
+else ()
     target_link_libraries(core PUBLIC ${HARFBUZZ_LIBRARIES})
     target_include_directories(core PUBLIC ${HARFBUZZ_INCLUDE_DIRS})
-endif()
+endif ()
 
 # PNG, JPEG and WebP decode an \includegraphics source into plain pixels;
 # zlib recompresses them for the PDF. An https:// source is fetched by the
@@ -426,17 +426,17 @@ target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
 # logger.hpp keys its floor on it, and the tests, which undefine NDEBUG so
 # their asserts run, must see the same floor the engine was compiled with.
 target_compile_definitions(core PUBLIC $<$<NOT:$<CONFIG:Debug>>:LATEX_RELEASE>)
-if(WIN32)
+if (WIN32)
     target_link_libraries(core PUBLIC winhttp)
-elseif(NOT EMSCRIPTEN)
+elseif (NOT EMSCRIPTEN)
     find_package(CURL QUIET)
-    if(CURL_FOUND)
+    if (CURL_FOUND)
         target_link_libraries(core PUBLIC CURL::libcurl)
         target_compile_definitions(core PRIVATE LATEX_CURL)
-    endif()
-endif()
+    endif ()
+endif ()
 
-if(EMSCRIPTEN)
+if (EMSCRIPTEN)
     # The engine as a WebAssembly module, for a web page, a worker or Node:
     # see include/render/wasm.hpp. Configure with the `wasm` preset, which
     # builds every library for the wasm32-emscripten triplet, and the build
@@ -454,7 +454,7 @@ if(EMSCRIPTEN)
             -sENVIRONMENT=web,worker,node
             "SHELL:--preload-file ${fonts}@/assets/fonts")
     set_target_properties(wasm PROPERTIES OUTPUT_NAME latex)
-else()
+else ()
     add_executable(latex "${source}/src/main.cpp")
     target_link_libraries(latex PRIVATE core)
     # The program a person runs is `mlatex`: `latex` is the command a TeX
@@ -477,22 +477,22 @@ else()
     # Loaded the first time a document needs them rather than when the program
     # starts: most documents draw no JPEG or WebP picture and fetch nothing
     # over HTTP, and every library loaded at start-up is paid for by all.
-    if(WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-        foreach(target latex ffi)
+    if (WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+        foreach (target latex ffi)
             target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
                     /DELAYLOAD:winhttp.dll)
             target_link_libraries(${target} PRIVATE delayimp)
-        endforeach()
-    endif()
+        endforeach ()
+    endif ()
 
     # After vcpkg's copy, not instead of it: see `dependencies` above.
-    if(dependencies)
-        foreach(target latex ffi)
+    if (dependencies)
+        foreach (target latex ffi)
             add_custom_command(TARGET ${target} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dependencies} "$<TARGET_FILE_DIR:${target}>"
                     VERBATIM)
-        endforeach()
-    endif()
+        endforeach ()
+    endif ()
 
     enable_testing()
     add_subdirectory(tests)
@@ -510,7 +510,7 @@ else()
             ARCHIVE DESTINATION lib)
     install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
     install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
-    if(WIN32)
+    if (WIN32)
         # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
         # program -- HarfBuzz, FreeType, the image libraries, zlib, the
         # delay-loaded ones included -- goes beside it again, so an installed
@@ -518,7 +518,7 @@ else()
         # linked in (CMAKE_MSVC_RUNTIME_LIBRARY above): no redistributable.
         install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:latex>/*.dll\")
             file(INSTALL \${libraries} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")")
-    endif()
+    endif ()
 
     # A release build packages itself: `cpack` in the build tree -- or the
     # `package` target -- leaves every package in the source tree's bin/
@@ -530,35 +530,35 @@ else()
     # another build: clang-cl for ARM64 with the arm64-windows triplet, an
     # aarch64 compiler, or on macOS CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
     # with universal libraries for a single disk image that runs on both.
-    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
-        if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
+        if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
             set(processor "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
-        else()
+        else ()
             set(processor "${CMAKE_SYSTEM_PROCESSOR}")
-        endif()
+        endif ()
         list(LENGTH CMAKE_OSX_ARCHITECTURES slices)
-        if(APPLE AND slices EQUAL 1)
+        if (APPLE AND slices EQUAL 1)
             set(processor "${CMAKE_OSX_ARCHITECTURES}")
-        endif()
+        endif ()
         string(TOLOWER "${processor}" processor)
-        if(APPLE AND slices GREATER 1)
+        if (APPLE AND slices GREATER 1)
             set(architecture universal)
-        elseif(processor MATCHES "^(x64|x86_64|amd64)$")
+        elseif (processor MATCHES "^(x64|x86_64|amd64)$")
             set(architecture x64)
-        elseif(processor MATCHES "^(arm64|arm64ec|aarch64)$")
+        elseif (processor MATCHES "^(arm64|arm64ec|aarch64)$")
             set(architecture arm64)
-        elseif(processor MATCHES "^(x86|i[3-6]86)$")
+        elseif (processor MATCHES "^(x86|i[3-6]86)$")
             set(architecture x86)
-        else()
+        else ()
             set(architecture "${processor}")
-        endif()
-        if(WIN32)
+        endif ()
+        if (WIN32)
             set(platform windows)
-        elseif(APPLE)
+        elseif (APPLE)
             set(platform macos)
-        else()
+        else ()
             set(platform linux)
-        endif()
+        endif ()
 
         set(CPACK_PACKAGE_NAME mlatex)
         set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
@@ -576,7 +576,7 @@ else()
         configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
         set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")
 
-        if(WIN32)
+        if (WIN32)
             # An MSI when WiX is installed -- the .NET tool `wix`, version 4
             # or later, or version 3's candle and light -- and a .zip always.
             # WiX 7 runs only once its EULA is accepted, which is the
@@ -586,42 +586,42 @@ else()
             set(CPACK_GENERATOR ZIP)
             find_program(toolset wix)
             find_program(candle candle HINTS "$ENV{WIX}/bin")
-            if(toolset)
+            if (toolset)
                 list(APPEND CPACK_GENERATOR WIX)
                 set(CPACK_WIX_VERSION 4)
-            elseif(candle)
+            elseif (candle)
                 list(APPEND CPACK_GENERATOR WIX)
-            else()
+            else ()
                 message(STATUS "No WiX found: packaging a .zip and no .msi")
-            endif()
+            endif ()
             set(CPACK_WIX_UPGRADE_GUID "AA871061-E247-40FB-A13C-CBA1467E7954")
             set(CPACK_WIX_ARCHITECTURE "${architecture}")
-        elseif(APPLE)
+        elseif (APPLE)
             # A disk image holding an mLaTeX folder and a link to
             # Applications to drag it onto; a .pkg installer that puts the
             # same folder in /Applications itself; and two archives.
             set(CPACK_GENERATOR DragNDrop productbuild TGZ ZIP)
             set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
             set(CPACK_PRODUCTBUILD_IDENTIFIER io.github.apaxphoenix.mlatex)
-        else()
+        else ()
             # Debian's and Red Hat's packages, named as each names its own,
             # and two archives for everything else. An .rpm needs rpmbuild.
             set(CPACK_GENERATOR DEB TGZ ZIP)
             find_program(builder rpmbuild)
-            if(builder)
+            if (builder)
                 list(APPEND CPACK_GENERATOR RPM)
-            endif()
+            endif ()
             set(debian ${architecture})
             set(redhat ${architecture})
-            if(architecture STREQUAL "x64")
+            if (architecture STREQUAL "x64")
                 set(debian amd64)
                 set(redhat x86_64)
-            elseif(architecture STREQUAL "arm64")
+            elseif (architecture STREQUAL "arm64")
                 set(redhat aarch64)
-            elseif(architecture STREQUAL "x86")
+            elseif (architecture STREQUAL "x86")
                 set(debian i386)
                 set(redhat i686)
-            endif()
+            endif ()
             set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${debian})
             set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
             set(CPACK_DEBIAN_PACKAGE_SECTION tex)
@@ -631,7 +631,7 @@ else()
             set(CPACK_RPM_PACKAGE_LICENSE AGPL-3.0-only)
             set(CPACK_RPM_PACKAGE_GROUP Applications/Publishing)
             set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /opt)
-        endif()
+        endif ()
 
         # Where each package puts the tree: an mLaTeX folder in the disk
         # image, /Applications/mLaTeX from the .pkg, and /opt/mlatex for
@@ -648,5 +648,5 @@ endif()
 ]] @ONLY)
         set(CPACK_PROJECT_CONFIG_FILE "${binary}/packaging.cmake")
         include(CPack)
-    endif()
-endif()
+    endif ()
+endif ()

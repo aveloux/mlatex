@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Text set as it was typed: `\\verb`, the `verbatim` block, and
     ///        the listings package's `lstlisting`, `\\lstinline` and
     ///        `\\lstinputlisting`.
@@ -45,28 +44,27 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Verbatim(syntax::Lexicon& lexicon) noexcept;
+        explicit Verbatim(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the text is shaped with its fonts.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief A block opened and not yet read: what it is, and its options.
         struct Opening {
-            std::string kind;      ///< `verbatim`, `lstlisting` or `comment`.
-            std::string options;   ///< As written between its brackets.
-            bool headed{false};    ///< Its caption, if it has one, has been read.
+            std::string kind; ///< `verbatim`, `lstlisting` or `comment`.
+            std::string options; ///< As written between its brackets.
+            bool headed{false}; ///< Its caption, if it has one, has been read.
         };
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Opening> openings{};                ///< Blocks opened, innermost last.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Opening> openings{}; ///< Blocks opened, innermost last.
 
-        syntax::Symbol start{};   ///< The mark a block's opening leaves; no document can write it.
+        syntax::Symbol start{}; ///< The mark a block's opening leaves; no document can write it.
     };
-
 }

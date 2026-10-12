@@ -42,8 +42,8 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Parser parser(mouth, arena);
 
     std::string text;
-    const auto get = [&text](this const auto& self, const memory::Slice<syntax::Node*> nodes) -> void {
-        for (const syntax::Node* node : nodes) {
+    const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
+        for (const syntax::Node *node: nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -51,7 +51,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter : text) {
+    for (const char letter: text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -61,14 +61,14 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto& list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback& fault : list) errors += fault.format() + '\n';
+    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
 
 /// A document must set exactly this text, and report nothing.
-static void sets(const std::string_view document, const std::string_view expected, const char* what) {
+static void sets(const std::string_view document, const std::string_view expected, const char *what) {
     const auto [text, errors] = expand(document);
     if (text != expected || !errors.empty()) {
         std::fprintf(stderr, "%s\n  document: %.*s\n  expected: [%.*s]\n  got:      [%s]\n%s", what,
@@ -90,13 +90,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -140,11 +140,12 @@ int main() {
         "pifont", "fontspec", "unicode-math", "pgfplots", "tikz-cd", "tocloft", "ctable", "xurl", "soulutf8",
         "subfigure", "mwe", "iftex", "stfloats", "balance", "sectsty", "newtxmath", "libertine", "nicematrix",
     };
-    for (const std::string_view name : packages) {
+    for (const std::string_view name: packages) {
         const Result result = typeset("\\documentclass{article}\\usepackage{" + std::string(name) +
                                       "}\\begin{document}x\\end{document}");
-        if (!result.clean) std::fprintf(stderr, "  %.*s: %s", static_cast<int>(name.size()), name.data(),
-                                        result.errors.c_str());
+        if (!result.clean)
+            std::fprintf(stderr, "  %.*s: %s", static_cast<int>(name.size()), name.data(),
+                         result.errors.c_str());
         assert((result.clean && !holds(result.errors, "not found")) &&
                "a package loads, known by name, with no error reported");
     }
@@ -155,8 +156,8 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{xurl}\\begin{document}"
-                                      "\\ifpackageloaded{url}{url}{none} \\ifpackageloaded{xurl}{xurl}{none}"
-                                      "\\end{document}");
+            "\\ifpackageloaded{url}{url}{none} \\ifpackageloaded{xurl}{xurl}{none}"
+            "\\end{document}");
         assert((result.clean && result.errors.empty() && holds(result.text, "urlxurl")) &&
                "a package under another's name loads that one, and both are loaded");
     }
@@ -204,24 +205,26 @@ int main() {
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\acrodef{API}{application programming interface}"
-                                                               "\\acs{API} \\acl{API} \\acf{API}");
-        assert((result.clean && holds(result.text, "APIapplicationprogramminginterfaceapplicationprogramminginterface(API)")) &&
+                                      "\\acs{API} \\acl{API} \\acf{API}");
+        assert((result.clean && holds(result.text,
+                                      "APIapplicationprogramminginterfaceapplicationprogramminginterface(API)")) &&
                "every form");
     }
     {
-        const Result result = article("\\usepackage{acronym}", "\\newacronym{os}{OS}{operating system}\\acp{os}, \\acp{os}");
+        const Result result = article("\\usepackage{acronym}",
+                                      "\\newacronym{os}{OS}{operating system}\\acp{os}, \\acp{os}");
         assert((result.clean && holds(result.text, "operatingsystems(OSs),OSs")) && "plurals");
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\newacronym{pdf}{PDF}{Portable Document Format}"
-                                                               "\\ac{pdf} \\acreset{pdf}\\ac{pdf}");
+                                      "\\ac{pdf} \\acreset{pdf}\\ac{pdf}");
         assert((result.clean && holds(result.text, "PortableDocumentFormat(PDF)PortableDocumentFormat(PDF)")) &&
                "\\acreset spells it out again");
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\ac{GUI} and \\ac{GUI}.\n\n"
-                                                               "\\begin{acronym}\\acro{GUI}{graphical user interface}"
-                                                               "\\end{acronym}");
+                                      "\\begin{acronym}\\acro{GUI}{graphical user interface}"
+                                      "\\end{acronym}");
         assert((result.clean && holds(result.text, "graphicaluserinterface(GUI)andGUI.") &&
                 holds(result.text, "GUIgraphicaluserinterface")) &&
                "an acronym used before its list defines it, and the list");
@@ -276,8 +279,10 @@ int main() {
 #else
         localtime_r(&now, &local);
 #endif
-        static constexpr const char* months[] = {"January", "February", "March", "April", "May", "June", "July",
-                                                 "August", "September", "October", "November", "December"};
+        static constexpr const char *months[] = {
+            "January", "February", "March", "April", "May", "June", "July",
+            "August", "September", "October", "November", "December"
+        };
         const int year = local.tm_year + 1900;
         char iso[16];
         std::snprintf(iso, sizeof iso, "%04d-%02d-%02d", year, local.tm_mon + 1, local.tm_mday);
@@ -312,7 +317,7 @@ int main() {
                                       "\\begin{algorithm}\\KwIn{a list}\\ForEach{$x$}{add it}\\Return{$s$}"
                                       "\\caption{Sum}\\end{algorithm}");
         assert((result.clean && holds(result.text, "Input:alist") && holds(result.text, "foreach") &&
-               holds(result.text, "Algorithm1Sum")) && "algorithm2e's steps, set as a captioned float");
+                holds(result.text, "Algorithm1Sum")) && "algorithm2e's steps, set as a captioned float");
     }
     {
         const Result result = article("\\usepackage{lastpage}",
@@ -323,7 +328,7 @@ int main() {
         const Result result = article("\\usepackage{epigraph,authblk}",
                                       "\\epigraph{The purpose of computing is insight.}{Hamming}");
         assert((result.clean && holds(result.text, "Thepurposeofcomputingisinsight.") &&
-               holds(result.text, "Hamming")) &&
+                holds(result.text, "Hamming")) &&
                "an epigraph and its source");
     }
 

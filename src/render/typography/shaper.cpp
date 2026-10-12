@@ -12,22 +12,21 @@
 #include <vector>
 
 namespace render::typography {
-
     Shaper::~Shaper() noexcept {
         if (buffer) hb_buffer_destroy(buffer);
-        for (const Plan& kept : plans) {
+        for (const Plan &kept: plans) {
             if (kept.plan) hb_shape_plan_destroy(kept.plan);
         }
     }
 
-    memory::Slice<layout::Node*> Shaper::shape(
-        const memory::Slice<const Font*> fonts,
+    memory::Slice<layout::Node *> Shaper::shape(
+        const memory::Slice<const Font *> fonts,
         const std::string_view text,
         const memory::Slice<Feature> features
     ) const {
         if (text.empty() || fonts.empty()) return {};
 
-        const Font* primary = nullptr;
+        const Font *primary = nullptr;
         for (std::size_t index = 0; index < fonts.count; ++index) {
             if (fonts[index] && fonts[index]->handle()) {
                 primary = fonts[index];
@@ -44,18 +43,24 @@ namespace render::typography {
         // One character read out of the UTF-8 at a byte, and how many bytes
         // it took. A malformed byte reads as itself over one byte, so a bad
         // encoding cannot stall anything that walks the text.
-        const auto decode = [](const std::string_view from, const std::size_t at) -> std::pair<std::uint32_t, std::size_t> {
-            const auto* data = reinterpret_cast<const std::uint8_t*>(from.data() + at);
+        const auto decode = [](const std::string_view from,
+                               const std::size_t at) -> std::pair<std::uint32_t, std::size_t> {
+            const auto *data = reinterpret_cast<const std::uint8_t *>(from.data() + at);
             const std::size_t rest = from.size() - at;
             if ((data[0] & 0xE0) == 0xC0 && rest >= 2) {
                 return {static_cast<std::uint32_t>(((data[0] & 0x1F) << 6) | (data[1] & 0x3F)), 2};
             }
             if ((data[0] & 0xF0) == 0xE0 && rest >= 3) {
-                return {static_cast<std::uint32_t>(((data[0] & 0x0F) << 12) | ((data[1] & 0x3F) << 6) | (data[2] & 0x3F)), 3};
+                return {
+                    static_cast<std::uint32_t>(((data[0] & 0x0F) << 12) | ((data[1] & 0x3F) << 6) | (data[2] & 0x3F)), 3
+                };
             }
             if ((data[0] & 0xF8) == 0xF0 && rest >= 4) {
-                return {static_cast<std::uint32_t>(((data[0] & 0x07) << 18) | ((data[1] & 0x3F) << 12) |
-                                                   ((data[2] & 0x3F) << 6) | (data[3] & 0x3F)), 4};
+                return {
+                    static_cast<std::uint32_t>(((data[0] & 0x07) << 18) | ((data[1] & 0x3F) << 12) |
+                                               ((data[2] & 0x3F) << 6) | (data[3] & 0x3F)),
+                    4
+                };
             }
             return {data[0], 1};
         };
@@ -66,7 +71,7 @@ namespace render::typography {
         // left. Whether any character came back as glyph zero -- the face
         // saying it cannot draw it -- is noted on the way.
         bool missing = false;
-        const auto set = [&](const Font& font, const std::string_view run) -> memory::Slice<layout::Node*> {
+        const auto set = [&](const Font &font, const std::string_view run) -> memory::Slice<layout::Node *> {
             if (buffer) {
                 hb_buffer_reset(buffer);
             } else {
@@ -93,17 +98,17 @@ namespace render::typography {
             if (list.empty()) {
                 hb_segment_properties_t properties{};
                 hb_buffer_get_segment_properties(buffer, &properties);
-                hb_face_t* face = hb_font_get_face(font.handle());
+                hb_face_t *face = hb_font_get_face(font.handle());
 
-                hb_shape_plan_t* chosen = nullptr;
-                for (const Plan& kept : plans) {
+                hb_shape_plan_t *chosen = nullptr;
+                for (const Plan &kept: plans) {
                     if (kept.face == face && hb_segment_properties_equal(&kept.properties, &properties)) {
                         chosen = kept.plan;
                         break;
                     }
                 }
                 if (!chosen) {
-                    Plan& slot = plans[oldest];
+                    Plan &slot = plans[oldest];
                     oldest = (oldest + 1) % plans.size();
                     if (slot.plan) hb_shape_plan_destroy(slot.plan);
                     chosen = hb_shape_plan_create_cached(face, &properties, nullptr, 0, nullptr);
@@ -115,8 +120,8 @@ namespace render::typography {
             }
 
             unsigned int count = 0;
-            const hb_glyph_info_t* info = hb_buffer_get_glyph_infos(buffer, &count);
-            const hb_glyph_position_t* position = hb_buffer_get_glyph_positions(buffer, &count);
+            const hb_glyph_info_t *info = hb_buffer_get_glyph_infos(buffer, &count);
+            const hb_glyph_position_t *position = hb_buffer_get_glyph_positions(buffer, &count);
 
             // The buffer is kept for the next run; see the member's notes.
             if (count == 0) return {};
@@ -124,14 +129,16 @@ namespace render::typography {
             // Every glyph stands as tall and as deep as the face asked for
             // says, whichever face drew it, so a word in another script does
             // not push its line further from the next than the rest are.
-            const memory::Slice<layout::Node*> nodes = arena.allocate<layout::Node*>(count);
+            const memory::Slice<layout::Node *> nodes = arena.allocate<layout::Node *>(count);
             const Font::Metric metric = primary->metrics();
             const bool backward = HB_DIRECTION_IS_BACKWARD(hb_buffer_get_direction(buffer));
             constexpr float grain = 1.0f / 64.0f;
 
             for (std::size_t step = 0; step < count; ++step) {
                 const std::uint32_t cluster = info[step].cluster;
-                const auto [code, size] = cluster < run.size() ? decode(run, cluster) : std::pair<std::uint32_t, std::size_t>{0, 0};
+                const auto [code, size] = cluster < run.size()
+                                              ? decode(run, cluster)
+                                              : std::pair<std::uint32_t, std::size_t>{0, 0};
                 const float advance = static_cast<float>(position[step].x_advance) * grain;
 
                 // A space becomes glue, not a glyph: it is where the breaker
@@ -139,7 +146,7 @@ namespace render::typography {
                 // stretch. The proportions are TeX's: half the space may be
                 // added, a third of it taken away.
                 if (code == ' ') {
-                    auto* node = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                    auto *node = arena.compose<layout::Node>(layout::Node::Type::Glue);
                     node->glue({
                         .width = advance,
                         .stretch = advance * 0.5f,
@@ -180,7 +187,7 @@ namespace render::typography {
                     if (end > cluster + size) letters = arena.copy(run.substr(cluster, end - cluster));
                 }
 
-                auto* node = arena.compose<layout::Node>(layout::Node::Type::Glyph);
+                auto *node = arena.compose<layout::Node>(layout::Node::Type::Glyph);
                 node->glyph({
                     .width = advance,
                     .height = metric.ascent,
@@ -197,7 +204,7 @@ namespace render::typography {
             return nodes;
         };
 
-        const memory::Slice<layout::Node*> whole = set(*primary, text);
+        const memory::Slice<layout::Node *> whole = set(*primary, text);
         if (!missing || (fonts.count < 2 && !registry)) return whole;
 
         // Something the face cannot draw. The text is cut into runs by the
@@ -207,12 +214,12 @@ namespace render::typography {
         // whole in its own face, so a Cyrillic word keeps its kerning and an
         // Arabic one joins, as neither would glyph by glyph. A mark goes with
         // the letter it sits on, and a joiner with the letter before it.
-        std::vector<std::pair<std::size_t, const Font*>> starts;
-        hb_unicode_funcs_t* unicode = hb_unicode_funcs_get_default();
+        std::vector<std::pair<std::size_t, const Font *> > starts;
+        hb_unicode_funcs_t *unicode = hb_unicode_funcs_get_default();
         for (std::size_t at = 0; at < text.size();) {
             const auto [code, size] = decode(text, at);
             const hb_unicode_general_category_t category =
-                hb_unicode_general_category(unicode, code);
+                    hb_unicode_general_category(unicode, code);
             const bool attached = category == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK ||
                                   category == HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK ||
                                   category == HB_UNICODE_GENERAL_CATEGORY_ENCLOSING_MARK ||
@@ -227,13 +234,13 @@ namespace render::typography {
                                 category == HB_UNICODE_GENERAL_CATEGORY_TITLECASE_LETTER ||
                                 category == HB_UNICODE_GENERAL_CATEGORY_MODIFIER_LETTER ||
                                 category == HB_UNICODE_GENERAL_CATEGORY_OTHER_LETTER;
-            const Font* face = primary;
+            const Font *face = primary;
             if (attached && !starts.empty()) {
                 face = starts.back().second;
             } else if (code > ' ' && primary->index(code) == 0) {
                 face = registry && letter ? registry->cover(*primary, code, false) : nullptr;
                 for (std::size_t index = 0; !face && index < fonts.count; ++index) {
-                    const Font* offered = fonts[index];
+                    const Font *offered = fonts[index];
                     if (offered && offered != primary && offered->handle() && offered->index(code) != 0) face = offered;
                 }
                 if (!face && registry) face = registry->cover(*primary, code, true);
@@ -245,17 +252,17 @@ namespace render::typography {
         }
         if (starts.size() == 1 && starts.front().second == primary) return whole;
 
-        std::vector<layout::Node*> gathered;
+        std::vector<layout::Node *> gathered;
         gathered.reserve(text.size());
         for (std::size_t index = 0; index < starts.size(); ++index) {
             const std::size_t end = index + 1 < starts.size() ? starts[index + 1].first : text.size();
-            const memory::Slice<layout::Node*> part = set(*starts[index].second, text.substr(starts[index].first, end - starts[index].first));
+            const memory::Slice<layout::Node *> part = set(*starts[index].second,
+                                                           text.substr(starts[index].first, end - starts[index].first));
             gathered.insert(gathered.end(), part.begin(), part.end());
         }
 
-        const memory::Slice<layout::Node*> nodes = arena.allocate<layout::Node*>(gathered.size());
+        const memory::Slice<layout::Node *> nodes = arena.allocate<layout::Node *>(gathered.size());
         std::ranges::copy(gathered, nodes.begin());
         return nodes;
     }
-
 }

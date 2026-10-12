@@ -8,7 +8,7 @@
 // are scoped with them, and expansion that reads a macro's body in its place.
 
 /// @brief Every token's text the expander hands out, until it runs dry.
-static std::string drain(syntax::Mouth& mouth) {
+static std::string drain(syntax::Mouth &mouth) {
     std::string text;
     for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) text += token.text;
     return text;
@@ -69,7 +69,7 @@ int main() {
     // A primitive bound by a module runs when it is read.
     {
         int calls = 0;
-        mouth.bind("\\count", [&calls](syntax::Mouth&) { ++calls; });
+        mouth.bind("\\count", [&calls](syntax::Mouth &) { ++calls; });
         mouth.ingest("\\count x\\count");
         assert((drain(mouth) == "x" && calls == 2) && "a bound primitive runs each time it is read");
     }
@@ -80,9 +80,10 @@ int main() {
     {
         std::string seen;
         const std::string held = "kept";
-        mouth.bind("\\grow", [&seen, &lexicon, held](syntax::Mouth& inner) {
+        mouth.bind("\\grow", [&seen, &lexicon, held](syntax::Mouth &inner) {
             for (int index = 0; index < 4096; ++index) {
-                inner.bind(lexicon.intern("\\grown" + std::to_string(index)), [](syntax::Mouth&) {});
+                inner.bind(lexicon.intern("\\grown" + std::to_string(index)), [](syntax::Mouth &) {
+                });
             }
             seen = held;
         });

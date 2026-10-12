@@ -7,7 +7,6 @@
 #include <string_view>
 
 namespace syntax {
-
     /// @brief One recorded error and the position that caused it.
     ///
     /// Errors are collected rather than thrown: as in TeX, a mistake costs the
@@ -16,22 +15,23 @@ namespace syntax {
     public:
         /// @brief The kind of error.
         enum class Type : std::uint8_t {
-            Group,         ///< Unbalanced or unclosed brace group.
-            Equation,      ///< Malformed formula.
-            Environment,   ///< Mismatched `\begin` and `\end`.
-            Delimiter,     ///< Unbalanced delimiter or runaway delimited argument.
-            Argument,      ///< Missing or malformed argument.
-            Token,         ///< Illegal input byte.
-            End,           ///< Input ended too early.
-            Macro,         ///< Undefined or misused control sequence.
-            Recursion,     ///< Runaway expansion.
-            Memory,        ///< A size limit was exceeded.
-            Scope,         ///< Unbalanced group exit.
-            Primitive,     ///< A primitive could not do what it was asked.
-            Dimension,     ///< Missing or malformed dimension.
-            Register,      ///< Bad register reference or arithmetic.
-            Syntax,        ///< Any other malformed input.
-            Warning        ///< Not a mistake: something set in a way of the engine's own, or left out,
+            Group, ///< Unbalanced or unclosed brace group.
+            Equation, ///< Malformed formula.
+            Environment, ///< Mismatched `\begin` and `\end`.
+            Delimiter, ///< Unbalanced delimiter or runaway delimited argument.
+            Argument, ///< Missing or malformed argument.
+            Token, ///< Illegal input byte.
+            End, ///< Input ended too early.
+            Macro, ///< Undefined or misused control sequence.
+            Recursion, ///< Runaway expansion.
+            Memory, ///< A size limit was exceeded.
+            Scope, ///< Unbalanced group exit.
+            Primitive, ///< A primitive could not do what it was asked.
+            Dimension, ///< Missing or malformed dimension.
+            Register, ///< Bad register reference or arithmetic.
+            Syntax, ///< Any other malformed input.
+            Warning
+            ///< Not a mistake: something set in a way of the engine's own, or left out,
                            ///< that a document should hear about -- a package it only knows by name.
         };
 
@@ -40,7 +40,8 @@ namespace syntax {
         /// @param location Where it happened; zero means unknown.
         /// @param message  Explanation; copied.
         Traceback(const Type type, const memory::Location location, const std::string_view message)
-            : type(type), location(location), message(message) {}
+            : type(type), location(location), message(message) {
+        }
 
         /// @brief Whether it stops the document being clean: every kind but a warning does.
         [[nodiscard]] bool fatal() const noexcept { return type != Type::Warning; }
@@ -50,9 +51,8 @@ namespace syntax {
         /// @return The rendered text; the position is omitted when unknown.
         [[nodiscard]] std::string format() const;
 
-        Type type;                  ///< Kind of error.
-        memory::Location location;  ///< Where it happened.
-        std::string message;        ///< Explanation.
+        Type type; ///< Kind of error.
+        memory::Location location; ///< Where it happened.
+        std::string message; ///< Explanation.
     };
-
 }

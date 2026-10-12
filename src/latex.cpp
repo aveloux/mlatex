@@ -48,17 +48,16 @@
 #include <vector>
 
 #if defined(_WIN32)
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #ifndef NOMINMAX
-        #define NOMINMAX
-    #endif
-    #include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #endif
 
 namespace latex {
-
     // The font tree as the build listed it, so a run need not walk it.
 #include "fonts.inc"
 
@@ -77,16 +76,16 @@ namespace latex {
     ///                    this is the second; null on a first.
     /// @return True when the document compiled with nothing left broken.
     static bool run(
-        const std::filesystem::path& assets,
-        const std::filesystem::path* source,
+        const std::filesystem::path &assets,
+        const std::filesystem::path *source,
         const std::string_view text,
-        const std::filesystem::path* destination,
-        std::string* pdf,
-        std::vector<std::string>* texts,
-        const Host& host,
-        std::ostream* report,
-        std::ostream& errors,
-        const std::vector<std::string>* folios = nullptr
+        const std::filesystem::path *destination,
+        std::string *pdf,
+        std::vector<std::string> *texts,
+        const Host &host,
+        std::ostream *report,
+        std::ostream &errors,
+        const std::vector<std::string> *folios = nullptr
     ) {
         const auto started = std::chrono::high_resolution_clock::now();
 
@@ -124,42 +123,47 @@ namespace latex {
             "lmroman5-regular", "lmroman8-regular", "lmroman9-regular", "lmroman10-bolditalic", "lmmono10-regular",
         };
         const auto warm = [&collection] {
-            for (const std::string_view family : likely) {
-                const render::typography::Collection::Entry* entry = collection.get(family);
+            for (const std::string_view family: likely) {
+                const render::typography::Collection::Entry *entry = collection.get(family);
                 if (!entry) continue;
                 std::uint8_t touched = 0;
                 for (std::size_t at = 0; at < entry->bytes.size(); at += 4096) touched ^= entry->bytes[at];
-                static_cast<void>(*static_cast<volatile std::uint8_t*>(&touched));
+                static_cast<void>(*static_cast<volatile std::uint8_t *>(&touched));
             }
         };
-    #if defined(_WIN32)
+#if defined(_WIN32)
         // The process's thread pool, as the PDF writer uses it: a worker is
         // usually alive already, and handing it work costs microseconds.
         struct Worker {
             PTP_WORK work{nullptr};
+
             ~Worker() {
                 if (!work) return;
                 WaitForThreadpoolWorkCallbacks(work, FALSE);
                 CloseThreadpoolWork(work);
             }
         };
-        const Worker worker{CreateThreadpoolWork(
-            [](PTP_CALLBACK_INSTANCE, void* context, PTP_WORK) { (*static_cast<const decltype(warm)*>(context))(); },
-            const_cast<void*>(static_cast<const void*>(&warm)), nullptr)};
+        const Worker worker{
+            CreateThreadpoolWork(
+                [](PTP_CALLBACK_INSTANCE, void *context, PTP_WORK) {
+                    (*static_cast<const decltype(warm) *>(context))();
+                },
+                const_cast<void *>(static_cast<const void *>(&warm)), nullptr)
+        };
         if (worker.work) SubmitThreadpoolWork(worker.work);
-    #elif defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+#elif defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
         // No thread to spare: each face opens when it is first asked for.
-    #else
+#else
         const std::jthread worker(warm);
-    #endif
+#endif
 
         const auto surveyed = std::chrono::high_resolution_clock::now();
 
         render::typography::Registry registry(arena, collection);
 
         constexpr float body = 12.0f;
-        const render::typography::Font* prose = registry.get({.family = "text", .size = body});
-        const render::typography::Font* maths = registry.get({.family = "expression", .size = body});
+        const render::typography::Font *prose = registry.get({.family = "text", .size = body});
+        const render::typography::Font *maths = registry.get({.family = "expression", .size = body});
 
         if (!prose) {
             errors << "No text face available; looked under " << (assets / "fonts").string() << '\n';
@@ -215,17 +219,18 @@ namespace latex {
         const syntax::primitives::Writer write = [&nearby](const std::string_view name, const std::string_view text) {
             nearby.insert_or_assign(std::string(name), std::string(text));
         };
-        const syntax::primitives::Reader disk = [&nearby, &folders](const std::string_view name) -> const std::string* {
+        const syntax::primitives::Reader disk = [&nearby, &folders
+                ](const std::string_view name) -> const std::string * {
             if (const auto kept = nearby.find(name); kept != nearby.end()) {
                 return kept->second.empty() ? nullptr : &kept->second;
             }
             const std::filesystem::path relative(
-                std::u8string_view(reinterpret_cast<const char8_t*>(name.data()), name.size()));
+                std::u8string_view(reinterpret_cast<const char8_t *>(name.data()), name.size()));
             bool inside = !name.empty() && !relative.has_root_name() && !relative.has_root_directory();
-            for (const std::filesystem::path& part : relative) inside = inside && part != "..";
+            for (const std::filesystem::path &part: relative) inside = inside && part != "..";
 
             std::string bytes;
-            for (const std::filesystem::path& folder : folders) {
+            for (const std::filesystem::path &folder: folders) {
                 if (!inside || !bytes.empty()) break;
                 if (std::ifstream file(folder / relative, std::ios::binary | std::ios::ate); file) {
                     const std::streamsize size = file.tellg();
@@ -248,19 +253,19 @@ namespace latex {
 
         // Whatever the caller handed in, set before the first token is read,
         // so the document and every package see it from their first line.
-        for (const auto& [name, value] : host.variables) core.variables.define(name, value);
+        for (const auto &[name, value]: host.variables) core.variables.define(name, value);
 
         // The calling program's own commands, bound beside the primitives
         // and read the way a primitive reads: arguments expanded, handed
         // over as text, and the answer read in the command's place. The
         // answer is copied into the arena first, because a token's text is a
         // view and the string it came back in is gone once this returns.
-        for (const Command& command : host.commands) {
+        for (const Command &command: host.commands) {
             std::string_view name = command.name;
             if (name.starts_with('\\')) name.remove_prefix(1);
             if (name.empty() || !command.handler) continue;
 
-            mouth.bind("\\" + std::string(name), [&command](syntax::Mouth& mouth) {
+            mouth.bind("\\" + std::string(name), [&command](syntax::Mouth &mouth) {
                 std::vector<std::string> arguments;
                 arguments.reserve(command.arity);
                 for (std::size_t index = 0; index < command.arity; ++index) {
@@ -307,11 +312,12 @@ namespace latex {
         if (!source) {
             content = text;
         } else {
-    #if defined(_WIN32)
+#if defined(_WIN32)
             const HANDLE file = CreateFileW(source->c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                                             nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
             if (file != INVALID_HANDLE_VALUE) {
-                if (LARGE_INTEGER size{}; GetFileSizeEx(file, &size) && size.QuadPart > 0 && size.QuadPart <= MAXDWORD) {
+                if (LARGE_INTEGER size{}; GetFileSizeEx(file, &size) && size.QuadPart > 0 && size.QuadPart <=
+                                          MAXDWORD) {
                     content.resize(static_cast<std::size_t>(size.QuadPart));
                     DWORD read = 0;
                     if (!ReadFile(file, content.data(), static_cast<DWORD>(content.size()), &read, nullptr) ||
@@ -321,7 +327,7 @@ namespace latex {
                 }
                 CloseHandle(file);
             }
-    #else
+#else
             if (std::ifstream file(*source, std::ios::binary | std::ios::ate); file) {
                 if (const std::streamsize size = file.tellg(); size > 0) {
                     file.seekg(0, std::ios::beg);
@@ -329,7 +335,7 @@ namespace latex {
                     if (!file.read(content.data(), size)) content.clear();
                 }
             }
-    #endif
+#endif
         }
         if (content.empty()) {
             errors << "Document unreadable or empty: " << (source ? source->string() : "(text)") << '\n';
@@ -371,7 +377,7 @@ namespace latex {
 
         const auto ingested = std::chrono::high_resolution_clock::now();
 
-        const memory::Slice<syntax::Node*> outputs = parser.parse(0);
+        const memory::Slice<syntax::Node *> outputs = parser.parse(0);
         const auto parsed = std::chrono::high_resolution_clock::now();
 
         // A page asked for -- a `\\pageref`, a table of contents -- is known
@@ -387,8 +393,8 @@ namespace latex {
         // reporter, called once per source, rather than the same loop
         // written out four times.
         bool broken = false;
-        const auto collect = [&broken, &errors](const std::vector<syntax::Traceback>& faults) {
-            for (const syntax::Traceback& fault : faults) {
+        const auto collect = [&broken, &errors](const std::vector<syntax::Traceback> &faults) {
+            for (const syntax::Traceback &fault: faults) {
                 errors << fault.format() << '\n';
                 broken = broken || fault.fatal();
             }
@@ -402,10 +408,11 @@ namespace latex {
 
         if (const std::size_t unclosed = core.blocks.depth(); unclosed != 0 && !again) {
             const std::string_view innermost = core.blocks.innermost();
-            errors << (innermost == "document" ? std::string("*** (job aborted, no legal \\end found)")
-                                               : std::format("error (environment): \\begin{{{}}} ended by \\end{{document}}",
-                                                             innermost))
-                   << '\n';
+            errors << (innermost == "document"
+                           ? std::string("*** (job aborted, no legal \\end found)")
+                           : std::format("error (environment): \\begin{{{}}} ended by \\end{{document}}",
+                                         innermost))
+                    << '\n';
             broken = true;
         }
 
@@ -418,15 +425,15 @@ namespace latex {
         // Recursive, because a brace group is a boundary around nodes rather
         // than a node in its own right: what it holds goes in where it stood.
         const auto post = [&composer, &selection](
-            auto&& again, const memory::Slice<syntax::Node*> nodes) -> void {
+            auto &&again, const memory::Slice<syntax::Node *> nodes) -> void {
             for (std::size_t index = 0; index < nodes.count; ++index) {
-                const syntax::Node* node = nodes[index];
+                const syntax::Node *node = nodes[index];
                 if (!node) continue;
 
                 // The face a style or a group recorded when the text was
                 // read, and whatever is selected now for text that was never
                 // claimed.
-                const auto* face = static_cast<const render::typography::Font*>(node->face);
+                const auto *face = static_cast<const render::typography::Font *>(node->face);
 
                 switch (node->type) {
                     case syntax::Node::Type::Group:
@@ -435,14 +442,14 @@ namespace latex {
                     case syntax::Node::Type::Text:
                         if (face ? face : selection.text()) {
                             composer.document.append(node->value, face ? *face : *selection.text(), body,
-                                                       static_cast<const render::layout::Node::Color*>(node->tint));
+                                                     static_cast<const render::layout::Node::Color *>(node->tint));
                         }
                         break;
                     case syntax::Node::Type::Expression:
                         if (face ? face : selection.formula()) {
                             composer.document.append(node->expression,
-                                                       face ? *face : *selection.formula(),
-                                                       static_cast<const render::layout::Node::Color*>(node->tint));
+                                                     face ? *face : *selection.formula(),
+                                                     static_cast<const render::layout::Node::Color *>(node->tint));
                         }
                         break;
                     case syntax::Node::Type::Directive:
@@ -450,7 +457,7 @@ namespace latex {
                         // stands on its own or belongs in the line it was
                         // written in.
                         composer.document.append(
-                            static_cast<render::layout::Node*>(node->directive), node->display);
+                            static_cast<render::layout::Node *>(node->directive), node->display);
                         break;
                     case syntax::Node::Type::Paragraph:
                         composer.document.separate();
@@ -473,17 +480,23 @@ namespace latex {
         // LaTeX's `\DocumentMetadata{pdfstandard=A-2b}`.
         {
             using Metadata = render::layout::Document::Metadata;
-            Metadata& about = composer.document.metadata;
-            for (const auto& [key, field] : {std::pair{"hyperref.pdftitle", &Metadata::title},
-                                             std::pair{"hyperref.pdfauthor", &Metadata::author},
-                                             std::pair{"hyperref.pdfsubject", &Metadata::subject},
-                                             std::pair{"hyperref.pdfkeywords", &Metadata::keywords}}) {
-                if (const std::string* value = core.variables.get(key)) about.*field = *value;
+            Metadata &about = composer.document.metadata;
+            for (const auto &[key, field]: {
+                     std::pair{"hyperref.pdftitle", &Metadata::title},
+                     std::pair{"hyperref.pdfauthor", &Metadata::author},
+                     std::pair{"hyperref.pdfsubject", &Metadata::subject},
+                     std::pair{"hyperref.pdfkeywords", &Metadata::keywords}
+                 }) {
+                if (const std::string *value = core.variables.get(key)) about.*field = *value;
             }
-            const std::string* standard = core.variables.get("metadata.pdfstandard");
+            const std::string *standard = core.variables.get("metadata.pdfstandard");
             about.archival = (standard && (standard->contains('a') || standard->contains('A'))) ||
-                             std::ranges::any_of(std::array{"pdfx.a-1b", "pdfx.a-2b", "pdfx.a-2u", "pdfx.a-3b", "pdfx.a-3u"},
-                                                 [&core](const char* key) { return core.variables.get(key) != nullptr; });
+                             std::ranges::any_of(std::array{
+                                                     "pdfx.a-1b", "pdfx.a-2b", "pdfx.a-2u", "pdfx.a-3b", "pdfx.a-3u"
+                                                 },
+                                                 [&core](const char *key) {
+                                                     return core.variables.get(key) != nullptr;
+                                                 });
         }
 
         const auto composed = std::chrono::high_resolution_clock::now();
@@ -493,12 +506,12 @@ namespace latex {
         // engine's, and the rest belongs to the PDF writer and the fonts it
         // embeds.
         const memory::Slice<render::layout::Pager::Page> pages =
-            typesetter.compose(composer.document);
+                typesetter.compose(composer.document);
         const auto laid = std::chrono::high_resolution_clock::now();
 
         if (again) {
-            const render::layout::Document::Configuration& page = composer.document.configuration;
-            for (const render::layout::Pager::Page& sheet : pages) {
+            const render::layout::Document::Configuration &page = composer.document.configuration;
+            for (const render::layout::Pager::Page &sheet: pages) {
                 static_cast<void>(composer.draw(sheet.nodes, sheet.notes, page.left, page.top));
             }
             return run(assets, source, text, destination, pdf, texts, host, report, errors, &composer.anchors);
@@ -520,14 +533,14 @@ namespace latex {
 
         const auto finished = std::chrono::high_resolution_clock::now();
 
-        const auto span = [](const auto& from, const auto& to) {
+        const auto span = [](const auto &from, const auto &to) {
             return std::chrono::duration<double, std::micro>(to - from).count();
         };
 
         if (!report) return !broken;
 
-        std::ostream& out = *report;
-        const render::layout::Document::Configuration& page = composer.document.configuration;
+        std::ostream &out = *report;
+        const render::layout::Document::Configuration &page = composer.document.configuration;
 
         out << std::fixed << std::setprecision(1);
         out << "Pipeline\n";
@@ -543,7 +556,8 @@ namespace latex {
         out << "  Pages                   : " << pages.count << '\n';
         out << "  Page size               : " << page.width << " by " << page.height << " pt\n";
         out << "  Output file             : "
-            << (destination ? destination->string() : pdf ? std::string("(memory)") : std::string("(none)")) << '\n';
+                << (destination ? destination->string() : pdf ? std::string("(memory)") : std::string("(none)")) <<
+                '\n';
         out << '\n';
 
         out << std::setprecision(4);
@@ -571,7 +585,8 @@ namespace latex {
         return name;
     }
 
-    Session::Session(std::filesystem::path assets) : assets(std::move(assets)) {}
+    Session::Session(std::filesystem::path assets) : assets(std::move(assets)) {
+    }
 
     void Session::set(const std::string_view name, const std::string_view value) {
         const auto known = std::ranges::find(host.variables, name, &Variables::value_type::first);
@@ -583,7 +598,7 @@ namespace latex {
     }
 
     void Session::unset(const std::string_view name) {
-        std::erase_if(host.variables, [name](const auto& pair) { return pair.first == name; });
+        std::erase_if(host.variables, [name](const auto &pair) { return pair.first == name; });
     }
 
     void Session::define(Command command) {
@@ -597,7 +612,7 @@ namespace latex {
     }
 
     void Session::forget(const std::string_view name) {
-        std::erase_if(host.commands, [name = bare(name)](const Command& command) { return command.name == name; });
+        std::erase_if(host.commands, [name = bare(name)](const Command &command) { return command.name == name; });
     }
 
     void Session::provide(const std::string_view name, std::string bytes) {
@@ -615,7 +630,7 @@ namespace latex {
         return made;
     }
 
-    std::filesystem::path locate(const std::filesystem::path& binary) {
+    std::filesystem::path locate(const std::filesystem::path &binary) {
         std::error_code failure;
 
         for (std::filesystem::path step = binary.parent_path();
@@ -629,13 +644,13 @@ namespace latex {
     }
 
     bool compose(
-        const std::filesystem::path& assets,
-        const std::filesystem::path& source,
-        const std::filesystem::path& destination,
-        const Host& host,
-        std::ostream* report,
-        std::ostream& errors,
-        std::vector<std::string>* texts
+        const std::filesystem::path &assets,
+        const std::filesystem::path &source,
+        const std::filesystem::path &destination,
+        const Host &host,
+        std::ostream *report,
+        std::ostream &errors,
+        std::vector<std::string> *texts
     ) {
         if (texts) texts->clear();
         return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, texts, host,
@@ -643,16 +658,15 @@ namespace latex {
     }
 
     bool typeset(
-        const std::filesystem::path& assets,
+        const std::filesystem::path &assets,
         const std::string_view document,
-        std::string& pdf,
-        const Host& host,
-        std::ostream& errors,
-        std::vector<std::string>* texts
+        std::string &pdf,
+        const Host &host,
+        std::ostream &errors,
+        std::vector<std::string> *texts
     ) {
         pdf.clear();
         if (texts) texts->clear();
         return run(assets, nullptr, document, nullptr, &pdf, texts, host, nullptr, errors);
     }
-
 }

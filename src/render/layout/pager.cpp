@@ -33,39 +33,39 @@
 #include <vector>
 
 namespace render::layout {
-
     /// @brief Every footnote a block calls, however deep inside it the call is.
     /// @param node  The block.
     /// @param notes Where the notes go, in order; appended to.
     /// @complexity O(n) in the block's nodes.
-    static void collect(const Node* node, std::vector<const Node*>& notes) {
+    static void collect(const Node *node, std::vector<const Node *> &notes) {
         if (!node) return;
         if (node->type == Node::Type::Directive) {
-            const Node::Directive& order = node->directive();
+            const Node::Directive &order = node->directive();
             if (order.command == Node::Directive::Command::Note && order.note) notes.push_back(order.note);
             return;
         }
         if (node->type != Node::Type::Box) return;
-        for (const Node* child : node->box().list) collect(child, notes);
+        for (const Node *child: node->box().list) collect(child, notes);
     }
 
-    Pager::Pager(memory::Arena& arena) noexcept : arena(arena) {}
+    Pager::Pager(memory::Arena &arena) noexcept : arena(arena) {
+    }
 
-    memory::Slice<Pager::Page> Pager::paginate(const Node* head, const Context& context) const {
+    memory::Slice<Pager::Page> Pager::paginate(const Node *head, const Context &context) const {
         if (!head || head->type != Node::Type::Box) return {};
 
-        const memory::Slice<Node*>& column = head->box().list;
+        const memory::Slice<Node *> &column = head->box().list;
         const std::size_t total = column.size();
         if (total == 0 || context.height <= 0.0f) return {};
 
         using Command = Node::Directive::Command;
         using Directive = Node::Directive;
-        const Placement& rules = context.placement;
-        const auto space = [](const Node* block) {
+        const Placement &rules = context.placement;
+        const auto space = [](const Node *block) {
             return block->type == Node::Type::Glue || block->type == Node::Type::Kern;
         };
         const auto kern = [this](const float amount) {
-            auto* made = arena.compose<Node>(Node::Type::Kern);
+            auto *made = arena.compose<Node>(Node::Type::Kern);
             made->kern({.width = amount});
             return made;
         };
@@ -77,13 +77,13 @@ namespace render::layout {
 
         /// @brief A float: what it sets, and where it may go.
         struct Float {
-            std::vector<Node*> blocks{};           ///< Its blocks, its own space above and below left off.
-            float span{0.0f};                      ///< How tall they stand.
-            std::vector<const Node*> notes{};      ///< The footnotes it calls.
-            std::uint8_t place{0};                 ///< Directive::Place bits.
-            std::size_t kind{0};                   ///< Its kind, which keeps its order among its kind.
-            bool across{false};                    ///< Across the columns of a page of several.
-            std::size_t written{0};                ///< Where it came among all the floats.
+            std::vector<Node *> blocks{}; ///< Its blocks, its own space above and below left off.
+            float span{0.0f}; ///< How tall they stand.
+            std::vector<const Node *> notes{}; ///< The footnotes it calls.
+            std::uint8_t place{0}; ///< Directive::Place bits.
+            std::size_t kind{0}; ///< Its kind, which keeps its order among its kind.
+            bool across{false}; ///< Across the columns of a page of several.
+            std::size_t written{0}; ///< Where it came among all the floats.
         };
 
         // Pages grow as they are made; a float that waits can add one.
@@ -92,26 +92,26 @@ namespace render::layout {
         // The page being made: what is set on it above the columns being
         // filled -- a region already closed, a title or floats across the
         // columns under it -- and how tall that stands.
-        std::vector<Node*> above;
+        std::vector<Node *> above;
         float used = 0.0f;
 
         // The columns being filled: how many stand side by side, those of
         // them already full and the tallest of those, which a footnote added
         // later must still leave room for, and the one being filled now.
         std::size_t count = std::max<std::size_t>(context.columns, 1);
-        std::vector<std::vector<Node*>> full;
+        std::vector<std::vector<Node *> > full;
         float tallest = 0.0f;
-        std::vector<Node*> filling;
+        std::vector<Node *> filling;
         float height = 0.0f;
 
         // The footnotes the page being made calls, and the room they take
         // at its foot -- the notes themselves, the gap between them, and the
         // space and rule above the first.
-        std::vector<const Node*> notes;
+        std::vector<const Node *> notes;
         float reserved = 0.0f;
-        const auto room = [&context](const std::vector<const Node*>& added, const bool first) {
+        const auto room = [&context](const std::vector<const Node *> &added, const bool first) {
             float taken = 0.0f;
-            for (const Node* note : added) taken += Line::extent(note) + context.between;
+            for (const Node *note: added) taken += Line::extent(note) + context.between;
             return taken + (first && !added.empty() ? context.separation : 0.0f);
         };
 
@@ -139,8 +139,8 @@ namespace render::layout {
         // Whether a float of this kind written before this one waits in a
         // list, which keeps this one waiting too: LaTeX sets a kind's floats
         // in the order written, across the columns or in one.
-        const auto before = [](const std::deque<Float>& list, const Float& item) {
-            return std::ranges::any_of(list, [&item](const Float& other) {
+        const auto before = [](const std::deque<Float> &list, const Float &item) {
+            return std::ranges::any_of(list, [&item](const Float &other) {
                 return other.kind == item.kind && other.written < item.written;
             });
         };
@@ -160,17 +160,17 @@ namespace render::layout {
         // of their height upward, each time by the least that keeps one more
         // block in a column, until they fit. Space at the head of a column
         // after the first is dropped, as at a page's.
-        const auto balance = [&](const std::vector<Node*>& blocks) {
+        const auto balance = [&](const std::vector<Node *> &blocks) {
             float tall = 0.0f;
-            for (const Node* block : blocks) tall += Line::extent(block);
+            for (const Node *block: blocks) tall += Line::extent(block);
             tall /= static_cast<float>(count);
 
-            std::vector<std::vector<Node*>> set;
+            std::vector<std::vector<Node *> > set;
             while (true) {
                 set.assign(1, {});
                 float filled = 0.0f;
                 float least = std::numeric_limits<float>::infinity();
-                for (Node* block : blocks) {
+                for (Node *block: blocks) {
                     const float span = Line::extent(block);
                     if (!set.back().empty() && filled + span > tall + 0.01f) {
                         least = std::min(least, filled + span - tall);
@@ -193,7 +193,7 @@ namespace render::layout {
         // stretches between them.
         const auto assemble = [&](const bool done) {
             if (heads.empty() && feet.empty()) return;
-            std::vector<Node*> set;
+            std::vector<Node *> set;
             for (std::size_t index = 0; index < heads.size(); ++index) {
                 if (index > 0) set.push_back(kern(rules.apart));
                 set.insert(set.end(), heads[index].blocks.begin(), heads[index].blocks.end());
@@ -201,7 +201,9 @@ namespace render::layout {
             if (!heads.empty() && !filling.empty()) set.push_back(kern(rules.clearance));
             set.insert(set.end(), filling.begin(), filling.end());
             if (!feet.empty() && !set.empty()) {
-                const float free = done ? std::max(context.height - used - reserved - crown - height - sole, 0.0f) : 0.0f;
+                const float free = done
+                                       ? std::max(context.height - used - reserved - crown - height - sole, 0.0f)
+                                       : 0.0f;
                 set.push_back(kern(rules.clearance + free));
             }
             for (std::size_t index = 0; index < feet.size(); ++index) {
@@ -210,7 +212,7 @@ namespace render::layout {
             }
             filling = std::move(set);
             height = 0.0f;
-            for (const Node* block : filling) height += Line::extent(block);
+            for (const Node *block: filling) height += Line::extent(block);
             heads.clear();
             feet.clear();
             crown = 0.0f;
@@ -229,37 +231,38 @@ namespace render::layout {
                 above.insert(above.end(), filling.begin(), filling.end());
                 used += height;
             } else {
-                std::vector<std::vector<Node*>> set = std::move(full);
+                std::vector<std::vector<Node *> > set = std::move(full);
                 set.push_back(std::move(filling));
                 if (level) {
-                    std::vector<Node*> blocks;
-                    for (const std::vector<Node*>& blocked : set) blocks.insert(blocks.end(), blocked.begin(), blocked.end());
+                    std::vector<Node *> blocks;
+                    for (const std::vector<Node *> &blocked: set) blocks.insert(
+                        blocks.end(), blocked.begin(), blocked.end());
                     set = balance(blocks);
                 }
 
-                if (std::ranges::any_of(set, [](const std::vector<Node*>& blocked) { return !blocked.empty(); })) {
+                if (std::ranges::any_of(set, [](const std::vector<Node *> &blocked) { return !blocked.empty(); })) {
                     const float share = (context.width - context.gap * static_cast<float>(count - 1)) /
                                         static_cast<float>(count);
-                    const memory::Slice<Node*> row = arena.allocate<Node*>(set.size() * 2);
+                    const memory::Slice<Node *> row = arena.allocate<Node *>(set.size() * 2);
                     std::size_t placed = 0;
-                    for (std::vector<Node*>& blocked : set) {
+                    for (std::vector<Node *> &blocked: set) {
                         if (placed > 0) {
-                            auto* gap = arena.compose<Node>(Node::Type::Kern);
+                            auto *gap = arena.compose<Node>(Node::Type::Kern);
                             gap->kern({.width = context.gap});
                             row[placed++] = gap;
                         }
-                        Node* box = Line::vertical(arena, memory::Slice{blocked.data(), blocked.size()}, 0.0f);
+                        Node *box = Line::vertical(arena, memory::Slice{blocked.data(), blocked.size()}, 0.0f);
                         Node::Box shape = box->box();
                         shape.width = share;
                         box->box(shape);
                         row[placed++] = box;
-                        for (Node* block : blocked) {
+                        for (Node *block: blocked) {
                             if (block->type == Node::Type::Directive && block->directive().command == Command::Page) {
                                 above.push_back(block);
                             }
                         }
                     }
-                    Node* across = Line::horizontal(arena, memory::Slice{row.data, placed}, 0.0f);
+                    Node *across = Line::horizontal(arena, memory::Slice{row.data, placed}, 0.0f);
                     above.push_back(across);
                     used += Line::extent(across);
                 }
@@ -275,9 +278,9 @@ namespace render::layout {
             // A page of nothing but instructions and space -- a numbering
             // changed, an anchor, between two breaks -- is no page, as TeX
             // ships none: its instructions go to the next.
-            if (std::ranges::none_of(above, [&](const Node* block) {
-                    return block->type != Node::Type::Directive && !space(block);
-                })) {
+            if (std::ranges::none_of(above, [&](const Node *block) {
+                return block->type != Node::Type::Directive && !space(block);
+            })) {
                 std::erase_if(above, space);
                 used = 0.0f;
                 return;
@@ -288,7 +291,7 @@ namespace render::layout {
                 // the highest order on it, as TeX sets a page's glue.
                 Node::Order order = Node::Order::Normal;
                 float weight = 0.0f;
-                for (const Node* block : above) {
+                for (const Node *block: above) {
                     if (block->type != Node::Type::Glue || block->glue().stretch <= 0.0f) continue;
                     if (block->glue().expand > order) {
                         order = block->glue().expand;
@@ -298,7 +301,7 @@ namespace render::layout {
                 }
                 if (order != Node::Order::Normal && weight > 0.0f) {
                     const float room = std::max(context.height - used - reserved, 0.0f);
-                    for (Node*& block : above) {
+                    for (Node *&block: above) {
                         if (block->type != Node::Type::Glue || block->glue().expand != order) continue;
                         Node::Glue grown = block->glue();
                         grown.width += room * grown.stretch / weight;
@@ -308,9 +311,9 @@ namespace render::layout {
                     used += room;
                 }
 
-                const memory::Slice<Node*> nodes = arena.allocate<Node*>(above.size());
+                const memory::Slice<Node *> nodes = arena.allocate<Node *>(above.size());
                 std::ranges::copy(above, nodes.begin());
-                const memory::Slice<const Node*> called = arena.allocate<const Node*>(notes.size());
+                const memory::Slice<const Node *> called = arena.allocate<const Node *>(notes.size());
                 std::ranges::copy(notes, called.begin());
 
                 // How short the page fell, cubed as line badness is, so a page
@@ -334,7 +337,7 @@ namespace render::layout {
         };
 
         // A float's notes, called on the page it lands on.
-        const auto call = [&](const Float& item) {
+        const auto call = [&](const Float &item) {
             reserved += room(item.notes, notes.empty());
             notes.insert(notes.end(), item.notes.begin(), item.notes.end());
         };
@@ -342,12 +345,12 @@ namespace render::layout {
         // Floats alone, as a page of floats sets them: the room they leave
         // shared out a part above them, two between each two with \\@fpsep
         // besides, and a part below.
-        const auto alone = [&](const std::vector<Float>& set, const float tall) {
+        const auto alone = [&](const std::vector<Float> &set, const float tall) {
             float taken = 0.0f;
-            for (const Float& item : set) taken += item.span;
+            for (const Float &item: set) taken += item.span;
             taken += leaf * static_cast<float>(set.size() - 1);
             const float part = std::max(tall - taken, 0.0f) / (2.0f * static_cast<float>(set.size()));
-            std::vector<Node*> nodes;
+            std::vector<Node *> nodes;
             nodes.push_back(kern(part));
             for (std::size_t index = 0; index < set.size(); ++index) {
                 if (index > 0) nodes.push_back(kern(leaf + 2.0f * part));
@@ -360,13 +363,13 @@ namespace render::layout {
         // this height -- in order, at least the first when forced, a kind
         // whose float does not fit, or waits earlier in the other list,
         // holding back its later ones -- and how tall they stand together.
-        const auto fitting = [&](const std::deque<Float>& list, const std::deque<Float>& other, const float tall,
-                                const bool forced) {
+        const auto fitting = [&](const std::deque<Float> &list, const std::deque<Float> &other, const float tall,
+                                 const bool forced) {
             std::vector<std::size_t> taken;
             std::vector<std::size_t> held;
             float filled = 0.0f;
             for (std::size_t index = 0; index < list.size(); ++index) {
-                const Float& item = list[index];
+                const Float &item = list[index];
                 if (std::ranges::contains(held, item.kind) || before(other, item)) continue;
                 const float added = item.span + (taken.empty() ? 0.0f : leaf);
                 if ((forced || (item.place & Directive::Alone)) && filled + added <= tall) {
@@ -393,10 +396,11 @@ namespace render::layout {
                 if (taken.empty() || (!forced && filled < rules.sheet * context.height)) break;
                 if (!above.empty()) seal();
                 std::vector<Float> set;
-                for (const std::size_t index : taken) set.push_back(std::move(spanning[index]));
-                for (auto index = taken.rbegin(); index != taken.rend(); ++index) spanning.erase(spanning.begin() + *index);
-                for (Node* node : alone(set, context.height)) above.push_back(node);
-                for (const Float& item : set) call(item);
+                for (const std::size_t index: taken) set.push_back(std::move(spanning[index]));
+                for (auto index = taken.rbegin(); index != taken.rend(); ++index) spanning.erase(
+                    spanning.begin() + *index);
+                for (Node *node: alone(set, context.height)) above.push_back(node);
+                for (const Float &item: set) call(item);
                 used = context.height;
                 seal();
             }
@@ -404,7 +408,7 @@ namespace render::layout {
             std::size_t stacked = 0;
             float taken = 0.0f;
             while (!spanning.empty()) {
-                const Float& item = spanning.front();
+                const Float &item = spanning.front();
                 const bool insisted = item.place & Directive::Force;
                 if (!(item.place & Directive::Top) || before(waiting, item)) break;
                 if (!insisted && (stacked >= rules.spans || taken + item.span > rules.spanning * context.height)) break;
@@ -435,7 +439,7 @@ namespace render::layout {
 
         // What the column being filled has left, once the notes a block
         // would call are counted.
-        const auto left = [&](const std::vector<const Node*>& called) {
+        const auto left = [&](const std::vector<const Node *> &called) {
             return context.height - used - reserved - room(called, notes.empty()) - crown - sole;
         };
         // The text the column must keep beside its floats: \\textfraction of
@@ -446,7 +450,7 @@ namespace render::layout {
         // Whether a float of this kind waits already, which keeps the next
         // waiting too.
         const auto waits = [&](const std::size_t kind) {
-            const auto same = [kind](const Float& other) { return other.kind == kind; };
+            const auto same = [kind](const Float &other) { return other.kind == kind; };
             return std::ranges::any_of(waiting, same) || std::ranges::any_of(spanning, same);
         };
 
@@ -454,7 +458,7 @@ namespace render::layout {
         // there: `t` allowed, fewer than topnumber there and totalnumber in
         // the column, within what is left of \\topfraction, nothing of its
         // kind set below it, and the column's text still fitting beside it.
-        const auto crowned = [&](Float& item) {
+        const auto crowned = [&](Float &item) {
             const bool forced = item.place & Directive::Force;
             if (!(item.place & Directive::Top) || std::ranges::contains(below, item.kind)) return false;
             if (!forced && (heads.size() >= rules.heads || within >= rules.most || item.span > headroom)) return false;
@@ -470,7 +474,7 @@ namespace render::layout {
 
         // A float at the foot of the column, on the same terms with `b`,
         // bottomnumber and \\bottomfraction.
-        const auto footed = [&](Float& item) {
+        const auto footed = [&](Float &item) {
             const bool forced = item.place & Directive::Force;
             if (!(item.place & Directive::Bottom)) return false;
             if (!forced && (feet.size() >= rules.feet || within >= rules.most || item.span > footroom)) return false;
@@ -487,7 +491,7 @@ namespace render::layout {
 
         // A float in the text where it is written, \\intextsep above and
         // below it, on the same terms with `h`.
-        const auto amid = [&](Float& item) {
+        const auto amid = [&](Float &item) {
             const bool forced = item.place & Directive::Force;
             if (!(item.place & Directive::Here) || (!forced && within >= rules.most)) return false;
             if (text(forced) + item.span + 2.0f * rules.amid > left(item.notes)) return false;
@@ -504,7 +508,7 @@ namespace render::layout {
         // On to the next column: beside this one while the page has room
         // for another, or at the head of the next page -- and the column
         // opens with the floats that waited for it.
-        std::function<void(bool)> turn;
+        std::function < void(bool) > turn;
         const std::function<void(bool)> settle = [&](const bool forced) {
             // A column of floats alone, when those waiting fill enough of it
             // -- \\floatpagefraction -- or the break is forced.
@@ -513,11 +517,12 @@ namespace render::layout {
                 const auto [taken, filled] = fitting(waiting, spanning, tall, forced);
                 if (!taken.empty() && (forced || filled >= rules.page * tall)) {
                     std::vector<Float> set;
-                    for (const std::size_t index : taken) set.push_back(std::move(waiting[index]));
-                    for (auto index = taken.rbegin(); index != taken.rend(); ++index) waiting.erase(waiting.begin() + *index);
+                    for (const std::size_t index: taken) set.push_back(std::move(waiting[index]));
+                    for (auto index = taken.rbegin(); index != taken.rend(); ++index) waiting.erase(
+                        waiting.begin() + *index);
                     filling = alone(set, tall);
                     height = tall;
-                    for (const Float& item : set) call(item);
+                    for (const Float &item: set) call(item);
                     turn(forced);
                     return;
                 }
@@ -565,24 +570,24 @@ namespace render::layout {
         // Whether a block may start the column being filled: space may not,
         // except the first column's on the first page, or under something
         // already set higher on the page.
-        const auto dropped = [&](const Node* block) {
+        const auto dropped = [&](const Node *block) {
             return filling.empty() && space(block) && (!full.empty() || (above.empty() && !pages.empty()));
         };
 
         // A long table being set: the rows each column it runs on into opens
         // with, the rows each column it breaks out of closes with, and how
         // many of its rows the column being filled holds.
-        Node* header = nullptr;
-        Node* footer = nullptr;
+        Node *header = nullptr;
+        Node *footer = nullptr;
         std::size_t rows = 0;
 
-        std::vector<const Node*> added;
+        std::vector<const Node *> added;
         for (std::size_t index = 0; index < total; ++index) {
-            Node* block = column[index];
+            Node *block = column[index];
             if (!block) continue;
 
             if (block->type == Node::Type::Directive) {
-                const Node::Directive& order = block->directive();
+                const Node::Directive &order = block->directive();
 
                 // A long table's rows begin, or end.
                 if (order.command == Command::Repeat) {
@@ -617,7 +622,7 @@ namespace render::layout {
                     std::size_t last = total - 1;
                     std::size_t depth = 0;
                     for (std::size_t scan = index + 1; scan < total; ++scan) {
-                        const Node* mark = column[scan];
+                        const Node *mark = column[scan];
                         if (!mark || mark->type != Node::Type::Directive) continue;
                         if (mark->directive().command == Command::Hold) ++depth;
                         if (mark->directive().command == Command::Release) {
@@ -631,7 +636,7 @@ namespace render::layout {
                     std::size_t first = last + 1;
                     std::size_t final = index;
                     for (std::size_t scan = index; scan <= last; ++scan) {
-                        const Node* inner = column[scan];
+                        const Node *inner = column[scan];
                         if (inner && !space(inner) && inner->type != Node::Type::Directive) {
                             first = std::min(first, scan);
                             final = scan;
@@ -642,7 +647,7 @@ namespace render::layout {
                         item.place |= Directive::Top | Directive::Bottom | Directive::Alone;
                     }
                     for (std::size_t scan = index; scan <= last; ++scan) {
-                        Node* inner = column[scan];
+                        Node *inner = column[scan];
                         if (!inner || (space(inner) && (scan < first || scan > final))) continue;
                         item.blocks.push_back(inner);
                         item.span += Line::extent(inner);
@@ -748,5 +753,4 @@ namespace render::layout {
         std::ranges::copy(pages, made.begin());
         return made;
     }
-
 }

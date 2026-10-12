@@ -20,10 +20,9 @@
 /// library in `protocols/ffi.hpp` calls the same path, which is why it can make
 /// the same PDF from the same document without running a second program.
 namespace latex {
-
     /// @brief Values handed to a document before it runs, name then text, as
     ///        `\\variable{name}` reads them.
-    using Variables = std::vector<std::pair<std::string, std::string>>;
+    using Variables = std::vector<std::pair<std::string, std::string> >;
 
     /// @brief A control sequence the calling program implements itself.
     ///
@@ -39,8 +38,8 @@ namespace latex {
     /// by the account number the page is about, a figure computed from a
     /// database the engine never sees.
     struct Command {
-        std::string name{};     ///< Without the backslash, as `balance`.
-        std::size_t arity{0};   ///< How many brace groups it reads; at most nine.
+        std::string name{}; ///< Without the backslash, as `balance`.
+        std::size_t arity{0}; ///< How many brace groups it reads; at most nine.
 
         /// Called with the arguments' text; returns what the command stands for.
         std::function<std::string(std::span<const std::string>)> handler{};
@@ -48,9 +47,9 @@ namespace latex {
 
     /// @brief Everything a calling program hands a document besides its text.
     struct Host {
-        Variables variables{};                    ///< Read with `\\variable`.
-        std::vector<Command> commands{};          ///< Implemented by the program.
-        syntax::primitives::Files files{};        ///< Packages, inputs and pictures, from memory.
+        Variables variables{}; ///< Read with `\\variable`.
+        std::vector<Command> commands{}; ///< Implemented by the program.
+        syntax::primitives::Files files{}; ///< Packages, inputs and pictures, from memory.
 
         /// Folders read after the document's own for what it inputs --
         /// `\\input`, `\\include`, `\\usepackage`, `\\includegraphics`, a
@@ -129,10 +128,10 @@ namespace latex {
         ///         #pdf is empty when none could be made at all.
         bool typeset(std::string_view document);
 
-        std::filesystem::path assets{};    ///< The assets directory the session reads.
-        Host host{};                       ///< Everything the next document will be handed.
-        std::string pdf{};                 ///< The last PDF made, or nothing when none could be.
-        std::string error{};               ///< What went wrong the last time, one error per line; empty when nothing did.
+        std::filesystem::path assets{}; ///< The assets directory the session reads.
+        Host host{}; ///< Everything the next document will be handed.
+        std::string pdf{}; ///< The last PDF made, or nothing when none could be.
+        std::string error{}; ///< What went wrong the last time, one error per line; empty when nothing did.
 
         /// Each page of the last PDF made, as its text: what a reader copying
         /// it would get, a line of the page to a line.
@@ -152,7 +151,7 @@ namespace latex {
     /// @param binary Path to the running executable or library.
     /// @return The assets directory, or an empty path when none was found.
     /// @complexity O(d) in the depth of the binary's path.
-    [[nodiscard]] std::filesystem::path locate(const std::filesystem::path& binary);
+    [[nodiscard]] std::filesystem::path locate(const std::filesystem::path &binary);
 
     /// @brief Composes one document from disk into a PDF on disk, start to
     ///        finish, with whatever the command line hands it.
@@ -171,13 +170,13 @@ namespace latex {
     ///                    for a draft, which draws no page.
     /// @return True when the document compiled with nothing left broken.
     [[nodiscard]] bool compose(
-        const std::filesystem::path& assets,
-        const std::filesystem::path& source,
-        const std::filesystem::path& destination,
-        const Host& host,
-        std::ostream* report,
-        std::ostream& errors,
-        std::vector<std::string>* texts = nullptr
+        const std::filesystem::path &assets,
+        const std::filesystem::path &source,
+        const std::filesystem::path &destination,
+        const Host &host,
+        std::ostream *report,
+        std::ostream &errors,
+        std::vector<std::string> *texts = nullptr
     );
 
     /// @brief Composes a document held in memory into a PDF held in memory,
@@ -200,12 +199,11 @@ namespace latex {
     /// @return True when the document compiled with nothing left broken. A
     ///         PDF may still have been made when some part of it was not.
     [[nodiscard]] bool typeset(
-        const std::filesystem::path& assets,
+        const std::filesystem::path &assets,
         std::string_view document,
-        std::string& pdf,
-        const Host& host,
-        std::ostream& errors,
-        std::vector<std::string>* texts = nullptr
+        std::string &pdf,
+        const Host &host,
+        std::ostream &errors,
+        std::vector<std::string> *texts = nullptr
     );
-
 }

@@ -4,7 +4,6 @@
 #include <string_view>
 
 namespace syntax::semantics {
-
     /// @brief What kind of open group a scope is, for diagnostics.
     ///
     /// Scope used to be a stack of its own, opened and closed alongside
@@ -17,12 +16,12 @@ namespace syntax::semantics {
     public:
         /// @brief Which kind of group is open.
         enum class Type : std::uint8_t {
-            Group,       ///< A brace group or `\\begingroup ... \\endgroup`.
+            Group, ///< A brace group or `\\begingroup ... \\endgroup`.
             Environment, ///< `\\begin{name} ... \\end{name}`.
-            Equations,   ///< A formula: `$...$`, `$$...$$`, `\\(...\\)`, `\\[...\\]`.
-            Box,         ///< `\\hbox`, `\\vbox`, `\\vtop`.
+            Equations, ///< A formula: `$...$`, `$$...$$`, `\\(...\\)`, `\\[...\\]`.
+            Box, ///< `\\hbox`, `\\vbox`, `\\vtop`.
             Conditional, ///< `\\if`, `\\ifx`, `\\else`, `\\fi`.
-            Alignment    ///< `\\halign`, `\\valign`, a table.
+            Alignment ///< `\\halign`, `\\valign`, a table.
         };
 
         /// @brief One name per Type, for a traceback message.
@@ -31,5 +30,4 @@ namespace syntax::semantics {
         /// @complexity O(1).
         [[nodiscard]] static std::string_view name(Type type) noexcept;
     };
-
 }

@@ -24,7 +24,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief The contents of the brace group at a position in a preamble, and
     ///        the position after it -- or the one character there, when no
     ///        group is, as TeX reads an undelimited argument.
@@ -32,7 +31,7 @@ namespace render::primitives {
     /// @param at   Where the group starts; moved past it.
     /// @return What the group holds.
     /// @complexity O(n) in the group's length.
-    static std::string_view enclosed(const std::string_view text, std::size_t& at) {
+    static std::string_view enclosed(const std::string_view text, std::size_t &at) {
         while (at < text.size() && text[at] == ' ') ++at;
         if (at >= text.size()) return {};
         if (text[at] != '{') return text.substr(at++, 1);
@@ -58,11 +57,11 @@ namespace render::primitives {
     ///                preamble that repeats itself cannot run forever.
     /// @param customs The column types \\newcolumntype made, or none.
     /// @complexity O(n) in the preamble's expanded length.
-    static void spell(const std::string_view text, std::vector<Tables::Column>& columns, const int depth,
-                      const Tables::Customs* customs) {
-        int rules = 0;        // `|` waiting for the next column
-        bool padded = true;   // whether the next column keeps its left padding
-        std::string head;     // `>{...}` waiting for the next column
+    static void spell(const std::string_view text, std::vector<Tables::Column> &columns, const int depth,
+                      const Tables::Customs *customs) {
+        int rules = 0; // `|` waiting for the next column
+        bool padded = true; // whether the next column keeps its left padding
+        std::string head; // `>{...}` waiting for the next column
         std::size_t at = 0;
 
         const auto push = [&](Tables::Column column) {
@@ -78,19 +77,24 @@ namespace render::primitives {
         while (at < text.size()) {
             const char letter = text[at++];
             switch (letter) {
-                case 'l': case 'c': case 'r':
+                case 'l':
+                case 'c':
+                case 'r':
                     push(Tables::Column{.align = letter});
                     break;
                 // siunitx's number and unit columns, centred as their numbers
                 // would be; their options, `S[table-format=2.2]`, read and let go.
-                case 'S': case 's':
+                case 'S':
+                case 's':
                     if (at < text.size() && text[at] == '[') {
                         const std::size_t end = text.find(']', at);
                         at = end == std::string_view::npos ? text.size() : end + 1;
                     }
                     push(Tables::Column{.align = 'c'});
                     break;
-                case 'p': case 'm': case 'b':
+                case 'p':
+                case 'm':
+                case 'b':
                     push(Tables::Column{.align = 'l', .width = std::string(enclosed(text, at))});
                     break;
                 // tabularx's X, and tabu's with its options, `X[c]`, `X[2,r]`:
@@ -100,7 +104,7 @@ namespace render::primitives {
                     char side = 'l';
                     if (at < text.size() && text[at] == '[') {
                         const std::size_t end = std::min(text.find(']', at), text.size());
-                        for (const char option : text.substr(at + 1, end - at - 1)) {
+                        for (const char option: text.substr(at + 1, end - at - 1)) {
                             if (option == 'c' || option == 'r' || option == 'C' || option == 'R') {
                                 side = static_cast<char>(option | 0x20);
                             }
@@ -124,7 +128,8 @@ namespace render::primitives {
                 case '>':
                     head += enclosed(text, at);
                     break;
-                case '!': case '<':
+                case '!':
+                case '<':
                     static_cast<void>(enclosed(text, at));
                     break;
                 case '*': {
@@ -146,8 +151,8 @@ namespace render::primitives {
                     // A column type \newcolumntype made: its preamble, its
                     // arguments put in, read in its place.
                     if (const auto code = static_cast<unsigned char>(letter); customs && code < customs->size() &&
-                        !(*customs)[code].body.empty()) {
-                        const Tables::Custom& made = (*customs)[code];
+                                                                              !(*customs)[code].body.empty()) {
+                        const Tables::Custom &made = (*customs)[code];
                         std::string expanded = made.body;
                         for (int index = 1; index <= made.count; ++index) {
                             const std::string argument(enclosed(text, at));
@@ -172,8 +177,10 @@ namespace render::primitives {
                         push(Tables::Column{.align = 'c'});
                     } else if (letter == 'w' || letter == 'W') {
                         const std::string_view align = enclosed(text, at);
-                        push(Tables::Column{.align = align.empty() ? 'l' : align.front(),
-                                            .width = std::string(enclosed(text, at))});
+                        push(Tables::Column{
+                            .align = align.empty() ? 'l' : align.front(),
+                            .width = std::string(enclosed(text, at))
+                        });
                     }
                     break;
                 }
@@ -186,11 +193,11 @@ namespace render::primitives {
         }
     }
 
-    std::vector<Tables::Column> Tables::preamble(const std::vector<syntax::Token>& tokens, const Customs* customs) {
+    std::vector<Tables::Column> Tables::preamble(const std::vector<syntax::Token> &tokens, const Customs *customs) {
         // Written back out as text, a control word keeping the space that
         // ended it, so its letters cannot run into a column letter after it.
         std::string text;
-        for (const syntax::Token& token : tokens) {
+        for (const syntax::Token &token: tokens) {
             text += token.text;
             if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
         }
@@ -200,15 +207,15 @@ namespace render::primitives {
         return columns;
     }
 
-    Tables::Tables(syntax::Lexicon& lexicon) noexcept {
+    Tables::Tables(syntax::Lexicon &lexicon) noexcept {
         row = lexicon.intern("\\cr");
         column = lexicon.intern("&");
     }
 
-    void Tables::operator()(syntax::Parser& parser, Context& context) const {
-        parser.bind("\\halign", [this, &context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+    void Tables::operator()(syntax::Parser &parser, Context &context) const {
+        parser.bind("\\halign", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // A table is written across several lines, so the blanks between
@@ -225,14 +232,14 @@ namespace render::primitives {
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 tracebacks.emplace_back(syntax::Traceback::Type::Group, origin,
-                                         "\\halign needs a brace group for its rows");
+                                        "\\halign needs a brace group for its rows");
                 return directive(arena, nullptr, origin);
             }
 
             mouth.push(syntax::semantics::Scope::Type::Alignment);
 
-            std::vector<std::vector<layout::Node*>> grid;
-            std::vector<layout::Node*> line;
+            std::vector<std::vector<layout::Node *> > grid;
+            std::vector<layout::Node *> line;
             bool closed = false;
 
             while (grid.size() < limit) {
@@ -245,16 +252,16 @@ namespace render::primitives {
                     mouth.stream().inject(std::span{&brace, 1});
                 }
 
-                const memory::Slice<syntax::Node*> children = parser.parse('}');
+                const memory::Slice<syntax::Node *> children = parser.parse('}');
 
-                std::vector<layout::Node*> nodes;
+                std::vector<layout::Node *> nodes;
                 nodes.reserve(children.count);
                 for (std::size_t index = 0; index < children.count; ++index) {
                     compose(nodes, children[index], context);
                 }
 
-                const memory::Slice<layout::Node*> contents =
-                    arena.allocate<layout::Node*>(nodes.size());
+                const memory::Slice<layout::Node *> contents =
+                        arena.allocate<layout::Node *>(nodes.size());
                 for (std::size_t index = 0; index < nodes.size(); ++index) {
                     contents[index] = nodes[index];
                 }
@@ -290,34 +297,34 @@ namespace render::primitives {
 
             if (!closed) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Group, origin,
-                                         "\\halign ran past the end of its rows");
+                                        "\\halign ran past the end of its rows");
             }
             if (grid.empty()) return directive(arena, nullptr, origin, true);
 
             // Pass one's result: how wide each column has to be.
             std::size_t columns = 0;
-            for (const auto& cells : grid) columns = std::max(columns, cells.size());
+            for (const auto &cells: grid) columns = std::max(columns, cells.size());
 
             const memory::Slice<float> widths = arena.allocate<float>(columns);
             for (std::size_t index = 0; index < columns; ++index) widths[index] = 0.0f;
 
-            for (const auto& cells : grid) {
+            for (const auto &cells: grid) {
                 for (std::size_t index = 0; index < cells.size(); ++index) {
                     if (cells[index]) widths[index] = std::max(widths[index], cells[index]->box().width);
                 }
             }
 
             // Pass two: each cell followed by a kern out to its column's width.
-            const memory::Slice<layout::Node*> rows = arena.allocate<layout::Node*>(grid.size());
+            const memory::Slice<layout::Node *> rows = arena.allocate<layout::Node *>(grid.size());
 
             for (std::size_t outer = 0; outer < grid.size(); ++outer) {
-                const std::vector<layout::Node*>& cells = grid[outer];
-                const memory::Slice<layout::Node*> flat =
-                    arena.allocate<layout::Node*>(cells.size() * 2);
+                const std::vector<layout::Node *> &cells = grid[outer];
+                const memory::Slice<layout::Node *> flat =
+                        arena.allocate<layout::Node *>(cells.size() * 2);
                 std::size_t filled = 0;
 
                 for (std::size_t index = 0; index < cells.size(); ++index) {
-                    layout::Node* cell = cells[index];
+                    layout::Node *cell = cells[index];
                     flat[filled++] = cell;
 
                     // Out to the column's width, plus the gap to the next one.
@@ -327,7 +334,7 @@ namespace render::primitives {
                     const float slack = widths[index] - taken +
                                         (index + 1 < cells.size() ? gutter : 0.0f);
                     if (slack > 0.0f) {
-                        auto* pad = arena.compose<layout::Node>();
+                        auto *pad = arena.compose<layout::Node>();
                         pad->kern({.width = slack});
                         flat[filled++] = pad;
                     }
@@ -346,30 +353,32 @@ namespace render::primitives {
         // and tabular* their width first -- and hands over to `\tabular`,
         // which reads the rows as far as the marker `\end` leaves.
         struct Kind {
-            std::string_view name;   ///< The block.
-            bool sized;              ///< True when a width comes before the preamble.
-            bool breakable;          ///< True when a page may end between its rows.
+            std::string_view name; ///< The block.
+            bool sized; ///< True when a width comes before the preamble.
+            bool breakable; ///< True when a page may end between its rows.
         };
         // nicematrix's and tabularray's tables are read as the tabular they
         // write out, their own keys aside.
-        static constexpr std::array<Kind, 14> kinds{{
-            {"tabular", false, false}, {"tabular*", true, false}, {"tabularx", true, false},
-            {"longtable", false, true}, {"supertabular", false, true}, {"tabulary", true, false},
-            {"xtabular", false, true}, {"longtable*", false, true}, {"NiceTabular", false, false},
-            {"NiceTabular*", true, false}, {"NiceTabularX", true, false}, {"tblr", false, false},
-            {"longtblr", false, true}, {"xltabular", true, true},
-        }};
-        for (const auto& [name, sized, breakable] : kinds) {
+        static constexpr std::array<Kind, 14> kinds{
+            {
+                {"tabular", false, false}, {"tabular*", true, false}, {"tabularx", true, false},
+                {"longtable", false, true}, {"supertabular", false, true}, {"tabulary", true, false},
+                {"xtabular", false, true}, {"longtable*", false, true}, {"NiceTabular", false, false},
+                {"NiceTabular*", true, false}, {"NiceTabularX", true, false}, {"tblr", false, false},
+                {"longtblr", false, true}, {"xltabular", true, true},
+            }
+        };
+        for (const auto &[name, sized, breakable]: kinds) {
             const bool keyed = name.ends_with("tblr");
             context.blocks.watch(
                 name,
-                [this, &context, sized, keyed, breakable](syntax::Mouth& mouth) {
+                [this, &context, sized, keyed, breakable](syntax::Mouth &mouth) {
                     Opening opening;
                     opening.breakable = breakable;
                     if (sized) opening.width = syntax::Argument::text(mouth);
                     // A vertical position, `[t]`: which of its rows the table
                     // stands on, when it is set in a line or in another's cell.
-                    for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                    for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                         if (!token.text.empty()) opening.position = token.text.front();
                     }
                     std::vector<syntax::Token> columns = mouth.argument({}, 0);
@@ -377,12 +386,13 @@ namespace render::primitives {
                     // is what its colspec holds, the rest of its keys read.
                     std::string spelled;
                     std::vector<std::size_t> starts;
-                    for (const syntax::Token& token : columns) {
+                    for (const syntax::Token &token: columns) {
                         starts.push_back(spelled.size());
                         spelled += token.text;
                     }
                     if (const std::size_t found = spelled.find("colspec"); keyed && found != std::string::npos) {
-                        std::size_t at = static_cast<std::size_t>(std::ranges::lower_bound(starts, found) - starts.begin());
+                        std::size_t at = static_cast<std::size_t>(
+                            std::ranges::lower_bound(starts, found) - starts.begin());
                         while (at < columns.size() && !columns[at].is(syntax::Catcodes::Category::Group, '{')) ++at;
                         std::vector<syntax::Token> inside;
                         int depth = 0;
@@ -404,12 +414,13 @@ namespace render::primitives {
                         caption = "\\@define\\caption{\\@ifstar\\@longplain\\@longcaption}"
                                   "\\@define\\@longcaption[2][]{" + across +
                                   "{\\makebox[0pt][c]{\\captionof{table}[#1]{#2}}\\rule[-1em]{0pt}{1em}}}"
-                                  "\\@define\\@longplain#1{" + across + "{\\makebox[0pt][c]{#1}\\rule[-1em]{0pt}{1em}}}";
+                                  "\\@define\\@longplain#1{" + across +
+                                  "{\\makebox[0pt][c]{#1}\\rule[-1em]{0pt}{1em}}}";
                     }
                     openings.push_back(std::move(opening));
                     mouth.ingest(context.arena.copy(caption + "\\tabular "));
                 },
-                [](syntax::Mouth& mouth) { mouth.ingest("\\endtabular "); });
+                [](syntax::Mouth &mouth) { mouth.ingest("\\endtabular "); });
         }
 
         // LaTeX's tabbing: lines set at tab stops, `\\=` setting one and `\\>`
@@ -421,32 +432,32 @@ namespace render::primitives {
         // not drawn, as a table's is.
         context.blocks.watch(
             "tabbing",
-            [this](syntax::Mouth& mouth) {
+            [this](syntax::Mouth &mouth) {
                 mouth.ingest("{@{}l@{}l@{}l@{}l@{}l@{}l@{}l@{}l@{}l@{}l@{}}");
                 Opening opening;
                 opening.columns = preamble(mouth.argument({}, 0), &customs);
                 openings.push_back(std::move(opening));
                 mouth.ingest("\\@define\\={\\ &}\\@define\\>{\\ &}\\@define\\+{}\\@define\\-{}\\@define\\<{}"
-                             "\\par\\noindent\\tabular ");
+                    "\\par\\noindent\\tabular ");
             },
-            [](syntax::Mouth& mouth) { mouth.ingest("\\endtabular\\par "); });
+            [](syntax::Mouth &mouth) { mouth.ingest("\\endtabular\\par "); });
 
         // array's \newcolumntype{C}[1]{>{\centering}p{#1}}: a letter that
         // stands for a preamble of its own, with up to nine arguments, which
         // any table's preamble may use from here on.
-        parser.mouth.bind("\\newcolumntype", [this](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\newcolumntype", [this](syntax::Mouth &mouth) {
             const std::string letter = syntax::Argument::text(mouth);
             std::string count;
-            for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 count += token.text;
             }
             std::string body;
-            for (const syntax::Token& token : mouth.argument({}, 0)) {
+            for (const syntax::Token &token: mouth.argument({}, 0)) {
                 body += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') body += ' ';
             }
             if (letter.size() != 1 || static_cast<unsigned char>(letter[0]) >= customs.size()) return;
-            Custom& made = customs[static_cast<unsigned char>(letter[0])];
+            Custom &made = customs[static_cast<unsigned char>(letter[0])];
             made.count = count.empty() ? 0 : count[0] - '0';
             made.body = std::move(body);
         });
@@ -457,15 +468,15 @@ namespace render::primitives {
         // \\tabular reads it; anywhere else, its text where it stands. The
         // width, the struts and the move are read and let go.
         struct Span {
-            std::size_t rows{1};                       ///< How many rows it spans.
-            char place{'c'};                           ///< t, c or b.
-            memory::Slice<syntax::Node*> nodes{};      ///< Its text.
+            std::size_t rows{1}; ///< How many rows it spans.
+            char place{'c'}; ///< t, c or b.
+            memory::Slice<syntax::Node *> nodes{}; ///< Its text.
         };
-        const auto spanned = [&context](syntax::Parser& parser) {
-            syntax::Mouth& mouth = parser.mouth;
+        const auto spanned = [&context](syntax::Parser &parser) {
+            syntax::Mouth &mouth = parser.mouth;
             const syntax::Mouth::Parameter optional{.optional = true};
             Span made;
-            for (const syntax::Token& token : mouth.argument(optional, 0)) {
+            for (const syntax::Token &token: mouth.argument(optional, 0)) {
                 if (!token.text.empty()) made.place = token.text.front();
             }
             const std::string count = syntax::Argument::text(mouth);
@@ -486,20 +497,21 @@ namespace render::primitives {
             }
             return made;
         };
-        parser.bind("\\multirow", [spanned](syntax::Parser& parser) -> syntax::Node* {
+        parser.bind("\\multirow", [spanned](syntax::Parser &parser) -> syntax::Node * {
             const memory::Location origin = parser.mouth.lookahead().location;
             const Span made = spanned(parser);
-            return parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, made.nodes);
+            return parser.arena.compose<
+                syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, made.nodes);
         });
 
-        parser.bind("\\tabular", [this, &context, spanned](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
-            memory::Arena& arena = parser.arena;
+        parser.bind("\\tabular", [this, &context, spanned](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             if (openings.empty()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
-                                         "\\tabular outside a tabular block");
+                                        "\\tabular outside a tabular block");
                 return directive(arena, nullptr, origin, true);
             }
             // Taken off now, before a cell opens a table of its own.
@@ -511,7 +523,7 @@ namespace render::primitives {
             // right, as one set under polyglossia does.
             const bool reversed = context.reversed;
 
-            syntax::Lexicon& lexicon = mouth.lexicon;
+            syntax::Lexicon &lexicon = mouth.lexicon;
             const syntax::Symbol ampersand = column;
             const syntax::Symbol newline = lexicon.intern("\\\\");
             const syntax::Symbol alternative = lexicon.intern("\\tabularnewline");
@@ -539,9 +551,9 @@ namespace render::primitives {
                 firsthead, head, foot, lastfoot, multirow,
             };
 
-            const typography::Font* body = context.selection.text();
+            const typography::Font *body = context.selection.text();
             const float size = body ? body->size() : 10.0f;
-            const float ex = size * 0.43f;              // Latin Modern's x-height
+            const float ex = size * 0.43f; // Latin Modern's x-height
             // \tabcolsep, \arrayrulewidth and \arraystretch, as the document
             // has them where the table is set: LaTeX's own when it has not
             // changed them.
@@ -550,35 +562,35 @@ namespace render::primitives {
                 return slot ? static_cast<float>(context.registers.get(slot->type, slot->slot)) / 65536.0f : fallback;
             };
             float stretch = 1.0f;
-            if (const syntax::Mouth::Macro* written = mouth.macro(lexicon.intern("\\arraystretch"))) {
+            if (const syntax::Mouth::Macro *written = mouth.macro(lexicon.intern("\\arraystretch"))) {
                 std::string digits;
-                for (const syntax::Token& token : written->body) digits += token.text;
+                for (const syntax::Token &token: written->body) digits += token.text;
                 if (patch::decimal(digits.data(), digits.data() + digits.size(), stretch).ec != std::errc{}) {
                     stretch = 1.0f;
                 }
             }
             const float padding = length("\\tabcolsep", 6.0f);
             const float thin = length("\\arrayrulewidth", 0.4f);
-            const float strut = size * 1.2f * stretch;   // a baseline
+            const float strut = size * 1.2f * stretch; // a baseline
 
             /// A rule between two rows, across some of the columns.
             struct Stroke {
-                float thickness{0.4f};     ///< How heavy.
-                float above{0.0f};         ///< Space above it.
-                float below{0.0f};         ///< Space below it.
-                std::size_t from{0};       ///< First column it spans.
-                std::size_t to{0};         ///< One past the last; 0 for every column.
-                float trim{0.0f};          ///< How far in from each end it stops.
+                float thickness{0.4f}; ///< How heavy.
+                float above{0.0f}; ///< Space above it.
+                float below{0.0f}; ///< Space below it.
+                std::size_t from{0}; ///< First column it spans.
+                std::size_t to{0}; ///< One past the last; 0 for every column.
+                float trim{0.0f}; ///< How far in from each end it stops.
             };
             /// One cell as read.
             struct Cell {
-                std::vector<syntax::Node*> nodes{};    ///< What it holds.
-                std::size_t span{1};                   ///< How many columns it covers.
-                std::optional<Column> format{};        ///< Its own column, from \\multicolumn.
-                std::optional<layout::Node::Color> fill{};   ///< Painted behind it: `\\cellcolor`.
-                bool begun{false};                     ///< Its column's `>{...}` read already.
-                std::size_t rows{1};                   ///< How many rows it spans, from \\multirow.
-                char place{'c'};                       ///< Where in them it stands: t, c or b.
+                std::vector<syntax::Node *> nodes{}; ///< What it holds.
+                std::size_t span{1}; ///< How many columns it covers.
+                std::optional<Column> format{}; ///< Its own column, from \\multicolumn.
+                std::optional<layout::Node::Color> fill{}; ///< Painted behind it: `\\cellcolor`.
+                bool begun{false}; ///< Its column's `>{...}` read already.
+                std::size_t rows{1}; ///< How many rows it spans, from \\multirow.
+                char place{'c'}; ///< Where in them it stands: t, c or b.
             };
             /// Which part of a long table a row is in: its body, or the rows
             /// longtable sets above it on its first page and on the others,
@@ -586,12 +598,12 @@ namespace render::primitives {
             enum class Part : std::uint8_t { Body, First, Head, Foot, Last };
             /// One row as read, with the rules above it.
             struct Line {
-                std::vector<Cell> cells{};       ///< Its cells, left to right.
-                std::vector<Stroke> strokes{};   ///< Rules between it and the row above.
-                float gap{0.0f};                 ///< Extra space below it, from `\\[length]`.
-                std::optional<layout::Node::Color> fill{};   ///< Painted behind it: `\\rowcolor`.
-                bool hidden{false};              ///< Ended by `\\kill`: measured, and not drawn.
-                Part part{Part::Body};           ///< The part of the table it is in.
+                std::vector<Cell> cells{}; ///< Its cells, left to right.
+                std::vector<Stroke> strokes{}; ///< Rules between it and the row above.
+                float gap{0.0f}; ///< Extra space below it, from `\\[length]`.
+                std::optional<layout::Node::Color> fill{}; ///< Painted behind it: `\\rowcolor`.
+                bool hidden{false}; ///< Ended by `\\kill`: measured, and not drawn.
+                Part part{Part::Body}; ///< The part of the table it is in.
             };
 
             std::vector<Line> lines;
@@ -600,7 +612,7 @@ namespace render::primitives {
             // The rows up to the last of longtable's marks, which said what
             // part they are, and which parts were given at all.
             std::size_t marked = 0;
-            std::array<bool, 5> given{};
+            std::array < bool, 5 > given{};
             std::vector<Stroke> trailing;
             bool closed = false;
 
@@ -609,7 +621,7 @@ namespace render::primitives {
             // here does not reach past.
             const auto paint = [&mouth, &context]() -> layout::Node::Color {
                 std::string model;
-                for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     model += token.text;
                 }
                 const std::string spec = syntax::Argument::text(mouth);
@@ -624,11 +636,11 @@ namespace render::primitives {
             // A cell with nothing in it but the blanks around the source's `&`.
             // An instruction -- a `>{\\centering}` read into the empty row
             // after a last `\\\\` -- sets nothing, and leaves a cell blank.
-            const auto blank = [](const std::vector<syntax::Node*>& nodes) {
-                return std::ranges::all_of(nodes, [](const syntax::Node* node) {
+            const auto blank = [](const std::vector<syntax::Node *> &nodes) {
+                return std::ranges::all_of(nodes, [](const syntax::Node *node) {
                     if (!node || node->type == syntax::Node::Type::Paragraph) return true;
                     if (node->type == syntax::Node::Type::Directive) {
-                        const auto* inside = static_cast<const layout::Node*>(node->directive);
+                        const auto *inside = static_cast<const layout::Node *>(node->directive);
                         return !inside || inside->type == layout::Node::Type::Directive;
                     }
                     return node->type == syntax::Node::Type::Text &&
@@ -640,7 +652,7 @@ namespace render::primitives {
             const auto heaviness = [&](const float fallback) {
                 if (!mouth.lookahead().is('[')) return fallback;
                 std::string text;
-                for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     text += token.text;
                 }
                 const float read = measure(text, mouth, context);
@@ -669,7 +681,7 @@ namespace render::primitives {
                 if (!cell.begun) {
                     cell.begun = true;
                     std::size_t at = 0;
-                    for (const Cell& item : current.cells) at += item.span;
+                    for (const Cell &item: current.cells) at += item.span;
                     if (at < opening.columns.size() && !opening.columns[at].head.empty()) {
                         mouth.ingest(context.arena.copy(opening.columns[at].head + " "));
                     }
@@ -677,17 +689,17 @@ namespace render::primitives {
 
                 // Each cell is a group of its own: a style chosen in it ends at
                 // its edge, as it would at a brace.
-                const typography::Font* text = context.selection.text();
-                const typography::Font* formula = context.selection.formula();
+                const typography::Font *text = context.selection.text();
+                const typography::Font *formula = context.selection.formula();
                 syntax::Symbol matched = syntax::none;
-                const memory::Slice<syntax::Node*> read = parser.parse(0, stops, matched);
+                const memory::Slice<syntax::Node *> read = parser.parse(0, stops, matched);
                 stamp(read, context);
                 context.selection.text(text);
                 context.selection.formula(formula);
                 cell.nodes.insert(cell.nodes.end(), read.begin(), read.end());
 
                 // A rule stands where a row is about to start, and belongs above it.
-                std::vector<Stroke>& strokes = current.strokes;
+                std::vector<Stroke> &strokes = current.strokes;
                 const auto doubled = [&strokes] { return !strokes.empty() && strokes.back().thickness > 0.0f; };
                 if (matched == hline) {
                     strokes.push_back(Stroke{.thickness = thin, .above = doubled() ? 2.0f : 0.0f});
@@ -698,7 +710,9 @@ namespace render::primitives {
                     continue;
                 }
                 if (matched == midrule) {
-                    strokes.push_back(Stroke{.thickness = heaviness(size * 0.05f), .above = ex * 0.4f, .below = ex * 0.65f});
+                    strokes.push_back(Stroke{
+                        .thickness = heaviness(size * 0.05f), .above = ex * 0.4f, .below = ex * 0.65f
+                    });
                     continue;
                 }
                 if (matched == bottomrule) {
@@ -709,12 +723,15 @@ namespace render::primitives {
                     const float weight = heaviness(size * 0.03f);
                     float trim = 0.0f;
                     if (mouth.lookahead().is('(')) {
-                        for (syntax::Token token = mouth.read(); !token.empty() && !token.is(')'); token = mouth.read()) {
+                        for (syntax::Token token = mouth.read(); !token.empty() && !token.is(')');
+                             token = mouth.read()) {
                             if (!token.is('(')) trim = size * 0.25f;
                         }
                     }
-                    strokes.push_back(range(Stroke{.thickness = weight, .above = ex * 0.4f, .below = ex * 0.65f,
-                                                   .trim = trim}));
+                    strokes.push_back(range(Stroke{
+                        .thickness = weight, .above = ex * 0.4f, .below = ex * 0.65f,
+                        .trim = trim
+                    }));
                     continue;
                 }
                 if (matched == cline) {
@@ -739,7 +756,7 @@ namespace render::primitives {
                     if (open.is(syntax::Catcodes::Category::Group, '{')) {
                         const Selection restore = context.selection;
                         mouth.push(syntax::semantics::Scope::Type::Group);
-                        const memory::Slice<syntax::Node*> inside = parser.parse('}');
+                        const memory::Slice<syntax::Node *> inside = parser.parse('}');
                         mouth.pop(syntax::semantics::Scope::Type::Group);
                         stamp(inside, context);
                         context.selection = restore;
@@ -785,7 +802,7 @@ namespace render::primitives {
                     if (mouth.lookahead().is('*')) mouth.read();
                     if (mouth.lookahead().is('[')) {
                         std::string written;
-                        for (const syntax::Token& token :
+                        for (const syntax::Token &token:
                              mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                             written += token.text;
                         }
@@ -809,10 +826,13 @@ namespace render::primitives {
                     cell = Cell{};
                     lines.push_back(std::move(current));
                     current = Line{};
-                    const Part part = matched == firsthead ? Part::First
-                                      : matched == head    ? Part::Head
-                                      : matched == foot    ? Part::Foot
-                                                           : Part::Last;
+                    const Part part = matched == firsthead
+                                          ? Part::First
+                                          : matched == head
+                                                ? Part::Head
+                                                : matched == foot
+                                                      ? Part::Foot
+                                                      : Part::Last;
                     for (; marked < lines.size(); ++marked) lines[marked].part = part;
                     given[static_cast<std::size_t>(part)] = true;
                     continue;
@@ -833,16 +853,16 @@ namespace render::primitives {
 
             if (!closed) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Environment, origin,
-                                         "A tabular ran past the end of the document");
+                                        "A tabular ran past the end of the document");
             }
 
             // The columns: the preamble's, and as many plain ones again as the
             // widest row needs beyond it.
             std::vector<Column> columns = opening.columns;
             std::size_t count = columns.size();
-            for (const Line& line : lines) {
+            for (const Line &line: lines) {
                 std::size_t taken = 0;
-                for (const Cell& item : line.cells) taken += item.span;
+                for (const Cell &item: line.cells) taken += item.span;
                 count = std::max(count, taken);
             }
             if (count == 0) return directive(arena, nullptr, origin, true);
@@ -863,18 +883,18 @@ namespace render::primitives {
                 }
                 std::ranges::reverse(columns);
                 for (std::size_t index = 0; index < count; ++index) {
-                    Column& format = columns[index];
+                    Column &format = columns[index];
                     std::swap(format.opened, format.closed);
                     format.before = rules[count - index];
                     format.after = 0;
                 }
                 columns.back().after = rules[0];
-                for (Line& line : lines) {
+                for (Line &line: lines) {
                     std::size_t taken = 0;
-                    for (const Cell& item : line.cells) taken += item.span;
+                    for (const Cell &item: line.cells) taken += item.span;
                     for (; taken < count; ++taken) line.cells.emplace_back();
                     std::ranges::reverse(line.cells);
-                    for (Stroke& rule : line.strokes) {
+                    for (Stroke &rule: line.strokes) {
                         if (rule.to == 0) continue;
                         const std::size_t from = count - std::min(rule.to, count);
                         rule.to = count - rule.from;
@@ -883,20 +903,20 @@ namespace render::primitives {
                 }
             }
 
-            const layout::Document::Configuration& page = context.document.configuration;
+            const layout::Document::Configuration &page = context.document.configuration;
 
             // Pass one: every cell's material, and how wide each column must be.
             struct Piece {
-                memory::Slice<layout::Node*> material{};   ///< The cell's boxes.
-                std::size_t first{0};                      ///< The column it starts in.
-                std::size_t span{1};                       ///< How many it covers.
-                const Column* format{nullptr};             ///< How it sits in them.
-                layout::Node* box{nullptr};                ///< Built in pass two.
+                memory::Slice<layout::Node *> material{}; ///< The cell's boxes.
+                std::size_t first{0}; ///< The column it starts in.
+                std::size_t span{1}; ///< How many it covers.
+                const Column *format{nullptr}; ///< How it sits in them.
+                layout::Node *box{nullptr}; ///< Built in pass two.
                 std::optional<layout::Node::Color> fill{}; ///< Painted behind it.
-                std::size_t rows{1};                       ///< How many rows it spans.
-                char place{'c'};                           ///< Where in them it stands.
+                std::size_t rows{1}; ///< How many rows it spans.
+                char place{'c'}; ///< Where in them it stands.
             };
-            std::vector<std::vector<Piece>> pieces(lines.size());
+            std::vector<std::vector<Piece> > pieces(lines.size());
             std::vector<float> widths(count, 0.0f);
             for (std::size_t index = 0; index < count; ++index) {
                 if (!columns[index].width.empty()) widths[index] = measure(columns[index].width, mouth, context);
@@ -904,39 +924,41 @@ namespace render::primitives {
 
             for (std::size_t line = 0; line < lines.size(); ++line) {
                 std::size_t at = 0;
-                for (Cell& item : lines[line].cells) {
+                for (Cell &item: lines[line].cells) {
                     if (at >= count) break;
 
                     // The blanks the source leaves around a `&` are layout, and
                     // not part of the cell.
-                    std::vector<syntax::Node*>& nodes = item.nodes;
-                    std::erase_if(nodes, [](const syntax::Node* node) {
+                    std::vector<syntax::Node *> &nodes = item.nodes;
+                    std::erase_if(nodes, [](const syntax::Node *node) {
                         return !node || node->type == syntax::Node::Type::Paragraph;
                     });
                     if (!nodes.empty() && nodes.front()->type == syntax::Node::Type::Text) {
-                        std::string_view& value = nodes.front()->value;
+                        std::string_view &value = nodes.front()->value;
                         value.remove_prefix(std::min(value.find_first_not_of(" \t\n"), value.size()));
                     }
                     if (!nodes.empty() && nodes.back()->type == syntax::Node::Type::Text) {
-                        std::string_view& value = nodes.back()->value;
+                        std::string_view &value = nodes.back()->value;
                         const std::size_t last = value.find_last_not_of(" \t\n");
                         value = last == std::string_view::npos ? std::string_view{} : value.substr(0, last + 1);
                     }
 
-                    std::vector<layout::Node*> gathered;
-                    for (const syntax::Node* node : nodes) compose(gathered, node, context);
-                    const memory::Slice<layout::Node*> material = arena.allocate<layout::Node*>(gathered.size());
+                    std::vector<layout::Node *> gathered;
+                    for (const syntax::Node *node: nodes) compose(gathered, node, context);
+                    const memory::Slice<layout::Node *> material = arena.allocate<layout::Node *>(gathered.size());
                     std::ranges::copy(gathered, material.begin());
 
                     const std::size_t span = std::min(item.span, count - at);
-                    const Column* format = item.format ? &*item.format : &columns[at];
+                    const Column *format = item.format ? &*item.format : &columns[at];
                     pieces[line].push_back(
-                        Piece{.material = material, .first = at, .span = span, .format = format, .fill = item.fill,
-                              .rows = item.rows, .place = item.place});
+                        Piece{
+                            .material = material, .first = at, .span = span, .format = format, .fill = item.fill,
+                            .rows = item.rows, .place = item.place
+                        });
 
                     if (span == 1 && format->width.empty() && !format->stretch) {
                         float natural = 0.0f;
-                        for (const layout::Node* node : material) natural += layout::Line::advance(node);
+                        for (const layout::Node *node: material) natural += layout::Line::advance(node);
                         widths[at] = std::max(widths[at], natural);
                     }
                     at += span;
@@ -946,16 +968,17 @@ namespace render::primitives {
             // tabularx: what the fixed columns leave of the width asked for is
             // shared out among the `X` columns.
             const auto edge = [&](const std::size_t index) {
-                const Column& format = columns[index];
+                const Column &format = columns[index];
                 return (format.opened ? padding : 0.0f) + (format.closed ? padding : 0.0f) +
                        thin * static_cast<float>(format.before) +
                        (index + 1 == count ? thin * static_cast<float>(format.after) : 0.0f);
             };
             const std::size_t stretched = static_cast<std::size_t>(
-                std::ranges::count_if(columns, [](const Column& format) { return format.stretch; }));
+                std::ranges::count_if(columns, [](const Column &format) { return format.stretch; }));
             if (stretched > 0) {
-                const float target = opening.width.empty() ? breadth(context)
-                                                           : measure(opening.width, mouth, context);
+                const float target = opening.width.empty()
+                                         ? breadth(context)
+                                         : measure(opening.width, mouth, context);
                 float fixed = 0.0f;
                 for (std::size_t index = 0; index < count; ++index) {
                     fixed += edge(index) + (columns[index].stretch ? 0.0f : widths[index]);
@@ -974,15 +997,15 @@ namespace render::primitives {
                     total += widths[index];
                     if (index > first) {
                         total += thin * static_cast<float>(columns[index].before) +
-                                 (columns[index - 1].closed ? padding : 0.0f) + (columns[index].opened ? padding : 0.0f);
+                                (columns[index - 1].closed ? padding : 0.0f) + (columns[index].opened ? padding : 0.0f);
                     }
                 }
                 return total;
             };
 
             // Pass two: each cell's box, a paragraph for a column of fixed width.
-            for (std::vector<Piece>& line : pieces) {
-                for (Piece& piece : line) {
+            for (std::vector<Piece> &line: pieces) {
+                for (Piece &piece: line) {
                     const bool wrapped = !piece.format->width.empty() || piece.format->stretch;
                     if (wrapped) {
                         const float measure = piece.span == 1 ? widths[piece.first] : room(piece.first, piece.span);
@@ -991,31 +1014,34 @@ namespace render::primitives {
                         // says -- the one a `>{...}` put there, most often --
                         // or tabu's `X[c]` and `X[r]`.
                         const char side = piece.format->align;
-                        layout::Node::Justification setting = side == 'c'   ? layout::Node::Justification::Center
-                                                              : side == 'r' ? layout::Node::Justification::Right
-                                                                            : layout::Node::Justification::Full;
-                        for (const layout::Node* node : piece.material) {
+                        layout::Node::Justification setting = side == 'c'
+                                                                  ? layout::Node::Justification::Center
+                                                                  : side == 'r'
+                                                                        ? layout::Node::Justification::Right
+                                                                        : layout::Node::Justification::Full;
+                        for (const layout::Node *node: piece.material) {
                             if (node && node->type == layout::Node::Type::Directive &&
                                 node->directive().command == layout::Node::Directive::Command::Align) {
                                 setting = node->directive().justification;
                             }
                         }
-                        auto* paragraph = arena.compose<layout::Paragraph>(arena, piece.material, setting, 0.0f, 0.0f,
+                        auto *paragraph = arena.compose<layout::Paragraph>(arena, piece.material, setting, 0.0f, 0.0f,
                                                                            reversed);
                         paragraph->layout(arena, measure, page.leading);
-                        layout::Node* broken = paragraph->node();
+                        layout::Node *broken = paragraph->node();
                         if (broken && broken->type == layout::Node::Type::Box && !broken->box().list.empty()) {
                             // Hung from its first line's baseline, as `p` sets a
                             // cell: the first line level with the row's others.
-                            const layout::Node* first = broken->box().list[0];
-                            const float top = first && first->type == layout::Node::Type::Box ? first->box().height
-                                                                                                  : size * 0.7f;
+                            const layout::Node *first = broken->box().list[0];
+                            const float top = first && first->type == layout::Node::Type::Box
+                                                  ? first->box().height
+                                                  : size * 0.7f;
                             // A column hangs from its top edge, so it is raised by
                             // that line's height to bring the line's baseline up.
                             layout::Node::Box shape = broken->box();
                             shape.shift = -top;
                             broken->box(shape);
-                            const memory::Slice<layout::Node*> only = arena.allocate<layout::Node*>(1);
+                            const memory::Slice<layout::Node *> only = arena.allocate<layout::Node *>(1);
                             only[0] = broken;
                             piece.box = layout::Line::horizontal(arena, only, 0.0f);
                         }
@@ -1043,32 +1069,32 @@ namespace render::primitives {
                 across += thin * static_cast<float>(columns[index].before);
                 starts[index] = across;
                 across += (columns[index].opened ? padding : 0.0f) + widths[index] +
-                          (columns[index].closed ? padding : 0.0f);
+                        (columns[index].closed ? padding : 0.0f);
                 ends[index] = across;
             }
             across += thin * static_cast<float>(columns.back().after);
             const float total = across;
 
             const auto kern = [&arena](const float width) {
-                auto* node = arena.compose<layout::Node>(layout::Node::Type::Kern);
+                auto *node = arena.compose<layout::Node>(layout::Node::Type::Kern);
                 node->kern({.width = width});
                 return node;
             };
             const auto bar = [&arena, thin](const float height, const float depth) {
-                auto* node = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                auto *node = arena.compose<layout::Node>(layout::Node::Type::Rule);
                 node->rule({.width = thin, .height = height, .depth = depth});
                 return node;
             };
 
             // A rule between rows, as the line of the column it is drawn in.
-            const auto stroke = [&](const Stroke& rule, std::vector<layout::Node*>& column) {
+            const auto stroke = [&](const Stroke &rule, std::vector<layout::Node *> &column) {
                 if (rule.above > 0.0f) column.push_back(kern(rule.above));
                 if (rule.thickness > 0.0f) {
                     const float left = rule.to == 0 ? 0.0f : starts[std::min(rule.from, count - 1)] + rule.trim;
                     const float right = rule.to == 0 ? total : ends[std::min(rule.to, count) - 1] - rule.trim;
-                    auto* line = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                    auto *line = arena.compose<layout::Node>(layout::Node::Type::Rule);
                     line->rule({.width = std::max(right - left, 0.0f), .height = rule.thickness});
-                    const memory::Slice<layout::Node*> parts = arena.allocate<layout::Node*>(3);
+                    const memory::Slice<layout::Node *> parts = arena.allocate<layout::Node *>(3);
                     parts[0] = kern(left);
                     parts[1] = line;
                     parts[2] = kern(total - right);
@@ -1079,7 +1105,7 @@ namespace render::primitives {
 
             // Each row, with the rules above it and the room below it, in the
             // part of the table it was written in.
-            std::array<std::vector<layout::Node*>, 5> stacks;
+            std::array<std::vector<layout::Node *>, 5> stacks;
 
             // How tall and deep each row stands: its tallest cell, and never
             // less than a strut -- a cell over several rows aside, which
@@ -1087,7 +1113,7 @@ namespace render::primitives {
             std::vector<float> heights(lines.size(), strut * 0.7f);
             std::vector<float> depths(lines.size(), strut * 0.3f);
             for (std::size_t line = 0; line < lines.size(); ++line) {
-                for (const Piece& piece : pieces[line]) {
+                for (const Piece &piece: pieces[line]) {
                     if (!piece.box || piece.rows > 1) continue;
                     heights[line] = std::max(heights[line], piece.box->box().height);
                     depths[line] = std::max(depths[line], piece.box->box().depth);
@@ -1099,13 +1125,13 @@ namespace render::primitives {
             // own row's baseline as the rows it spans, and the rules and the
             // room between them, put it.
             for (std::size_t line = 0; line < lines.size(); ++line) {
-                for (Piece& piece : pieces[line]) {
+                for (Piece &piece: pieces[line]) {
                     if (!piece.box || piece.rows < 2 || piece.place == 't') continue;
                     const std::size_t last = std::min(line + piece.rows, lines.size()) - 1;
-                    float span = 0.0f;   // from the top of its row to the foot of the last
+                    float span = 0.0f; // from the top of its row to the foot of the last
                     for (std::size_t below = line; below <= last; ++below) {
                         if (below > line) {
-                            for (const Stroke& rule : lines[below].strokes) {
+                            for (const Stroke &rule: lines[below].strokes) {
                                 span += rule.above + rule.thickness + rule.below;
                             }
                         }
@@ -1121,13 +1147,13 @@ namespace render::primitives {
             }
 
             for (std::size_t line = 0; line < lines.size(); ++line) {
-                std::vector<layout::Node*>& stack = stacks[static_cast<std::size_t>(lines[line].part)];
-                for (const Stroke& rule : lines[line].strokes) stroke(rule, stack);
+                std::vector<layout::Node *> &stack = stacks[static_cast<std::size_t>(lines[line].part)];
+                for (const Stroke &rule: lines[line].strokes) stroke(rule, stack);
                 if (lines[line].hidden) continue;
                 const float height = heights[line];
                 const float depth = depths[line];
 
-                std::vector<layout::Node*> parts;
+                std::vector<layout::Node *> parts;
 
                 // The row's color and its cells' painted first, under the
                 // rules and the text: the row across the whole table, a cell
@@ -1136,13 +1162,13 @@ namespace render::primitives {
                 float painted = 0.0f;
                 const auto fill = [&](const float from, const float to, const layout::Node::Color color) {
                     parts.push_back(kern(from - painted));
-                    auto* area = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                    auto *area = arena.compose<layout::Node>(layout::Node::Type::Rule);
                     area->rule({.width = to - from, .height = height, .depth = depth, .color = color});
                     parts.push_back(area);
                     painted = to;
                 };
                 if (lines[line].fill) fill(0.0f, total, *lines[line].fill);
-                for (const Piece& piece : pieces[line]) {
+                for (const Piece &piece: pieces[line]) {
                     if (piece.fill) fill(starts[piece.first], ends[piece.first + piece.span - 1], *piece.fill);
                 }
                 if (painted != 0.0f) parts.push_back(kern(-painted));
@@ -1155,7 +1181,7 @@ namespace render::primitives {
                     drawn += thin * static_cast<float>(columns[index].before);
                 };
 
-                for (const Piece& piece : pieces[line]) {
+                for (const Piece &piece: pieces[line]) {
                     for (; at < piece.first; ++at) {
                         advance(at);
                         parts.push_back(kern(ends[at] - starts[at]));
@@ -1183,9 +1209,9 @@ namespace render::primitives {
                 }
                 for (int rule = 0; rule < columns.back().after; ++rule) parts.push_back(bar(height, depth));
 
-                const memory::Slice<layout::Node*> material = arena.allocate<layout::Node*>(parts.size());
+                const memory::Slice<layout::Node *> material = arena.allocate<layout::Node *>(parts.size());
                 std::ranges::copy(parts, material.begin());
-                layout::Node* built = layout::Line::horizontal(arena, material, 0.0f);
+                layout::Node *built = layout::Line::horizontal(arena, material, 0.0f);
                 layout::Node::Box shape = built->box();
                 shape.height = height;
                 shape.depth = depth;
@@ -1194,17 +1220,17 @@ namespace render::primitives {
 
                 if (lines[line].gap > 0.0f) stack.push_back(kern(lines[line].gap));
             }
-            std::vector<layout::Node*>& rows = stacks[static_cast<std::size_t>(Part::Body)];
-            for (const Stroke& rule : trailing) stroke(rule, rows);
+            std::vector<layout::Node *> &rows = stacks[static_cast<std::size_t>(Part::Body)];
+            for (const Stroke &rule: trailing) stroke(rule, rows);
 
             // The rows above the body on the first page and below it on the
             // last: longtable's \\endfirsthead and \\endlastfoot where they
             // were given, and its \\endhead and \\endfoot where they were not.
-            const auto part = [&](const Part chosen, const Part otherwise) -> const std::vector<layout::Node*>& {
+            const auto part = [&](const Part chosen, const Part otherwise) -> const std::vector<layout::Node *> & {
                 return stacks[static_cast<std::size_t>(given[static_cast<std::size_t>(chosen)] ? chosen : otherwise)];
             };
-            const std::vector<layout::Node*>& opener = part(Part::First, Part::Head);
-            const std::vector<layout::Node*>& closer = part(Part::Last, Part::Foot);
+            const std::vector<layout::Node *> &opener = part(Part::First, Part::Head);
+            const std::vector<layout::Node *> &closer = part(Part::Last, Part::Foot);
 
             Logger::log(Logger::Type::Layout, Logger::Level::Debug,
                         "Tabulated {} rows over {} columns", lines.size(), count);
@@ -1217,12 +1243,12 @@ namespace render::primitives {
             // each page it breaks off closes with.
             if (opening.breakable) {
                 const float measure = breadth(context);
-                const auto set = [&](layout::Node* each) {
+                const auto set = [&](layout::Node *each) {
                     if (each->type != layout::Node::Type::Box) return each;
-                    const memory::Slice<layout::Node*> line = arena.allocate<layout::Node*>(3);
+                    const memory::Slice<layout::Node *> line = arena.allocate<layout::Node *>(3);
                     std::size_t filled = 0;
                     const auto fill = [&arena] {
-                        auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                        auto *glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
                         glue->glue({.stretch = 1.0f, .expand = layout::Node::Order::Fil});
                         return glue;
                     };
@@ -1231,72 +1257,75 @@ namespace render::primitives {
                     if (opening.position != 'r') line[filled++] = fill();
                     return layout::Line::horizontal(arena, memory::Slice{line.data, filled}, measure);
                 };
-                const auto repeated = [&](const Part chosen) -> layout::Node* {
-                    const std::vector<layout::Node*>& chunk = stacks[static_cast<std::size_t>(chosen)];
+                const auto repeated = [&](const Part chosen) -> layout::Node * {
+                    const std::vector<layout::Node *> &chunk = stacks[static_cast<std::size_t>(chosen)];
                     if (chunk.empty()) return nullptr;
-                    const memory::Slice<layout::Node*> list = arena.allocate<layout::Node*>(chunk.size());
+                    const memory::Slice<layout::Node *> list = arena.allocate<layout::Node *>(chunk.size());
                     for (std::size_t at = 0; at < chunk.size(); ++at) list[at] = set(chunk[at]);
                     return layout::Line::vertical(arena, list, 0.0f);
                 };
 
-                std::vector<syntax::Node*> out;
+                std::vector<syntax::Node *> out;
                 const auto skip = [&] {
-                    auto* glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
+                    auto *glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
                     glue->glue({.width = size * 1.2f, .stretch = size * 0.4f, .shrink = size * 0.4f});
                     out.push_back(directive(arena, glue, origin, true));
                 };
-                const auto mark = [&](layout::Node* above, layout::Node* below) {
-                    auto* order = arena.compose<layout::Node>(layout::Node::Type::Directive);
-                    order->directive({.command = layout::Node::Directive::Command::Repeat, .head = above, .foot = below});
+                const auto mark = [&](layout::Node *above, layout::Node *below) {
+                    auto *order = arena.compose<layout::Node>(layout::Node::Type::Directive);
+                    order->directive(
+                        {.command = layout::Node::Directive::Command::Repeat, .head = above, .foot = below});
                     out.push_back(directive(arena, order, origin));
                 };
                 // Each row stands where the one above leaves it, with no
                 // space between them for their baselines: a rule of nothing
                 // before each, as TeX's \\nointerlineskip, stops the space.
-                const auto put = [&](layout::Node* each) {
-                    auto* stop = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                const auto put = [&](layout::Node *each) {
+                    auto *stop = arena.compose<layout::Node>(layout::Node::Type::Rule);
                     stop->rule({});
                     out.push_back(directive(arena, stop, origin, true));
                     out.push_back(directive(arena, set(each), origin, true));
                 };
                 skip();
-                for (layout::Node* each : opener) put(each);
+                for (layout::Node *each: opener) put(each);
                 mark(repeated(Part::Head), repeated(Part::Foot));
-                for (layout::Node* each : rows) put(each);
+                for (layout::Node *each: rows) put(each);
                 mark(nullptr, nullptr);
-                for (layout::Node* each : closer) put(each);
+                for (layout::Node *each: closer) put(each);
                 skip();
 
-                const memory::Slice<syntax::Node*> nodes = arena.allocate<syntax::Node*>(out.size());
+                const memory::Slice<syntax::Node *> nodes = arena.allocate<syntax::Node *>(out.size());
                 std::ranges::copy(out, nodes.begin());
                 return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, nodes);
             }
 
             // Any other is one box: its first head, its body and its last
             // foot, as a long table set whole is too.
-            std::vector<layout::Node*> stack(opener);
+            std::vector<layout::Node *> stack(opener);
             stack.insert(stack.end(), rows.begin(), rows.end());
             stack.insert(stack.end(), closer.begin(), closer.end());
             if (stack.empty()) return directive(arena, nullptr, origin, true);
 
-            const memory::Slice<layout::Node*> down = arena.allocate<layout::Node*>(stack.size());
+            const memory::Slice<layout::Node *> down = arena.allocate<layout::Node *>(stack.size());
             std::ranges::copy(stack, down.begin());
-            layout::Node* table = layout::Line::vertical(arena, down, 0.0f);
+            layout::Node *table = layout::Line::vertical(arena, down, 0.0f);
 
             // A column hangs from its top, so it is raised to where its
             // baseline falls: `[t]` its first row's, `[b]` its last row's,
             // and by default the formula axis through its middle, as LaTeX
             // sets a table in a line or in another table's cell.
             layout::Node::Box shape = table->box();
-            const auto rim = [](const layout::Node* row, const bool top) {
+            const auto rim = [](const layout::Node *row, const bool top) {
                 if (!row || row->type != layout::Node::Type::Box) return 0.0f;
                 return top ? row->box().height : row->box().depth;
             };
-            shape.shift = opening.position == 't'   ? -rim(stack.front(), true)
-                          : opening.position == 'b' ? rim(stack.back(), false) - shape.depth
-                                                    : -(shape.depth * 0.5f + size * 0.25f);
+            shape.shift = opening.position == 't'
+                              ? -rim(stack.front(), true)
+                              : opening.position == 'b'
+                                    ? rim(stack.back(), false) - shape.depth
+                                    : -(shape.depth * 0.5f + size * 0.25f);
             table->box(shape);
-            const memory::Slice<layout::Node*> only = arena.allocate<layout::Node*>(1);
+            const memory::Slice<layout::Node *> only = arena.allocate<layout::Node *>(1);
             only[0] = table;
 
             // A box in the line, as LaTeX's tabular is: beside the words
@@ -1305,9 +1334,9 @@ namespace render::primitives {
         });
 
         // revtex's ruledtabular: the tabular inside it, set as it stands.
-        context.blocks.watch("ruledtabular", [](syntax::Mouth&) {}, {});
+        context.blocks.watch("ruledtabular", [](syntax::Mouth &) {
+        }, {});
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound alignment primitives");
     }
-
 }

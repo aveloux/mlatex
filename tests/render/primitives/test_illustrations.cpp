@@ -28,13 +28,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -66,17 +66,18 @@ static std::size_t count(const std::string_view text, const std::string_view par
 
 /// Each straight stroke a PDF draws, `x y m` then `x y l S`, as how far it
 /// goes across and how far up, in points.
-static std::vector<std::pair<float, float>> strokes(const std::string_view pdf) {
-    std::vector<std::pair<float, float>> found;
+static std::vector<std::pair<float, float> > strokes(const std::string_view pdf) {
+    std::vector<std::pair<float, float> > found;
     for (std::size_t at = pdf.find(" l S"); at != std::string_view::npos; at = pdf.find(" l S", at + 1)) {
         const std::size_t move = pdf.rfind(" m\n", at);
         if (move == std::string_view::npos) continue;
         float numbers[4]{};
         const std::size_t begin = pdf.rfind('\n', move - 1) + 1;
         const std::string_view written = pdf.substr(begin, at - begin);
-        const char* cursor = written.data();
-        for (float& number : numbers) {
-            while (cursor < written.data() + written.size() && (*cursor == ' ' || *cursor == '\n' || *cursor == 'm')) ++cursor;
+        const char *cursor = written.data();
+        for (float &number: numbers) {
+            while (cursor < written.data() + written.size() && (*cursor == ' ' || *cursor == '\n' || *cursor == 'm')) ++
+                    cursor;
             cursor = patch::decimal(cursor, written.data() + written.size(), number).ptr;
         }
         found.emplace_back(numbers[2] - numbers[0], numbers[1] - numbers[3]);
@@ -93,7 +94,7 @@ static std::string dot() {
         0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
         0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     };
-    return std::string(reinterpret_cast<const char*>(bytes), sizeof bytes);
+    return std::string(reinterpret_cast<const char *>(bytes), sizeof bytes);
 }
 
 int main() {
@@ -135,8 +136,9 @@ int main() {
         const Result kept = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                     "\\includegraphics[width=4cm]{chart}\\end{document}",
                                     unknown);
-        assert((kept.clean && holds(kept.errors, "'chart' is in a form this engine does not draw; its place is kept")) &&
-               "a picture in a form it does not draw is found, and its place kept with a warning");
+        assert(
+            (kept.clean && holds(kept.errors, "'chart' is in a form this engine does not draw; its place is kept")) &&
+            "a picture in a form it does not draw is found, and its place kept with a warning");
         assert((count(kept.pdf, "/Subtype /Image") == 0 && holds(kept.pdf, " re")) && "framed, and empty");
     }
     {
@@ -148,7 +150,8 @@ int main() {
                                       "\\includegraphics{https://127.0.0.1:1/chart.png}\\end{document}",
                                       offline);
         assert((!result.clean &&
-                holds(result.errors, "\\includegraphics of 'https://127.0.0.1:1/chart.png' refused: the run is offline")) &&
+                holds(result.errors,
+                      "\\includegraphics of 'https://127.0.0.1:1/chart.png' refused: the run is offline")) &&
                "an offline run fetches no picture");
     }
     {
@@ -160,22 +163,22 @@ int main() {
     // --- The picture block ------------------------------------------------------------
     {
         const Result result = article("", "\\begin{picture}{100pt}{50pt}\\linecolor{#FF0000}\\line{0pt}{0pt}"
-                                          "{100pt}{50pt}\\linestyle{dashed}\\lineweight{2pt}"
-                                          "\\line{0pt}{50pt}{100pt}{0pt}\\end{picture}");
+                                      "{100pt}{50pt}\\linestyle{dashed}\\lineweight{2pt}"
+                                      "\\line{0pt}{50pt}{100pt}{0pt}\\end{picture}");
         assert((result.clean && holds(result.pdf, "1 0 0 RG")) && "a line is stroked in its color");
         assert((holds(result.pdf, "] 0 d")) && "and a dashed one dashed");
     }
     {
         const Result result = article("", "\\begin{picture}{100pt}{100pt}\\isometric\\spaceline{0pt}{0pt}{0pt}"
-                                          "{10pt}{10pt}{10pt}\\orthographic{30}{45}\\spaceline{0pt}{0pt}{0pt}{0pt}"
-                                          "{0pt}{10pt}\\planar\\end{picture}");
+                                      "{10pt}{10pt}{10pt}\\orthographic{30}{45}\\spaceline{0pt}{0pt}{0pt}{0pt}"
+                                      "{0pt}{10pt}\\planar\\end{picture}");
         assert((result.clean) && "projected lines");
     }
     {
         // Declared ten points tall, drawn a hundred: the text after it has to
         // start below the drawing, not ninety points up inside it.
         const Result result = article("", "\\begin{picture}{10pt}{10pt}\\line{0pt}{0pt}{100pt}{100pt}\\end{picture}\n\n"
-                                          "After.");
+                                      "After.");
         float lowest = 0.0f;
         for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
             const std::size_t start = result.pdf.rfind(' ', at - 1) + 1;
@@ -210,25 +213,28 @@ int main() {
         const Result outside = article("", "\\draw (0,0) -- (1,1);");
         assert((holds(outside.errors, "\\draw needs an open picture")) && "\\draw needs a picture");
         const Result option = article("", "\\begin{tikzpicture}\\draw[wobbly] (0,0) -- (1,1);\\end{tikzpicture}");
-        assert((option.clean && holds(option.errors, "warning: \\draw: the option 'wobbly' is not one this engine draws")) &&
+        assert((option.clean && holds(option.errors,
+                                      "warning: \\draw: the option 'wobbly' is not one this engine draws")) &&
                "an option it cannot draw is a warning that names it, and the line is drawn without it");
         const Result path = article("", "\\begin{tikzpicture}\\draw (0,0) parabola (1,1);\\end{tikzpicture}");
-        assert((path.clean && holds(path.errors, "is not a path this engine draws")) && "and so is a path it cannot read");
+        assert(
+            (path.clean && holds(path.errors, "is not a path this engine draws")) && "and so is a path it cannot read");
     }
     {
         // Curves, as TikZ writes them, flattened into strokes.
         const Result curves = article("", "\\begin{tikzpicture}\\draw (0,0) .. controls (1,2) and (2,-1) .. (3,1);"
-                                          "\\draw (0,0) to[bend left] (3,0) to[out=90,in=180] (4,1);"
-                                          "\\draw (0,0) .. controls +(0,1) and +(0,1) .. (2,0);\\end{tikzpicture}");
+                                      "\\draw (0,0) to[bend left] (3,0) to[out=90,in=180] (4,1);"
+                                      "\\draw (0,0) .. controls +(0,1) and +(0,1) .. (2,0);\\end{tikzpicture}");
         assert((curves.clean && curves.errors.empty()) && "a curve's controls, a bend and the angles a `to` leaves at");
         assert((count(curves.pdf, " l S") > 20) && "each drawn as many strokes");
         const Result broken = article("", "\\begin{tikzpicture}\\draw (0,0) .. (1,1);\\end{tikzpicture}");
-        assert((!broken.clean && holds(broken.errors, "a curve needs its controls")) && "a curve without them is named");
+        assert((!broken.clean && holds(broken.errors,
+                                       "a curve needs its controls")) && "a curve without them is named");
 
         // Fills: \fill's inside, \filldraw's inside and outline, fill= on \draw.
         const Result fills = article("", "\\begin{tikzpicture}\\fill[red] (0,0) rectangle (1,1);"
-                                         "\\filldraw[fill=blue,draw=black] (2,0) circle (0.5);"
-                                         "\\draw[fill=green] (3,0) -- (4,1) -- (5,0) -- cycle;\\end{tikzpicture}");
+                                     "\\filldraw[fill=blue,draw=black] (2,0) circle (0.5);"
+                                     "\\draw[fill=green] (3,0) -- (4,1) -- (5,0) -- cycle;\\end{tikzpicture}");
         assert((fills.clean && fills.errors.empty() && count(fills.pdf, "\nh f\n") == 3) && "three regions filled");
         assert((holds(fills.pdf, "1 0 0 rg") && holds(fills.pdf, "0 0 1 rg")) && "each in its own color");
     }
@@ -251,14 +257,14 @@ int main() {
 
     {
         const Result result = article("\\usepackage{tikz}", "\\begin{tikzpicture}\\draw[domain=0:2, samples=5] "
-                                                            "plot ({\\x}, {\\x*\\x});\\end{tikzpicture}");
+                                      "plot ({\\x}, {\\x*\\x});\\end{tikzpicture}");
         assert((result.clean && count(result.pdf, " l\n") + count(result.pdf, " l ") >= 1) &&
                "a plot of a function drawn through its points");
     }
     {
         const Result result = article("\\usepackage{tikz}", "\\begin{tikzpicture}\\node at (0,0) {A};\\end{tikzpicture}"
-                                                            "\\hfill\\begin{tikzpicture}\\node at (0,0) {B};"
-                                                            "\\end{tikzpicture}");
+                                      "\\hfill\\begin{tikzpicture}\\node at (0,0) {B};"
+                                      "\\end{tikzpicture}");
         std::vector<float> across;
         for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
             const std::size_t y = result.pdf.rfind(' ', at - 1);
@@ -274,7 +280,7 @@ int main() {
         // A picture in the line stands on the baseline, as TikZ's does: a
         // line up from its origin starts where the text around it sits.
         const Result result = article("\\usepackage{tikz}", "x\\tikz\\draw (0,0) -- (0,1);y "
-                                                            "\\tikz[baseline=-0.5ex]{\\draw (0,0) circle (1ex);}");
+                                      "\\tikz[baseline=-0.5ex]{\\draw (0,0) circle (1ex);}");
         const std::size_t move = result.pdf.find(" m\n");
         const std::size_t start = result.pdf.rfind(' ', move - 1) + 1;
         float y = 0.0f;
@@ -283,7 +289,8 @@ int main() {
         const std::size_t first = result.pdf.rfind(' ', text - 1) + 1;
         float baseline = 0.0f;
         patch::decimal(result.pdf.data() + first, result.pdf.data() + text, baseline);
-        assert((result.clean && std::abs(y - baseline) < 0.01f) && "its bottom on the baseline, and \\tikz's two forms");
+        assert(
+            (result.clean && std::abs(y - baseline) < 0.01f) && "its bottom on the baseline, and \\tikz's two forms");
     }
     {
         // A matrix: its cells as nodes named by row and column, arrows
@@ -294,7 +301,8 @@ int main() {
                                       "{ a & b \\\\ c & d \\\\ };\\draw[->] (m-1-1) -- node[above] {$x$} (m-1-2);"
                                       "\\draw[->] (m-1-1) -- (m-2-1);\\end{tikzpicture}");
         assert((result.clean && result.errors.empty()) && "a matrix of math nodes, and arrows between its cells");
-        for (const std::string_view part : {"a", "b", "c", "d", "x"}) assert(holds(result.text, part) && "every cell set");
+        for (const std::string_view part: {"a", "b", "c", "d", "x"}) assert(
+            holds(result.text, part) && "every cell set");
         std::vector<float> across;
         for (std::size_t at = result.pdf.find(" Tm"); at != std::string::npos; at = result.pdf.find(" Tm", at + 1)) {
             const std::size_t y = result.pdf.rfind(' ', at - 1);
@@ -335,7 +343,7 @@ int main() {
                                       "\\begin{tikzpicture}\\coordinate (a) at (0,0);\\coordinate (b) at (2,0);"
                                       "\\draw (0,0) -- ({1+1},{sin(30)*2});"
                                       "\\draw (a) -- ([xshift=10pt]b);\\end{tikzpicture}");
-        const std::vector<std::pair<float, float>> drawn = strokes(result.pdf);
+        const std::vector<std::pair<float, float> > drawn = strokes(result.pdf);
         constexpr float centimetre = 72.27f / 2.54f;
         const auto near = [](const std::pair<float, float> stroke, const float across, const float up) {
             return std::abs(stroke.first - across) < 0.01f && std::abs(stroke.second - up) < 0.01f;
@@ -352,7 +360,7 @@ int main() {
                                     "\\draw (a) -- ($(a)!1cm!(b)$);"
                                     "\\draw (a) -- ($(a)!0.5!90:(b)$);"
                                     "\\draw (a) -- ($2*(b)-(0,1)$);\\end{tikzpicture}");
-        const std::vector<std::pair<float, float>> worked = strokes(calc.pdf);
+        const std::vector<std::pair<float, float> > worked = strokes(calc.pdf);
         assert((calc.clean && calc.errors.empty() && worked.size() == 4) && "four lines, each read");
         assert((near(worked[0], centimetre, centimetre)) && "halfway to a point, then up one");
         assert((near(worked[1], centimetre, 0.0f)) && "a centimetre towards a point");
@@ -366,13 +374,14 @@ int main() {
                                    "\\draw let \\p1 = (a), \\p2 = (b), \\n1 = {veclen(\\x2-\\x1,\\y2-\\y1)} in (a) -- (\\n1, 0);"
                                    "\\draw let \\p1 = ($(b)-(a)$), \\n{angle} = {atan2(\\y1,\\x1)} in (a) -- (\\n{angle}:1cm);"
                                    "\\draw let \\p{top} = (b) in (a) -- (\\x{top}, 0);\\end{tikzpicture}");
-        const std::vector<std::pair<float, float>> set = strokes(let.pdf);
+        const std::vector<std::pair<float, float> > set = strokes(let.pdf);
         assert((let.clean && let.errors.empty() && set.size() == 3) && "three paths with registers, each read");
         assert((near(set[0], 5 * centimetre, 0.0f)) && "a length worked out of two points' registers");
         assert((near(set[1], 0.6f * centimetre, 0.8f * centimetre)) && "an angle, a register named in braces");
         assert((near(set[2], 3 * centimetre, 0.0f)) && "a point register's x");
-        const Result unread = article("\\usepackage{tikz}", "\\begin{tikzpicture}\\draw let \\p1 = (1,0) (0,0) -- (1,1);"
-                                                            "\\end{tikzpicture}");
+        const Result unread = article("\\usepackage{tikz}",
+                                      "\\begin{tikzpicture}\\draw let \\p1 = (1,0) (0,0) -- (1,1);"
+                                      "\\end{tikzpicture}");
         assert((holds(unread.errors, "up to 'in'")) && "a let without its 'in' is named");
     }
 

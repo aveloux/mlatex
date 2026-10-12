@@ -11,7 +11,6 @@
 #include <optional>
 
 namespace syntax::primitives {
-
     /// @brief Arithmetic: `\\evaluate` and the comparison it enables.
     ///
     /// This is what lets the language calculate on its own rather than only
@@ -56,15 +55,15 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Compute(Lexicon& lexicon) noexcept;
+        explicit Compute(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\evaluate`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; operands resolve against its registers.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
-        static constexpr std::int64_t ceiling = 2147483647;   ///< Widest value a register holds.
-        static constexpr std::size_t depth = 64;              ///< Deepest parenthesis nesting.
+        static constexpr std::int64_t ceiling = 2147483647; ///< Widest value a register holds.
+        static constexpr std::size_t depth = 64; ///< Deepest parenthesis nesting.
 
         /// @brief Errors this module has recorded.
         ///
@@ -73,37 +72,39 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
         /// @brief State threaded through one evaluation.
         struct Pass {
-            Cursor& cursor;                     ///< Tokens of the expression.
-            const semantics::Registers& registers; ///< Resolves register operands.
-            Symbol integer;                     ///< Interned `\\integer`.
-            const Compute& owner;               ///< Records errors on this module.
-            Symbol modulo;                      ///< Interned `\\mod`.
-            std::size_t level = 0;              ///< Current parenthesis depth.
-            bool sound = true;                  ///< Cleared by malformed input; result becomes 0.
-            bool noted = false;                 ///< An overflow has already been reported.
+            Cursor &cursor; ///< Tokens of the expression.
+            const semantics::Registers &registers; ///< Resolves register operands.
+            Symbol integer; ///< Interned `\\integer`.
+            const Compute &owner; ///< Records errors on this module.
+            Symbol modulo; ///< Interned `\\mod`.
+            std::size_t level = 0; ///< Current parenthesis depth.
+            bool sound = true; ///< Cleared by malformed input; result becomes 0.
+            bool noted = false; ///< An overflow has already been reported.
         };
 
-        [[nodiscard]] static std::int64_t expression(Pass& pass);
-        [[nodiscard]] static std::int64_t term(Pass& pass);
-        [[nodiscard]] static std::int64_t power(Pass& pass);
-        [[nodiscard]] static std::int64_t factor(Pass& pass);
+        [[nodiscard]] static std::int64_t expression(Pass &pass);
+
+        [[nodiscard]] static std::int64_t term(Pass &pass);
+
+        [[nodiscard]] static std::int64_t power(Pass &pass);
+
+        [[nodiscard]] static std::int64_t factor(Pass &pass);
 
         /// @brief Skips spaces and returns the next token without consuming it.
         /// @param pass The parse in progress; read from its own cursor.
-        [[nodiscard]] static Token lookahead(Pass& pass);
+        [[nodiscard]] static Token lookahead(Pass &pass);
 
         /// @brief Clamps to the register range, reporting once if it had to.
-        [[nodiscard]] static std::int64_t bound(Pass& pass, std::int64_t value);
+        [[nodiscard]] static std::int64_t bound(Pass &pass, std::int64_t value);
 
-        Symbol integer{};   ///< `\\integer`, so register operands scan.
-        Symbol modulo{};    ///< `\\mod`, the remainder operator.
+        Symbol integer{}; ///< `\\integer`, so register operands scan.
+        Symbol modulo{}; ///< `\\mod`, the remainder operator.
     };
-
 }

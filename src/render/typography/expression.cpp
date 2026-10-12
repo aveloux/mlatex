@@ -13,11 +13,11 @@
 #include <limits>
 
 namespace render::typography {
-
     /// HarfBuzz's fixed-point denominator: 26.6 means sixty-fourths.
     static constexpr float grain = 1.0f / 64.0f;
 
-    Expression::Expression(const Font& font) noexcept : parent(font) {}
+    Expression::Expression(const Font &font) noexcept : parent(font) {
+    }
 
     bool Expression::present() const noexcept {
         return parent.handle() && hb_ot_math_has_data(hb_font_get_face(parent.handle()));
@@ -27,7 +27,7 @@ namespace render::typography {
         if (ready) return cache;
         if (!present()) return {};
 
-        hb_font_t* handle = parent.handle();
+        hb_font_t *handle = parent.handle();
 
         const auto constant = [handle](const hb_ot_math_constant_t which) {
             return static_cast<float>(hb_ot_math_get_constant(handle, which)) * grain;
@@ -57,7 +57,8 @@ namespace render::typography {
             .before = constant(HB_OT_MATH_CONSTANT_RADICAL_KERN_BEFORE_DEGREE),
             .after = constant(HB_OT_MATH_CONSTANT_RADICAL_KERN_AFTER_DEGREE),
             .raise = static_cast<float>(
-                hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_RADICAL_DEGREE_BOTTOM_RAISE_PERCENT)) / 100.0f,
+                         hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_RADICAL_DEGREE_BOTTOM_RAISE_PERCENT)) /
+                     100.0f,
             .subscript = constant(HB_OT_MATH_CONSTANT_SUBSCRIPT_SHIFT_DOWN),
             .superscript = constant(HB_OT_MATH_CONSTANT_SUPERSCRIPT_SHIFT_UP),
 
@@ -65,9 +66,10 @@ namespace render::typography {
             // they arrive unscaled and are turned into the fractions the
             // typesetter multiplies a size by.
             .script = static_cast<float>(
-                hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN)) / 100.0f,
+                          hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN)) / 100.0f,
             .scriptscript = static_cast<float>(
-                hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN)) / 100.0f,
+                                hb_ot_math_get_constant(handle, HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN)) /
+                            100.0f,
             .display = constant(HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT),
             .drop = constant(HB_OT_MATH_CONSTANT_SUPERSCRIPT_BASELINE_DROP_MAX),
             .sink = constant(HB_OT_MATH_CONSTANT_SUBSCRIPT_BASELINE_DROP_MIN),
@@ -81,7 +83,7 @@ namespace render::typography {
     float Expression::correction(const std::uint32_t glyph) const noexcept {
         if (!parent.handle()) return 0.0f;
         return static_cast<float>(
-            hb_ot_math_get_glyph_italics_correction(parent.handle(), glyph)) * grain;
+                   hb_ot_math_get_glyph_italics_correction(parent.handle(), glyph)) * grain;
     }
 
     Expression::Variant Expression::stretch(const std::uint32_t glyph, const float height) const noexcept {
@@ -135,7 +137,7 @@ namespace render::typography {
 
     Expression::Assembly Expression::assemble(const std::uint32_t glyph, const float height) const {
         Assembly built;
-        hb_font_t* handle = parent.handle();
+        hb_font_t *handle = parent.handle();
         if (!handle) return built;
 
         // Sixteen is past what any shipped font uses for one assembly: a
@@ -175,7 +177,7 @@ namespace render::typography {
         std::size_t repeats = extenders > 0 ? 1 : 0;
         while (extenders > 0 && longest(repeats) < height && repeats < 256) ++repeats;
 
-        std::vector<const hb_ot_math_glyph_part_t*> order;
+        std::vector<const hb_ot_math_glyph_part_t *> order;
         order.reserve(singles + repeats * extenders);
         for (unsigned int index = 0; index < count; ++index) {
             const bool extender = parts[index].flags & HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER;
@@ -191,7 +193,8 @@ namespace render::typography {
         for (std::size_t index = 0; index < order.size(); ++index) {
             total += static_cast<float>(order[index]->full_advance) * grain;
             if (index + 1 < order.size()) {
-                const auto shared = std::min(order[index]->end_connector_length, order[index + 1]->start_connector_length);
+                const auto shared = std::min(order[index]->end_connector_length,
+                                             order[index + 1]->start_connector_length);
                 most = std::min(most, static_cast<float>(shared) * grain);
             }
         }
@@ -204,12 +207,11 @@ namespace render::typography {
 
         float lift = 0.0f;
         built.pieces.reserve(order.size());
-        for (const hb_ot_math_glyph_part_t* part : order) {
+        for (const hb_ot_math_glyph_part_t *part: order) {
             built.pieces.push_back(Piece{.glyph = part->glyph, .lift = lift});
             lift += static_cast<float>(part->full_advance) * grain - overlap;
         }
         built.span = total - static_cast<float>(joints) * overlap;
         return built;
     }
-
 }

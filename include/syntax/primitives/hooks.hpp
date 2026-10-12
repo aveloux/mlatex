@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Named places one package leaves open for another to fill:
     ///        `\\addtohook`, `\\usehook`.
     ///
@@ -38,19 +37,19 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Hooks(Lexicon& lexicon) noexcept;
+        explicit Hooks(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\addtohook` and `\\usehook`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; unused by this module.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error this module has recorded; it records none.
         ///
         /// Adding to a hook and running one cannot fail -- an unknown hook
         /// is an empty one -- but every module answers the same question, so
         /// Wrapper can merge them without knowing which ones can.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief Runs a hook: its code goes in front of whatever is read
         ///        next, and nothing happens when nothing was added to it.
@@ -62,14 +61,13 @@ namespace syntax::primitives {
         /// @param mouth Expander to read the code into.
         /// @param name  The hook.
         /// @complexity O(n) in the hook's tokens.
-        void run(Mouth& mouth, std::string_view name) const;
+        void run(Mouth &mouth, std::string_view name) const;
 
     private:
         /// What each hook runs, in the order it was added. Mutable because
         /// the module is installed as a const callable, as every module is.
-        mutable memory::Dictionary<std::vector<Token>> hooks{};
+        mutable memory::Dictionary<std::vector<Token> > hooks{};
 
-        std::vector<Traceback> tracebacks{};   ///< Always empty; see traceback().
+        std::vector<Traceback> tracebacks{}; ///< Always empty; see traceback().
     };
-
 }

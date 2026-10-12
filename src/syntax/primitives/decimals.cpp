@@ -16,7 +16,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     Decimals::Wide Decimals::multiply(const std::uint64_t left, const std::uint64_t right) noexcept {
         const std::uint64_t mask = 0xFFFFFFFFull;
         const std::uint64_t a = left & mask, b = left >> 32;
@@ -32,7 +31,7 @@ namespace syntax::primitives {
         };
     }
 
-    bool Decimals::divide(const Wide dividend, const std::uint64_t divisor, std::uint64_t& quotient) noexcept {
+    bool Decimals::divide(const Wide dividend, const std::uint64_t divisor, std::uint64_t &quotient) noexcept {
         // A quotient of more than one word starts with a remainder of at
         // least the divisor after the upper word alone.
         if (dividend.high >= divisor) return false;
@@ -57,20 +56,20 @@ namespace syntax::primitives {
         return true;
     }
 
-    bool Decimals::sign(const std::uint64_t value, const bool negative, std::int64_t& result) noexcept {
+    bool Decimals::sign(const std::uint64_t value, const bool negative, std::int64_t &result) noexcept {
         if (value > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) return false;
         result = negative ? -static_cast<std::int64_t>(value) : static_cast<std::int64_t>(value);
         return true;
     }
 
-    Decimals::Decimals(Lexicon& lexicon) noexcept {
+    Decimals::Decimals(Lexicon &lexicon) noexcept {
         lexicon.intern("\\calculate");
         lexicon.intern("\\amount");
         lexicon.intern("\\separators");
     }
 
     std::optional<std::int64_t> Decimals::evaluate(
-        const std::string_view text, const Variables& variables, std::string& error
+        const std::string_view text, const Variables &variables, std::string &error
     ) {
         Pass pass{.text = text, .cursor = 0, .variables = variables, .error = error, .level = 0};
         const std::optional<std::int64_t> value = expression(pass);
@@ -85,7 +84,7 @@ namespace syntax::primitives {
         return value;
     }
 
-    std::optional<std::int64_t> Decimals::expression(Pass& pass) {
+    std::optional<std::int64_t> Decimals::expression(Pass &pass) {
         std::optional<std::int64_t> total = term(pass);
         while (total) {
             while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
@@ -111,7 +110,7 @@ namespace syntax::primitives {
         return total;
     }
 
-    std::optional<std::int64_t> Decimals::term(Pass& pass) {
+    std::optional<std::int64_t> Decimals::term(Pass &pass) {
         std::optional<std::int64_t> total = unary(pass);
         while (total) {
             while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
@@ -152,7 +151,7 @@ namespace syntax::primitives {
         return total;
     }
 
-    std::optional<std::int64_t> Decimals::unary(Pass& pass) {
+    std::optional<std::int64_t> Decimals::unary(Pass &pass) {
         while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
         if (pass.cursor < pass.text.size() && (pass.text[pass.cursor] == '-' || pass.text[pass.cursor] == '+')) {
             const bool negative = pass.text[pass.cursor] == '-';
@@ -164,7 +163,7 @@ namespace syntax::primitives {
         return primary(pass);
     }
 
-    std::optional<std::int64_t> Decimals::primary(Pass& pass) {
+    std::optional<std::int64_t> Decimals::primary(Pass &pass) {
         while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
         if (pass.cursor >= pass.text.size()) {
             pass.error = "an operand is missing";
@@ -229,7 +228,9 @@ namespace syntax::primitives {
                 const std::int64_t first = arguments.front();
                 const long double real = static_cast<long double>(first) / scale;
                 // Places to round to, from a second argument: `round(x, 2)`.
-                const std::int64_t places = arguments.size() > 1 ? std::clamp<std::int64_t>(arguments[1] / scale, 0, precision) : 0;
+                const std::int64_t places = arguments.size() > 1
+                                                ? std::clamp<std::int64_t>(arguments[1] / scale, 0, precision)
+                                                : 0;
                 std::int64_t step = scale;
                 for (std::int64_t place = 0; place < places; ++place) step /= 10;
                 if (name == "sqrt") {
@@ -240,9 +241,12 @@ namespace syntax::primitives {
                     return static_cast<std::int64_t>(std::llround(std::sqrt(real) * scale));
                 }
                 if (name == "abs") return first < 0 ? -first : first;
-                if (name == "round") return static_cast<std::int64_t>(std::llround(static_cast<long double>(first) / step)) * step;
-                if (name == "floor") return static_cast<std::int64_t>(std::floor(static_cast<long double>(first) / step)) * step;
-                if (name == "ceil") return static_cast<std::int64_t>(std::ceil(static_cast<long double>(first) / step)) * step;
+                if (name == "round") return static_cast<std::int64_t>(std::llround(
+                                                static_cast<long double>(first) / step)) * step;
+                if (name == "floor") return static_cast<std::int64_t>(
+                                                std::floor(static_cast<long double>(first) / step)) * step;
+                if (name == "ceil") return static_cast<std::int64_t>(std::ceil(static_cast<long double>(first) / step))
+                                           * step;
                 if (name == "trunc") return first / step * step;
                 if (name == "min") return std::ranges::min(arguments);
                 if (name == "max") return std::ranges::max(arguments);
@@ -252,14 +256,16 @@ namespace syntax::primitives {
             if (name == "pi") return 3'141'593;
             if (name == "e" && !pass.variables.get(name)) return 2'718'282;
 
-            const std::string* value = pass.variables.get(name);
+            const std::string *value = pass.variables.get(name);
             if (!value) {
                 pass.error = std::format("nothing is set under '{}'", name);
                 return std::nullopt;
             }
 
-            Pass nested{.text = *value, .cursor = 0, .variables = pass.variables, .error = pass.error,
-                        .level = pass.level + 1};
+            Pass nested{
+                .text = *value, .cursor = 0, .variables = pass.variables, .error = pass.error,
+                .level = pass.level + 1
+            };
             const std::optional<std::int64_t> read = expression(nested);
             if (read && nested.text.find_first_not_of(' ', nested.cursor) != std::string_view::npos) {
                 pass.error = std::format("'{}' holds '{}', which is not a number", name, *value);
@@ -274,8 +280,8 @@ namespace syntax::primitives {
             std::uint64_t whole = 0;
             std::uint64_t fraction = 0;
             int places = 0;
-            bool seen = false;       // any digit at all
-            bool rounding = false;   // the first digit past the sixth place was five or more
+            bool seen = false; // any digit at all
+            bool rounding = false; // the first digit past the sixth place was five or more
 
             while (pass.cursor < pass.text.size() && pass.text[pass.cursor] >= '0' && pass.text[pass.cursor] <= '9') {
                 seen = true;
@@ -337,8 +343,8 @@ namespace syntax::primitives {
         return text;
     }
 
-    void Decimals::operator()(Mouth& mouth, Context& context) const {
-        mouth.bind("\\calculate", [this, &context](Mouth& mouth) {
+    void Decimals::operator()(Mouth &mouth, Context &context) const {
+        mouth.bind("\\calculate", [this, &context](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string text = Argument::expanded(mouth);
 
@@ -346,12 +352,12 @@ namespace syntax::primitives {
             const std::optional<std::int64_t> value = evaluate(text, context.variables, error);
             if (!value) {
                 tracebacks.emplace_back(Traceback::Type::Primitive, origin,
-                                         std::format("\\calculate: {}", error));
+                                        std::format("\\calculate: {}", error));
             }
             mouth.ingest(mouth.arena.copy(write(value.value_or(0))));
         });
 
-        mouth.bind("\\amount", [this, &context](Mouth& mouth) {
+        mouth.bind("\\amount", [this, &context](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
 
             // Places are optional and two by default: an amount is money
@@ -360,13 +366,13 @@ namespace syntax::primitives {
             const std::vector<Token> written = mouth.argument(Mouth::Parameter{.optional = true}, 0);
             if (!written.empty()) {
                 std::string digits;
-                for (const Token& token : written) digits += token.text;
+                for (const Token &token: written) digits += token.text;
                 std::string error;
                 const std::optional<std::int64_t> read = evaluate(digits, context.variables, error);
                 if (!read || *read < 0 || *read % scale != 0 || *read / scale > precision) {
                     tracebacks.emplace_back(Traceback::Type::Argument, origin,
-                                             std::format("\\amount: places must be a whole number from 0 to {}",
-                                                         precision));
+                                            std::format("\\amount: places must be a whole number from 0 to {}",
+                                                        precision));
                 } else {
                     places = static_cast<int>(*read / scale);
                 }
@@ -406,12 +412,11 @@ namespace syntax::primitives {
         });
 
         // Read as written: a separator is text, not something to evaluate.
-        mouth.bind("\\separators", [this](Mouth& mouth) {
+        mouth.bind("\\separators", [this](Mouth &mouth) {
             grouping = Argument::text(mouth);
             point = Argument::text(mouth);
         });
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Bound the decimal primitives");
     }
-
 }

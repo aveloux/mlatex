@@ -16,45 +16,44 @@
 #include <vector>
 
 namespace render::layout {
-
-    float Line::advance(const Node* node) noexcept {
+    float Line::advance(const Node *node) noexcept {
         if (!node) return 0.0f;
         switch (node->type) {
-            case Node::Type::Box:    return node->box().width;
-            case Node::Type::Glyph:  return node->glyph().width;
-            case Node::Type::Rule:   return node->rule().width;
+            case Node::Type::Box: return node->box().width;
+            case Node::Type::Glyph: return node->glyph().width;
+            case Node::Type::Rule: return node->rule().width;
             case Node::Type::Bitmap: return node->bitmap().width;
-            case Node::Type::Kern:   return node->kern().width;
-            case Node::Type::Glue:   return node->glue().width;
+            case Node::Type::Kern: return node->kern().width;
+            case Node::Type::Glue: return node->glue().width;
             // A page number is only known once the page is, so it takes the
             // room it was given when it was read.
             case Node::Type::Directive:
                 return node->directive().command == Node::Directive::Command::Number ? node->directive().width : 0.0f;
-            default:                 return 0.0f;   // penalties and marks take no room
+            default: return 0.0f; // penalties and marks take no room
         }
     }
 
-    float Line::extent(const Node* node) noexcept {
+    float Line::extent(const Node *node) noexcept {
         if (!node) return 0.0f;
         switch (node->type) {
-            case Node::Type::Box:    return node->box().height + node->box().depth;
-            case Node::Type::Glyph:  return node->glyph().height + node->glyph().depth;
-            case Node::Type::Rule:   return node->rule().height + node->rule().depth;
-            case Node::Type::Bitmap: return node->bitmap().height;   // depth is always zero
+            case Node::Type::Box: return node->box().height + node->box().depth;
+            case Node::Type::Glyph: return node->glyph().height + node->glyph().depth;
+            case Node::Type::Rule: return node->rule().height + node->rule().depth;
+            case Node::Type::Bitmap: return node->bitmap().height; // depth is always zero
             // A kern or a glue between two lines is vertical space, and its
             // one measurement is its width whichever way it is being read.
-            case Node::Type::Kern:   return node->kern().width;
-            case Node::Type::Glue:   return node->glue().width;
-            default:                 return 0.0f;
+            case Node::Type::Kern: return node->kern().width;
+            case Node::Type::Glue: return node->glue().width;
+            default: return 0.0f;
         }
     }
 
-    Node* Line::horizontal(
-        memory::Arena& arena,
-        const memory::Slice<Node*> nodes,
+    Node *Line::horizontal(
+        memory::Arena &arena,
+        const memory::Slice<Node *> nodes,
         const float target
     ) noexcept {
-        auto* box = arena.compose<Node>(Node::Type::Box);
+        auto *box = arena.compose<Node>(Node::Type::Box);
 
         float natural = 0.0f;
         float height = 0.0f;
@@ -63,10 +62,10 @@ namespace render::layout {
         // One accumulator per order of infinity. A finite stretch loses to any
         // infinite one, and each order of infinity to the next, which is how
         // `\\hfil` yields to `\\hfill` in the same line.
-        std::array<float, 4> stretch{};
-        std::array<float, 4> shrink{};
+        std::array < float, 4 > stretch{};
+        std::array < float, 4 > shrink{};
 
-        for (const Node* node : nodes) {
+        for (const Node *node: nodes) {
             if (!node) continue;
 
             natural += advance(node);
@@ -75,7 +74,7 @@ namespace render::layout {
                 case Node::Type::Box: {
                     // A shifted box carries its ink with it: pushed down the
                     // page, it needs less room above the line and more below.
-                    const auto& inner = node->box();
+                    const auto &inner = node->box();
                     height = std::max(height, inner.height - inner.shift);
                     depth = std::max(depth, inner.depth + inner.shift);
                     break;
@@ -92,7 +91,7 @@ namespace render::layout {
                     height = std::max(height, node->bitmap().height);
                     break;
                 case Node::Type::Glue: {
-                    const auto& glue = node->glue();
+                    const auto &glue = node->glue();
                     stretch[static_cast<std::size_t>(glue.expand)] += glue.stretch;
                     shrink[static_cast<std::size_t>(glue.limit)] += glue.shrink;
                     break;
@@ -108,7 +107,7 @@ namespace render::layout {
 
         if (target > 0.0f && natural != target) {
             const bool loose = natural < target;
-            const std::array<float, 4>& flex = loose ? stretch : shrink;
+            const std::array<float, 4> &flex = loose ? stretch : shrink;
 
             // Highest order present wins outright; the lower ones then take
             // none of the difference at all, which is why the order is kept
@@ -145,29 +144,29 @@ namespace render::layout {
         return box;
     }
 
-    Node* Line::vertical(
-        memory::Arena& arena,
-        const memory::Slice<Node*> nodes,
+    Node *Line::vertical(
+        memory::Arena &arena,
+        const memory::Slice<Node *> nodes,
         const float skip,
         const Anchor anchor
     ) noexcept {
-        auto* box = arena.compose<Node>(Node::Type::Box);
+        auto *box = arena.compose<Node>(Node::Type::Box);
 
         // Room for one leading glue between each pair, when leading is asked for.
         const std::size_t count = nodes.size();
-        const memory::Slice<Node*> column =
-            arena.allocate<Node*>(skip > 0.0f && count > 1 ? count * 2 - 1 : count);
+        const memory::Slice<Node *> column =
+                arena.allocate<Node *>(skip > 0.0f && count > 1 ? count * 2 - 1 : count);
 
         float width = 0.0f;
         float height = 0.0f;
         std::size_t filled = 0;
 
         for (std::size_t index = 0; index < count; ++index) {
-            Node* child = nodes[index];
+            Node *child = nodes[index];
             if (!child) continue;
 
             if (skip > 0.0f && filled > 0) {
-                auto* glue = arena.compose<Node>(Node::Type::Glue);
+                auto *glue = arena.compose<Node>(Node::Type::Glue);
                 glue->glue({.width = skip});
                 column[filled++] = glue;
                 height += skip;
@@ -183,7 +182,7 @@ namespace render::layout {
         // text stays flush left.
         if (anchor == Anchor::Middle) {
             for (std::size_t index = 0; index < filled; ++index) {
-                Node* child = column[index];
+                Node *child = column[index];
                 if (!child || child->type != Node::Type::Box) continue;
 
                 Node::Box shape = child->box();
@@ -206,7 +205,7 @@ namespace render::layout {
         return box;
     }
 
-    void Line::reorder(memory::Arena& arena, Node* line, const bool reversed) {
+    void Line::reorder(memory::Arena &arena, Node *line, const bool reversed) {
         // Which way each character runs: 1 for a letter read left to right,
         // 2 for one read right to left -- Hebrew, Arabic, Syriac, Thaana,
         // N'Ko and their presentation forms -- 3 for a digit, and 0 for
@@ -227,12 +226,12 @@ namespace render::layout {
         // What a node's text runs as: its first letter's way, or a number's
         // when it holds digits and no letter, or 0. A box inside the line --
         // a formula, a word in another face -- the same over what it holds.
-        const auto run = [&sense](this const auto& self, const Node* node) -> int {
+        const auto run = [&sense](this const auto &self, const Node *node) -> int {
             if (!node) return 0;
             if (node->type == Node::Type::Glyph) return sense(node->glyph().point);
             if (node->type != Node::Type::Box) return 0;
             int found = 0;
-            for (const Node* child : node->box().list) {
+            for (const Node *child: node->box().list) {
                 const int way = self(child);
                 if (way == 1 || way == 2) return way;
                 if (way == 3) found = 3;
@@ -243,7 +242,7 @@ namespace render::layout {
         // Only a line with something right to left in it, or in a paragraph
         // that reads so, has anything to put in another order.
         if (!line || line->type != Node::Type::Box || line->box().alignment != Node::Alignment::Horizontal) return;
-        const memory::Slice<Node*> list = line->box().list;
+        const memory::Slice<Node *> list = line->box().list;
         if (list.count == 0) return;
         bool mixed = reversed;
         for (std::size_t index = 0; !mixed && index < list.count; ++index) mixed = run(list[index]) == 2;
@@ -261,11 +260,11 @@ namespace render::layout {
         // the algorithm puts it -- the left, at the end of a sentence read
         // right to left -- not where the face's run left it. A word in two
         // faces with nothing right to left in it, `x²`, stays whole.
-        std::vector<std::pair<std::size_t, std::size_t>> pieces;
+        std::vector<std::pair<std::size_t, std::size_t> > pieces;
         for (std::size_t at = 0; at < list.count;) {
             std::size_t end = at + 1;
             const auto inside = [&](const std::size_t index) {
-                const Node* node = list[index];
+                const Node *node = list[index];
                 if (node && node->type == Node::Type::Glue && index > 0 && list[index - 1] &&
                     list[index - 1]->type == Node::Type::Penalty && list[index - 1]->penalty().value >= 10000) {
                     return true;
@@ -277,16 +276,16 @@ namespace render::layout {
             }
 
             std::size_t from = at;
-            const typography::Font* face = nullptr;
-            bool backward = false;   // whether the face's run from `from` holds a right-to-left letter
+            const typography::Font *face = nullptr;
+            bool backward = false; // whether the face's run from `from` holds a right-to-left letter
             for (std::size_t step = at; step < end; ++step) {
-                const Node* node = list[step];
+                const Node *node = list[step];
                 if (!node || node->type != Node::Type::Glyph) continue;
-                const typography::Font* font = node->glyph().font;
+                const typography::Font *font = node->glyph().font;
                 if (face && font != face) {
-                    bool ahead = false;   // whether the run that starts here holds one
+                    bool ahead = false; // whether the run that starts here holds one
                     for (std::size_t next = step; next < end; ++next) {
-                        const Node* other = list[next];
+                        const Node *other = list[next];
                         if (!other || other->type != Node::Type::Glyph) continue;
                         if (other->glyph().font != font) break;
                         ahead = ahead || sense(other->glyph().point) == 2;
@@ -304,7 +303,7 @@ namespace render::layout {
             at = end;
         }
         std::vector<int> ways;
-        for (const auto& [from, end] : pieces) {
+        for (const auto &[from, end]: pieces) {
             int way = 0;
             for (std::size_t step = from; step < end; ++step) {
                 const int found = run(list[step]);
@@ -325,7 +324,7 @@ namespace render::layout {
         // and the paragraph's when they do not.
         const int base = reversed ? 1 : 0;
         std::vector<int> levels(pieces.size(), base);
-        std::vector<int> strong(pieces.size(), 0);   // 1 left to right, 2 right to left, 0 none
+        std::vector<int> strong(pieces.size(), 0); // 1 left to right, 2 right to left, 0 none
         int last = reversed ? 2 : 1;
         for (std::size_t index = 0; index < pieces.size(); ++index) {
             if (ways[index] == 1 || ways[index] == 2) last = ways[index];
@@ -374,17 +373,18 @@ namespace render::layout {
         // its level is odd. The character it stands for stays, for the
         // text copied out of the page.
         constexpr std::u32string_view pairs = U"()[]{}<>«»‹›";
-        const memory::Slice<Node*> drawn = arena.allocate<Node*>(list.count);
+        const memory::Slice<Node *> drawn = arena.allocate<Node *>(list.count);
         std::size_t filled = 0;
-        for (const std::size_t index : order) {
+        for (const std::size_t index: order) {
             for (std::size_t step = pieces[index].first; step < pieces[index].second; ++step) {
-                Node* node = list[step];
+                Node *node = list[step];
                 const bool turned = ways[index] == 0 && levels[index] % 2 == 1 && node &&
                                     node->type == Node::Type::Glyph && node->glyph().font;
-                const std::size_t found = turned ? pairs.find(static_cast<char32_t>(node->glyph().point))
-                                                 : std::u32string_view::npos;
+                const std::size_t found = turned
+                                              ? pairs.find(static_cast<char32_t>(node->glyph().point))
+                                              : std::u32string_view::npos;
                 const std::uint32_t code =
-                    found != std::u32string_view::npos ? node->glyph().font->index(pairs[found ^ 1]) : 0;
+                        found != std::u32string_view::npos ? node->glyph().font->index(pairs[found ^ 1]) : 0;
                 if (code != 0) {
                     Node::Glyph mirrored = node->glyph();
                     mirrored.code = code;
@@ -399,5 +399,4 @@ namespace render::layout {
         shape.list = drawn;
         line->box(shape);
     }
-
 }

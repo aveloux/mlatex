@@ -15,8 +15,7 @@
 #include <vector>
 
 namespace syntax::primitives {
-
-    Variables::Variables(Lexicon& lexicon) noexcept {
+    Variables::Variables(Lexicon &lexicon) noexcept {
         lexicon.intern("\\variable");
         lexicon.intern("\\setvariable");
         lexicon.intern("\\ifvariable");
@@ -70,8 +69,9 @@ namespace syntax::primitives {
             }
 
             const std::string_view key = trim(item.substr(0, split));
-            std::string_view value = split == std::string_view::npos ? std::string_view{"true"}
-                                                                      : trim(item.substr(split + 1));
+            std::string_view value = split == std::string_view::npos
+                                         ? std::string_view{"true"}
+                                         : trim(item.substr(split + 1));
             if (value.size() >= 2 && value.front() == '{' && value.back() == '}') {
                 value = trim(value.substr(1, value.size() - 2));
             }
@@ -79,20 +79,20 @@ namespace syntax::primitives {
         }
     }
 
-    const std::string* Variables::get(const std::string_view name) const noexcept {
+    const std::string *Variables::get(const std::string_view name) const noexcept {
         const auto found = values.find(name);
         return found == values.end() ? nullptr : &found->second;
     }
 
-    void Variables::operator()(Mouth& mouth, Context&) const {
-        mouth.bind("\\variable", [this](Mouth& mouth) {
+    void Variables::operator()(Mouth &mouth, Context &) const {
+        mouth.bind("\\variable", [this](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = Argument::text(mouth);
 
-            const std::string* value = get(name);
+            const std::string *value = get(name);
             if (!value) {
                 tracebacks.emplace_back(Traceback::Type::Primitive, origin,
-                                         std::format("\\variable: nothing is set under '{}'", name));
+                                        std::format("\\variable: nothing is set under '{}'", name));
                 return;
             }
             if (!value->empty()) mouth.ingest(mouth.arena.copy(*value));
@@ -101,28 +101,28 @@ namespace syntax::primitives {
         // The value is expanded before it is kept, so a running total is a
         // number and not the calculation that made it -- which would refer to
         // itself the next time round.
-        mouth.bind("\\setvariable", [this](Mouth& mouth) {
+        mouth.bind("\\setvariable", [this](Mouth &mouth) {
             const std::string name = Argument::text(mouth);
             const std::string value = Argument::expanded(mouth);
             define(name, value);
             Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Variable '{}' set to '{}'", name, value);
         });
 
-        mouth.bind("\\setkeys", [this](Mouth& mouth) {
+        mouth.bind("\\setkeys", [this](Mouth &mouth) {
             const std::string family = Argument::text(mouth);
             assign(family, Argument::expanded(mouth));
         });
 
-        mouth.bind("\\unsetvariable", [this](Mouth& mouth) { unset(Argument::text(mouth)); });
+        mouth.bind("\\unsetvariable", [this](Mouth &mouth) { unset(Argument::text(mouth)); });
 
         // Both sides expanded first, so each compares by what it comes to.
-        mouth.bind("\\ifstrequal", [](Mouth& mouth) {
+        mouth.bind("\\ifstrequal", [](Mouth &mouth) {
             const std::string left = Argument::expanded(mouth);
             const std::string right = Argument::expanded(mouth);
             const std::vector<Token> same = mouth.argument({}, 1);
             const std::vector<Token> different = mouth.argument({}, 1);
 
-            const std::vector<Token>& chosen = left == right ? same : different;
+            const std::vector<Token> &chosen = left == right ? same : different;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 
@@ -133,12 +133,12 @@ namespace syntax::primitives {
         // turned by `\\NOT` and grouped by `\\(` and `\\)`. Each part is
         // worked out by expanding it as TeX would have written it: a
         // comparison as an `\\ifnum`, a test with `1` and `0` for branches.
-        mouth.bind("\\iftest", [](Mouth& mouth) {
+        mouth.bind("\\iftest", [](Mouth &mouth) {
             const std::vector<Token> test = mouth.argument({}, 0);
             const std::vector<Token> held = mouth.argument({}, 1);
             const std::vector<Token> failed = mouth.argument({}, 1);
 
-            const auto named = [](const Token& token, const std::string_view name) {
+            const auto named = [](const Token &token, const std::string_view name) {
                 return token.category == Catcodes::Category::Escape && token.text == name;
             };
             // A part as the text it was written as, a control word spaced
@@ -146,7 +146,7 @@ namespace syntax::primitives {
             const auto written = [](const std::span<const Token> tokens) {
                 std::string text;
                 bool word = false;
-                for (const Token& token : tokens) {
+                for (const Token &token: tokens) {
                     if (word && token.category == Catcodes::Category::Letter) text += ' ';
                     text += token.text;
                     word = token.category == Catcodes::Category::Escape && token.text.size() > 1 &&
@@ -154,7 +154,7 @@ namespace syntax::primitives {
                 }
                 return text;
             };
-            const auto truth = [&mouth](const std::string& snippet) {
+            const auto truth = [&mouth](const std::string &snippet) {
                 mouth.ingest(mouth.arena.copy("{" + snippet + "}"), memory::Location{});
                 return Argument::expanded(mouth).contains('1');
             };
@@ -168,7 +168,7 @@ namespace syntax::primitives {
                 std::size_t relation = at;
                 int depth = 0;
                 while (relation < stop) {
-                    const Token& token = test[relation];
+                    const Token &token = test[relation];
                     if (token.is(Catcodes::Category::Group, '{')) ++depth;
                     if (token.is(Catcodes::Category::Group, '}')) --depth;
                     if (depth == 0 && (token.is('<') || token.is('=') || token.is('>'))) break;
@@ -179,12 +179,13 @@ namespace syntax::primitives {
                 if (!whole.empty() && named(whole.front(), "\\lengthtest")) {
                     const std::string inside = written(whole.subspan(1));
                     result = truth("\\ifdim" + inside.substr(inside.starts_with("{") ? 1 : 0,
-                                                            inside.size() - (inside.starts_with("{") ? 2 : 0)) +
+                                                             inside.size() - (inside.starts_with("{") ? 2 : 0)) +
                                    "\\relax 1\\else 0\\fi");
                 } else if (relation < stop) {
                     const std::string left = written({test.data() + at, relation - at});
                     const std::string right = written({test.data() + relation + 1, stop - relation - 1});
-                    result = truth("\\ifnum " + left + std::string(test[relation].text) + right + "\\relax 1\\else 0\\fi");
+                    result = truth(
+                        "\\ifnum " + left + std::string(test[relation].text) + right + "\\relax 1\\else 0\\fi");
                 } else {
                     result = truth(written(whole) + "{1}{0}");
                 }
@@ -196,7 +197,7 @@ namespace syntax::primitives {
                 std::size_t stop = at;
                 int depth = 0;
                 while (stop < test.size()) {
-                    const Token& token = test[stop];
+                    const Token &token = test[stop];
                     if (token.is(Catcodes::Category::Group, '{')) ++depth;
                     if (token.is(Catcodes::Category::Group, '}')) --depth;
                     if (depth == 0 && (named(token, "\\AND") || named(token, "\\OR") || named(token, "\\)"))) break;
@@ -205,7 +206,7 @@ namespace syntax::primitives {
                 return stop;
             };
             // Parts joined by \\AND bind closer than parts joined by \\OR.
-            const auto expression = [&](this const auto& self) -> bool {
+            const auto expression = [&](this const auto &self) -> bool {
                 bool any = false;
                 bool all = true;
                 while (true) {
@@ -243,20 +244,19 @@ namespace syntax::primitives {
                 }
             };
 
-            const std::vector<Token>& chosen = expression() ? held : failed;
+            const std::vector<Token> &chosen = expression() ? held : failed;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 
-        mouth.bind("\\ifvariable", [this](Mouth& mouth) {
+        mouth.bind("\\ifvariable", [this](Mouth &mouth) {
             const std::string name = Argument::text(mouth);
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const std::vector<Token>& chosen = get(name) ? present : absent;
+            const std::vector<Token> &chosen = get(name) ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Bound the variable primitives");
     }
-
 }

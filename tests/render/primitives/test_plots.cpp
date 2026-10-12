@@ -26,13 +26,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -56,7 +56,8 @@ static bool holds(const std::string_view text, const std::string_view part) {
 /// How many times a text holds another.
 static std::size_t count(const std::string_view text, const std::string_view part) {
     std::size_t found = 0;
-    for (std::size_t at = text.find(part); at != std::string_view::npos; at = text.find(part, at + part.size())) ++found;
+    for (std::size_t at = text.find(part); at != std::string_view::npos; at = text.find(part, at + part.size())) ++
+            found;
     return found;
 }
 
@@ -95,8 +96,8 @@ int main() {
 
     {
         const Result result = picture("\\begin{axis}[xlabel={Time}, ylabel={Speed}, title={Run}]"
-                                      "\\addplot[blue, domain=0:4] {x^2};"
-                                      "\\end{axis}");
+            "\\addplot[blue, domain=0:4] {x^2};"
+            "\\end{axis}");
         assert((result.clean && holds(result.text, "Run") && holds(result.text, "Time") &&
                 holds(result.text, "Speed")) &&
                "an axis's title and labels");
@@ -105,29 +106,29 @@ int main() {
     }
     {
         const Result result = picture("\\begin{axis}"
-                                      "\\addplot coordinates {(0,1) (1,3) (2,2)};"
-                                      "\\addplot table {x y \\\\ 0 5 \\\\ 2 1 \\\\};"
-                                      "\\legend{first, second}"
-                                      "\\end{axis}");
+            "\\addplot coordinates {(0,1) (1,3) (2,2)};"
+            "\\addplot table {x y \\\\ 0 5 \\\\ 2 1 \\\\};"
+            "\\legend{first, second}"
+            "\\end{axis}");
         assert((result.clean && holds(result.text, "first") && holds(result.text, "second")) &&
                "coordinates, a table and a legend");
         assert(holds(result.text, "5") && "the table's data in the limits");
     }
     {
         const Result result = picture("\\begin{semilogyaxis}\\addplot coordinates {(1,1) (2,100)};"
-                                      "\\addlegendentry{errors}\\end{semilogyaxis}");
+            "\\addlegendentry{errors}\\end{semilogyaxis}");
         assert((result.clean && holds(result.text, "10") && holds(result.text, "errors")) &&
                "a logarithmic axis's powers of ten");
     }
     {
         const Result result = picture("\\begin{axis}[ybar, symbolic x coords={A,B}, xtick=data]"
-                                      "\\addplot coordinates {(A,3) (B,5)};\\end{axis}");
+            "\\addplot coordinates {(A,3) (B,5)};\\end{axis}");
         assert((result.clean && holds(result.text, "A") && holds(result.text, "B")) &&
                "bars at symbolic coordinates, labelled by them");
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{pgfplots}\\begin{document}"
-                                      "\\addplot {x};\\end{document}");
+            "\\addplot {x};\\end{document}");
         assert((!result.clean && holds(result.errors, "\\addplot outside an axis")) && "a plot needs an axis");
     }
     {
@@ -139,16 +140,16 @@ int main() {
         // end -- three strokes a point, given with the data, from a table's
         // column, or the same for every point -- and the limits make room.
         const Result plain = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
-                                     "\\addplot+[mark=none] coordinates {(0,1) (1,2)};\\end{axis}");
+            "\\addplot+[mark=none] coordinates {(0,1) (1,2)};\\end{axis}");
         const Result given = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
-                                     "\\addplot+[mark=none, error bars/.cd, y dir=both, y explicit] "
-                                     "coordinates {(0,1) +- (0,0.5) (1,2) +- (0,0.25)};\\end{axis}");
+            "\\addplot+[mark=none, error bars/.cd, y dir=both, y explicit] "
+            "coordinates {(0,1) +- (0,0.5) (1,2) +- (0,0.25)};\\end{axis}");
         const Result tabled = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
-                                      "\\addplot+[mark=none, error bars/y dir=plus, error bars/y explicit] "
-                                      "table[x=x, y=y, y error=e] {x y e \\\\ 0 1 0.5 \\\\ 1 2 0.25 \\\\};\\end{axis}");
+            "\\addplot+[mark=none, error bars/y dir=plus, error bars/y explicit] "
+            "table[x=x, y=y, y error=e] {x y e \\\\ 0 1 0.5 \\\\ 1 2 0.25 \\\\};\\end{axis}");
         const Result fixed = picture("\\begin{axis}[xtick={0,1}, ytick={1,2}]"
-                                     "\\addplot+[mark=none, error bars/.cd, x dir=both, x fixed=0.1] "
-                                     "coordinates {(0,1) (1,2)};\\end{axis}");
+            "\\addplot+[mark=none, error bars/.cd, x dir=both, x fixed=0.1] "
+            "coordinates {(0,1) (1,2)};\\end{axis}");
         assert((plain.clean && given.clean && tabled.clean && fixed.clean) && "plots with error bars, each read");
         assert((count(given.pdf, " l S") == count(plain.pdf, " l S") + 6) && "a bar and two ends a point");
         assert((count(tabled.pdf, " l S") == count(plain.pdf, " l S") + 6) && "from a table's column, upwards");
@@ -158,15 +159,15 @@ int main() {
         // fill between: the region between two named plots -- one of them
         // not drawn -- filled once, under the lines, within its soft clip.
         const Result result = picture("\\begin{axis}[domain=0:2]"
-                                      "\\addplot[name path=f, blue] {x^2};"
-                                      "\\addplot[name path=g, draw=none] {0};"
-                                      "\\addplot[gray, fill opacity=0.3] fill between[of=f and g, soft clip={domain=0.5:1.5}];"
-                                      "\\end{axis}");
+            "\\addplot[name path=f, blue] {x^2};"
+            "\\addplot[name path=g, draw=none] {0};"
+            "\\addplot[gray, fill opacity=0.3] fill between[of=f and g, soft clip={domain=0.5:1.5}];"
+            "\\end{axis}");
         assert((result.clean && result.errors.empty()) && "a fill between two plots");
         assert((count(result.pdf, "\nh f\n") == 1) && "filled once");
         assert((result.pdf.find("h f\n") < result.pdf.find("0 0 1 RG")) && "under the blue line");
         const Result lost = picture("\\begin{axis}\\addplot[name path=f] {x};"
-                                    "\\addplot fill between[of=f and nothing];\\end{axis}");
+            "\\addplot fill between[of=f and nothing];\\end{axis}");
         assert((holds(lost.errors, "fill between: no plot named 'nothing'")) && "a plot it cannot find is named");
     }
     {
@@ -174,16 +175,16 @@ int main() {
         // colormap, the colorbar beside it in slices; a mesh's lines; a
         // curve through points, seen from the view given.
         const Result faced = picture("\\begin{axis}[zlabel={height}, colorbar]"
-                                       "\\addplot3[surf, samples=5, domain=0:1] {x*y};\\end{axis}");
+            "\\addplot3[surf, samples=5, domain=0:1] {x*y};\\end{axis}");
         assert((faced.clean && faced.errors.empty() && holds(faced.text, "height")) && "a surface, its z labelled");
         assert((count(faced.pdf, "\nh f\n") == 16 + 40) && "four by four faces filled, and forty slices of colorbar");
         const Result mesh = picture("\\begin{axis}\\addplot3[mesh, samples=4, domain=0:1] {x+y};\\end{axis}");
         assert((mesh.clean && count(mesh.pdf, "\nh f\n") == 0 && count(mesh.pdf, " l S") >= 24) &&
                "a mesh of lines, three by four each way, none filled");
         const Result curve = picture("\\begin{axis}[view={60}{30}]"
-                                     "\\addplot3[red] coordinates {(0,0,0) (1,1,1) (2,0,2)};"
-                                     "\\addplot3[blue, domain=0:6, samples=30, samples y=0] ({cos(deg(x))}, {sin(deg(x))}, {x});"
-                                     "\\end{axis}");
+            "\\addplot3[red] coordinates {(0,0,0) (1,1,1) (2,0,2)};"
+            "\\addplot3[blue, domain=0:6, samples=30, samples y=0] ({cos(deg(x))}, {sin(deg(x))}, {x});"
+            "\\end{axis}");
         assert((curve.clean && curve.errors.empty()) && "curves in three dimensions, a list and a helix");
         assert((holds(curve.pdf, "1 0 0 RG") && holds(curve.pdf, "0 0 1 RG")) && "each in its colour");
     }

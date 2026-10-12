@@ -4,7 +4,6 @@
 #include "syntax/parser.hpp"
 
 namespace render::primitives {
-
     /// @brief The characters and marks a document cannot type directly.
     ///
     /// Two kinds of thing, for the same reason. A `%` starts a comment and a
@@ -35,12 +34,11 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Symbols(syntax::Lexicon& lexicon) noexcept;
+        explicit Symbols(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the named characters.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; unused by this module.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
     };
-
 }

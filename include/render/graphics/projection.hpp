@@ -3,7 +3,6 @@
 #include "render/graphics/point.hpp"
 
 namespace render::graphics {
-
     /// @brief Flattens three dimensions onto two, the way a drafting board does.
     ///
     /// Not a camera with any depth to it: there is no perspective divide and
@@ -37,7 +36,7 @@ namespace render::graphics {
         /// @param point Point in space.
         /// @return Where it falls on the page, in the projection's own units.
         /// @complexity O(1).
-        [[nodiscard]] Point2 project(const Point3& point) const noexcept;
+        [[nodiscard]] Point2 project(const Point3 &point) const noexcept;
 
     private:
         /// @brief A view stated by where each axis's unit step lands.
@@ -45,11 +44,11 @@ namespace render::graphics {
         /// @param along  Where a unit step on y lands.
         /// @param up     Where a unit step on z lands.
         Projection(const Point2 across, const Point2 along, const Point2 up) noexcept
-            : x(across), y(along), z(up) {}
+            : x(across), y(along), z(up) {
+        }
 
-        Point2 x{1.0f, 0.0f};   ///< Where a unit step on x lands.
-        Point2 y{0.0f, 1.0f};   ///< Where a unit step on y lands.
-        Point2 z{0.0f, 0.0f};   ///< Where a unit step on z lands.
+        Point2 x{1.0f, 0.0f}; ///< Where a unit step on x lands.
+        Point2 y{0.0f, 1.0f}; ///< Where a unit step on y lands.
+        Point2 z{0.0f, 0.0f}; ///< Where a unit step on z lands.
     };
-
 }

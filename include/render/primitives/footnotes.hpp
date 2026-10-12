@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     /// @brief Footnotes, set at the foot of the page that calls them.
     ///
     /// @par Language
@@ -37,15 +36,15 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Footnotes(syntax::Lexicon& lexicon) noexcept;
+        explicit Footnotes(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\footnote`, `\\footnotemark`, `\\footnotetext` and `\\thanks`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; the number comes from its counters.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a `\\footnote` with no text face.
-        [[nodiscard]] const std::vector<syntax::Traceback>& traceback() const noexcept {
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
             return tracebacks;
         }
 
@@ -57,15 +56,15 @@ namespace render::primitives {
         /// @param text    The mark.
         /// @param size    The size of the text it is set against.
         /// @return The mark's box.
-        [[nodiscard]] static layout::Node* mark(const Context& context, memory::Arena& arena,
-                                                const std::string& text, float size);
+        [[nodiscard]] static layout::Node *mark(const Context &context, memory::Arena &arena,
+                                                const std::string &text, float size);
 
         /// @brief Reads a note's text and lays it out at the foot's size.
         /// @param parser  Parser to read the text with; the brace is next.
         /// @param context Engine services.
         /// @param label   The mark the note opens with.
         /// @return The note, as a column, or nullptr with no text to read.
-        [[nodiscard]] layout::Node* note(syntax::Parser& parser, Context& context, const std::string& label) const;
+        [[nodiscard]] layout::Node *note(syntax::Parser &parser, Context &context, const std::string &label) const;
 
         /// @brief A call's mark and the note it carries, as one node.
         /// @param arena  Allocator for the nodes.
@@ -73,15 +72,14 @@ namespace render::primitives {
         /// @param set    The note, or nullptr for none.
         /// @param origin Where in the source it came from.
         /// @return The node.
-        [[nodiscard]] static syntax::Node* call(memory::Arena& arena, layout::Node* raised, layout::Node* set,
+        [[nodiscard]] static syntax::Node *call(memory::Arena &arena, layout::Node *raised, layout::Node *set,
                                                 memory::Location origin);
 
-        mutable std::vector<syntax::Traceback> tracebacks{};   ///< Errors this module found.
-        mutable int thanked{0};                                 ///< How many `\\thanks` marks are given out.
+        mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
+        mutable int thanked{0}; ///< How many `\\thanks` marks are given out.
 
         /// How far a mark is raised above the baseline, as a fraction of the
         /// text it is set in: where a superscript sits.
         static constexpr float raise = 0.36f;
     };
-
 }

@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::typography {
-
     /// @brief Liang's hyphenation algorithm, over a trie of patterns.
     ///
     /// A pattern is a short run of letters carrying a digit between each pair,
@@ -58,16 +57,16 @@ namespace render::typography {
         ///        in the edges, and what the patterns ending here say. Node 0
         ///        is the root, which no edge leads to, so 0 also means none.
         struct Node {
-            std::uint32_t begin{0};      ///< Its first child's edge.
-            std::uint32_t children{0};   ///< How many children it has.
-            std::uint32_t levels{0};     ///< Where its digits start in the levels.
-            std::uint32_t count{0};      ///< How many digits; 0 when no pattern ends here.
+            std::uint32_t begin{0}; ///< Its first child's edge.
+            std::uint32_t children{0}; ///< How many children it has.
+            std::uint32_t levels{0}; ///< Where its digits start in the levels.
+            std::uint32_t count{0}; ///< How many digits; 0 when no pattern ends here.
         };
 
         /// @brief The way from one node to a child: the letter, and the child.
         struct Edge {
-            std::uint32_t code{0};    ///< The letter.
-            std::uint32_t child{0};   ///< The node it leads to.
+            std::uint32_t code{0}; ///< The letter.
+            std::uint32_t child{0}; ///< The node it leads to.
         };
 
         /// How many first letters a trie's root indexes directly: every byte,
@@ -90,12 +89,12 @@ namespace render::typography {
                 std::uint32_t count{0};
             };
 
-            std::vector<Link> links{Link{}};               ///< Every node as it grows; the first is the root.
-            std::vector<Node> nodes{};                     ///< Every node, packed.
-            std::vector<Edge> edges{};                     ///< Every node's children, side by side.
-            std::vector<std::uint8_t> levels{};            ///< Every pattern's digits, one after another.
-            std::array<std::uint32_t, alphabet> initials{};   ///< The root's child for each first letter.
-            std::size_t patterns{0};                       ///< How many patterns it holds.
+            std::vector<Link> links{Link{}}; ///< Every node as it grows; the first is the root.
+            std::vector<Node> nodes{}; ///< Every node, packed.
+            std::vector<Edge> edges{}; ///< Every node's children, side by side.
+            std::vector<std::uint8_t> levels{}; ///< Every pattern's digits, one after another.
+            std::array<std::uint32_t, alphabet> initials{}; ///< The root's child for each first letter.
+            std::size_t patterns{0}; ///< How many patterns it holds.
 
             /// @brief Reads patterns written as a TeX pattern file writes them
             ///        -- whitespace between them, `%` to the end of a line a
@@ -161,7 +160,8 @@ namespace render::typography {
 
                     links[current].levels = static_cast<std::uint32_t>(levels.size());
                     links[current].count = static_cast<std::uint32_t>(length + 1);
-                    levels.insert(levels.end(), digits.begin(), digits.begin() + static_cast<std::ptrdiff_t>(length + 1));
+                    levels.insert(levels.end(), digits.begin(),
+                                  digits.begin() + static_cast<std::ptrdiff_t>(length + 1));
                     ++patterns;
                 }
 
@@ -173,7 +173,7 @@ namespace render::typography {
                 edges.reserve(links.size());
                 initials.fill(0);
                 for (std::size_t index = 0; index < links.size(); ++index) {
-                    Node& node = nodes[index];
+                    Node &node = nodes[index];
                     node.levels = links[index].levels;
                     node.count = links[index].count;
                     node.begin = static_cast<std::uint32_t>(edges.size());
@@ -182,9 +182,9 @@ namespace render::typography {
                     }
                     node.children = static_cast<std::uint32_t>(edges.size()) - node.begin;
                     std::sort(edges.begin() + node.begin, edges.end(),
-                              [](const Edge& left, const Edge& right) { return left.code < right.code; });
+                              [](const Edge &left, const Edge &right) { return left.code < right.code; });
                     if (index == 0) {
-                        for (const Edge& edge : std::span{edges}.subspan(node.begin)) initials[edge.code] = edge.child;
+                        for (const Edge &edge: std::span{edges}.subspan(node.begin)) initials[edge.code] = edge.child;
                     }
                 }
                 return patterns - before;
@@ -195,8 +195,9 @@ namespace render::typography {
         ///        is added.
         Hyphenator() noexcept = default;
 
-        Hyphenator(const Hyphenator&) = delete("a hyphenator may point into a trie of its own");
-        Hyphenator& operator=(const Hyphenator&) = delete("a hyphenator may point into a trie of its own");
+        Hyphenator(const Hyphenator &) = delete("a hyphenator may point into a trie of its own");
+
+        Hyphenator &operator=(const Hyphenator &) = delete("a hyphenator may point into a trie of its own");
 
         /// @brief Reads a TeX pattern file into the trie.
         ///
@@ -249,7 +250,7 @@ namespace render::typography {
         /// @complexity O(n * k) in the word's length and the longest pattern,
         ///             independent of how many patterns were loaded.
         [[nodiscard]] memory::Slice<std::uint8_t> execute(
-            memory::Arena& scratch,
+            memory::Arena &scratch,
             memory::Slice<std::uint32_t> word,
             std::uint32_t pad = '.',
             std::size_t left = 2,
@@ -260,13 +261,12 @@ namespace render::typography {
         [[nodiscard]] std::size_t count() const noexcept { return patterns; }
 
     private:
-        mutable Trie grown{};                          ///< A trie of the hyphenator's own, for patterns read at run time.
-        mutable std::string_view source{};             ///< The compiled language's own patterns, to read again into #grown.
-        mutable std::span<const Node> nodes{};          ///< The trie execute() walks: the compiled one or #grown.
-        mutable std::span<const Edge> edges{};          ///< Its edges.
+        mutable Trie grown{}; ///< A trie of the hyphenator's own, for patterns read at run time.
+        mutable std::string_view source{}; ///< The compiled language's own patterns, to read again into #grown.
+        mutable std::span<const Node> nodes{}; ///< The trie execute() walks: the compiled one or #grown.
+        mutable std::span<const Edge> edges{}; ///< Its edges.
         mutable std::span<const std::uint8_t> levels{}; ///< Its digits.
-        mutable const std::uint32_t* initials{nullptr}; ///< Its root's child for each first letter.
-        mutable std::size_t patterns{0};               ///< Patterns it holds.
+        mutable const std::uint32_t *initials{nullptr}; ///< Its root's child for each first letter.
+        mutable std::size_t patterns{0}; ///< Patterns it holds.
     };
-
 }

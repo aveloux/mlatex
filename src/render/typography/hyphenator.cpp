@@ -14,7 +14,6 @@
 #include <utility>
 
 namespace render::typography {
-
     std::size_t Hyphenator::compose(const std::string_view path) const {
         // std::string, not path.data(): a string_view is not guaranteed to be
         // terminated, and handing an unterminated one to a stream reads past
@@ -60,7 +59,7 @@ namespace render::typography {
     }
 
     memory::Slice<std::uint8_t> Hyphenator::execute(
-        memory::Arena& scratch,
+        memory::Arena &scratch,
         const memory::Slice<std::uint32_t> word,
         const std::uint32_t pad,
         const std::size_t left,
@@ -86,11 +85,11 @@ namespace render::typography {
         // The walk reads through plain pointers: it is the innermost loop of
         // hyphenating a document, and a checked accessor per letter would be
         // most of what it costs.
-        const std::uint32_t* const letters = padded.data;
-        std::uint8_t* const highest = claimed.data;
-        const Node* const trie = nodes.data();
-        const Edge* const ways = edges.data();
-        const std::uint8_t* const digits = levels.data();
+        const std::uint32_t *const letters = padded.data;
+        std::uint8_t *const highest = claimed.data;
+        const Node *const trie = nodes.data();
+        const Edge *const ways = edges.data();
+        const std::uint8_t *const digits = levels.data();
 
         for (std::size_t start = 0; start < total; ++start) {
             // The first letter straight from the root's index; see #alphabet.
@@ -102,7 +101,7 @@ namespace render::typography {
             for (std::size_t step = start; current != 0;) {
                 // Highest digit wins, which is how an even level in a longer
                 // pattern vetoes the odd level a shorter one asked for.
-                const Node& node = trie[current];
+                const Node &node = trie[current];
                 for (std::size_t offset = 0; offset < node.count; ++offset) {
                     const std::size_t target = start + offset;
                     const std::uint8_t level = digits[node.levels + offset];
@@ -112,7 +111,7 @@ namespace render::typography {
                 if (++step >= total) break;
                 const std::uint32_t code = letters[step];
                 current = 0;
-                for (const Edge* way = ways + node.begin, *last = way + node.children; way != last; ++way) {
+                for (const Edge *way = ways + node.begin, *last = way + node.children; way != last; ++way) {
                     if (way->code < code) continue;
                     if (way->code == code) current = way->child;
                     break;
@@ -133,5 +132,4 @@ namespace render::typography {
 
         return result;
     }
-
 }

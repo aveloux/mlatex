@@ -19,7 +19,6 @@
 #include <vector>
 
 namespace render::layout {
-
     using Category = syntax::expression::Unicodes::Category;
     using Expression = syntax::expression::Node;
     using Alphabet = Typesetter::Alphabet;
@@ -35,18 +34,20 @@ namespace render::layout {
     ///
     /// A space marked here is dropped at script size, again as TeX does
     /// it, because an exponent has no room for it.
-    static constexpr std::array<std::array<std::uint8_t, 9>, 9> spacing{{
-        //         Ord  Op  Bin  Rel Open Close Punct Inner Accent
-        /* Ord   */ {{ 0,  3,  4,  5,  0,  0,  0,  3,  0 }},
-        /* Op    */ {{ 3,  3,  0,  5,  0,  0,  0,  3,  0 }},
-        /* Bin   */ {{ 4,  4,  0,  0,  4,  0,  0,  4,  0 }},
-        /* Rel   */ {{ 5,  5,  0,  0,  5,  0,  0,  5,  0 }},
-        /* Open  */ {{ 0,  0,  0,  0,  0,  0,  0,  0,  0 }},
-        /* Close */ {{ 0,  3,  4,  5,  0,  0,  0,  3,  0 }},
-        /* Punct */ {{ 3,  3,  0,  3,  3,  3,  3,  3,  0 }},
-        /* Inner */ {{ 3,  3,  4,  5,  3,  0,  3,  3,  0 }},
-        /* Accent*/ {{ 0,  3,  4,  5,  0,  0,  0,  3,  0 }},
-    }};
+    static constexpr std::array<std::array<std::uint8_t, 9>, 9> spacing{
+        {
+            //         Ord  Op  Bin  Rel Open Close Punct Inner Accent
+            /* Ord   */ {{0, 3, 4, 5, 0, 0, 0, 3, 0}},
+            /* Op    */ {{3, 3, 0, 5, 0, 0, 0, 3, 0}},
+            /* Bin   */ {{4, 4, 0, 0, 4, 0, 0, 4, 0}},
+            /* Rel   */ {{5, 5, 0, 0, 5, 0, 0, 5, 0}},
+            /* Open  */ {{0, 0, 0, 0, 0, 0, 0, 0, 0}},
+            /* Close */ {{0, 3, 4, 5, 0, 0, 0, 3, 0}},
+            /* Punct */ {{3, 3, 0, 3, 3, 3, 3, 3, 0}},
+            /* Inner */ {{3, 3, 4, 5, 3, 0, 3, 3, 0}},
+            /* Accent*/ {{0, 3, 4, 5, 0, 0, 0, 3, 0}},
+        }
+    };
 
     /// @brief How wide a spacing command is, in eighteenths of an em.
     ///
@@ -61,10 +62,10 @@ namespace render::layout {
     static constexpr float width(std::string_view name) noexcept {
         if (name.starts_with('\\')) name.remove_prefix(1);
 
-        if (name == ",") return 3.0f;     // thin
-        if (name == ":") return 4.0f;     // medium
-        if (name == ";") return 5.0f;     // thick
-        if (name == "!") return -3.0f;    // negative thin
+        if (name == ",") return 3.0f; // thin
+        if (name == ":") return 4.0f; // medium
+        if (name == ";") return 5.0f; // thick
+        if (name == "!") return -3.0f; // negative thin
         // A word space: `\ `, a tie, and a backslash ending its line.
         if (name == " " || name == "~" || name == "\n" || name == "\r" || name == "\r\n") return 6.0f;
         if (name == "quad") return 18.0f;
@@ -88,7 +89,7 @@ namespace render::layout {
     ///                meets whatever follows it; false for its left.
     /// @return Its category on that side.
     /// @complexity O(depth) of the edge it follows, which is O(1) in practice.
-    static constexpr Category classify(const Expression* node, const bool closing) noexcept {
+    static constexpr Category classify(const Expression *node, const bool closing) noexcept {
         if (!node) return Category::Ordinary;
 
         switch (node->type) {
@@ -118,8 +119,9 @@ namespace render::layout {
                 // A named function is an operator; a spacing command is
                 // not an atom at all and is left Ordinary.
                 if (node->arguments.count == 0) {
-                    return !node->left && width(node->value) == 0.0f ? Category::Operator
-                                                                     : Category::Ordinary;
+                    return !node->left && width(node->value) == 0.0f
+                               ? Category::Operator
+                               : Category::Ordinary;
                 }
                 if (node->value.empty()) {
                     return classify(node->arguments[closing ? node->arguments.count - 1 : 0], closing);
@@ -131,22 +133,24 @@ namespace render::layout {
     }
 
     Typesetter::Typesetter(
-        memory::Arena& arena,
-        typography::Registry& registry,
-        const typography::Shaper& shaper,
-        const Metrics& metrics
+        memory::Arena &arena,
+        typography::Registry &registry,
+        const typography::Shaper &shaper,
+        const Metrics &metrics
     ) noexcept
-        : arena(arena), registry(registry), shaper(shaper), metrics(metrics) {}
+        : arena(arena), registry(registry), shaper(shaper), metrics(metrics) {
+    }
 
     Typesetter::Typesetter(
-        memory::Arena& arena,
-        typography::Registry& registry,
-        const typography::Shaper& shaper
+        memory::Arena &arena,
+        typography::Registry &registry,
+        const typography::Shaper &shaper
     ) noexcept
-        : Typesetter(arena, registry, shaper, Metrics{}) {}
+        : Typesetter(arena, registry, shaper, Metrics{}) {
+    }
 
     Typesetter::Frame Typesetter::frame(
-        const typography::Font& font,
+        const typography::Font &font,
         const float target,
         const Style style,
         const Alphabet alphabet
@@ -167,13 +171,13 @@ namespace render::layout {
                          : metrics.script * metrics.script;
         }
 
-        const typography::Font* resolved = &font;
+        const typography::Font *resolved = &font;
         if (factor < 1.0f && !font.family().empty()) {
             const typography::Registry::Request smaller{
                 .family = font.family(),
                 .size = font.size() * factor
             };
-            if (const typography::Font* found = registry.get(smaller)) {
+            if (const typography::Font *found = registry.get(smaller)) {
                 resolved = found;
             }
         }
@@ -205,14 +209,18 @@ namespace render::layout {
             // Without the font's own, TeX's: the bar's thickness in a line
             // and three of it in a display, three and seven between the
             // parts of a binomial.
-            .separation = carried && math.separation > 0.0f ? math.separation * factor
-                                                            : size * metrics.thickness,
-            .distance = carried && math.distance > 0.0f ? math.distance * factor
-                                                        : size * metrics.thickness * 3.0f,
-            .spacing = carried && math.spacing > 0.0f ? math.spacing * factor
-                                                      : size * metrics.thickness * 3.0f,
-            .spread = carried && math.spread > 0.0f ? math.spread * factor
-                                                    : size * metrics.thickness * 7.0f,
+            .separation = carried && math.separation > 0.0f
+                              ? math.separation * factor
+                              : size * metrics.thickness,
+            .distance = carried && math.distance > 0.0f
+                            ? math.distance * factor
+                            : size * metrics.thickness * 3.0f,
+            .spacing = carried && math.spacing > 0.0f
+                           ? math.spacing * factor
+                           : size * metrics.thickness * 3.0f,
+            .spread = carried && math.spread > 0.0f
+                          ? math.spread * factor
+                          : size * metrics.thickness * 7.0f,
             .superscript = carried && math.superscript > 0.0f
                                ? math.superscript * factor
                                : size * metrics.superscript,
@@ -227,30 +235,31 @@ namespace render::layout {
             .after = carried ? math.after * factor : size * metrics.after,
             .raise = carried && math.raise > 0.0f ? math.raise : metrics.raise,
             .quad = size,
-            .display = carried && math.display > 0.0f ? math.display * factor
-                                                      : size * metrics.display,
+            .display = carried && math.display > 0.0f
+                           ? math.display * factor
+                           : size * metrics.display,
             .drop = carried && math.drop > 0.0f ? math.drop * factor : size * metrics.drop,
             .sink = carried && math.sink > 0.0f ? math.sink * factor : size * metrics.sink,
             .limit = carried && math.limit > 0.0f ? math.limit * factor : size * metrics.limit
         };
     }
 
-    Node* Typesetter::lower(
-        const syntax::expression::Node* node,
-        const typography::Font& font,
+    Node *Typesetter::lower(
+        const syntax::expression::Node *node,
+        const typography::Font &font,
         const float target,
         const Style style
     ) const {
         if (!node) return nullptr;
 
-        Node* box = render(node, frame(font, target, style));
+        Node *box = render(node, frame(font, target, style));
         if (!box) return nullptr;
 
         // Always wrapped, so the box handed back is one this method owns.
         // A fraction sets a shift of its own to reach the axis, and a caller
         // stacking it in a column would otherwise overwrite that.
         if (node->style != syntax::expression::Node::Style::Display || target <= 0.0f) {
-            const memory::Slice<Node*> only = arena.allocate<Node*>(1);
+            const memory::Slice<Node *> only = arena.allocate<Node *>(1);
             only[0] = box;
             return Line::horizontal(arena, only, 0.0f);
         }
@@ -259,20 +268,20 @@ namespace render::layout {
         // sides of it rather than a computed offset: the line then stays
         // centred if the column is later resized.
 
-        auto* left = arena.compose<Node>(Node::Type::Glue);
+        auto *left = arena.compose<Node>(Node::Type::Glue);
         left->glue({.width = 0.0f, .stretch = 1.0f, .expand = Node::Order::Fil});
 
-        auto* right = arena.compose<Node>(Node::Type::Glue);
+        auto *right = arena.compose<Node>(Node::Type::Glue);
         right->glue({.width = 0.0f, .stretch = 1.0f, .expand = Node::Order::Fil});
 
-        const memory::Slice<Node*> row = arena.allocate<Node*>(3);
+        const memory::Slice<Node *> row = arena.allocate<Node *>(3);
         row[0] = left;
         row[1] = box;
         row[2] = right;
         return Line::horizontal(arena, row, target);
     }
 
-    void Typesetter::paint(Node* node, const Node::Color& color) noexcept {
+    void Typesetter::paint(Node *node, const Node::Color &color) noexcept {
         if (!node) return;
         if (node->type == Node::Type::Glyph) {
             Node::Glyph mark = node->glyph();
@@ -283,61 +292,61 @@ namespace render::layout {
             bar.color = color;
             node->rule(bar);
         } else if (node->type == Node::Type::Box) {
-            for (Node* inner : node->box().list) paint(inner, color);
+            for (Node *inner: node->box().list) paint(inner, color);
         }
     }
 
-    memory::Slice<Node*> Typesetter::unfold(
-        const syntax::expression::Node* node,
-        const typography::Font& font
+    memory::Slice<Node *> Typesetter::unfold(
+        const syntax::expression::Node *node,
+        const typography::Font &font
     ) const {
         if (!node) return {};
 
         // render() appends the outer level's pieces as it makes them, and
         // hands back whatever it built as a box of its own instead.
-        std::vector<Node*> pieces;
+        std::vector<Node *> pieces;
         Frame scope = frame(font, 0.0f, Style::Text);
         scope.pieces = &pieces;
-        if (Node* box = render(node, scope)) pieces.push_back(box);
+        if (Node *box = render(node, scope)) pieces.push_back(box);
         if (pieces.empty()) return {};
 
         // Nothing to break at: one box, wrapped as lower() wraps it, so a
         // fraction's own shift survives whatever is done to the box after.
         if (pieces.size() == 1) {
-            const memory::Slice<Node*> only = arena.allocate<Node*>(1);
+            const memory::Slice<Node *> only = arena.allocate<Node *>(1);
             only[0] = pieces[0];
-            const memory::Slice<Node*> wrapped = arena.allocate<Node*>(1);
+            const memory::Slice<Node *> wrapped = arena.allocate<Node *>(1);
             wrapped[0] = Line::horizontal(arena, only, 0.0f);
             return wrapped;
         }
 
-        const memory::Slice<Node*> run = arena.allocate<Node*>(pieces.size());
+        const memory::Slice<Node *> run = arena.allocate<Node *>(pieces.size());
         std::ranges::copy(pieces, run.begin());
         return run;
     }
 
-    Node* Typesetter::enclose(Node* part) const {
+    Node *Typesetter::enclose(Node *part) const {
         if (!part) return nullptr;
         if (part->type == Node::Type::Box && part->box().shift == 0.0f &&
             part->box().offset == 0.0f) {
             return part;
         }
-        const memory::Slice<Node*> only = arena.allocate<Node*>(1);
+        const memory::Slice<Node *> only = arena.allocate<Node *>(1);
         only[0] = part;
         return Line::horizontal(arena, only, 0.0f);
     }
 
-    float Typesetter::bearing(const Node* node) noexcept {
+    float Typesetter::bearing(const Node *node) noexcept {
         if (!node) return 0.0f;
 
         switch (node->type) {
             case Node::Type::Glyph: {
-                const Node::Glyph& mark = node->glyph();
+                const Node::Glyph &mark = node->glyph();
                 return mark.x + (mark.font ? mark.font->bounds(mark.code).x : 0.0f);
             }
             case Node::Type::Box: {
-                const Node::Box& box = node->box();
-                const auto blank = [](const Node* child) {
+                const Node::Box &box = node->box();
+                const auto blank = [](const Node *child) {
                     return child->type == Node::Type::Penalty || child->type == Node::Type::Directive;
                 };
 
@@ -345,7 +354,7 @@ namespace render::layout {
                 // in front of it moves the ink in by its own width.
                 if (box.alignment == Node::Alignment::Horizontal && !box.absolute) {
                     float offset = box.offset;
-                    for (const Node* child : box.list) {
+                    for (const Node *child: box.list) {
                         if (!child || blank(child)) continue;
                         if (child->type == Node::Type::Kern || child->type == Node::Type::Glue) {
                             offset += Line::advance(child);
@@ -360,7 +369,7 @@ namespace render::layout {
                 // edge, so the edge is whichever reaches furthest left -- a
                 // fraction's bar, not the narrower numerator above it.
                 float least = std::numeric_limits<float>::max();
-                for (const Node* child : box.list) {
+                for (const Node *child: box.list) {
                     if (!child || blank(child) || child->type == Node::Type::Kern ||
                         child->type == Node::Type::Glue) {
                         continue;
@@ -375,14 +384,14 @@ namespace render::layout {
         }
     }
 
-    Node* Typesetter::delimiter(
+    Node *Typesetter::delimiter(
         const std::uint32_t codepoint,
         const float reach,
-        const Frame& scope
+        const Frame &scope
     ) const {
         if (codepoint == 0 || !scope.font) return nullptr;
 
-        const typography::Font& font = *scope.font;
+        const typography::Font &font = *scope.font;
         const std::uint32_t base = font.index(codepoint);
         if (base == 0) return nullptr;
 
@@ -393,7 +402,7 @@ namespace render::layout {
         // around a matrix of several rows -- it is built from the font's
         // parts instead, and centred on the axis the same way.
         if (advance < reach) {
-            if (Node* built = extend(codepoint, reach, scope); built && built->box().list.count > 1) {
+            if (Node *built = extend(codepoint, reach, scope); built && built->box().list.count > 1) {
                 Node::Box shape = built->box();
                 shape.shift = shape.height * 0.5f - scope.axis;
                 built->box(shape);
@@ -409,7 +418,7 @@ namespace render::layout {
         const float middle = ink.y - ink.height * 0.5f;
         const float span = std::max(ink.height, advance);
 
-        auto* drawn = arena.compose<Node>(Node::Type::Glyph);
+        auto *drawn = arena.compose<Node>(Node::Type::Glyph);
         drawn->glyph({
             .width = font.advance(glyph),
             .height = scope.axis + span * 0.5f,
@@ -422,10 +431,10 @@ namespace render::layout {
         return drawn;
     }
 
-    Node* Typesetter::extend(const std::uint32_t codepoint, const float reach, const Frame& scope) const {
+    Node *Typesetter::extend(const std::uint32_t codepoint, const float reach, const Frame &scope) const {
         if (codepoint == 0 || !scope.font) return nullptr;
 
-        const typography::Font& font = *scope.font;
+        const typography::Font &font = *scope.font;
         const std::uint32_t base = font.index(codepoint);
         if (base == 0) return nullptr;
 
@@ -442,13 +451,13 @@ namespace render::layout {
 
         // Each piece placed so its ink's bottom stands its lift above the
         // box's baseline; the box is a canvas, so each carries its own place.
-        const memory::Slice<Node*> pieces = arena.allocate<Node*>(built.pieces.size());
+        const memory::Slice<Node *> pieces = arena.allocate<Node *>(built.pieces.size());
         float width = 0.0f;
         for (std::size_t index = 0; index < built.pieces.size(); ++index) {
-            const auto& [glyph, lift] = built.pieces[index];
+            const auto &[glyph, lift] = built.pieces[index];
             const typography::Font::Box ink = font.bounds(glyph);
 
-            auto* piece = arena.compose<Node>(Node::Type::Glyph);
+            auto *piece = arena.compose<Node>(Node::Type::Glyph);
             piece->glyph({
                 .width = font.advance(glyph),
                 .height = lift + ink.height,
@@ -464,7 +473,7 @@ namespace render::layout {
             width = std::max(width, font.advance(glyph));
         }
 
-        auto* box = arena.compose<Node>(Node::Type::Box);
+        auto *box = arena.compose<Node>(Node::Type::Box);
         Node::Box shape{};
         shape.width = width;
         shape.height = built.span;
@@ -474,13 +483,13 @@ namespace render::layout {
         return box;
     }
 
-    Node* Typesetter::fence(
-        Node* inner,
+    Node *Typesetter::fence(
+        Node *inner,
         const std::uint32_t open,
         const std::uint32_t close,
-        const Frame& scope
+        const Frame &scope
     ) const {
-        Node* body = enclose(inner);
+        Node *body = enclose(inner);
 
         // How far the contents reach from the axis, on whichever side reaches
         // further. TeX lets a delimiter fall a tenth short of twice that,
@@ -490,20 +499,20 @@ namespace render::layout {
         const float depth = body ? body->box().depth : scope.quad * 0.5f;
         const float reach = 2.0f * std::max(height - scope.axis, depth + scope.axis) * 0.901f;
 
-        std::array<Node*, 3> parts{};
+        std::array<Node *, 3> parts{};
         std::size_t filled = 0;
 
-        if (Node* left = delimiter(open, reach, scope)) parts[filled++] = left;
+        if (Node *left = delimiter(open, reach, scope)) parts[filled++] = left;
         if (body) parts[filled++] = body;
-        if (Node* right = delimiter(close, reach, scope)) parts[filled++] = right;
+        if (Node *right = delimiter(close, reach, scope)) parts[filled++] = right;
 
         if (filled == 0) return nullptr;
-        const memory::Slice<Node*> row = arena.allocate<Node*>(filled);
+        const memory::Slice<Node *> row = arena.allocate<Node *>(filled);
         std::copy_n(parts.begin(), filled, row.begin());
         return Line::horizontal(arena, row, 0.0f);
     }
 
-    Node* Typesetter::render(const syntax::expression::Node* node, const Frame& scope) const {
+    Node *Typesetter::render(const syntax::expression::Node *node, const Frame &scope) const {
         if (!node || !scope.font) return nullptr;
 
         // Only an operator and a run of atoms keep the formula's outer level
@@ -516,10 +525,9 @@ namespace render::layout {
             return render(node, closed);
         }
 
-        const typography::Font& font = *scope.font;
+        const typography::Font &font = *scope.font;
 
         switch (node->type) {
-
             // A symbol. The code point is what the maths tables resolved the
             // name to; index() turns it into the glyph the font actually
             // draws, and a zero there means this face has no such character.
@@ -534,11 +542,15 @@ namespace render::layout {
                     sized.size() >= 4 && sized[0] == '\\' && (sized[1] == 'b' || sized[1] == 'B')) {
                     sized.remove_prefix(1);
                     if (sized.ends_with('l') || sized.ends_with('r') || sized.ends_with('m')) sized.remove_suffix(1);
-                    const float size = sized == "big"    ? 1.2f
-                                       : sized == "Big"  ? 1.8f
-                                       : sized == "bigg" ? 2.4f
-                                       : sized == "Bigg" ? 3.0f
-                                                         : 0.0f;
+                    const float size = sized == "big"
+                                           ? 1.2f
+                                           : sized == "Big"
+                                                 ? 1.8f
+                                                 : sized == "bigg"
+                                                       ? 2.4f
+                                                       : sized == "Bigg"
+                                                             ? 3.0f
+                                                             : 0.0f;
                     if (size > 0.0f) return delimiter(node->codepoint, size * scope.quad, scope);
                 }
 
@@ -548,7 +560,7 @@ namespace render::layout {
                     node->style == Expression::Style::Display && scope.style == Style::Text && !scope.stepped) {
                     // Only a size drawn whole: a script is placed against the
                     // glyph's own corners, which a mark built from parts has not.
-                    if (Node* large = delimiter(node->codepoint, scope.display, scope);
+                    if (Node *large = delimiter(node->codepoint, scope.display, scope);
                         large && large->type == Node::Type::Glyph) {
                         return large;
                     }
@@ -563,12 +575,12 @@ namespace render::layout {
                                (character >= 'A' && character <= 'Z') ||
                                (character >= '0' && character <= '9');
                     })) {
-                    const memory::Slice<Node*> row = arena.allocate<Node*>(written.size());
+                    const memory::Slice<Node *> row = arena.allocate<Node *>(written.size());
                     std::size_t filled = 0;
                     for (std::size_t index = 0; index < written.size(); ++index) {
                         syntax::expression::Node single = *node;
                         single.value = written.substr(index, 1);
-                        if (Node* drawn = render(&single, scope)) row[filled++] = drawn;
+                        if (Node *drawn = render(&single, scope)) row[filled++] = drawn;
                     }
                     if (filled == 0) return nullptr;
                     return Line::horizontal(arena, memory::Slice{row.data, filled}, 0.0f);
@@ -604,13 +616,13 @@ namespace render::layout {
                             }
                             if (codepoint >= 0x0391 && codepoint <= 0x03A9) return 0x1D6A8 + (codepoint - 0x0391);
                             switch (codepoint) {
-                                case 0x2207: return slanted ? 0x1D735 : 0x1D6C1;   // nabla
-                                case 0x2202: return slanted ? 0x1D74F : 0x1D6DB;   // partial
-                                case 0x03F5: return slanted ? 0x1D750 : 0x1D6DC;   // lunate epsilon
-                                case 0x03D1: return slanted ? 0x1D751 : 0x1D6DD;   // theta symbol
-                                case 0x03D5: return slanted ? 0x1D753 : 0x1D6DF;   // phi symbol
-                                case 0x03F1: return slanted ? 0x1D754 : 0x1D6E0;   // rho symbol
-                                case 0x03D6: return slanted ? 0x1D755 : 0x1D6E1;   // pi symbol
+                                case 0x2207: return slanted ? 0x1D735 : 0x1D6C1; // nabla
+                                case 0x2202: return slanted ? 0x1D74F : 0x1D6DB; // partial
+                                case 0x03F5: return slanted ? 0x1D750 : 0x1D6DC; // lunate epsilon
+                                case 0x03D1: return slanted ? 0x1D751 : 0x1D6DD; // theta symbol
+                                case 0x03D5: return slanted ? 0x1D753 : 0x1D6DF; // phi symbol
+                                case 0x03F1: return slanted ? 0x1D754 : 0x1D6E0; // rho symbol
+                                case 0x03D6: return slanted ? 0x1D755 : 0x1D6E1; // pi symbol
                                 default: break;
                             }
                             const bool upper = codepoint >= 'A' && codepoint <= 'Z';
@@ -629,13 +641,13 @@ namespace render::layout {
                             // variant forms and the partial sign sit after it.
                             if (codepoint >= 0x03B1 && codepoint <= 0x03C9) return 0x1D6FC + (codepoint - 0x03B1);
                             switch (codepoint) {
-                                case 0x2202: return 0x1D715;   // partial
-                                case 0x03F5: return 0x1D716;   // lunate epsilon
-                                case 0x03D1: return 0x1D717;   // theta symbol
-                                case 0x03F0: return 0x1D718;   // kappa symbol
-                                case 0x03D5: return 0x1D719;   // phi symbol
-                                case 0x03F1: return 0x1D71A;   // rho symbol
-                                case 0x03D6: return 0x1D71B;   // pi symbol
+                                case 0x2202: return 0x1D715; // partial
+                                case 0x03F5: return 0x1D716; // lunate epsilon
+                                case 0x03D1: return 0x1D717; // theta symbol
+                                case 0x03F0: return 0x1D718; // kappa symbol
+                                case 0x03D5: return 0x1D719; // phi symbol
+                                case 0x03F1: return 0x1D71A; // rho symbol
+                                case 0x03D6: return 0x1D71B; // pi symbol
                                 default: break;
                             }
                         }
@@ -645,7 +657,8 @@ namespace render::layout {
                         const bool digit = codepoint >= '0' && codepoint <= '9';
                         if (!upper && !lower && !digit) return 0;
 
-                        const std::uint32_t letter = upper ? codepoint - 'A' : lower ? codepoint - 'a' : codepoint - '0';
+                        const std::uint32_t letter =
+                                upper ? codepoint - 'A' : lower ? codepoint - 'a' : codepoint - '0';
 
                         // The ranges are laid out capitals, then lower case, then digits,
                         // and an alphabet that has no digits of its own borrows them.
@@ -712,7 +725,7 @@ namespace render::layout {
 
                     if (glyph != 0) {
                         const typography::Font::Box ink = font.bounds(glyph);
-                        auto* drawn = arena.compose<Node>(Node::Type::Glyph);
+                        auto *drawn = arena.compose<Node>(Node::Type::Glyph);
                         drawn->glyph({
                             .width = font.advance(glyph),
                             .height = std::max(ink.y, 0.0f),
@@ -729,9 +742,9 @@ namespace render::layout {
                 // as written. That covers letters and digits, which arrive as
                 // characters rather than as named symbols.
                 if (node->value.empty()) return nullptr;
-                const typography::Font* fonts[] = {&font};
-                const memory::Slice<Node*> shaped =
-                    shaper.shape(memory::Slice{fonts, 1uz}, node->value, {});
+                const typography::Font *fonts[] = {&font};
+                const memory::Slice<Node *> shaped =
+                        shaper.shape(memory::Slice{fonts, 1uz}, node->value, {});
                 if (shaped.empty()) return nullptr;
                 if (shaped.count == 1) return shaped[0];
                 return Line::horizontal(arena, shaped, 0.0f);
@@ -749,22 +762,23 @@ namespace render::layout {
                 symbol.codepoint = node->codepoint;
                 Frame closed = scope;
                 closed.pieces = nullptr;
-                Node* mark = render(&symbol, closed);
+                Node *mark = render(&symbol, closed);
 
                 // The operator's own class: a relation, punctuation, or an
                 // ordinary symbol such as the solidus spaced as its class
                 // says; anything else between two operands is binary. A sign
                 // is ordinary, with nothing on its left to be between.
-                const Category sort = node->type != Expression::Type::Binary ? Category::Ordinary
-                                      : node->category == Category::Relation ||
-                                                node->category == Category::Punctuation ||
-                                                node->category == Category::Ordinary
-                                          ? node->category
-                                          : Category::Binary;
+                const Category sort = node->type != Expression::Type::Binary
+                                          ? Category::Ordinary
+                                          : node->category == Category::Relation ||
+                                            node->category == Category::Punctuation ||
+                                            node->category == Category::Ordinary
+                                                ? node->category
+                                                : Category::Binary;
                 const auto pad = [&](const Category before, const Category after) {
                     if (scope.style != Style::Text) return 0.0f;
                     return scope.quad * static_cast<float>(spacing[static_cast<std::size_t>(before)]
-                                                                  [static_cast<std::size_t>(after)]) / 18.0f;
+                               [static_cast<std::size_t>(after)]) / 18.0f;
                 };
                 const float leading = pad(Category::Ordinary, sort);
                 const float trailing = pad(sort, Category::Ordinary);
@@ -774,46 +788,46 @@ namespace render::layout {
                 // \\binoppenalty after the operator: the price of ending a line
                 // there, which is the only place in such a formula one may end.
                 if (scope.pieces) {
-                    std::vector<Node*>& pieces = *scope.pieces;
+                    std::vector<Node *> &pieces = *scope.pieces;
                     const std::size_t before = pieces.size();
-                    if (Node* box = render(node->left, scope)) pieces.push_back(box);
+                    if (Node *box = render(node->left, scope)) pieces.push_back(box);
                     const bool left = pieces.size() > before;
                     const bool right = node->right != nullptr;
                     if (left && mark && leading > 0.0f) {
-                        auto* space = arena.compose<Node>(Node::Type::Kern);
+                        auto *space = arena.compose<Node>(Node::Type::Kern);
                         space->kern({.width = leading});
                         pieces.push_back(space);
                     }
                     if (mark) pieces.push_back(mark);
                     if (left && right && mark && (sort == Category::Relation || sort == Category::Binary)) {
-                        auto* price = arena.compose<Node>(Node::Type::Penalty);
+                        auto *price = arena.compose<Node>(Node::Type::Penalty);
                         price->penalty({.value = sort == Category::Relation ? 500 : 700});
                         pieces.push_back(price);
                     }
                     if (right && mark && trailing > 0.0f) {
-                        auto* space = arena.compose<Node>(Node::Type::Kern);
+                        auto *space = arena.compose<Node>(Node::Type::Kern);
                         space->kern({.width = trailing});
                         pieces.push_back(space);
                     }
-                    if (Node* box = render(node->right, scope)) pieces.push_back(box);
+                    if (Node *box = render(node->right, scope)) pieces.push_back(box);
                     return nullptr;
                 }
 
-                Node* left = render(node->left, scope);
-                Node* right = render(node->right, scope);
+                Node *left = render(node->left, scope);
+                Node *right = render(node->right, scope);
 
-                std::array<Node*, 5> parts{};
+                std::array<Node *, 5> parts{};
                 std::size_t filled = 0;
 
                 if (left) parts[filled++] = left;
                 if (left && mark && leading > 0.0f) {
-                    auto* space = arena.compose<Node>(Node::Type::Kern);
+                    auto *space = arena.compose<Node>(Node::Type::Kern);
                     space->kern({.width = leading});
                     parts[filled++] = space;
                 }
                 if (mark) parts[filled++] = mark;
                 if (right && mark && trailing > 0.0f) {
-                    auto* space = arena.compose<Node>(Node::Type::Kern);
+                    auto *space = arena.compose<Node>(Node::Type::Kern);
                     space->kern({.width = trailing});
                     parts[filled++] = space;
                 }
@@ -822,7 +836,7 @@ namespace render::layout {
                 if (filled == 0) return nullptr;
                 if (filled == 1) return parts[0];
 
-                const memory::Slice<Node*> row = arena.allocate<Node*>(filled);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(filled);
                 std::copy_n(parts.begin(), filled, row.begin());
                 return Line::horizontal(arena, row, 0.0f);
             }
@@ -835,7 +849,7 @@ namespace render::layout {
                     // table where it reads wrongly. TeX measures these in
                     // eighteenths of an em, and so does the table.
                     if (const float units = width(node->value); units != 0.0f) {
-                        auto* space = arena.compose<Node>(Node::Type::Kern);
+                        auto *space = arena.compose<Node>(Node::Type::Kern);
                         space->kern({.width = scope.quad * units / 18.0f});
                         return space;
                     }
@@ -848,9 +862,9 @@ namespace render::layout {
                     if (name.starts_with('\\')) name.remove_prefix(1);
                     if (name.empty()) return nullptr;
 
-                    const typography::Font* fonts[] = {&font};
-                    const memory::Slice<Node*> shaped =
-                        shaper.shape(memory::Slice{fonts, 1uz}, name, {});
+                    const typography::Font *fonts[] = {&font};
+                    const memory::Slice<Node *> shaped =
+                            shaper.shape(memory::Slice{fonts, 1uz}, name, {});
                     if (shaped.empty()) return nullptr;
                     return Line::horizontal(arena, shaped, 0.0f);
                 }
@@ -893,9 +907,9 @@ namespace render::layout {
                     // `\\phantom` both ways, `\\hphantom` only across and
                     // `\\vphantom` only up and down, a strut as tall as it.
                     if (name == "phantom" || name == "hphantom" || name == "vphantom") {
-                        const Node* body = enclose(render(node->arguments[0], scope));
+                        const Node *body = enclose(render(node->arguments[0], scope));
                         if (!body) return nullptr;
-                        Node* blank = Line::horizontal(arena, memory::Slice<Node*>{}, 0.0f);
+                        Node *blank = Line::horizontal(arena, memory::Slice<Node *>{}, 0.0f);
                         Node::Box shape = blank->box();
                         shape.width = name == "vphantom" ? 0.0f : body->box().width;
                         shape.height = name == "hphantom" ? 0.0f : body->box().height;
@@ -906,7 +920,7 @@ namespace render::layout {
 
                     // Drawn, but standing no taller or deeper than the line.
                     if (name == "smash") {
-                        Node* body = enclose(render(node->arguments[0], scope));
+                        Node *body = enclose(render(node->arguments[0], scope));
                         if (!body) return nullptr;
                         Node::Box shape = body->box();
                         shape.height = 0.0f;
@@ -918,27 +932,28 @@ namespace render::layout {
                     // A bar above or below, drawn the width of what it covers.
                     const bool above = name == "overline";
                     if (above || name == "underline") {
-                        Node* body = enclose(render(node->arguments[0], scope));
+                        Node *body = enclose(render(node->arguments[0], scope));
                         if (!body) return nullptr;
 
-                        auto* bar = arena.compose<Node>(Node::Type::Rule);
+                        auto *bar = arena.compose<Node>(Node::Type::Rule);
                         bar->rule({.width = body->box().width, .height = scope.thickness});
 
-                        auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                        auto *clearance = arena.compose<Node>(Node::Type::Kern);
                         clearance->kern({.width = scope.gap});
 
-                        const memory::Slice<Node*> column = arena.allocate<Node*>(3);
+                        const memory::Slice<Node *> column = arena.allocate<Node *>(3);
                         column[0] = above ? bar : body;
                         column[1] = clearance;
                         column[2] = above ? body : bar;
 
-                        Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                        Node *stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                         Node::Box shape = stacked->box();
 
                         // A column hangs from its top edge, so it is raised
                         // until the contents keep the baseline they had.
-                        shape.shift = above ? -(body->box().height + scope.gap + scope.thickness)
-                                            : -body->box().height;
+                        shape.shift = above
+                                          ? -(body->box().height + scope.gap + scope.thickness)
+                                          : -body->box().height;
                         stacked->box(shape);
                         return stacked;
                     }
@@ -951,25 +966,26 @@ namespace render::layout {
                                    node->value == "\\stackrel")) {
                     const bool over = node->value != "\\underset";
                     const Style smaller = scope.style == Style::Text ? Style::Script : Style::Scriptscript;
-                    Node* mark = enclose(render(node->arguments[0], frame(*scope.base, scope.target, smaller,
-                                                                             scope.alphabet)));
-                    Node* body = enclose(render(node->arguments[1], scope));
+                    Node *mark = enclose(render(node->arguments[0], frame(*scope.base, scope.target, smaller,
+                                                                          scope.alphabet)));
+                    Node *body = enclose(render(node->arguments[1], scope));
                     if (!mark || !body) return body ? body : mark;
 
-                    auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                    auto *clearance = arena.compose<Node>(Node::Type::Kern);
                     clearance->kern({.width = scope.limit});
 
-                    const memory::Slice<Node*> column = arena.allocate<Node*>(3);
+                    const memory::Slice<Node *> column = arena.allocate<Node *>(3);
                     column[0] = over ? mark : body;
                     column[1] = clearance;
                     column[2] = over ? body : mark;
 
                     // A column hangs from its top edge, so it is raised until
                     // the base keeps the baseline it had.
-                    Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                    Node *stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                     Node::Box shape = stacked->box();
-                    shape.shift = over ? -(Line::extent(mark) + scope.limit + body->box().height)
-                                       : -body->box().height;
+                    shape.shift = over
+                                      ? -(Line::extent(mark) + scope.limit + body->box().height)
+                                      : -body->box().height;
                     stacked->box(shape);
                     return stacked;
                 }
@@ -978,20 +994,20 @@ namespace render::layout {
                 // table's space before it go straight onto it. The space is
                 // put in once the atom is known to have set something.
                 if (scope.pieces) {
-                    std::vector<Node*>& pieces = *scope.pieces;
-                    const syntax::expression::Node* previous = nullptr;
+                    std::vector<Node *> &pieces = *scope.pieces;
+                    const syntax::expression::Node *previous = nullptr;
                     for (std::size_t index = 0; index < count; ++index) {
-                        const syntax::expression::Node* child = node->arguments[index];
+                        const syntax::expression::Node *child = node->arguments[index];
                         const std::size_t before = pieces.size();
-                        if (Node* box = render(child, scope)) pieces.push_back(box);
+                        if (Node *box = render(child, scope)) pieces.push_back(box);
                         if (pieces.size() == before) continue;
 
                         if (previous && scope.style == Style::Text) {
                             const std::uint8_t units =
-                                spacing[static_cast<std::size_t>(classify(previous, true))]
-                                       [static_cast<std::size_t>(classify(child, false))];
+                                    spacing[static_cast<std::size_t>(classify(previous, true))]
+                                    [static_cast<std::size_t>(classify(child, false))];
                             if (units != 0) {
-                                auto* space = arena.compose<Node>(Node::Type::Kern);
+                                auto *space = arena.compose<Node>(Node::Type::Kern);
                                 space->kern({.width = scope.quad * static_cast<float>(units) / 18.0f});
                                 pieces.insert(pieces.begin() + static_cast<std::ptrdiff_t>(before), space);
                             }
@@ -1003,21 +1019,21 @@ namespace render::layout {
 
                 // At most one space between each pair, so twice the atoms
                 // less one covers the worst case with nothing to grow.
-                const memory::Slice<Node*> row = arena.allocate<Node*>(count * 2);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(count * 2);
                 std::size_t filled = 0;
-                const syntax::expression::Node* previous = nullptr;
+                const syntax::expression::Node *previous = nullptr;
 
                 for (std::size_t index = 0; index < count; ++index) {
-                    const syntax::expression::Node* child = node->arguments[index];
-                    Node* box = render(child, scope);
+                    const syntax::expression::Node *child = node->arguments[index];
+                    Node *box = render(child, scope);
                     if (!box) continue;
 
                     if (previous && scope.style == Style::Text) {
                         const std::uint8_t units =
-                            spacing[static_cast<std::size_t>(classify(previous, true))]
-                                   [static_cast<std::size_t>(classify(child, false))];
+                                spacing[static_cast<std::size_t>(classify(previous, true))]
+                                [static_cast<std::size_t>(classify(child, false))];
                         if (units != 0) {
-                            auto* space = arena.compose<Node>(Node::Type::Kern);
+                            auto *space = arena.compose<Node>(Node::Type::Kern);
                             space->kern({.width = scope.quad * static_cast<float>(units) / 18.0f});
                             row[filled++] = space;
                         }
@@ -1035,7 +1051,7 @@ namespace render::layout {
             // written with `\\left` and `\\right`, draws its delimiters grown
             // to whatever is inside them.
             case Expression::Type::Group: {
-                Node* inner = render(node->left, scope);
+                Node *inner = render(node->left, scope);
                 if (node->open == 0 && node->close == 0) return inner;
                 return fence(inner, node->open, node->close, scope);
             }
@@ -1043,13 +1059,13 @@ namespace render::layout {
             // A base with an index, an exponent, or both: beside it as a rule,
             // above and below it for a sum or a limit in a displayed formula.
             case Expression::Type::Script: {
-                Node* base = render(node->left, scope);
+                Node *base = render(node->left, scope);
 
                 const Style inner = scope.style == Style::Text ? Style::Script : Style::Scriptscript;
                 const Frame nested = frame(*scope.base, scope.target, inner, scope.alphabet);
 
-                Node* raised = enclose(render(node->superscript, nested));
-                Node* dropped = enclose(render(node->subscript, nested));
+                Node *raised = enclose(render(node->superscript, nested));
+                Node *dropped = enclose(render(node->subscript, nested));
                 if (!raised && !dropped) return base;
 
                 const bool displayed = node->style == Expression::Style::Display &&
@@ -1063,34 +1079,36 @@ namespace render::layout {
                 // contour forms; an operator named with a star, as
                 // `\\DeclareMathOperator*` makes one; and the named operators
                 // that behave like a sum.
-                const Expression* limited = node->left;
+                const Expression *limited = node->left;
                 std::string_view named = limited && limited->type == Expression::Type::Sequence ? limited->value : "";
                 if (named.starts_with('\\')) named.remove_prefix(1);
                 const bool bounded =
-                    limited &&
-                    ((limited->type == Expression::Type::Variable && limited->category == Category::Operator &&
-                      (limited->codepoint < 0x222B || limited->codepoint > 0x2233)) ||
-                     (limited->type == Expression::Type::Sequence && limited->value == "\\operatorname*") ||
-                     (limited->type == Expression::Type::Sequence && limited->arguments.count == 0 &&
-                      (named == "lim" || named == "max" || named == "min" || named == "sup" || named == "inf" ||
-                       named == "det" || named == "gcd" || named == "Pr")));
+                        limited &&
+                        ((limited->type == Expression::Type::Variable && limited->category == Category::Operator &&
+                          (limited->codepoint < 0x222B || limited->codepoint > 0x2233)) ||
+                         (limited->type == Expression::Type::Sequence && limited->value == "\\operatorname*") ||
+                         (limited->type == Expression::Type::Sequence && limited->arguments.count == 0 &&
+                          (named == "lim" || named == "max" || named == "min" || named == "sup" || named == "inf" ||
+                           named == "det" || named == "gcd" || named == "Pr")));
 
                 // A brace's label goes over or under it in a line as well,
                 // as TeX sets one: the brace is an operator with \\limits.
-                const std::string_view stretched = limited && limited->type == Expression::Type::Accent ? limited->value : "";
+                const std::string_view stretched = limited && limited->type == Expression::Type::Accent
+                                                       ? limited->value
+                                                       : "";
                 const bool braced = stretched.ends_with("brace") || stretched.ends_with("bracket") ||
                                     stretched.ends_with("paren");
 
                 if ((displayed && bounded) || braced) {
-                    Node* middle = enclose(base);
+                    Node *middle = enclose(base);
 
-                    std::array<Node*, 5> parts{};
+                    std::array<Node *, 5> parts{};
                     std::size_t filled = 0;
-                    float reach = 0.0f;   // from the column's top to the base's baseline
+                    float reach = 0.0f; // from the column's top to the base's baseline
 
                     if (raised) {
                         parts[filled++] = raised;
-                        auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                        auto *clearance = arena.compose<Node>(Node::Type::Kern);
                         clearance->kern({.width = scope.limit});
                         parts[filled++] = clearance;
                         reach += Line::extent(raised) + scope.limit;
@@ -1100,19 +1118,19 @@ namespace render::layout {
                         reach += middle->box().height;
                     }
                     if (dropped) {
-                        auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                        auto *clearance = arena.compose<Node>(Node::Type::Kern);
                         clearance->kern({.width = scope.limit});
                         parts[filled++] = clearance;
                         parts[filled++] = dropped;
                     }
 
-                    const memory::Slice<Node*> column = arena.allocate<Node*>(filled);
+                    const memory::Slice<Node *> column = arena.allocate<Node *>(filled);
                     std::copy_n(parts.begin(), filled, column.begin());
 
                     // A column hangs from its top edge; raising it by the
                     // distance down to the base's baseline puts the operator
                     // back on the line with its limits centred over and under.
-                    Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                    Node *stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                     Node::Box shape = stacked->box();
                     shape.shift = -reach;
                     stacked->box(shape);
@@ -1128,13 +1146,13 @@ namespace render::layout {
                 const bool letter = node->left && node->left->type == Expression::Type::Variable &&
                                     !(displayed && node->left->category == Category::Operator);
                 if (!letter) {
-                    if (const Node* measured = enclose(base)) {
+                    if (const Node *measured = enclose(base)) {
                         rise = std::max(rise, measured->box().height - scope.drop);
                         fall = std::max(fall, measured->box().depth + scope.sink);
                     }
                 }
 
-                std::array<Node*, 8> parts{};
+                std::array<Node *, 8> parts{};
                 std::size_t filled = 0;
                 float width = 0.0f;
 
@@ -1156,19 +1174,21 @@ namespace render::layout {
                 // Each script is shifted and nothing else: the line it goes
                 // into works its height and depth out from the shift, so
                 // adjusting them here as well would count the move twice.
-                for (const auto& [script, shift, indent] :
-                     {std::tuple{raised, -rise, large ? 0.0f : lean},
-                      std::tuple{dropped, fall, large ? -lean : 0.0f}}) {
+                for (const auto &[script, shift, indent]:
+                     {
+                         std::tuple{raised, -rise, large ? 0.0f : lean},
+                         std::tuple{dropped, fall, large ? -lean : 0.0f}
+                     }) {
                     if (!script) continue;
 
                     if (indent != 0.0f) {
-                        auto* inset = arena.compose<Node>(Node::Type::Kern);
+                        auto *inset = arena.compose<Node>(Node::Type::Kern);
                         inset->kern({.width = indent});
                         parts[filled++] = inset;
                     }
 
                     Node::Box shape = script->box();
-                    shape.shift = shift;   // up the page is negative
+                    shape.shift = shift; // up the page is negative
                     script->box(shape);
 
                     parts[filled++] = script;
@@ -1176,18 +1196,18 @@ namespace render::layout {
 
                     // Back to where the script started, so the other one is
                     // set at the same place rather than after it.
-                    auto* back = arena.compose<Node>(Node::Type::Kern);
+                    auto *back = arena.compose<Node>(Node::Type::Kern);
                     back->kern({.width = -(indent + shape.width)});
                     parts[filled++] = back;
                 }
 
                 // One forward kern past whichever script is wider, so the next
                 // atom clears both of them.
-                auto* forward = arena.compose<Node>(Node::Type::Kern);
+                auto *forward = arena.compose<Node>(Node::Type::Kern);
                 forward->kern({.width = width});
                 parts[filled++] = forward;
 
-                const memory::Slice<Node*> row = arena.allocate<Node*>(filled);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(filled);
                 std::copy_n(parts.begin(), filled, row.begin());
                 return Line::horizontal(arena, row, 0.0f);
             }
@@ -1209,17 +1229,19 @@ namespace render::layout {
                 const bool displayed = node->style == Expression::Style::Display &&
                                        scope.style == Style::Text && !scope.stepped;
                 const bool roomy = name.starts_with('d') || (displayed && !name.starts_with('t'));
-                const Style inner = roomy ? Style::Text
-                                          : scope.style == Style::Text ? Style::Script
-                                                                       : Style::Scriptscript;
+                const Style inner = roomy
+                                        ? Style::Text
+                                        : scope.style == Style::Text
+                                              ? Style::Script
+                                              : Style::Scriptscript;
 
                 // Its parts are in text style even in a display, so a sum in
                 // one is the size it is in a line, with its limits beside it.
                 Frame nested = frame(*scope.base, scope.target, inner, scope.alphabet);
                 nested.stepped = true;
 
-                Node* above = enclose(render(node->left, nested));
-                Node* below = enclose(render(node->right, nested));
+                Node *above = enclose(render(node->left, nested));
+                Node *below = enclose(render(node->right, nested));
                 if (!above && !below) return nullptr;
 
                 const float thickness = barless ? 0.0f : scope.thickness;
@@ -1231,8 +1253,8 @@ namespace render::layout {
                 // least clearance -- from the bar, or, with no bar, from the
                 // other part, the two then moved apart by half the shortfall
                 // each. TeX's rule 15, with the font's numbers.
-                const float top = scope.axis + thickness * 0.5f;      // the bar's top edge
-                const float bottom = scope.axis - thickness * 0.5f;   // and its bottom edge
+                const float top = scope.axis + thickness * 0.5f; // the bar's top edge
+                const float bottom = scope.axis - thickness * 0.5f; // and its bottom edge
                 const float depth = above ? above->box().depth : 0.0f;
                 const float height = below ? below->box().height : 0.0f;
 
@@ -1250,35 +1272,35 @@ namespace render::layout {
                     drop = std::max(drop, least + height - bottom);
                 }
 
-                std::array<Node*, 5> parts{};
+                std::array<Node *, 5> parts{};
                 std::size_t filled = 0;
 
                 if (above) {
                     parts[filled++] = above;
-                    auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                    auto *clearance = arena.compose<Node>(Node::Type::Kern);
                     clearance->kern({.width = lift - above->box().depth - top});
                     parts[filled++] = clearance;
                 }
 
-                auto* bar = arena.compose<Node>(Node::Type::Rule);
+                auto *bar = arena.compose<Node>(Node::Type::Rule);
                 bar->rule({.width = barless ? 0.0f : width, .height = thickness});
                 parts[filled++] = bar;
 
                 if (below) {
-                    auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                    auto *clearance = arena.compose<Node>(Node::Type::Kern);
                     clearance->kern({.width = drop - below->box().height + bottom});
                     parts[filled++] = clearance;
                     parts[filled++] = below;
                 }
 
-                const memory::Slice<Node*> column = arena.allocate<Node*>(filled);
+                const memory::Slice<Node *> column = arena.allocate<Node *>(filled);
                 std::copy_n(parts.begin(), filled, column.begin());
 
                 // A column hangs from its top edge, which is the numerator's
                 // top: raising the column by that much puts every part where
                 // it was placed above. The line it joins works out its height
                 // and depth from the shift, so neither is adjusted here.
-                Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                Node *stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                 Node::Box shape = stacked->box();
                 shape.shift = above ? -(lift + above->box().height) : -top;
                 shape.width = std::max(shape.width, width);
@@ -1289,11 +1311,11 @@ namespace render::layout {
                 // The bar is as wide as the wider part and no wider; the room
                 // either side of it is TeX's null delimiters, the width of
                 // `\\nulldelimiterspace`.
-                auto* before = arena.compose<Node>(Node::Type::Kern);
+                auto *before = arena.compose<Node>(Node::Type::Kern);
                 before->kern({.width = scope.base->size() * metrics.padding});
-                auto* after = arena.compose<Node>(Node::Type::Kern);
+                auto *after = arena.compose<Node>(Node::Type::Kern);
                 after->kern({.width = scope.base->size() * metrics.padding});
-                const memory::Slice<Node*> row = arena.allocate<Node*>(3);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(3);
                 row[0] = before;
                 row[1] = stacked;
                 row[2] = after;
@@ -1307,7 +1329,7 @@ namespace render::layout {
             // and below the contents rather than all left hanging under the
             // line; and its top is where the bar is drawn.
             case Expression::Type::Radical: {
-                Node* body = enclose(render(node->right, scope));
+                Node *body = enclose(render(node->right, scope));
 
                 // The contents' extent, or an x-height's worth of nothing for
                 // a radical over nothing at all, so the sign still has a size.
@@ -1322,14 +1344,15 @@ namespace render::layout {
                 // display gap, so a tall term never reads as touching its bar.
                 const bool displayed = node->style == Expression::Style::Display && scope.style == Style::Text &&
                                        !scope.stepped;
-                float gap = displayed ? scope.clearance
-                                      : std::max(scope.gap, std::min(scope.clearance, scope.rule + (height + depth) / 10.0f));
+                float gap = displayed
+                                ? scope.clearance
+                                : std::max(scope.gap, std::min(scope.clearance, scope.rule + (height + depth) / 10.0f));
                 const float needed = height + depth + gap + scope.rule;
 
-                Node* sign = extend(0x221A, needed, scope);
-                std::array<Node*, 5> parts{};
+                Node *sign = extend(0x221A, needed, scope);
+                std::array<Node *, 5> parts{};
                 std::size_t filled = 0;
-                float side = 0.0f;     // the drawn sign's own space after its ink
+                float side = 0.0f; // the drawn sign's own space after its ink
 
                 // The bar's top, above the baseline: the contents' top, the
                 // gap -- widened by half of whatever the sign has to spare, so
@@ -1350,15 +1373,15 @@ namespace render::layout {
                 // never starts left of the radical's own edge.
                 if (node->left && sign) {
                     const Frame nested = frame(*scope.base, scope.target, Style::Scriptscript, scope.alphabet);
-                    if (Node* raw = render(node->left, nested)) {
-                        Node* degree = enclose(raw);
+                    if (Node *raw = render(node->left, nested)) {
+                        Node *degree = enclose(raw);
                         Node::Box shape = degree->box();
-                        shape.shift = -((top - span) + span * scope.raise);   // up the page is negative
+                        shape.shift = -((top - span) + span * scope.raise); // up the page is negative
                         degree->box(shape);
 
-                        auto* before = arena.compose<Node>(Node::Type::Kern);
+                        auto *before = arena.compose<Node>(Node::Type::Kern);
                         before->kern({.width = scope.before});
-                        auto* after = arena.compose<Node>(Node::Type::Kern);
+                        auto *after = arena.compose<Node>(Node::Type::Kern);
                         after->kern({.width = std::max(scope.after, -(scope.before + shape.width))});
 
                         parts[filled++] = before;
@@ -1395,10 +1418,10 @@ namespace render::layout {
                         const float least = scope.quad / 36.0f;
                         const float open = side + bearing(body);
                         if (open < least) {
-                            auto* inset = arena.compose<Node>(Node::Type::Kern);
+                            auto *inset = arena.compose<Node>(Node::Type::Kern);
                             inset->kern({.width = least - open});
 
-                            const memory::Slice<Node*> padded = arena.allocate<Node*>(2);
+                            const memory::Slice<Node *> padded = arena.allocate<Node *>(2);
                             padded[0] = inset;
                             padded[1] = body;
                             body = Line::horizontal(arena, padded, 0.0f);
@@ -1408,16 +1431,16 @@ namespace render::layout {
                     // The bar over the contents is a rule above them, with the
                     // font's room above it: a vertical stack of the room, the
                     // rule, the gap and the contents.
-                    auto* room = arena.compose<Node>(Node::Type::Kern);
+                    auto *room = arena.compose<Node>(Node::Type::Kern);
                     room->kern({.width = scope.ascender});
 
-                    auto* bar = arena.compose<Node>(Node::Type::Rule);
+                    auto *bar = arena.compose<Node>(Node::Type::Rule);
                     bar->rule({.width = body->box().width, .height = scope.rule, .depth = 0.0f});
 
-                    auto* space = arena.compose<Node>(Node::Type::Kern);
+                    auto *space = arena.compose<Node>(Node::Type::Kern);
                     space->kern({.width = gap});
 
-                    const memory::Slice<Node*> column = arena.allocate<Node*>(4);
+                    const memory::Slice<Node *> column = arena.allocate<Node *>(4);
                     column[0] = room;
                     column[1] = bar;
                     column[2] = space;
@@ -1425,7 +1448,7 @@ namespace render::layout {
 
                     // Raised so the contents keep their own baseline and the
                     // bar's top sits where the sign's does.
-                    Node* covered = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                    Node *covered = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                     Node::Box shape = covered->box();
                     shape.shift = -(top + scope.ascender);
                     covered->box(shape);
@@ -1434,7 +1457,7 @@ namespace render::layout {
                 }
 
                 if (filled == 0) return nullptr;
-                const memory::Slice<Node*> row = arena.allocate<Node*>(filled);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(filled);
                 std::copy_n(parts.begin(), filled, row.begin());
                 return Line::horizontal(arena, row, 0.0f);
             }
@@ -1448,14 +1471,14 @@ namespace render::layout {
                 // lines of an `aligned` or a `gathered` stay displayed.
                 Frame cells = scope;
                 cells.stepped = scope.stepped || node->grid == Expression::Grid::Spaced;
-                const memory::Slice<Node*> built = grid(node, cells);
+                const memory::Slice<Node *> built = grid(node, cells);
                 if (built.empty()) return nullptr;
 
                 // A jot between the rows of anything set out as displayed
                 // lines -- `aligned`, `cases` -- and none between a matrix's,
                 // whose struts alone keep its rows a line apart.
                 const bool spread = node->grid == Expression::Grid::Paired || node->value == "ll";
-                Node* stacked = Line::vertical(arena, built, spread ? scope.quad * 0.3f : 0.0f,
+                Node *stacked = Line::vertical(arena, built, spread ? scope.quad * 0.3f : 0.0f,
                                                Line::Anchor::Middle);
 
                 // A column hangs from its top edge; centred on the axis is
@@ -1474,71 +1497,71 @@ namespace render::layout {
             // another alphabet that alphabet's own character.
             case Expression::Type::Text: {
                 const std::string_view text = node->value;
-            if (text.empty()) return nullptr;
+                if (text.empty()) return nullptr;
 
-            const bool upright = scope.alphabet == Alphabet::Upright || scope.alphabet == Alphabet::Italic;
-            const float space = scope.quad / 3.0f;
+                const bool upright = scope.alphabet == Alphabet::Upright || scope.alphabet == Alphabet::Italic;
+                const float space = scope.quad / 3.0f;
 
-            const auto alphanumeric = [](const char letter) {
-                return (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') ||
-                       (letter >= '0' && letter <= '9');
-            };
+                const auto alphanumeric = [](const char letter) {
+                    return (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') ||
+                           (letter >= '0' && letter <= '9');
+                };
 
-            std::vector<Node*> parts;
-            const auto shape = [&](const std::string_view run) {
-                if (run.empty()) return;
-                const typography::Font* fonts[] = {&font};
-                const memory::Slice<Node*> shaped = shaper.shape(memory::Slice{fonts, 1uz}, run, {});
-                parts.insert(parts.end(), shaped.begin(), shaped.end());
-            };
+                std::vector<Node *> parts;
+                const auto shape = [&](const std::string_view run) {
+                    if (run.empty()) return;
+                    const typography::Font *fonts[] = {&font};
+                    const memory::Slice<Node *> shaped = shaper.shape(memory::Slice{fonts, 1uz}, run, {});
+                    parts.insert(parts.end(), shaped.begin(), shaped.end());
+                };
 
-            std::size_t at = 0;
-            while (at < text.size()) {
-                if (text[at] == ' ') {
-                    auto* gap = arena.compose<Node>(Node::Type::Kern);
-                    gap->kern({.width = space});
-                    parts.push_back(gap);
-                    ++at;
-                    continue;
-                }
-
-                std::size_t end = text.find(' ', at);
-                if (end == std::string_view::npos) end = text.size();
-                const std::string_view word = text.substr(at, end - at);
-                at = end;
-
-                // Upright, the word is shaped whole and keeps its kerning; in
-                // another alphabet each letter is that alphabet's own character,
-                // and anything the alphabet has no form of is shaped as it is.
-                if (upright) {
-                    shape(word);
-                    continue;
-                }
-                std::size_t start = 0;
-                for (std::size_t index = 0; index <= word.size(); ++index) {
-                    if (index < word.size() && !alphanumeric(word[index])) continue;
-                    shape(word.substr(start, index - start));
-                    if (index < word.size()) {
-                        Expression single{};
-                        single.type = Expression::Type::Variable;
-                        single.value = word.substr(index, 1);
-                        if (Node* drawn = render(&single, scope)) parts.push_back(drawn);
+                std::size_t at = 0;
+                while (at < text.size()) {
+                    if (text[at] == ' ') {
+                        auto *gap = arena.compose<Node>(Node::Type::Kern);
+                        gap->kern({.width = space});
+                        parts.push_back(gap);
+                        ++at;
+                        continue;
                     }
-                    start = index + 1;
-                }
-            }
 
-            if (parts.empty()) return nullptr;
-            const memory::Slice<Node*> row = arena.allocate<Node*>(parts.size());
-            std::ranges::copy(parts, row.begin());
-            return Line::horizontal(arena, row, 0.0f);
+                    std::size_t end = text.find(' ', at);
+                    if (end == std::string_view::npos) end = text.size();
+                    const std::string_view word = text.substr(at, end - at);
+                    at = end;
+
+                    // Upright, the word is shaped whole and keeps its kerning; in
+                    // another alphabet each letter is that alphabet's own character,
+                    // and anything the alphabet has no form of is shaped as it is.
+                    if (upright) {
+                        shape(word);
+                        continue;
+                    }
+                    std::size_t start = 0;
+                    for (std::size_t index = 0; index <= word.size(); ++index) {
+                        if (index < word.size() && !alphanumeric(word[index])) continue;
+                        shape(word.substr(start, index - start));
+                        if (index < word.size()) {
+                            Expression single{};
+                            single.type = Expression::Type::Variable;
+                            single.value = word.substr(index, 1);
+                            if (Node *drawn = render(&single, scope)) parts.push_back(drawn);
+                        }
+                        start = index + 1;
+                    }
+                }
+
+                if (parts.empty()) return nullptr;
+                const memory::Slice<Node *> row = arena.allocate<Node *>(parts.size());
+                std::ranges::copy(parts, row.begin());
+                return Line::horizontal(arena, row, 0.0f);
             }
 
             // A mark centred over its argument. The mark's name selects the
             // character; anything unrecognised falls through as the argument
             // alone, which is better than dropping the argument with it.
             case Expression::Type::Accent: {
-                Node* body = enclose(render(node->left, scope));
+                Node *body = enclose(render(node->left, scope));
                 if (!body) return nullptr;
 
                 std::string_view name = node->value;
@@ -1568,8 +1591,10 @@ namespace render::layout {
                         for (int step = 1; step <= 8; ++step) {
                             const float t = static_cast<float>(step) / 8.0f;
                             const float u = 1.0f - t;
-                            line.push_back({u * u * from.x + 2.0f * u * t * control.x + t * t * to.x,
-                                            u * u * from.y + 2.0f * u * t * control.y + t * t * to.y});
+                            line.push_back({
+                                u * u * from.x + 2.0f * u * t * control.x + t * t * to.x,
+                                u * u * from.y + 2.0f * u * t * control.y + t * t * to.y
+                            });
                         }
                     };
                     if (shape == "brace") {
@@ -1588,10 +1613,12 @@ namespace render::layout {
                     memory::Slice<Node::Point> area;
                     if (shape == "bracket") {
                         area = arena.allocate<Node::Point>(8);
-                        const std::array<Node::Point, 8> corners{{
-                            {0.0f, height}, {0.0f, 0.0f}, {width, 0.0f}, {width, height},
-                            {width - stroke, height}, {width - stroke, stroke}, {stroke, stroke}, {stroke, height},
-                        }};
+                        const std::array<Node::Point, 8> corners{
+                            {
+                                {0.0f, height}, {0.0f, 0.0f}, {width, 0.0f}, {width, height},
+                                {width - stroke, height}, {width - stroke, stroke}, {stroke, stroke}, {stroke, height},
+                            }
+                        };
                         std::ranges::copy(corners, area.begin());
                     } else {
                         area = arena.allocate<Node::Point>(line.size() * 2);
@@ -1603,17 +1630,17 @@ namespace render::layout {
                     // Under the body the shape is turned over, its tip down.
                     const float extent = shape == "bracket" ? height : height + stroke;
                     if (!over) {
-                        for (Node::Point& corner : area) corner.y = extent - corner.y;
+                        for (Node::Point &corner: area) corner.y = extent - corner.y;
                     }
 
-                    auto* outline = arena.compose<Node>();
+                    auto *outline = arena.compose<Node>();
                     outline->path({.area = area});
-                    const memory::Slice<Node*> drawn = arena.allocate<Node*>(1);
+                    const memory::Slice<Node *> drawn = arena.allocate<Node *>(1);
                     drawn[0] = outline;
 
                     // Hung from its top edge, as a canvas is, every point
                     // measured down from it.
-                    auto* mark = arena.compose<Node>();
+                    auto *mark = arena.compose<Node>();
                     mark->box({
                         .width = width,
                         .height = 0.0f,
@@ -1623,17 +1650,17 @@ namespace render::layout {
                         .absolute = true,
                     });
 
-                    auto* clearance = arena.compose<Node>(Node::Type::Kern);
+                    auto *clearance = arena.compose<Node>(Node::Type::Kern);
                     clearance->kern({.width = scope.gap});
 
-                    const memory::Slice<Node*> column = arena.allocate<Node*>(3);
+                    const memory::Slice<Node *> column = arena.allocate<Node *>(3);
                     column[0] = over ? mark : body;
                     column[1] = clearance;
                     column[2] = over ? body : mark;
 
                     // A column hangs from its top edge, so it is raised until
                     // the body keeps the baseline it had.
-                    Node* stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
+                    Node *stacked = Line::vertical(arena, column, 0.0f, Line::Anchor::Middle);
                     Node::Box placed = stacked->box();
                     placed.shift = over ? -(extent + scope.gap + body->box().height) : -body->box().height;
                     stacked->box(placed);
@@ -1667,7 +1694,7 @@ namespace render::layout {
                     glyph = typography::Expression(font).widen(glyph, body->box().width).glyph;
                 }
 
-                auto* mark = arena.compose<Node>(Node::Type::Glyph);
+                auto *mark = arena.compose<Node>(Node::Type::Glyph);
                 mark->glyph({
                     .width = font.advance(glyph),
                     .height = body->box().height + scope.gap,
@@ -1684,13 +1711,13 @@ namespace render::layout {
                 // where they stand, onto the letter before them.
                 const typography::Font::Box ink = font.bounds(glyph);
                 const float centre = ink.x + ink.width * 0.5f;
-                auto* lead = arena.compose<Node>(Node::Type::Kern);
+                auto *lead = arena.compose<Node>(Node::Type::Kern);
                 lead->kern({.width = -body->box().width * 0.5f - centre});
 
-                auto* trail = arena.compose<Node>(Node::Type::Kern);
+                auto *trail = arena.compose<Node>(Node::Type::Kern);
                 trail->kern({.width = body->box().width * 0.5f + centre - mark->glyph().width});
 
-                const memory::Slice<Node*> row = arena.allocate<Node*>(4);
+                const memory::Slice<Node *> row = arena.allocate<Node *>(4);
                 row[0] = body;
                 row[1] = lead;
                 row[2] = mark;
@@ -1702,7 +1729,7 @@ namespace render::layout {
         return nullptr;
     }
 
-    memory::Slice<Node*> Typesetter::grid(const Expression* node, const Frame& scope) const {
+    memory::Slice<Node *> Typesetter::grid(const Expression *node, const Frame &scope) const {
         if (!node || node->type != Expression::Type::Matrix) return {};
         const std::size_t columns = node->columns;
         if (columns == 0 || node->arguments.count == 0) return {};
@@ -1716,19 +1743,21 @@ namespace render::layout {
         // nothing on its left inside its own cell; amsmath puts an empty
         // atom there, so the relation is spaced on both sides, and so is it
         // here.
-        const memory::Slice<Node*> cells = arena.allocate<Node*>(node->arguments.count);
+        const memory::Slice<Node *> cells = arena.allocate<Node *>(node->arguments.count);
         for (std::size_t index = 0; index < node->arguments.count; ++index) {
-            const Expression* written = node->arguments[index];
-            Node* cell = enclose(render(written, scope));
+            const Expression *written = node->arguments[index];
+            Node *cell = enclose(render(written, scope));
 
             const Category edge = classify(written, false);
             if (cell && paired && index % columns % 2 == 1 && scope.style == Style::Text &&
                 (edge == Category::Relation || edge == Category::Binary)) {
-                auto* lead = arena.compose<Node>(Node::Type::Kern);
-                lead->kern({.width = scope.quad *
-                                     static_cast<float>(spacing[static_cast<std::size_t>(Category::Ordinary)]
-                                                               [static_cast<std::size_t>(edge)]) / 18.0f});
-                const memory::Slice<Node*> padded = arena.allocate<Node*>(2);
+                auto *lead = arena.compose<Node>(Node::Type::Kern);
+                lead->kern({
+                    .width = scope.quad *
+                             static_cast<float>(spacing[static_cast<std::size_t>(Category::Ordinary)]
+                                 [static_cast<std::size_t>(edge)]) / 18.0f
+                });
+                const memory::Slice<Node *> padded = arena.allocate<Node *>(2);
                 padded[0] = lead;
                 padded[1] = cell;
                 cell = Line::horizontal(arena, padded, 0.0f);
@@ -1740,7 +1769,7 @@ namespace render::layout {
         const memory::Slice<float> widths = arena.allocate<float>(columns);
         for (std::size_t index = 0; index < columns; ++index) widths[index] = 0.0f;
         for (std::size_t index = 0; index < cells.count; ++index) {
-            if (const Node* cell = cells[index]) {
+            if (const Node *cell = cells[index]) {
                 widths[index % columns] = std::max(widths[index % columns], cell->box().width);
             }
         }
@@ -1758,29 +1787,29 @@ namespace render::layout {
         const float strut = scope.quad * 1.2f;
 
         // Pass two: each row, its cells placed in their columns.
-        const memory::Slice<Node*> built = arena.allocate<Node*>(count);
+        const memory::Slice<Node *> built = arena.allocate<Node *>(count);
         for (std::size_t position = 0; position < count; ++position) {
-            const memory::Slice<Node*> pieces = arena.allocate<Node*>(columns * 3);
+            const memory::Slice<Node *> pieces = arena.allocate<Node *>(columns * 3);
             std::size_t filled = 0;
 
             for (std::size_t column = 0; column < columns; ++column) {
-                Node* cell = cells[position * columns + column];
+                Node *cell = cells[position * columns + column];
                 const float slack = widths[column] - (cell ? cell->box().width : 0.0f);
                 const char align = preamble[column % preamble.size()];
                 const float before = align == 'l' ? 0.0f : align == 'r' ? slack : slack * 0.5f;
 
-                auto* leading = arena.compose<Node>(Node::Type::Kern);
+                auto *leading = arena.compose<Node>(Node::Type::Kern);
                 leading->kern({.width = before});
                 pieces[filled++] = leading;
 
                 if (cell) pieces[filled++] = cell;
 
-                auto* trailing = arena.compose<Node>(Node::Type::Kern);
+                auto *trailing = arena.compose<Node>(Node::Type::Kern);
                 trailing->kern({.width = slack - before + gap(column)});
                 pieces[filled++] = trailing;
             }
 
-            Node* line = Line::horizontal(arena, memory::Slice{pieces.data, filled}, 0.0f);
+            Node *line = Line::horizontal(arena, memory::Slice{pieces.data, filled}, 0.0f);
             Node::Box shape = line->box();
             shape.height = std::max(shape.height, strut * 0.7f);
             shape.depth = std::max(shape.depth, strut * 0.3f);
@@ -1791,27 +1820,27 @@ namespace render::layout {
         return built;
     }
 
-    memory::Slice<Node*> Typesetter::rows(const Expression* node, const typography::Font& font) const {
+    memory::Slice<Node *> Typesetter::rows(const Expression *node, const typography::Font &font) const {
         if (!node || node->type != Expression::Type::Matrix) return {};
         return grid(node, frame(font, 0.0f, Style::Text));
     }
 
-    memory::Slice<Pager::Page> Typesetter::compose(Document& document) const {
+    memory::Slice<Pager::Page> Typesetter::compose(Document &document) const {
         document.layout();
 
-        const memory::Slice<Document::Element*> elements = document.elements();
+        const memory::Slice<Document::Element *> elements = document.elements();
         if (elements.empty()) return {};
 
-        const Document::Configuration& page = document.configuration;
+        const Document::Configuration &page = document.configuration;
 
         // The page's column is every block in reading order -- and a
         // paragraph's own lines opened into it one by one rather than kept as
         // one block, so the pager may end a page between any two lines, as
         // TeX does. A column hangs from its top edge, so a line opened out is
         // drawn exactly where it was drawn inside its paragraph.
-        const auto opened = [](const Document::Element* element) -> const Node* {
+        const auto opened = [](const Document::Element *element) -> const Node * {
             if (element->type != Document::Element::Type::Paragraph || !element->paragraph) return nullptr;
-            const Node* box = element->paragraph->node();
+            const Node *box = element->paragraph->node();
             if (!box || box->type != Node::Type::Box || box->box().alignment != Node::Alignment::Vertical ||
                 box->box().absolute) {
                 return nullptr;
@@ -1820,13 +1849,13 @@ namespace render::layout {
         };
 
         std::size_t room = 0;
-        for (const Document::Element* element : elements) {
+        for (const Document::Element *element: elements) {
             if (!element) continue;
-            const Node* lines = opened(element);
+            const Node *lines = opened(element);
             room += (lines ? lines->box().list.count : 1) * 2 + 1;
         }
 
-        const memory::Slice<Node*> column = arena.allocate<Node*>(room);
+        const memory::Slice<Node *> column = arena.allocate<Node *>(room);
         std::size_t filled = 0;
 
         // TeX's rule between any two boxes stacked down a page: the second's
@@ -1837,9 +1866,9 @@ namespace render::layout {
         // this; a rule across the page stops it, as TeX's prevdepth does.
         const float least = page.leading * 0.1f;
         float depth = 0.0f;
-        bool previous = false;   // a box stands above, for the rule to measure from
+        bool previous = false; // a box stands above, for the rule to measure from
 
-        const auto stack = [&](Node* box) {
+        const auto stack = [&](Node *box) {
             if (!box) return;
             switch (box->type) {
                 case Node::Type::Glue:
@@ -1856,12 +1885,15 @@ namespace render::layout {
                     break;
             }
 
-            const float height = box->type == Node::Type::Box      ? box->box().height - box->box().shift
-                                 : box->type == Node::Type::Bitmap ? box->bitmap().height
-                                 : box->type == Node::Type::Glyph  ? box->glyph().height
-                                                                     : 0.0f;
+            const float height = box->type == Node::Type::Box
+                                     ? box->box().height - box->box().shift
+                                     : box->type == Node::Type::Bitmap
+                                           ? box->bitmap().height
+                                           : box->type == Node::Type::Glyph
+                                                 ? box->glyph().height
+                                                 : 0.0f;
             if (previous) {
-                auto* glue = arena.compose<Node>(Node::Type::Glue);
+                auto *glue = arena.compose<Node>(Node::Type::Glue);
                 glue->glue({.width = std::max(page.leading - depth - height, least)});
                 column[filled++] = glue;
             }
@@ -1872,11 +1904,11 @@ namespace render::layout {
 
         // \\parskip, between one paragraph and the next and nowhere else.
         bool paragraph = false;
-        for (const Document::Element* element : elements) {
+        for (const Document::Element *element: elements) {
             if (!element) continue;
             const bool text = element->type == Document::Element::Type::Paragraph;
             if (text && paragraph && page.skip > 0.0f) {
-                auto* glue = arena.compose<Node>(Node::Type::Glue);
+                auto *glue = arena.compose<Node>(Node::Type::Glue);
                 glue->glue({.width = page.skip});
                 column[filled++] = glue;
             }
@@ -1884,10 +1916,10 @@ namespace render::layout {
                 (element->node && element->node->type != Node::Type::Directive)) {
                 paragraph = text;
             }
-            if (const Node* lines = opened(element)) {
+            if (const Node *lines = opened(element)) {
                 // Its own interline glue is replaced by the column's, which
                 // measures from the line above whatever block that was.
-                for (Node* line : lines->box().list) {
+                for (Node *line: lines->box().list) {
                     if (line && line->type != Node::Type::Glue) stack(line);
                 }
                 continue;
@@ -1898,16 +1930,17 @@ namespace render::layout {
         }
 
         if (filled == 0) return {};
-        const Node* root = Line::vertical(arena, memory::Slice{column.data, filled}, 0.0f);
+        const Node *root = Line::vertical(arena, memory::Slice{column.data, filled}, 0.0f);
 
         const Pager pager(arena);
         // \\skip\\footins above a page's footnotes, the rule's room in it.
-        return pager.paginate(root, Pager::Context{.height = page.height - page.top - page.bottom,
-                                                   .separation = page.size * 1.2f,
-                                                   .width = page.width - page.left - page.right,
-                                                   .gap = page.gap,
-                                                   .columns = page.columns,
-                                                   .placement = page.placement});
+        return pager.paginate(root, Pager::Context{
+                                  .height = page.height - page.top - page.bottom,
+                                  .separation = page.size * 1.2f,
+                                  .width = page.width - page.left - page.right,
+                                  .gap = page.gap,
+                                  .columns = page.columns,
+                                  .placement = page.placement
+                              });
     }
-
 }

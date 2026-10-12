@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace render::typography {
-
     /// @brief One font file, opened for measuring and shaping.
     ///
     /// A Face is a HarfBuzz face over bytes somebody else keeps alive. It
@@ -36,12 +35,16 @@ namespace render::typography {
     class Face {
     public:
         Face() noexcept = default;
+
         ~Face() noexcept;
 
-        Face(const Face&) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
-        Face& operator=(const Face&) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
-        Face(Face&& input) noexcept;
-        Face& operator=(Face&& input) noexcept;
+        Face(const Face &) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
+
+        Face &operator=(const Face &) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
+
+        Face(Face &&input) noexcept;
+
+        Face &operator=(Face &&input) noexcept;
 
         /// @brief Closes the face, leaving the borrowed bytes alone.
         void dispose() noexcept;
@@ -53,7 +56,7 @@ namespace render::typography {
         [[nodiscard]] bool compose(std::span<const std::uint8_t> data) noexcept;
 
         /// @brief The HarfBuzz face, which shaping and metrics are read from.
-        [[nodiscard]] hb_face_t* handle() const noexcept { return face; }
+        [[nodiscard]] hb_face_t *handle() const noexcept { return face; }
 
         /// @brief The bytes this face reads, for a writer that embeds the file.
         [[nodiscard]] std::span<const std::uint8_t> data() const noexcept { return storage; }
@@ -91,20 +94,19 @@ namespace render::typography {
     private:
         /// @brief One remembered glyph extent.
         struct Slot {
-            std::uint32_t glyph{0};       ///< Which glyph these extents describe.
-            bool ready{false};            ///< False until this slot has been filled.
+            std::uint32_t glyph{0}; ///< Which glyph these extents describe.
+            bool ready{false}; ///< False until this slot has been filled.
             hb_glyph_extents_t extents{}; ///< The extents, in the face's units.
         };
 
         /// Cache size, less one: a power of two, so the slot is a mask.
         static constexpr std::size_t mask = 0x3FF;
 
-        hb_face_t* face{nullptr};                    ///< HarfBuzz's view of the file.
-        std::span<const std::uint8_t> storage{};     ///< Borrowed file contents.
-        float scale{1000.0f};                        ///< Units per em.
+        hb_face_t *face{nullptr}; ///< HarfBuzz's view of the file.
+        std::span<const std::uint8_t> storage{}; ///< Borrowed file contents.
+        float scale{1000.0f}; ///< Units per em.
 
-        mutable hb_font_t* measure{nullptr};         ///< The face at its own units, made when first asked.
-        mutable std::vector<Slot> cache{};           ///< Remembered extents, sized when first asked.
+        mutable hb_font_t *measure{nullptr}; ///< The face at its own units, made when first asked.
+        mutable std::vector<Slot> cache{}; ///< Remembered extents, sized when first asked.
     };
-
 }

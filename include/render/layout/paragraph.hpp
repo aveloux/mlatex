@@ -5,7 +5,6 @@
 #include "memory/slice.hpp"
 
 namespace render::layout {
-
     /// @brief One paragraph: a horizontal list, and the lines it breaks into.
     ///
     /// The list is everything the paragraph is made of, already measured --
@@ -52,7 +51,7 @@ namespace render::layout {
         /// @param left          How far in from the column's left edge every line starts.
         /// @param right         How far in from the column's right edge every line ends.
         /// @param reversed      Whether it reads right to left.
-        Paragraph(memory::Arena& arena, memory::Slice<Node*> material,
+        Paragraph(memory::Arena &arena, memory::Slice<Node *> material,
                   Node::Justification setting, float left, float right = 0.0f, bool reversed = false) noexcept;
 
         /// @brief Breaks the paragraph into lines.
@@ -64,10 +63,10 @@ namespace render::layout {
         /// @param width   Column width in points.
         /// @param leading Baseline-to-baseline distance in points.
         /// @complexity O(n) in the list for ordinary prose.
-        void layout(memory::Arena& scratch, float width, float leading) noexcept;
+        void layout(memory::Arena &scratch, float width, float leading) noexcept;
 
         /// @brief The vertical box of lines, or nullptr before layout.
-        [[nodiscard]] Node* node() const noexcept { return tree; }
+        [[nodiscard]] Node *node() const noexcept { return tree; }
 
         /// Least space left between two lines that would otherwise touch, as a
         /// fraction of the asked-for leading. This is TeX's `\\lineskip`: when
@@ -77,14 +76,13 @@ namespace render::layout {
         static constexpr float minimum = 0.1f;
 
     private:
-        memory::Arena& arena;                ///< Allocator for the lines.
-        memory::Slice<Node*> content{};      ///< What the paragraph is made of.
-        Node::Justification justification{Node::Justification::Full};   ///< How its lines sit.
-        float margin{0.0f};                  ///< Indent of every line from the column's left edge.
-        float gutter{0.0f};                  ///< Indent of every line from the column's right edge.
-        bool reversed{false};                ///< Whether it reads right to left.
-        float column{0.0f};                  ///< Width it was last broken to.
-        Node* tree{nullptr};                 ///< Vertical box of the lines.
+        memory::Arena &arena; ///< Allocator for the lines.
+        memory::Slice<Node *> content{}; ///< What the paragraph is made of.
+        Node::Justification justification{Node::Justification::Full}; ///< How its lines sit.
+        float margin{0.0f}; ///< Indent of every line from the column's left edge.
+        float gutter{0.0f}; ///< Indent of every line from the column's right edge.
+        bool reversed{false}; ///< Whether it reads right to left.
+        float column{0.0f}; ///< Width it was last broken to.
+        Node *tree{nullptr}; ///< Vertical box of the lines.
     };
-
 }

@@ -14,13 +14,12 @@
 #include <utility>
 
 namespace render::layout {
-
     Document::Document(
-        memory::Arena& arena,
-        memory::Arena& scratch,
-        const typography::Shaper& shaper,
-        const Typesetter& typesetter,
-        const Configuration& page
+        memory::Arena &arena,
+        memory::Arena &scratch,
+        const typography::Shaper &shaper,
+        const Typesetter &typesetter,
+        const Configuration &page
     ) noexcept
         : configuration(page), arena(arena), scratch(scratch), shaper(shaper), typesetter(typesetter),
           ledger(arena), words(arena, 4096) {
@@ -28,14 +27,15 @@ namespace render::layout {
     }
 
     Document::Document(
-        memory::Arena& arena,
-        memory::Arena& scratch,
-        const typography::Shaper& shaper,
-        const Typesetter& typesetter
+        memory::Arena &arena,
+        memory::Arena &scratch,
+        const typography::Shaper &shaper,
+        const Typesetter &typesetter
     ) noexcept
-        : Document(arena, scratch, shaper, typesetter, Configuration{}) {}
+        : Document(arena, scratch, shaper, typesetter, Configuration{}) {
+    }
 
-    void Document::attach(Element* element) noexcept {
+    void Document::attach(Element *element) noexcept {
         if (tail) {
             tail->next = element;
         } else {
@@ -45,7 +45,7 @@ namespace render::layout {
         ++blocks;
     }
 
-    void Document::hyphenate(const Node::Directive& language) noexcept {
+    void Document::hyphenate(const Node::Directive &language) noexcept {
         if (hyphenation != language.hyphenator || before != language.before || after != language.after ||
             digits != language.digits || spaced != language.spaced) {
             words.dispose();
@@ -58,8 +58,8 @@ namespace render::layout {
         spaced = language.spaced;
     }
 
-    void Document::append(const std::string_view text, const typography::Font& font, const float size,
-                          const Node::Color* color) {
+    void Document::append(const std::string_view text, const typography::Font &font, const float size,
+                          const Node::Color *color) {
         if (text.empty()) return;
 
         // In a color: set as any text is, then each glyph that came out
@@ -69,16 +69,16 @@ namespace render::layout {
             const std::size_t first = pending.size();
             append(text, font, size, nullptr);
             for (std::size_t index = first; index < pending.size(); ++index) {
-                const Node* node = pending[index];
+                const Node *node = pending[index];
                 if (node->type == Node::Type::Glue && node->glue().leader &&
                     node->glue().leader->type == Node::Type::Rule) {
                     Node::Rule stroke = node->glue().leader->rule();
                     stroke.color = *color;
-                    auto* drawn = arena.compose<Node>(Node::Type::Rule);
+                    auto *drawn = arena.compose<Node>(Node::Type::Rule);
                     drawn->rule(stroke);
                     Node::Glue joined = node->glue();
                     joined.leader = drawn;
-                    auto* copy = arena.compose<Node>(Node::Type::Glue);
+                    auto *copy = arena.compose<Node>(Node::Type::Glue);
                     copy->glue(joined);
                     pending[index] = copy;
                     continue;
@@ -86,7 +86,7 @@ namespace render::layout {
                 if (node->type != Node::Type::Glyph) continue;
                 Node::Glyph mark = node->glyph();
                 mark.color = *color;
-                auto* copy = arena.compose<Node>(Node::Type::Glyph);
+                auto *copy = arena.compose<Node>(Node::Type::Glyph);
                 copy->glyph(mark);
                 pending[index] = copy;
             }
@@ -105,7 +105,7 @@ namespace render::layout {
             known.remove_prefix(first == std::string_view::npos ? known.size() : first);
         }
         const Ledger::Key key{.font = &font, .text = known, .size = size};
-        if (const memory::Slice<Node*> cached = ledger.get(key); !cached.empty()) {
+        if (const memory::Slice<Node *> cached = ledger.get(key); !cached.empty()) {
             pending.insert(pending.end(), cached.begin(), cached.end());
             if (const std::size_t end = text.find_last_not_of(" \t\n"); end != std::string_view::npos) {
                 factor = weigh(text.substr(0, end + 1), factor);
@@ -120,18 +120,18 @@ namespace render::layout {
         // what was produced depends on what came before it -- the leading
         // space is dropped at the start of a paragraph and kept elsewhere.
         if (start == 0 && pending.size() > start) {
-            const memory::Slice<Node*> shaped = arena.allocate<Node*>(pending.size() - start);
+            const memory::Slice<Node *> shaped = arena.allocate<Node *>(pending.size() - start);
             std::copy(pending.begin() + static_cast<std::ptrdiff_t>(start), pending.end(),
                       shaped.begin());
             ledger.set(key, shaped);
         }
     }
 
-    memory::Slice<Node*> Document::set(const std::string_view text, const typography::Font& font, const bool opening,
-                                       const Node::Color* color) {
+    memory::Slice<Node *> Document::set(const std::string_view text, const typography::Font &font, const bool opening,
+                                        const Node::Color *color) {
         // A box's text starts afresh: what came before it says nothing of
         // the space after its first word.
-        std::vector<Node*> nodes;
+        std::vector<Node *> nodes;
         const int kept = std::exchange(factor, 1000);
         divide(nodes, text, font, opening);
         factor = kept;
@@ -139,20 +139,20 @@ namespace render::layout {
         // The words are shared with every other place they were set, so a
         // color goes on copies of their glyphs and kashida strokes, as
         // append() puts it.
-        const memory::Slice<Node*> slice = arena.allocate<Node*>(nodes.size());
+        const memory::Slice<Node *> slice = arena.allocate<Node *>(nodes.size());
         for (std::size_t index = 0; index < nodes.size(); ++index) {
-            const Node* node = nodes[index];
+            const Node *node = nodes[index];
             slice[index] = nodes[index];
             if (!color) continue;
             if (node->type == Node::Type::Glue && node->glue().leader &&
                 node->glue().leader->type == Node::Type::Rule) {
                 Node::Rule stroke = node->glue().leader->rule();
                 stroke.color = *color;
-                auto* drawn = arena.compose<Node>(Node::Type::Rule);
+                auto *drawn = arena.compose<Node>(Node::Type::Rule);
                 drawn->rule(stroke);
                 Node::Glue joined = node->glue();
                 joined.leader = drawn;
-                auto* copy = arena.compose<Node>(Node::Type::Glue);
+                auto *copy = arena.compose<Node>(Node::Type::Glue);
                 copy->glue(joined);
                 slice[index] = copy;
                 continue;
@@ -160,7 +160,7 @@ namespace render::layout {
             if (node->type != Node::Type::Glyph) continue;
             Node::Glyph mark = node->glyph();
             mark.color = *color;
-            auto* copy = arena.compose<Node>(Node::Type::Glyph);
+            auto *copy = arena.compose<Node>(Node::Type::Glyph);
             copy->glyph(mark);
             slice[index] = copy;
         }
@@ -186,7 +186,9 @@ namespace render::layout {
         const char last = text.back();
         if (text.size() >= 2 && text[text.size() - 2] >= 'A' && text[text.size() - 2] <= 'Z') return 1000;
         switch (last) {
-            case '.': case '?': case '!': return 3000;
+            case '.':
+            case '?':
+            case '!': return 3000;
             case ':': return 2000;
             case ';': return 1500;
             case ',': return 1250;
@@ -194,10 +196,10 @@ namespace render::layout {
         }
     }
 
-    void Document::divide(std::vector<Node*>& into, const std::string_view text, const typography::Font& font,
+    void Document::divide(std::vector<Node *> &into, const std::string_view text, const typography::Font &font,
                           const bool opening) {
         const std::size_t first = into.size();
-        const typography::Font* fonts[] = {&font, fallback};
+        const typography::Font *fonts[] = {&font, fallback};
         const std::size_t faces = fallback && fallback != &font ? 2 : 1;
 
         // A typewriter face breaks no word, as TeX's \\hyphenchar of -1 has
@@ -214,11 +216,11 @@ namespace render::layout {
         // either of which outlives the document. Known by the font's own
         // size, so a word in a box and the same word in running text are
         // one entry.
-        const auto piece = [&](const std::string_view part, const bool breakable) -> memory::Slice<Node*> {
+        const auto piece = [&](const std::string_view part, const bool breakable) -> memory::Slice<Node *> {
             const Ledger::Key known{.font = &font, .text = part, .size = font.size()};
-            if (const memory::Slice<Node*> cached = words.get(known); !cached.empty()) return cached;
+            if (const memory::Slice<Node *> cached = words.get(known); !cached.empty()) return cached;
 
-            const memory::Slice<Node*> glyphs = shaper.shape(memory::Slice{fonts, faces}, part, {});
+            const memory::Slice<Node *> glyphs = shaper.shape(memory::Slice{fonts, faces}, part, {});
             if (glyphs.empty()) return {};
 
             // Hyphenation works on letters; the glyphs came out of shaping.
@@ -241,11 +243,11 @@ namespace render::layout {
                 // slash and the rest of a path -- never broken.
                 std::size_t count = 0;
                 std::size_t written = 0;
-                std::size_t opened = 0;            // the word's first letter, counted in letters
-                std::size_t closed = 0;            // one past its last
+                std::size_t opened = 0; // the word's first letter, counted in letters
+                std::size_t closed = 0; // one past its last
                 bool found = false;
                 for (std::size_t at = 0; at < part.size();) {
-                    const auto* data = reinterpret_cast<const std::uint8_t*>(part.data() + at);
+                    const auto *data = reinterpret_cast<const std::uint8_t *>(part.data() + at);
                     const std::size_t rest = part.size() - at;
                     std::uint32_t code = data[0];
                     std::size_t length = 1;
@@ -277,9 +279,11 @@ namespace render::layout {
                     } else if (code >= 0x531 && code <= 0x556) {
                         code += 0x30;
                     } else if (((code >= 0x100 && code <= 0x137) || (code >= 0x14A && code <= 0x177) ||
-                                (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) && code % 2 == 0) {
+                                (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) && code % 2 ==
+                               0) {
                         code += 1;
-                    } else if (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) && code % 2 == 1) {
+                    } else if (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) && code % 2 ==
+                               1) {
                         code += 1;
                     }
 
@@ -300,7 +304,7 @@ namespace render::layout {
                     const std::size_t from = opened == 0 ? 0 : ends[opened - 1] + 1;
                     const std::size_t to = ends[closed - 1] + 1;
                     const memory::Slice<std::uint8_t> points =
-                        hyphenation->execute(scratch, memory::Slice{bytes.data + from, to - from}, '.', 1, 1);
+                            hyphenation->execute(scratch, memory::Slice{bytes.data + from, to - from}, '.', 1, 1);
                     if (!points.empty()) {
                         breaks = scratch.allocate<std::uint8_t>(count);
                         for (std::size_t index = 0; index < count; ++index) {
@@ -321,14 +325,14 @@ namespace render::layout {
                 if (breaks[index]) ++penalties;
             }
 
-            memory::Slice<Node*> nodes = glyphs;
+            memory::Slice<Node *> nodes = glyphs;
             if (penalties > 0) {
-                nodes = arena.allocate<Node*>(glyphs.count + penalties);
+                nodes = arena.allocate<Node *>(glyphs.count + penalties);
                 std::size_t filled = 0;
                 for (std::size_t index = 0; index < glyphs.count; ++index) {
                     nodes[filled++] = glyphs[index];
                     if (index + 1 < glyphs.count && index < breaks.count && breaks[index]) {
-                        auto* penalty = arena.compose<Node>(Node::Type::Penalty);
+                        auto *penalty = arena.compose<Node>(Node::Type::Penalty);
                         penalty->penalty({.value = 50, .flag = true});
                         nodes[filled++] = penalty;
                     }
@@ -368,22 +372,23 @@ namespace render::layout {
                 };
                 // A glyph's first letter and its last: a ligature, lam with
                 // alef, joins on as its last letter does.
-                const auto ends = [](const Node* node) -> std::pair<std::uint32_t, std::uint32_t> {
-                    const Node::Glyph& mark = node->glyph();
+                const auto ends = [](const Node *node) -> std::pair<std::uint32_t, std::uint32_t> {
+                    const Node::Glyph &mark = node->glyph();
                     const std::string_view letters = mark.letters;
                     if (letters.size() < 2) return {mark.point, mark.point};
                     std::size_t at = letters.size() - 1;
                     while (at > 0 && (static_cast<unsigned char>(letters[at]) & 0xC0) == 0x80) --at;
-                    const auto* data = reinterpret_cast<const std::uint8_t*>(letters.data() + at);
+                    const auto *data = reinterpret_cast<const std::uint8_t *>(letters.data() + at);
                     std::uint32_t last = data[0];
-                    if ((data[0] & 0xE0) == 0xC0 && letters.size() - at >= 2) last = ((data[0] & 0x1Fu) << 6) | (data[1] & 0x3Fu);
+                    if ((data[0] & 0xE0) == 0xC0 && letters.size() - at >= 2)
+                        last = ((data[0] & 0x1Fu) << 6) | (data[1] & 0x3Fu);
                     return {mark.point, last};
                 };
                 // A mark is shaped into its letter's cluster, so it is read
                 // from the word as written: 064B to 065F and 0670 are two
                 // bytes from D9, 06D6 to 06ED two from DB.
                 bool arabic = true;
-                for (const Node* node : nodes) {
+                for (const Node *node: nodes) {
                     const std::uint32_t code = node->type == Node::Type::Glyph ? node->glyph().point : 0;
                     arabic = arabic && node->type == Node::Type::Glyph && code >= 0x0600 && code <= 0x06FF;
                 }
@@ -410,17 +415,17 @@ namespace render::layout {
                         best = index;
                     }
                 }
-                const typography::Font* face = score > 0 ? nodes[best]->glyph().font : nullptr;
+                const typography::Font *face = score > 0 ? nodes[best]->glyph().font : nullptr;
                 const std::uint32_t tatweel = face ? face->index(0x0640) : 0;
                 if (tatweel != 0) {
                     const typography::Font::Box ink = face->bounds(tatweel);
-                    auto* stroke = arena.compose<Node>(Node::Type::Rule);
+                    auto *stroke = arena.compose<Node>(Node::Type::Rule);
                     stroke->rule({.height = ink.y, .depth = ink.height - ink.y});
-                    auto* hold = arena.compose<Node>(Node::Type::Penalty);
+                    auto *hold = arena.compose<Node>(Node::Type::Penalty);
                     hold->penalty({.value = 10000});
-                    auto* kashida = arena.compose<Node>(Node::Type::Glue);
+                    auto *kashida = arena.compose<Node>(Node::Type::Glue);
                     kashida->glue({.width = 0.0f, .stretch = face->size() * 0.5f, .leader = stroke});
-                    const memory::Slice<Node*> drawn = arena.allocate<Node*>(nodes.count + 2);
+                    const memory::Slice<Node *> drawn = arena.allocate<Node *>(nodes.count + 2);
                     std::size_t filled = 0;
                     for (std::size_t index = 0; index < nodes.count; ++index) {
                         drawn[filled++] = nodes[index];
@@ -455,8 +460,8 @@ namespace render::layout {
                 // semicolon or comma, which is TeX's: as much again as the
                 // space factor asks to stretch and a share of it to shrink,
                 // and a third of a space more after a stop or a colon.
-                if (const memory::Slice<Node*> space = piece(" ", false); !space.empty()) {
-                    Node* gap = space[0];
+                if (const memory::Slice<Node *> space = piece(" ", false); !space.empty()) {
+                    Node *gap = space[0];
                     if (factor != 1000 && gap->type == Node::Type::Glue) {
                         Node::Glue spread = gap->glue();
                         const float ratio = static_cast<float>(factor) / 1000.0f;
@@ -484,16 +489,18 @@ namespace render::layout {
                     ++hyphens;
                 }
 
-                const std::string_view dash = hyphens >= 3   ? "—"
-                                              : hyphens == 2 ? "–"
-                                                             : "-";
-                const memory::Slice<Node*> drawn = piece(dash, false);
+                const std::string_view dash = hyphens >= 3
+                                                  ? "—"
+                                                  : hyphens == 2
+                                                        ? "–"
+                                                        : "-";
+                const memory::Slice<Node *> drawn = piece(dash, false);
                 into.insert(into.end(), drawn.begin(), drawn.end());
                 factor = 1000;
 
                 // A line may end after a dash, at `\\exhyphenpenalty`'s price,
                 // as TeX lets it after any hyphen it is given.
-                auto* chance = arena.compose<Node>(Node::Type::Penalty);
+                auto *chance = arena.compose<Node>(Node::Type::Penalty);
                 chance->penalty({.value = 50});
                 into.push_back(chance);
                 continue;
@@ -514,9 +521,10 @@ namespace render::layout {
                 }
 
                 const std::string_view quote =
-                    mark == '`' ? (run >= 2 ? "“" : "‘")
-                                : (run >= 2 ? "”" : "’");
-                const memory::Slice<Node*> drawn = piece(quote, false);
+                        mark == '`'
+                            ? (run >= 2 ? "“" : "‘")
+                            : (run >= 2 ? "”" : "’");
+                const memory::Slice<Node *> drawn = piece(quote, false);
                 into.insert(into.end(), drawn.begin(), drawn.end());
                 continue;
             }
@@ -532,15 +540,16 @@ namespace render::layout {
                 if (rest.front() == ':') return rest.size() < 2 || (rest[1] != '/' && (rest[1] < '0' || rest[1] > '9'));
                 return rest.front() == ';' || rest.front() == '!' || rest.front() == '?';
             };
-            if (spaced && high(cursor)) {
+            if (spaced &&high(cursor)) {
                 const std::string_view rest = text.substr(cursor);
                 const bool opens = rest.starts_with("«");
                 const std::size_t length = opens || rest.starts_with("»") ? 2 : 1;
-                const memory::Slice<Node*> space = piece(" ", false);
-                const float word = !space.empty() && space[0]->type == Node::Type::Glue ? space[0]->glue().width
-                                                                                       : font.size() / 3.0f;
+                const memory::Slice<Node *> space = piece(" ", false);
+                const float word = !space.empty() && space[0]->type == Node::Type::Glue
+                                       ? space[0]->glue().width
+                                       : font.size() / 3.0f;
                 const auto hold = [&](const float width) {
-                    auto* kern = arena.compose<Node>(Node::Type::Kern);
+                    auto *kern = arena.compose<Node>(Node::Type::Kern);
                     kern->kern({.width = width});
                     into.push_back(kern);
                 };
@@ -548,11 +557,12 @@ namespace render::layout {
                     if (!into.empty() && into.back()->type == Node::Type::Glue) into.pop_back();
                     if (!into.empty()) hold(rest.front() == ':' ? word : word * 0.5f);
                 }
-                const memory::Slice<Node*> mark = piece(rest.substr(0, length), false);
+                const memory::Slice<Node *> mark = piece(rest.substr(0, length), false);
                 into.insert(into.end(), mark.begin(), mark.end());
                 cursor += length;
                 if (opens) {
-                    while (cursor < text.size() && (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
+                    while (cursor < text.size() && (
+                               text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
                         ++cursor;
                     }
                     hold(word * 0.5f);
@@ -573,7 +583,7 @@ namespace render::layout {
             std::string_view written = text.substr(begun, cursor - begun);
             if (digits != 0 && written.find_first_of("0123456789") != std::string_view::npos) {
                 std::string mapped;
-                for (const char letter : written) {
+                for (const char letter: written) {
                     if (letter < '0' || letter > '9') {
                         mapped += letter;
                         continue;
@@ -593,16 +603,20 @@ namespace render::layout {
             // word kept whole, and a glue of no width stands between two
             // where a line may end, stretching a little when it is justified,
             // as xeCJK's \CJKglue does.
-            const auto decode = [](const std::string_view from, const std::size_t at) -> std::pair<std::uint32_t, std::size_t> {
-                const auto* data = reinterpret_cast<const std::uint8_t*>(from.data() + at);
+            const auto decode = [](const std::string_view from,
+                                   const std::size_t at) -> std::pair<std::uint32_t, std::size_t> {
+                const auto *data = reinterpret_cast<const std::uint8_t *>(from.data() + at);
                 const std::size_t rest = from.size() - at;
                 if ((data[0] & 0xE0) == 0xC0 && rest >= 2) return {((data[0] & 0x1Fu) << 6) | (data[1] & 0x3Fu), 2};
                 if ((data[0] & 0xF0) == 0xE0 && rest >= 3) {
                     return {((data[0] & 0x0Fu) << 12) | ((data[1] & 0x3Fu) << 6) | (data[2] & 0x3Fu), 3};
                 }
                 if ((data[0] & 0xF8) == 0xF0 && rest >= 4) {
-                    return {((data[0] & 0x07u) << 18) | ((data[1] & 0x3Fu) << 12) | ((data[2] & 0x3Fu) << 6) |
-                                (data[3] & 0x3Fu), 4};
+                    return {
+                        ((data[0] & 0x07u) << 18) | ((data[1] & 0x3Fu) << 12) | ((data[2] & 0x3Fu) << 6) |
+                        (data[3] & 0x3Fu),
+                        4
+                    };
                 }
                 return {data[0], 1};
             };
@@ -613,7 +627,7 @@ namespace render::layout {
                        (code >= 0xFF00 && code <= 0xFFEF) || (code >= 0x20000 && code <= 0x2FA1F);
             };
             static constexpr std::u32string_view closers = U"、。，．・：；？！ー」』）】〉》〕〗〙〛〟｝］"
-                                                           U"ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐゠〜";
+                    U"ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐゠〜";
             static constexpr std::u32string_view openers = U"「『（【〈《〔〖〘〚〝｛［";
             bool mixed = false;
             for (std::size_t at = 0; !mixed && at < written.size();) {
@@ -622,7 +636,7 @@ namespace render::layout {
                 at += size;
             }
             if (mixed) {
-                std::uint32_t last = 0;   // the character before, 0 at the word's start
+                std::uint32_t last = 0; // the character before, 0 at the word's start
                 for (std::size_t at = 0; at < written.size();) {
                     const auto [code, size] = decode(written, at);
                     std::size_t end = at + size;
@@ -636,11 +650,11 @@ namespace render::layout {
                     if (last != 0 && (ideographic(code) || ideographic(last)) &&
                         closers.find(static_cast<char32_t>(code)) == std::u32string_view::npos &&
                         openers.find(static_cast<char32_t>(last)) == std::u32string_view::npos) {
-                        auto* glue = arena.compose<Node>(Node::Type::Glue);
+                        auto *glue = arena.compose<Node>(Node::Type::Glue);
                         glue->glue({.width = 0.0f, .stretch = font.size() * 0.1f});
                         into.push_back(glue);
                     }
-                    const memory::Slice<Node*> part = piece(written.substr(at, end - at), !ideographic(code));
+                    const memory::Slice<Node *> part = piece(written.substr(at, end - at), !ideographic(code));
                     into.insert(into.end(), part.begin(), part.end());
                     std::size_t step = at;
                     while (step < end) {
@@ -654,24 +668,24 @@ namespace render::layout {
                 continue;
             }
 
-            const memory::Slice<Node*> word = piece(written, true);
+            const memory::Slice<Node *> word = piece(written, true);
             into.insert(into.end(), word.begin(), word.end());
             // French spaces a sentence's stop as any other, as \frenchspacing does.
             factor = spaced ? 1000 : weigh(text.substr(begun, cursor - begun), factor);
         }
     }
 
-    void Document::append(const syntax::expression::Node* expression, const typography::Font& font,
-                          const Node::Color* color) {
+    void Document::append(const syntax::expression::Node *expression, const typography::Font &font,
+                          const Node::Color *color) {
         if (!expression) return;
         factor = 1000;
 
         // Inline: dropped into the line in pieces, split where TeX would let
         // a line end inside it -- after a relation or a binary operator.
         if (expression->style != syntax::expression::Node::Style::Display) {
-            const memory::Slice<Node*> pieces = typesetter.unfold(expression, font);
+            const memory::Slice<Node *> pieces = typesetter.unfold(expression, font);
             if (color) {
-                for (Node* piece : pieces) Typesetter::paint(piece, *color);
+                for (Node *piece: pieces) Typesetter::paint(piece, *color);
             }
             pending.insert(pending.end(), pieces.begin(), pieces.end());
             return;
@@ -680,19 +694,19 @@ namespace render::layout {
         // Displayed: a block of its own, centred in the column, with the text
         // on either side of it in paragraphs of their own.
         separate();
-        Node* box = typesetter.lower(expression, font, column());
+        Node *box = typesetter.lower(expression, font, column());
         if (box && color) Typesetter::paint(box, *color);
         if (box) display(box);
     }
 
-    void Document::display(Node* box) {
+    void Document::display(Node *box) {
         if (!box) return;
 
         // \abovedisplayskip and \belowdisplayskip: the body's size either
         // side, as LaTeX's classes set them, giving a little and taking half.
         const float skip = configuration.size;
         const auto space = [this, skip] {
-            auto* glue = arena.compose<Node>(Node::Type::Glue);
+            auto *glue = arena.compose<Node>(Node::Type::Glue);
             glue->glue({.width = skip, .stretch = skip * 0.2f, .shrink = skip * 0.5f});
             return glue;
         };
@@ -701,14 +715,14 @@ namespace render::layout {
         append(space(), true);
     }
 
-    void Document::append(Node* node, const bool block) {
+    void Document::append(Node *node, const bool block) {
         if (!node) return;
         if (node->type != Node::Type::Directive) factor = 1000;
 
         // An instruction, not material: it changes how the paragraphs from
         // here on are assembled and takes no room of its own.
         if (node->type == Node::Type::Directive) {
-            const Node::Directive& order = node->directive();
+            const Node::Directive &order = node->directive();
             switch (order.command) {
                 case Node::Directive::Command::Indent:
                     // Before a paragraph, the paragraph's own indentation;
@@ -717,7 +731,7 @@ namespace render::layout {
                         indentation = true;
                         suppression = false;
                     } else {
-                        auto* space = arena.compose<Node>(Node::Type::Kern);
+                        auto *space = arena.compose<Node>(Node::Type::Kern);
                         space->kern({.width = configuration.indent});
                         pending.push_back(space);
                     }
@@ -733,7 +747,8 @@ namespace render::layout {
                     justification = order.justification;
                     break;
                 case Node::Directive::Command::Margin:
-                    if (order.trailing) gutter = order.width; else margin = order.width;
+                    if (order.trailing) gutter = order.width;
+                    else margin = order.width;
                     break;
                 case Node::Directive::Command::Save:
                     shapes.push_back(Shape{justification, margin, gutter, reversed});
@@ -790,7 +805,7 @@ namespace render::layout {
                     // written in.
                     if (!pending.empty()) separate();
                     if (order.command == Node::Directive::Command::Columns) split = order.index;
-                    auto* element = arena.compose<Element>();
+                    auto *element = arena.compose<Element>();
                     element->type = Element::Type::Directive;
                     element->node = node;
                     attach(element);
@@ -826,12 +841,12 @@ namespace render::layout {
             (justification == Node::Justification::Center || justification == Node::Justification::Right ||
              margin > 0.0f || gutter > 0.0f || reversed)) {
             const auto fill = [this] {
-                auto* glue = arena.compose<Node>(Node::Type::Glue);
+                auto *glue = arena.compose<Node>(Node::Type::Glue);
                 glue->glue({.stretch = 1.0f, .expand = Node::Order::Fil});
                 return glue;
             };
             const auto kern = [this](const float width) {
-                auto* space = arena.compose<Node>(Node::Type::Kern);
+                auto *space = arena.compose<Node>(Node::Type::Kern);
                 space->kern({.width = width});
                 return space;
             };
@@ -840,7 +855,7 @@ namespace render::layout {
             const bool right = justification == Node::Justification::Right ||
                                (reversed && justification != Node::Justification::Left);
 
-            const memory::Slice<Node*> row = arena.allocate<Node*>(5);
+            const memory::Slice<Node *> row = arena.allocate<Node *>(5);
             std::size_t filled = 0;
             row[filled++] = kern(margin);
             if (centred || right) row[filled++] = fill();
@@ -850,7 +865,7 @@ namespace render::layout {
             node = Line::horizontal(arena, memory::Slice{row.data, filled}, column());
         }
 
-        auto* element = arena.compose<Element>();
+        auto *element = arena.compose<Element>();
         element->type = Element::Type::Directive;
         element->node = node;
         attach(element);
@@ -877,16 +892,16 @@ namespace render::layout {
                               configuration.indent > 0.0f;
         const std::size_t lead = indented ? 1 : 0;
 
-        const memory::Slice<Node*> content = arena.allocate<Node*>(pending.size() + lead);
+        const memory::Slice<Node *> content = arena.allocate<Node *>(pending.size() + lead);
         if (indented) {
-            auto* space = arena.compose<Node>(Node::Type::Kern);
+            auto *space = arena.compose<Node>(Node::Type::Kern);
             space->kern({.width = configuration.indent});
             content[0] = space;
         }
         std::copy(pending.begin(), pending.end(), content.begin() + lead);
         pending.clear();
 
-        auto* element = arena.compose<Element>();
+        auto *element = arena.compose<Element>();
         element->type = Element::Type::Paragraph;
         element->paragraph = arena.compose<Paragraph>(arena, content, justification, margin, gutter, reversed);
         element->columns = split ? split : configuration.columns;
@@ -901,22 +916,21 @@ namespace render::layout {
         // ends with a blank line.
         separate();
 
-        for (Element* element = head; element; element = element->next) {
+        for (Element *element = head; element; element = element->next) {
             if (element->type == Element::Type::Paragraph && element->paragraph) {
                 element->paragraph->layout(scratch, column(element->columns), configuration.leading);
             }
         }
     }
 
-    memory::Slice<Document::Element*> Document::elements() const noexcept {
+    memory::Slice<Document::Element *> Document::elements() const noexcept {
         if (blocks == 0) return {};
 
-        const memory::Slice<Element*> slice = arena.allocate<Element*>(blocks);
+        const memory::Slice<Element *> slice = arena.allocate<Element *>(blocks);
         std::size_t filled = 0;
-        for (Element* element = head; element; element = element->next) {
+        for (Element *element = head; element; element = element->next) {
             slice[filled++] = element;
         }
         return slice;
     }
-
 }

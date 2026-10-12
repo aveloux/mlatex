@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Tables of data in a document: csvsimple's CSV files and
     ///        datatool's databases, under their packages' own names.
     ///
@@ -48,7 +47,7 @@ namespace syntax::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Records(Lexicon& lexicon) noexcept;
+        explicit Records(Lexicon &lexicon) noexcept;
 
         /// @brief Installs csvsimple's `\\csvautotabular`,
         ///        `\\csvautobooktabular` and `\\csvreader`, and datatool's
@@ -59,30 +58,29 @@ namespace syntax::primitives {
         ///        `\\DTLcleardb`, `\\DTLsetseparator` and `\\DTLsettabseparator`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services: the files a table is read from.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error this module has recorded: a file not found, a
         ///        database never made. Wrapper::traceback() gathers them.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief A CSV file's text as rows of fields.
         /// @param text      The file.
         /// @param separator The character between fields.
         /// @return Its lines, each its fields, quotes taken off; blank lines left out.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string>> parse(std::string_view text, char separator);
+        [[nodiscard]] static std::vector<std::vector<std::string> > parse(std::string_view text, char separator);
 
     private:
         /// @brief One table: its columns' names and its rows, each row a
         ///        value for each name, empty where none was given.
         struct Table {
-            std::vector<std::string> keys{};                 ///< The columns, in order.
-            std::vector<std::vector<std::string>> rows{};    ///< The rows, each as wide as #keys.
+            std::vector<std::string> keys{}; ///< The columns, in order.
+            std::vector<std::vector<std::string> > rows{}; ///< The rows, each as wide as #keys.
         };
 
-        mutable std::map<std::string, Table, std::less<>> tables{};   ///< datatool's databases, by name.
-        mutable char separator{','};                                   ///< Between a CSV file's fields.
-        mutable std::vector<Traceback> tracebacks{};                  ///< Errors this module found.
+        mutable std::map<std::string, Table, std::less<> > tables{}; ///< datatool's databases, by name.
+        mutable char separator{','}; ///< Between a CSV file's fields.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
-
 }

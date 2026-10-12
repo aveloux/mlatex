@@ -4,7 +4,6 @@
 #include "syntax/parser.hpp"
 
 namespace render::primitives {
-
     /// @brief Space: glue that may flex, and kerns that may not.
     ///
     /// The difference is the whole of it. Glue is where a line may be broken
@@ -43,12 +42,11 @@ namespace render::primitives {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Spacing(syntax::Lexicon& lexicon) noexcept;
+        explicit Spacing(syntax::Lexicon &lexicon) noexcept;
 
         /// @brief Installs the spacing primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; dimensions scan against its registers.
-        void operator()(syntax::Parser& parser, Context& context) const;
+        void operator()(syntax::Parser &parser, Context &context) const;
     };
-
 }

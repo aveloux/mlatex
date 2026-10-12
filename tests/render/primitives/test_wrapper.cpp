@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -53,8 +53,8 @@ static bool holds(const std::string_view text, const std::string_view part) {
 
 int main() {
     const Result result = typeset("\\documentclass{article}\\begin{document}"
-                                  "\\pagestyle{nosuch}\\textfont{no-such-family}\\stepcounter{nosuch}"
-                                  "\\includegraphics{nosuch.png}\\end{document}");
+        "\\pagestyle{nosuch}\\textfont{no-such-family}\\stepcounter{nosuch}"
+        "\\includegraphics{nosuch.png}\\end{document}");
     assert((!result.clean) && "a document with mistakes in several primitives is reported");
     assert((holds(result.errors, "Unknown page style 'nosuch'")) && "the page primitive's");
     assert((holds(result.errors, "No font family named 'no-such-family'")) && "the typeface primitive's");

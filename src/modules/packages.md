@@ -41,8 +41,8 @@ When none of the three has it:
    The same file marks them loaded with `\@providepackage{...}`, grouped by
    why there is nothing to read.
 6. **Not known at all** -- the document is still set. The package is marked
-   loaded, a warning names it, and its commands are read from the glossary
-   (below) when the document uses them. A command neither knows is an error
+   loaded, a warning names it, and its commands are read from the glossary (below) when the document uses them. A
+   command neither knows is an error
    where it is used, as in LaTeX.
 
 ## The glossary

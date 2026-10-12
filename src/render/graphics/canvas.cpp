@@ -5,7 +5,6 @@
 #include <algorithm>
 
 namespace render::graphics {
-
     void Canvas::line(
         const Point2 from, const Point2 to,
         const Color color, const float width, const bool dashed
@@ -14,15 +13,15 @@ namespace render::graphics {
     }
 
     void Canvas::line(
-        const Point3& from, const Point3& to, const Projection& view,
+        const Point3 &from, const Point3 &to, const Projection &view,
         const Color color, const float width, const bool dashed
     ) {
         segments.push_back({view.project(from), view.project(to), color, width, dashed});
     }
 
-    void Canvas::place(const Point2 at, layout::Node* box, const int across, const int up, const float gap) {
+    void Canvas::place(const Point2 at, layout::Node *box, const int across, const int up, const float gap) {
         if (!box) return;
-        const layout::Node::Box& shape = box->box();
+        const layout::Node::Box &shape = box->box();
         const float width = shape.width;
         const float tall = shape.height + shape.depth;
 
@@ -37,7 +36,7 @@ namespace render::graphics {
         regions.push_back(Region{.corners = std::vector<Point2>(corners.begin(), corners.end()), .color = color});
     }
 
-    layout::Node* Canvas::compose(memory::Arena& arena, const Room room, const std::optional<float> baseline) const {
+    layout::Node *Canvas::compose(memory::Arena &arena, const Room room, const std::optional<float> baseline) const {
         // The area the box takes, in the canvas's own coordinates, y up: the
         // declared one, or none at all when the drawing is to be its own size.
         float left = 0.0f;
@@ -63,30 +62,30 @@ namespace render::graphics {
                 bottom = std::min(bottom, point.y);
                 top = std::max(top, point.y);
             };
-            for (const Segment& segment : segments) {
+            for (const Segment &segment: segments) {
                 take(segment.from);
                 take(segment.to);
             }
-            for (const Region& region : regions) {
-                for (const Point2 corner : region.corners) take(corner);
+            for (const Region &region: regions) {
+                for (const Point2 corner: region.corners) take(corner);
             }
-            for (const Label& label : labels) {
-                const layout::Node::Box& shape = label.box->box();
+            for (const Label &label: labels) {
+                const layout::Node::Box &shape = label.box->box();
                 take(label.corner);
                 take({label.corner.x + shape.width, label.corner.y + shape.height + shape.depth});
             }
         }
 
         // The regions first, so every line is drawn over every fill.
-        const memory::Slice<layout::Node*> strokes =
-            arena.allocate<layout::Node*>(regions.size() + segments.size() + labels.size());
+        const memory::Slice<layout::Node *> strokes =
+                arena.allocate<layout::Node *>(regions.size() + segments.size() + labels.size());
         std::size_t filled = 0;
-        for (const Region& region : regions) {
+        for (const Region &region: regions) {
             const memory::Slice<layout::Node::Point> area = arena.allocate<layout::Node::Point>(region.corners.size());
             for (std::size_t index = 0; index < region.corners.size(); ++index) {
                 area[index] = {region.corners[index].x - left, top - region.corners[index].y};
             }
-            auto* shape = arena.compose<layout::Node>();
+            auto *shape = arena.compose<layout::Node>();
             shape->path({
                 .color = {region.color.r, region.color.g, region.color.b, region.color.alpha},
                 .area = area,
@@ -94,8 +93,8 @@ namespace render::graphics {
             strokes[filled++] = shape;
         }
         for (std::size_t index = 0; index < segments.size(); ++index) {
-            const Segment& segment = segments[index];
-            auto* stroke = arena.compose<layout::Node>();
+            const Segment &segment = segments[index];
+            auto *stroke = arena.compose<layout::Node>();
 
             // A canvas's own y runs up the way graph paper does; the box it
             // sits in hangs from its top edge the way any other block here
@@ -115,7 +114,7 @@ namespace render::graphics {
         // and its baseline down from the area's top -- the box's reference
         // point is its baseline, which stands its depth above its bottom.
         for (std::size_t index = 0; index < labels.size(); ++index) {
-            const Label& label = labels[index];
+            const Label &label = labels[index];
             layout::Node::Box shape = label.box->box();
             shape.offset = label.corner.x - left;
             shape.shift = top - (label.corner.y + shape.depth);
@@ -123,7 +122,7 @@ namespace render::graphics {
             strokes[filled + segments.size() + index] = label.box;
         }
 
-        auto* canvas = arena.compose<layout::Node>();
+        auto *canvas = arena.compose<layout::Node>();
         canvas->box({
             .width = right - left,
             .height = 0.0f,
@@ -141,5 +140,4 @@ namespace render::graphics {
         }
         return canvas;
     }
-
 }

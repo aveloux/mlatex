@@ -20,8 +20,7 @@
 #include <string>
 
 namespace syntax::primitives {
-
-    Include::Include(Lexicon& lexicon) noexcept {
+    Include::Include(Lexicon &lexicon) noexcept {
         lexicon.intern("\\include");
         lexicon.intern("\\input");
         lexicon.intern("\\usepackage");
@@ -38,23 +37,26 @@ namespace syntax::primitives {
         return packages.contains(name);
     }
 
-    void Include::read(Mouth& mouth, const std::string_view key, const std::string_view text) const {
+    void Include::read(Mouth &mouth, const std::string_view key, const std::string_view text) const {
         const std::size_t cut = key.find_last_of('/');
         folders.emplace_back(cut == std::string_view::npos ? std::string_view{} : key.substr(0, cut));
 
         // The cursor is a stack, so the marker goes in first and the file in
         // front of it: the file is read, then the marker, then whatever came
         // after the \include.
-        const Token marker{.symbol = leave, .category = Catcodes::Category::Escape,
-                           .text = mouth.lexicon.resolve(leave)};
+        const Token marker{
+            .symbol = leave, .category = Catcodes::Category::Escape,
+            .text = mouth.lexicon.resolve(leave)
+        };
         mouth.stream().inject(std::span{&marker, 1});
         // One of the engine's own files stands on no line of the document,
         // and says so: what its macros report is reported where the
         // document's own tokens stand, or without a place, never at a line
         // of a file the document's writer has never seen.
         const auto embedded = modules::get(key);
-        mouth.ingest(text, embedded && embedded->data() == text.data() ? std::optional{memory::Location{}}
-                                                                       : std::nullopt);
+        mouth.ingest(text, embedded && embedded->data() == text.data()
+                               ? std::optional{memory::Location{}}
+                               : std::nullopt);
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Reading '{}'", key);
     }
@@ -74,18 +76,18 @@ namespace syntax::primitives {
         return found;
     }
 
-    std::optional<std::string_view> Include::get(const Context& context, const std::string_view key) {
+    std::optional<std::string_view> Include::get(const Context &context, const std::string_view key) {
         if (context.files) {
             if (const auto file = context.files->find(key); file != context.files->end()) return file->second;
         }
         if (const auto module = modules::get(key)) return module;
         if (context.disk) {
-            if (const std::string* file = context.disk(key)) return *file;
+            if (const std::string *file = context.disk(key)) return *file;
         }
         return std::nullopt;
     }
 
-    void Include::load(Mouth& mouth, const Context& context, const std::string_view name,
+    void Include::load(Mouth &mouth, const Context &context, const std::string_view name,
                        const memory::Location origin) const {
         if (loaded(name)) return;
 
@@ -97,7 +99,8 @@ namespace syntax::primitives {
             // xurl is url, soulutf8 is soul -- as the core names them: that
             // one, loaded, and this marked loaded beside it.
             packages.emplace(name);
-            if (const std::string* other = context.variables.get("alias." + std::string(name)); other && *other != name) {
+            if (const std::string *other = context.variables.get("alias." + std::string(name));
+                other && *other != name) {
                 load(mouth, context, *other, origin);
                 return;
             }
@@ -116,12 +119,12 @@ namespace syntax::primitives {
         read(mouth, key, *found);
     }
 
-    void Include::operator()(Mouth& mouth, Context& context) const {
-        mouth.bind(leave, [this](Mouth&) {
+    void Include::operator()(Mouth &mouth, Context &context) const {
+        mouth.bind(leave, [this](Mouth &) {
             if (!folders.empty()) folders.pop_back();
         });
 
-        const auto including = [this, &context](Mouth& mouth) {
+        const auto including = [this, &context](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             std::string name = Argument::text(mouth);
             while (!name.empty() && name.back() == ' ') name.pop_back();
@@ -129,7 +132,7 @@ namespace syntax::primitives {
 
             if (name.empty()) {
                 tracebacks.emplace_back(Traceback::Type::Argument, origin,
-                                         "\\include needs a file name");
+                                        "\\include needs a file name");
                 return;
             }
 
@@ -139,7 +142,7 @@ namespace syntax::primitives {
             // \bibliography and \printbibliography sets the list.
             const std::string folder = folders.empty() ? std::string{} : folders.back();
             if (name.ends_with(".bib")) {
-                for (const std::string& candidate : {folder.empty() ? name : folder + "/" + name, name}) {
+                for (const std::string &candidate: {folder.empty() ? name : folder + "/" + name, name}) {
                     if (!get(context, candidate)) continue;
                     mouth.ingest(mouth.arena.copy("\\addbibresource{" + candidate + "}"), memory::Location{});
                     return;
@@ -176,7 +179,7 @@ namespace syntax::primitives {
             }
 
             tracebacks.emplace_back(Traceback::Type::Primitive, origin,
-                                     std::format("File `{}.tex' not found", name));
+                                    std::format("File `{}.tex' not found", name));
         };
 
         // Options are the package's to read: each `key=value` becomes the
@@ -184,11 +187,11 @@ namespace syntax::primitives {
         // holding `true` -- \setkeys's own rule, so a package reads what it
         // was given with \variable and \ifvariable, or all of them in order
         // as `package.options`.
-        const auto requiring = [this, &context](Mouth& mouth) {
+        const auto requiring = [this, &context](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
 
             std::string options;
-            for (const Token& token : mouth.argument(Mouth::Parameter{.optional = true}, 0)) {
+            for (const Token &token: mouth.argument(Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
             }
             // Several at once, read in the order they were written. Each goes
@@ -198,14 +201,14 @@ namespace syntax::primitives {
 
             if (asked.empty()) {
                 tracebacks.emplace_back(Traceback::Type::Argument, origin,
-                                         "\\usepackage needs a package name");
+                                        "\\usepackage needs a package name");
                 return;
             }
 
             // The list as written is kept too, as `package.options`, for a
             // package that reads its options in order: babel's last language
             // is the one the document is in.
-            for (const std::string& name : asked) {
+            for (const std::string &name: asked) {
                 if (options.empty()) continue;
                 context.variables.assign(name, options);
                 context.variables.define(name + ".options", options);
@@ -219,30 +222,30 @@ namespace syntax::primitives {
         // with nothing read, so a document's \\usepackage for it -- and its
         // \\ifpackageloaded -- find it there. Its options are still kept as
         // its variables, as any package's are.
-        const auto providing = [this](Mouth& mouth) {
-            for (std::string& name : split(Argument::text(mouth))) packages.emplace(std::move(name));
+        const auto providing = [this](Mouth &mouth) {
+            for (std::string &name: split(Argument::text(mouth))) packages.emplace(std::move(name));
         };
 
-        const auto asking = [this](Mouth& mouth) {
+        const auto asking = [this](Mouth &mouth) {
             const std::string name = Argument::text(mouth);
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const std::vector<Token>& chosen = loaded(name) ? present : absent;
+            const std::vector<Token> &chosen = loaded(name) ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         };
 
         // Whether a file could be read -- one handed in, or one of the
         // engine's own -- as written or with the extension a bare name
         // leaves off: LaTeX's \\IfFileExists.
-        mouth.bind("\\iffile", [&context](Mouth& mouth) {
+        mouth.bind("\\iffile", [&context](Mouth &mouth) {
             const std::string name = Argument::text(mouth);
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
             const bool found = !name.empty() && (get(context, name) || get(context, name + ".mtex") ||
                                                  get(context, name + "/main.mtex"));
-            const std::vector<Token>& chosen = found ? present : absent;
+            const std::vector<Token> &chosen = found ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });
 
@@ -250,14 +253,15 @@ namespace syntax::primitives {
         // what would go to one is read and let go, and what goes to the
         // terminal -- \write16, \message, \typeout -- to the engine's log.
         // \immediate says when a write happens, which here is always now.
-        mouth.bind("\\immediate", [](Mouth&) {});
-        mouth.bind("\\write", [&context](Mouth& mouth) {
+        mouth.bind("\\immediate", [](Mouth &) {
+        });
+        mouth.bind("\\write", [&context](Mouth &mouth) {
             const std::int32_t stream = Number::integer(mouth, context.registers).value_or(-1);
             const std::string text = Argument::expanded(mouth);
             if (stream < 0 || stream > 15) Logger::log(Logger::Type::Mouth, Logger::Level::Informative, "{}", text);
         });
-        for (const std::string_view name : {"\\message", "\\typeout"}) {
-            mouth.bind(name, [](Mouth& mouth) {
+        for (const std::string_view name: {"\\message", "\\typeout"}) {
+            mouth.bind(name, [](Mouth &mouth) {
                 Logger::log(Logger::Type::Mouth, Logger::Level::Informative, "{}", Argument::expanded(mouth));
             });
         }
@@ -265,11 +269,11 @@ namespace syntax::primitives {
         // \warning{text}: what a package says a document should hear about,
         // reported beside the errors without making the document fail --
         // \PackageWarning and \ClassWarning are built on it.
-        mouth.bind("\\warning", [this](Mouth& mouth) {
+        mouth.bind("\\warning", [this](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             tracebacks.emplace_back(Traceback::Type::Warning, origin, Argument::expanded(mouth));
         });
-        mouth.bind("\\openout", [&context](Mouth& mouth) {
+        mouth.bind("\\openout", [&context](Mouth &mouth) {
             static_cast<void>(Number::integer(mouth, context.registers));
             if (mouth.lookahead().is('=')) mouth.read();
             // The name, to the space or the \relax that ends it.
@@ -279,15 +283,15 @@ namespace syntax::primitives {
                 mouth.read();
             }
         });
-        mouth.bind("\\closeout", [&context](Mouth& mouth) {
+        mouth.bind("\\closeout", [&context](Mouth &mouth) {
             static_cast<void>(Number::integer(mouth, context.registers));
         });
-        mouth.bind("\\newwrite", [](Mouth& mouth) { static_cast<void>(mouth.read()); });
+        mouth.bind("\\newwrite", [](Mouth &mouth) { static_cast<void>(mouth.read()); });
 
         // \endinput: the rest of the file being read is left unread -- up to
         // the mark its reading left after it, which is put back, so the
         // folder it was read from is left as it would have been.
-        mouth.bind("\\endinput", [this](Mouth& mouth) {
+        mouth.bind("\\endinput", [this](Mouth &mouth) {
             for (Token token = mouth.read(); !token.empty(); token = mouth.read()) {
                 if (token.symbol != leave) continue;
                 mouth.stream().inject(std::span{&token, 1});
@@ -304,5 +308,4 @@ namespace syntax::primitives {
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Bound the include primitives");
     }
-
 }

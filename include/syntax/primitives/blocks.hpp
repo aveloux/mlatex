@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace syntax::primitives {
-
     /// @brief Named block structure: `\\begin{name}` ... `\\end{name}`.
     ///
     /// The document's outermost block is `\\begin{document}`. A block opens a
@@ -60,16 +59,16 @@ namespace syntax::primitives {
     class Blocks {
     public:
         /// What a hook does when its block opens or closes.
-        using Handler = std::function<void(Mouth&)>;
+        using Handler = std::function<void(Mouth &)>;
 
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Blocks(Lexicon& lexicon) noexcept;
+        explicit Blocks(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\begin`, `\\end`, `\\enter` and `\\leave`.
         /// @param mouth   Expander to bind into.
         /// @param context Engine services; unused by this module.
-        void operator()(Mouth& mouth, Context& context) const;
+        void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Asks to be told when one named block opens or closes.
         ///
@@ -90,7 +89,7 @@ namespace syntax::primitives {
         ///                    close before it, which nothing here can arrange.
         /// @complexity O(1) amortized.
         void watch(std::string_view name, Handler entering, Handler leaving,
-                  bool transparent = false) const;
+                   bool transparent = false) const;
 
         /// @brief Asks to be told when any block opens or closes, whatever
         ///        its name: before a named block's own opening hooks, and
@@ -115,28 +114,27 @@ namespace syntax::primitives {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<Traceback>& traceback() const noexcept { return tracebacks; }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief What to run when one named block opens or closes.
         struct Hook {
-            Handler entering{};        ///< Run after the block opens.
-            Handler leaving{};         ///< Run before the block closes.
-            bool transparent{false};   ///< True: no Environment scope of its own.
-            bool own{false};           ///< The document defined it: its code is its own two macros.
+            Handler entering{}; ///< Run after the block opens.
+            Handler leaving{}; ///< Run before the block closes.
+            bool transparent{false}; ///< True: no Environment scope of its own.
+            bool own{false}; ///< The document defined it: its code is its own two macros.
         };
 
         /// @brief Reads a `{name}` argument and interns it.
         /// @param mouth Expander to read from.
         /// @return The interned name, or none when the group was empty.
-        [[nodiscard]] Symbol title(Mouth& mouth) const;
+        [[nodiscard]] Symbol title(Mouth &mouth) const;
 
-        mutable std::vector<Traceback> tracebacks{};   ///< Errors this module found.
-        mutable std::vector<Symbol> open{};             ///< Names of the blocks currently entered.
-        mutable std::vector<Symbol> closing{};          ///< A document's blocks whose end code is being read.
-        mutable std::vector<Hook> hooks{};              ///< Indexed by interned block name.
-        mutable Hook every{};                           ///< Told of every block.
-        Lexicon* lexicon{nullptr};                      ///< For resolving names back to text.
+        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::vector<Symbol> open{}; ///< Names of the blocks currently entered.
+        mutable std::vector<Symbol> closing{}; ///< A document's blocks whose end code is being read.
+        mutable std::vector<Hook> hooks{}; ///< Indexed by interned block name.
+        mutable Hook every{}; ///< Told of every block.
+        Lexicon *lexicon{nullptr}; ///< For resolving names back to text.
     };
-
 }

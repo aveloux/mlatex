@@ -1,7 +1,6 @@
 #pragma once
 
 namespace render::graphics {
-
     /// @brief A point on the page a canvas draws to.
     struct Point2 {
         float x{0.0f};
@@ -14,5 +13,4 @@ namespace render::graphics {
         float y{0.0f};
         float z{0.0f};
     };
-
 }

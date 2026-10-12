@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host& host = {}) {
+static Result typeset(const std::string_view document, const latex::Host &host = {}) {
     static const std::filesystem::path assets = latex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
     result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string& page : result.pages) {
+    for (std::string &page: result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,13 +54,13 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\section{First}\\label{first} See \\ref{first} and \\ref{later}."
-                                          "\\section{Later}\\label{later}");
+                                      "\\section{Later}\\label{later}");
         assert((result.clean && holds(result.text, "See1and2.")) && "references, backwards and forwards");
     }
     {
         const Result result = article("", "\\begin{equation}x\\label{e}\\end{equation}\\eqref{e} "
-                                          "\\section{Named}\\label{s}\\nameref{s} on page \\pageref{s}. "
-                                          "\\ref{nosuch}");
+                                      "\\section{Named}\\label{s}\\nameref{s} on page \\pageref{s}. "
+                                      "\\ref{nosuch}");
         assert((holds(result.text, "(1)") && holds(result.text, "Namedonpage1.")) &&
                "\\eqref, \\nameref and \\pageref");
         assert((holds(result.text, "??")) && "a label never made reads ??");
@@ -87,7 +87,8 @@ int main() {
         assert((holds(twice.errors, "Label `a' multiply defined")) && "a label made twice is reported");
     }
     {
-        const Result result = article("", "Before: \\@forward{key}. \\@fulfil{key}{given later}After: \\@forward{key}.");
+        const Result result =
+                article("", "Before: \\@forward{key}. \\@fulfil{key}{given later}After: \\@forward{key}.");
         assert((result.clean && holds(result.text, "Before:givenlater.After:givenlater.")) &&
                "a text given further on than it is used, written in both places");
     }

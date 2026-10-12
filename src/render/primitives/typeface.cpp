@@ -19,23 +19,22 @@
 #include <vector>
 
 namespace render::primitives {
-
-    Typeface::Typeface(syntax::Lexicon& lexicon) noexcept {
+    Typeface::Typeface(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\font");
     }
 
-    void Typeface::operator()(syntax::Parser& parser, Context& context) const {
-        parser.mouth.bind("\\textfont", [this, &context](syntax::Mouth& mouth) {
+    void Typeface::operator()(syntax::Parser &parser, Context &context) const {
+        parser.mouth.bind("\\textfont", [this, &context](syntax::Mouth &mouth) {
             const std::string name = syntax::Argument::text(mouth);
-            const typography::Font* font = context.registry.get({
+            const typography::Font *font = context.registry.get({
                 .family = name,
                 .size = context.selection.text() ? context.selection.text()->size() : 12.0f
             });
 
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument,
-                                         mouth.lookahead().location,
-                                         "No font family named '" + name + "'");
+                                        mouth.lookahead().location,
+                                        "No font family named '" + name + "'");
                 return;
             }
 
@@ -44,17 +43,17 @@ namespace render::primitives {
                         "Text face is now '{}'", name);
         });
 
-        parser.mouth.bind("\\mathfont", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\mathfont", [this, &context](syntax::Mouth &mouth) {
             const std::string name = syntax::Argument::text(mouth);
-            const typography::Font* font = context.registry.get({
+            const typography::Font *font = context.registry.get({
                 .family = name,
                 .size = context.selection.text() ? context.selection.text()->size() : 12.0f
             });
 
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument,
-                                         mouth.lookahead().location,
-                                         "No font family named '" + name + "'");
+                                        mouth.lookahead().location,
+                                        "No font family named '" + name + "'");
                 return;
             }
 
@@ -66,11 +65,11 @@ namespace render::primitives {
         // `\\font\name = family at size`: builds the font and binds the name to
         // selecting it, so the two steps a document usually wants together are
         // written once and used many times.
-        parser.mouth.bind("\\font", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\font", [this, &context](syntax::Mouth &mouth) {
             const syntax::Token target = mouth.read();
             if (target.category != syntax::Catcodes::Category::Escape) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
-                                         "\\font needs a control sequence to name the face");
+                                        "\\font needs a control sequence to name the face");
                 return;
             }
 
@@ -119,14 +118,14 @@ namespace render::primitives {
                 }
             }
 
-            const typography::Font* font = context.registry.get({.family = name, .size = size});
+            const typography::Font *font = context.registry.get({.family = name, .size = size});
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
-                                         "No font family named '" + name + "'");
+                                        "No font family named '" + name + "'");
                 return;
             }
 
-            mouth.bind(target.symbol, [&context, font](syntax::Mouth&) {
+            mouth.bind(target.symbol, [&context, font](syntax::Mouth &) {
                 context.selection.text(font);
             });
 
@@ -142,54 +141,60 @@ namespace render::primitives {
         // Each is found by what its name holds, lower-cased and without its
         // spaces, the longer names first; one the engine has nothing near
         // leaves the face as it was, and says so.
-        parser.mouth.bind("\\@face", [this, &context](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\@face", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string role = syntax::Argument::text(mouth);
             const std::string name = syntax::Argument::text(mouth);
             std::string key;
-            for (const char letter : name) {
+            for (const char letter: name) {
                 if (letter == ' ' || letter == '-' || letter == '_') continue;
                 key += static_cast<char>(letter >= 'A' && letter <= 'Z' ? letter + 32 : letter);
             }
 
             using Pair = std::pair<std::string_view, std::string_view>;
-            static constexpr std::array<Pair, 20> texts{{
-                {"newcomputermodernsans", "NewCMSans10-Regular"}, {"newcmsans", "NewCMSans10-Regular"},
-                {"cmusans", "NewCMSans10-Regular"}, {"newcomputermodernmono", "NewCMMono10-Regular"},
-                {"newcmmono", "NewCMMono10-Regular"}, {"cmutypewriter", "NewCMMono10-Regular"},
-                {"newcomputermodern", "NewCM10-Regular"}, {"newcm", "NewCM10-Regular"},
-                {"cmuserif", "NewCM10-Regular"}, {"computermodern", "NewCM10-Regular"},
-                {"latinmodernsans", "lmsans10-regular"}, {"latinmodernmono", "lmmono10-regular"},
-                {"latinmodern", "lmroman10-regular"}, {"stix", "STIXTwoText-Regular"},
-                {"xits", "STIXTwoText-Regular"}, {"times", "STIXTwoText-Regular"},
-                {"termes", "STIXTwoText-Regular"}, {"liberationserif", "STIXTwoText-Regular"},
-                {"nimbusrom", "STIXTwoText-Regular"}, {"tinos", "STIXTwoText-Regular"},
-            }};
-            static constexpr std::array<Pair, 14> formulas{{
-                {"newcomputermodernsansmath", "NewCMSansMath-Regular"}, {"newcmsansmath", "NewCMSansMath-Regular"},
-                {"stix", "STIXTwoMath-Regular"}, {"xits", "STIXTwoMath-Regular"},
-                {"cambria", "STIXTwoMath-Regular"}, {"fira", "FiraMath-Regular"}, {"asana", "Asana-Math"},
-                {"pagella", "texgyrepagella-math"}, {"termes", "texgyretermes-math"},
-                {"bonum", "texgyrebonum-math"}, {"schola", "texgyreschola-math"}, {"dejavu", "texgyredejavu-math"},
-                {"newcomputermodern", "NewCMMath-Regular"}, {"latinmodern", "NewCMMath-Regular"},
-            }};
+            static constexpr std::array<Pair, 20> texts{
+                {
+                    {"newcomputermodernsans", "NewCMSans10-Regular"}, {"newcmsans", "NewCMSans10-Regular"},
+                    {"cmusans", "NewCMSans10-Regular"}, {"newcomputermodernmono", "NewCMMono10-Regular"},
+                    {"newcmmono", "NewCMMono10-Regular"}, {"cmutypewriter", "NewCMMono10-Regular"},
+                    {"newcomputermodern", "NewCM10-Regular"}, {"newcm", "NewCM10-Regular"},
+                    {"cmuserif", "NewCM10-Regular"}, {"computermodern", "NewCM10-Regular"},
+                    {"latinmodernsans", "lmsans10-regular"}, {"latinmodernmono", "lmmono10-regular"},
+                    {"latinmodern", "lmroman10-regular"}, {"stix", "STIXTwoText-Regular"},
+                    {"xits", "STIXTwoText-Regular"}, {"times", "STIXTwoText-Regular"},
+                    {"termes", "STIXTwoText-Regular"}, {"liberationserif", "STIXTwoText-Regular"},
+                    {"nimbusrom", "STIXTwoText-Regular"}, {"tinos", "STIXTwoText-Regular"},
+                }
+            };
+            static constexpr std::array<Pair, 14> formulas{
+                {
+                    {"newcomputermodernsansmath", "NewCMSansMath-Regular"}, {"newcmsansmath", "NewCMSansMath-Regular"},
+                    {"stix", "STIXTwoMath-Regular"}, {"xits", "STIXTwoMath-Regular"},
+                    {"cambria", "STIXTwoMath-Regular"}, {"fira", "FiraMath-Regular"}, {"asana", "Asana-Math"},
+                    {"pagella", "texgyrepagella-math"}, {"termes", "texgyretermes-math"},
+                    {"bonum", "texgyrebonum-math"}, {"schola", "texgyreschola-math"}, {"dejavu", "texgyredejavu-math"},
+                    {"newcomputermodern", "NewCMMath-Regular"}, {"latinmodern", "NewCMMath-Regular"},
+                }
+            };
 
             const bool formula = role == "math";
             std::string_view file;
-            for (const auto& [part, carried] : formula ? std::span<const Pair>{formulas} : std::span<const Pair>{texts}) {
+            for (const auto &[part, carried]:
+                 formula ? std::span<const Pair>{formulas} : std::span<const Pair>{texts}) {
                 if (key.contains(part)) {
                     file = carried;
                     break;
                 }
             }
 
-            const typography::Font* current = formula ? context.selection.formula() : context.selection.text();
+            const typography::Font *current = formula ? context.selection.formula() : context.selection.text();
             const float size = current ? current->size() : 10.0f;
-            const typography::Font* font = file.empty() ? nullptr : context.registry.get({.family = file, .size = size});
+            const typography::Font *font =
+                    file.empty() ? nullptr : context.registry.get({.family = file, .size = size});
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                         std::format("fontspec: no face near '{}' is carried; the {} face is kept", name,
-                                                     formula ? "formulas'" : "text's"));
+                                        std::format("fontspec: no face near '{}' is carried; the {} face is kept", name,
+                                                    formula ? "formulas'" : "text's"));
                 return;
             }
 
@@ -208,5 +213,4 @@ namespace render::primitives {
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound typeface primitives");
     }
-
 }

@@ -19,7 +19,6 @@
 #include <vector>
 
 namespace render::primitives {
-
     using Category = syntax::Catcodes::Category;
 
     /// @brief Text without the blanks around it.
@@ -49,13 +48,13 @@ namespace render::primitives {
         return text.size();
     }
 
-    Diagrams::Diagrams(syntax::Lexicon& lexicon) noexcept {
+    Diagrams::Diagrams(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\xymatrix");
         lexicon.intern("\\Qcircuit");
         lexicon.intern("\\Tree");
     }
 
-    std::string Diagrams::body(syntax::Mouth& mouth, const std::string_view name) {
+    std::string Diagrams::body(syntax::Mouth &mouth, const std::string_view name) {
         std::string text;
         int depth = 0;
         for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
@@ -79,8 +78,9 @@ namespace render::primitives {
         return text;
     }
 
-    std::vector<std::vector<std::string>> Diagrams::grid(const std::string_view text, const std::string_view separator) {
-        std::vector<std::vector<std::string>> rows(1);
+    std::vector<std::vector<std::string> >
+    Diagrams::grid(const std::string_view text, const std::string_view separator) {
+        std::vector<std::vector<std::string> > rows(1);
         std::size_t begin = 0;
         int depth = 0;
         for (std::size_t at = 0; at < text.size(); ++at) {
@@ -96,7 +96,8 @@ namespace render::primitives {
                 if (at < text.size() && text[at] == '[') at = closing(text, at) + 1;
                 begin = at;
                 --at;
-            } else if (text.substr(at).starts_with(separator) && (separator != "&" || at == 0 || text[at - 1] != '\\')) {
+            } else if (text.substr(at).starts_with(separator) && (
+                           separator != "&" || at == 0 || text[at - 1] != '\\')) {
                 rows.back().emplace_back(trim(text.substr(begin, at - begin)));
                 at += separator.size() - 1;
                 begin = at + 1;
@@ -108,7 +109,7 @@ namespace render::primitives {
         return rows;
     }
 
-    std::string Diagrams::picture(const Diagram& diagram, const memory::Location origin) const {
+    std::string Diagrams::picture(const Diagram &diagram, const memory::Location origin) const {
         // Its middle, a little under, on the baseline: the formula's axis,
         // where tikz-cd centres a diagram.
         std::string out = std::format("\\begin{{tikzpicture}}[baseline=([yshift=-0.25em]cd.center)]"
@@ -126,21 +127,22 @@ namespace render::primitives {
             return row >= 1 && row <= diagram.cells.size() && column >= 1 && column <= diagram.cells[row - 1].size() &&
                    !diagram.cells[row - 1][column - 1].empty();
         };
-        for (const Arrow& arrow : diagram.arrows) {
+        for (const Arrow &arrow: diagram.arrows) {
             if (!present(arrow.row, arrow.column) || !present(arrow.down, arrow.across)) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                         std::format("a diagram's arrow from row {}, column {} goes to no object and is not drawn",
-                                                     arrow.row, arrow.column));
+                                        std::format(
+                                            "a diagram's arrow from row {}, column {} goes to no object and is not drawn",
+                                            arrow.row, arrow.column));
                 continue;
             }
             out += std::format("\\draw[{}] (cd-{}-{}) to ", arrow.style, arrow.row, arrow.column);
-            for (const std::string& label : arrow.labels) out += label + " ";
+            for (const std::string &label: arrow.labels) out += label + " ";
             out += std::format("(cd-{}-{});", arrow.down, arrow.across);
         }
         return out + "\\end{tikzpicture}";
     }
 
-    Diagrams::Branch Diagrams::branch(const std::string_view text, std::size_t& at) {
+    Diagrams::Branch Diagrams::branch(const std::string_view text, std::size_t &at) {
         Branch node;
         ++at;
         const bool dotted = at < text.size() && text[at] == '.';
@@ -210,27 +212,29 @@ namespace render::primitives {
         return node;
     }
 
-    std::string Diagrams::plant(Branch& tree, const float left, const int depth, int& count, std::string& out) {
+    std::string Diagrams::plant(Branch &tree, const float left, const int depth, int &count, std::string &out) {
         // The children side by side, centred under the room this node has.
         float under = 0.0f;
-        for (const Branch& child : tree.children) under += child.width;
+        for (const Branch &child: tree.children) under += child.width;
         if (!tree.children.empty()) under += 10.0f * static_cast<float>(tree.children.size() - 1);
         float place = left + (tree.width - under) * 0.5f;
         std::vector<std::string> names;
-        for (Branch& child : tree.children) {
+        for (Branch &child: tree.children) {
             names.push_back(plant(child, place, depth + 1, count, out));
             place += child.width + 10.0f;
         }
-        tree.x = tree.children.empty() ? left + tree.width * 0.5f
-                                        : (tree.children.front().x + tree.children.back().x) * 0.5f;
+        tree.x = tree.children.empty()
+                     ? left + tree.width * 0.5f
+                     : (tree.children.front().x + tree.children.back().x) * 0.5f;
         const std::string name = std::format("@t{}", ++count);
-        out += std::format("\\node ({}) at ({:.2f}pt,{:.2f}pt) {{{}}};", name, tree.x, -22.0f * static_cast<float>(depth),
+        out += std::format("\\node ({}) at ({:.2f}pt,{:.2f}pt) {{{}}};", name, tree.x,
+                           -22.0f * static_cast<float>(depth),
                            tree.label);
-        for (const std::string& child : names) out += std::format("\\draw ({}) -- ({});", name, child);
+        for (const std::string &child: names) out += std::format("\\draw ({}) -- ({});", name, child);
         return name;
     }
 
-    void Diagrams::operator()(syntax::Parser& parser, Context& context) const {
+    void Diagrams::operator()(syntax::Parser &parser, Context &context) const {
         // An option list cut at its commas, those inside braces, brackets or
         // quotes left alone: tikz-cd's `r, "f,g"', bend left`.
         const auto split = [](const std::string_view list) {
@@ -244,7 +248,8 @@ namespace render::primitives {
                 if (!quoted && (letter == '{' || letter == '[')) ++depth;
                 if (!quoted && (letter == '}' || letter == ']') && depth > 0) --depth;
                 if (letter != ',' || depth != 0 || quoted) continue;
-                if (const std::string_view piece = trim(list.substr(begin, at - begin)); !piece.empty()) found.push_back(piece);
+                if (const std::string_view piece = trim(list.substr(begin, at - begin)); !piece.empty()) found.
+                        push_back(piece);
                 begin = at + 1;
             }
             return found;
@@ -252,9 +257,9 @@ namespace render::primitives {
         // The grid of a diagram's objects alone, for one inside a formula of
         // other things, which is set as a matrix is -- a cell's node
         // options, `|[draw]|`, left out.
-        const auto objects = [](const Diagram& diagram) {
+        const auto objects = [](const Diagram &diagram) {
             std::string out = "\\matrix{";
-            for (const std::vector<std::string>& row : diagram.cells) {
+            for (const std::vector<std::string> &row: diagram.cells) {
                 for (std::size_t column = 0; column < row.size(); ++column) {
                     std::string_view cell = row[column];
                     if (cell.starts_with("|[")) cell = trim(cell.substr(std::min(cell.find("]|") + 2, cell.size())));
@@ -268,8 +273,10 @@ namespace render::primitives {
         // arrow's left, or its right when swapped, with `auto`; across it
         // with `description`; or where a side it names puts it.
         const auto label = [](const std::string_view text, const bool swapped, const std::string_view options) {
-            const bool placed = options.find("above") != std::string_view::npos || options.find("below") != std::string_view::npos ||
-                                options.find("left") != std::string_view::npos || options.find("right") != std::string_view::npos;
+            const bool placed = options.find("above") != std::string_view::npos || options.find("below") !=
+                                std::string_view::npos ||
+                                options.find("left") != std::string_view::npos || options.find("right") !=
+                                std::string_view::npos;
             const bool across = options.find("description") != std::string_view::npos;
             std::string written = "font=\\scriptsize,inner sep=0.5ex,";
             if (across) written += "fill=white,";
@@ -281,10 +288,10 @@ namespace render::primitives {
         // tikz-cd: `\begin{tikzcd}[column sep=large] A \arrow[r, "f"] & B \end{tikzcd}`.
         context.blocks.watch(
             "tikzcd",
-            [this, &context, split, objects, label](syntax::Mouth& mouth) {
+            [this, &context, split, objects, label](syntax::Mouth &mouth) {
                 const memory::Location origin = mouth.lookahead().location;
                 std::string options;
-                for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     options += token.text;
                     if (token.text.size() > 1 && token.text.front() == '\\') options += ' ';
                 }
@@ -296,18 +303,25 @@ namespace render::primitives {
                 Diagram diagram;
                 std::string separator = "&";
                 std::string every;
-                static constexpr std::array<std::pair<std::string_view, std::array<std::string_view, 2>>, 6> sizes{{
-                    {"tiny", {"0.6em", "0.45em"}}, {"small", {"1.2em", "0.9em"}}, {"scriptsize", {"1.8em", "1.35em"}},
-                    {"normal", {"2.4em", "1.8em"}}, {"large", {"3.6em", "2.7em"}}, {"huge", {"4.8em", "3.6em"}},
-                }};
+                static constexpr std::array<std::pair<std::string_view, std::array<std::string_view, 2> >, 6> sizes{
+                    {
+                        {"tiny", {"0.6em", "0.45em"}}, {"small", {"1.2em", "0.9em"}},
+                        {"scriptsize", {"1.8em", "1.35em"}},
+                        {"normal", {"2.4em", "1.8em"}}, {"large", {"3.6em", "2.7em"}}, {"huge", {"4.8em", "3.6em"}},
+                    }
+                };
                 const auto sized = [](const std::string_view value, const std::size_t which) {
-                    const auto named = std::ranges::find(sizes, value, &std::pair<std::string_view, std::array<std::string_view, 2>>::first);
+                    const auto named = std::ranges::find(sizes, value,
+                                                         &std::pair<std::string_view, std::array<std::string_view,
+                                                             2> >::first);
                     return std::string(named != sizes.end() ? named->second[which] : value);
                 };
-                for (const std::string_view option : split(options)) {
+                for (const std::string_view option: split(options)) {
                     const std::size_t equals = option.find('=');
                     const std::string_view key = trim(option.substr(0, equals));
-                    std::string_view value = equals == std::string_view::npos ? std::string_view{} : trim(option.substr(equals + 1));
+                    std::string_view value = equals == std::string_view::npos
+                                                 ? std::string_view{}
+                                                 : trim(option.substr(equals + 1));
                     if (value.starts_with('{') && value.ends_with('}')) value = value.substr(1, value.size() - 2);
                     if (key == "column sep" || key == "sep") diagram.columns = sized(value, 0);
                     if (key == "row sep" || key == "sep") diagram.rows = sized(value, 1);
@@ -321,11 +335,14 @@ namespace render::primitives {
                 }
 
                 // Each cell's object, and the arrows written in it.
-                static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> commands{{
-                    {"\\arrow ", ""}, {"\\ar ", ""}, {"\\rar ", "r"}, {"\\lar ", "l"}, {"\\dar ", "d"}, {"\\uar ", "u"},
-                    {"\\drar ", "dr"}, {"\\urar ", "ur"}, {"\\dlar ", "dl"}, {"\\ular ", "ul"},
-                }};
-                const std::vector<std::vector<std::string>> rows = grid(text, separator);
+                static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> commands{
+                    {
+                        {"\\arrow ", ""}, {"\\ar ", ""}, {"\\rar ", "r"}, {"\\lar ", "l"}, {"\\dar ", "d"},
+                        {"\\uar ", "u"},
+                        {"\\drar ", "dr"}, {"\\urar ", "ur"}, {"\\dlar ", "dl"}, {"\\ular ", "ul"},
+                    }
+                };
+                const std::vector<std::vector<std::string> > rows = grid(text, separator);
                 for (std::size_t r = 0; r < rows.size(); ++r) {
                     diagram.cells.emplace_back();
                     for (std::size_t c = 0; c < rows[r].size(); ++c) {
@@ -333,7 +350,7 @@ namespace render::primitives {
                         std::string object;
                         std::size_t at = 0;
                         while (at < cell.size()) {
-                            const auto command = std::ranges::find_if(commands, [&](const auto& pair) {
+                            const auto command = std::ranges::find_if(commands, [&](const auto &pair) {
                                 return cell.substr(at).starts_with(pair.first);
                             });
                             if (command == commands.end()) {
@@ -375,15 +392,18 @@ namespace render::primitives {
                             bool swapped = false;
                             bool across = false;
                             std::string style;
-                            std::vector<std::pair<std::string, std::pair<bool, std::string>>> labels;
-                            for (const std::string_view item : split(every + list)) {
+                            std::vector<std::pair<std::string, std::pair<bool, std::string> > > labels;
+                            for (const std::string_view item: split(every + list)) {
                                 if (item.starts_with('"')) {
                                     const std::size_t shut = item.find('"', 1);
                                     const std::string_view written = item.substr(1, std::min(shut, item.size()) - 1);
-                                    std::string_view rest = shut == std::string_view::npos ? std::string_view{} : trim(item.substr(shut + 1));
+                                    std::string_view rest = shut == std::string_view::npos
+                                                                ? std::string_view{}
+                                                                : trim(item.substr(shut + 1));
                                     const bool turned = rest.starts_with('\'');
                                     if (turned) rest = trim(rest.substr(1));
-                                    if (rest.starts_with('{') && rest.ends_with('}')) rest = rest.substr(1, rest.size() - 2);
+                                    if (rest.starts_with('{') && rest.ends_with('}'))
+                                        rest = rest.substr(1, rest.size() - 2);
                                     labels.push_back({std::string(written), {turned, std::string(rest)}});
                                 } else if (item.find_first_not_of("rlud") == std::string_view::npos) {
                                     direction = item;
@@ -430,7 +450,8 @@ namespace render::primitives {
                                     std::size_t down = 0;
                                     std::size_t over = 0;
                                     std::from_chars(place.data(), place.data() + std::min(dash, place.size()), down);
-                                    if (dash != std::string_view::npos) std::from_chars(place.data() + dash + 1, place.data() + place.size(), over);
+                                    if (dash != std::string_view::npos) std::from_chars(
+                                        place.data() + dash + 1, place.data() + place.size(), over);
                                     if (item.starts_with("from=")) {
                                         arrow.row = down;
                                         arrow.column = over;
@@ -460,11 +481,13 @@ namespace render::primitives {
                             } else {
                                 arrow.down = arrow.row + static_cast<std::size_t>(std::ranges::count(direction, 'd')) -
                                              static_cast<std::size_t>(std::ranges::count(direction, 'u'));
-                                arrow.across = arrow.column + static_cast<std::size_t>(std::ranges::count(direction, 'r')) -
+                                arrow.across = arrow.column + static_cast<std::size_t>(std::ranges::count(
+                                                   direction, 'r')) -
                                                static_cast<std::size_t>(std::ranges::count(direction, 'l'));
                             }
-                            arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," + style;
-                            for (const auto& [written, how] : labels) {
+                            arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," +
+                                          style;
+                            for (const auto &[written, how]: labels) {
                                 std::string extra = how.second;
                                 if (across && extra.find("description") == std::string::npos) extra += ",description";
                                 arrow.labels.push_back(label(written, how.first != swapped, extra));
@@ -476,10 +499,11 @@ namespace render::primitives {
                 }
                 mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
             },
-            [](syntax::Mouth&) {});
+            [](syntax::Mouth &) {
+            });
 
         // xy-pic: `\xymatrix@C=3em{A \ar[r]^f \ar@{-->}[d]_g & B}`.
-        parser.mouth.bind("\\xymatrix", [this, &context, objects, label](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\xymatrix", [this, &context, objects, label](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             Diagram diagram{.columns = "2pc", .rows = "2pc"};
             // Its spacing before its body: `@C=`, `@R=`, `@=` and the rest.
@@ -503,7 +527,7 @@ namespace render::primitives {
                 if (which == "R" || which.empty()) diagram.rows = trim(length);
             }
             std::string text;
-            for (const syntax::Token& token : mouth.argument({}, 0)) {
+            for (const syntax::Token &token: mouth.argument({}, 0)) {
                 // `\ar@{-->}` is one control word where `@` is a letter.
                 if (token.text == "\\ar@") {
                     text += "\\ar @";
@@ -513,9 +537,9 @@ namespace render::primitives {
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
 
-            for (const std::vector<std::string>& row : grid(text, "&")) {
+            for (const std::vector<std::string> &row: grid(text, "&")) {
                 diagram.cells.emplace_back();
-                for (const std::string_view cell : row) {
+                for (const std::string_view cell: row) {
                     std::string object;
                     std::size_t at = 0;
                     while (at < cell.size()) {
@@ -592,7 +616,8 @@ namespace render::primitives {
                             } else if (cell[at] == '^' || cell[at] == '_' || cell[at] == '|') {
                                 // A label: `^` on its left, `_` its right, `|` across it.
                                 const char side = cell[at++];
-                                while (at < cell.size() && (cell[at] == '<' || cell[at] == '>' || cell[at] == ' ')) ++at;
+                                while (at < cell.size() && (cell[at] == '<' || cell[at] == '>' || cell[at] == ' ')) ++
+                                        at;
                                 if (at < cell.size() && cell[at] == '(') at = closing(cell, at) + 1;
                                 std::string_view written;
                                 if (at < cell.size() && cell[at] == '{') {
@@ -615,7 +640,8 @@ namespace render::primitives {
                                      static_cast<std::size_t>(std::ranges::count(direction, 'u'));
                         arrow.across = arrow.column + static_cast<std::size_t>(std::ranges::count(direction, 'r')) -
                                        static_cast<std::size_t>(std::ranges::count(direction, 'l'));
-                        arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," + style;
+                        arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," +
+                                      style;
                         diagram.arrows.push_back(std::move(arrow));
                     }
 
@@ -659,7 +685,8 @@ namespace render::primitives {
                                 if (shape.find('=') != std::string_view::npos) options += "double,";
                                 if (const std::size_t colon = shape.find(':'); colon != std::string_view::npos) {
                                     std::string_view radius = trim(shape.substr(colon + 1));
-                                    if (radius.starts_with('<') && radius.ends_with('>')) radius = radius.substr(1, radius.size() - 2);
+                                    if (radius.starts_with('<') && radius.ends_with('>'))
+                                        radius = radius.substr(1, radius.size() - 2);
                                     options += "rounded corners=" + std::string(radius.empty() ? "4pt" : radius) + ",";
                                 }
                             } else if (head == '!' || head == '=') {
@@ -667,16 +694,23 @@ namespace render::primitives {
                                 if (entry.starts_with('<')) {
                                     entry.remove_prefix(std::min(entry.find('>') + 1, entry.size()));
                                 } else {
-                                    while (!entry.empty() && std::isupper(static_cast<unsigned char>(entry.front()))) entry.remove_prefix(1);
+                                    while (!entry.empty() && std::isupper(static_cast<unsigned char>(entry.front())))
+                                        entry.remove_prefix(1);
                                 }
                             } else if (entry.starts_with("\\txt")) {
                                 // Its lines, each text, in a column of their own --
                                 // braced, so the matrix does not end a row at them.
                                 entry = trim(entry.substr(4));
-                                if (entry.starts_with('<')) entry = trim(entry.substr(std::min(entry.find('>') + 1, entry.size())));
-                                const std::size_t shut = entry.starts_with('{') ? closing(entry, 0) : std::string_view::npos;
-                                const std::string_view lines = shut == std::string_view::npos ? entry : entry.substr(1, shut - 1);
-                                const std::vector<std::vector<std::string>> rows = grid(lines, "\x01");
+                                if (entry.starts_with('<')) entry = trim(
+                                                                entry.substr(
+                                                                    std::min(entry.find('>') + 1, entry.size())));
+                                const std::size_t shut = entry.starts_with('{')
+                                                             ? closing(entry, 0)
+                                                             : std::string_view::npos;
+                                const std::string_view lines = shut == std::string_view::npos
+                                                                   ? entry
+                                                                   : entry.substr(1, shut - 1);
+                                const std::vector<std::vector<std::string> > rows = grid(lines, "\x01");
                                 content = "{\\begin{array}{c}";
                                 for (std::size_t line = 0; line < rows.size(); ++line) {
                                     content += (line > 0 ? "\\\\\\text{" : "\\text{") + rows[line].front() + "}";
@@ -691,7 +725,9 @@ namespace render::primitives {
                                 break;
                             }
                         }
-                        object = "|[" + options + "inner sep={" + margin + "}]| " + (trim(content).empty() ? "{}" : content);
+                        object = "|[" + options + "inner sep={" + margin + "}]| " + (trim(content).empty()
+                                     ? "{}"
+                                     : content);
                     }
                     diagram.cells.back().emplace_back(trim(object));
                 }
@@ -704,11 +740,11 @@ namespace render::primitives {
         // vertical ones, each vertical arrow under the object it leaves.
         context.blocks.watch(
             "CD",
-            [this, &context, objects, label](syntax::Mouth& mouth) {
+            [this, &context, objects, label](syntax::Mouth &mouth) {
                 const memory::Location origin = mouth.lookahead().location;
                 const std::string text = body(mouth, "CD");
                 Diagram diagram{.columns = "2.8em", .rows = "2em"};
-                const std::vector<std::vector<std::string>> rows = grid(text, "\x01");
+                const std::vector<std::vector<std::string> > rows = grid(text, "\x01");
                 for (std::size_t index = 0; index < rows.size(); ++index) {
                     const std::string_view line = rows[index].front();
                     const bool upright = index % 2 == 1;
@@ -720,7 +756,9 @@ namespace render::primitives {
                     // The text up to the next of a character, braces kept whole.
                     const auto until = [&](const char stop) {
                         const std::size_t begin = at;
-                        while (at < line.size() && line[at] != stop) at = line[at] == '{' ? closing(line, at) + 1 : at + 1;
+                        while (at < line.size() && line[at] != stop) at = line[at] == '{'
+                                                                              ? closing(line, at) + 1
+                                                                              : at + 1;
                         const std::string_view found = trim(line.substr(begin, std::min(at, line.size()) - begin));
                         ++at;
                         return found;
@@ -771,18 +809,20 @@ namespace render::primitives {
                 }
                 mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
             },
-            [](syntax::Mouth&) {});
+            [](syntax::Mouth &) {
+            });
 
         // A circuit, quantikz's or Qcircuit's: a row a wire, a cell a gate
         // on it -- boxed, a control's dot joined to its target's circle, a
         // meter, a label at its start or end -- and the wire run from its
         // first cell to its last, broken by each box it passes through.
-        const auto circuit = [](const std::string_view text, const std::string_view columns, const std::string_view rows,
-                                    const bool maths) {
+        const auto circuit = [](const std::string_view text, const std::string_view columns,
+                                const std::string_view rows,
+                                const bool maths) {
             std::string out = std::format("\\begin{{tikzpicture}}[baseline=([yshift=-0.25em]q.center)]"
                                           "\\matrix[column sep={}, row sep={}] (q) {{", columns, rows);
             std::string after;
-            const std::vector<std::vector<std::string>> lines = grid(text, "&");
+            const std::vector<std::vector<std::string> > lines = grid(text, "&");
             for (std::size_t r = 0; r < lines.size(); ++r) {
                 std::size_t first = lines[r].size();
                 std::size_t last = 0;
@@ -805,7 +845,8 @@ namespace render::primitives {
                         while (at < cell.size() && cell[at] == ' ') ++at;
                         if (at < cell.size() && cell[at] == '[') at = closing(cell, at) + 1;
                         while (at < cell.size() && cell[at] == ' ') ++at;
-                        if (at < cell.size() && cell[at] == '{') argument = cell.substr(at + 1, closing(cell, at) - at - 1);
+                        if (at < cell.size() && cell[at] == '{') argument = cell.substr(
+                                                                     at + 1, closing(cell, at) - at - 1);
                     }
                     const std::string called = std::format("q-{}-{}", r + 1, c + 1);
                     const std::string shown = maths ? std::format("${}$", argument) : std::string(argument);
@@ -818,7 +859,8 @@ namespace render::primitives {
                                                              : argument;
                         node = std::format("\\node[draw, fill=white, minimum size=1.6em] {{${}$}};", written);
                     } else if (name == "lstick" || name == "rstick" || name == "push" || name == "midstick") {
-                        node = std::format("\\node {{{}}};", name == "lstick" || name == "rstick" ? shown : std::string(argument));
+                        node = std::format("\\node {{{}}};",
+                                           name == "lstick" || name == "rstick" ? shown : std::string(argument));
                     } else if (name == "ctrl" || name == "control" || name == "phase") {
                         node = "\\node[fill, circle, inner sep=0, minimum size=0.4em] {};";
                         if (name == "phase") after += std::format("\\node[above] at ({}) {{${}$}};", called, argument);
@@ -826,10 +868,13 @@ namespace render::primitives {
                         node = "\\node[draw, fill=white, circle, inner sep=0, minimum size=0.45em] {};";
                     } else if (name == "targ") {
                         node = "\\node[draw, circle, inner sep=0, minimum size=0.9em] {};";
-                        after += std::format("\\draw ({0}.north) -- ({0}.south);\\draw ({0}.west) -- ({0}.east);", called);
+                        after += std::format("\\draw ({0}.north) -- ({0}.south);\\draw ({0}.west) -- ({0}.east);",
+                                             called);
                     } else if (name == "swap" || name == "targX" || name == "qswap") {
                         node = "\\node[inner sep=0, minimum size=0.55em] {};";
-                        after += std::format("\\draw ({0}.north west) -- ({0}.south east);\\draw ({0}.north east) -- ({0}.south west);", called);
+                        after += std::format(
+                            "\\draw ({0}.north west) -- ({0}.south east);\\draw ({0}.north east) -- ({0}.south west);",
+                            called);
                     } else if (name == "meter" || name == "measure" || name == "measureD" || name == "meterD") {
                         node = "\\node[draw, fill=white, minimum width=1.7em, minimum height=1.3em] {};";
                         after += std::format("\\draw ({0}.south) ++(-0.2em,0.2em) -- ++(0.55em,0.75em);"
@@ -844,12 +889,14 @@ namespace render::primitives {
                         int reach = 0;
                         std::from_chars(argument.data(), argument.data() + argument.size(), reach);
                         const int target = static_cast<int>(r) + 1 + reach;
-                        if (reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target, c + 1);
+                        if (reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target,
+                                                                            c + 1);
                     }
                 }
                 out += " \\\\ ";
                 for (std::size_t c = first; c < last; ++c) {
-                    after += std::format("\\draw{} (q-{}-{}) -- (q-{}-{});", classical[c + 1] ? "[double, double distance=1pt]" : "",
+                    after += std::format("\\draw{} (q-{}-{}) -- (q-{}-{});",
+                                         classical[c + 1] ? "[double, double distance=1pt]" : "",
                                          r + 1, c + 1, r + 1, c + 2);
                 }
             }
@@ -858,12 +905,13 @@ namespace render::primitives {
 
         context.blocks.watch(
             "quantikz",
-            [&context, circuit](syntax::Mouth& mouth) {
+            [&context, circuit](syntax::Mouth &mouth) {
                 std::string options;
-                for (const syntax::Token& token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) options += token.text;
+                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))
+                    options += token.text;
                 std::string columns = "0.9em";
                 std::string rows = "0.9em";
-                for (const auto piece : std::views::split(std::string_view{options}, ',')) {
+                for (const auto piece: std::views::split(std::string_view{options}, ',')) {
                     const std::string_view option = trim(std::string_view(piece.begin(), piece.end()));
                     if (option.starts_with("column sep=")) columns = trim(option.substr(11));
                     if (option.starts_with("row sep=")) rows = trim(option.substr(8));
@@ -871,9 +919,10 @@ namespace render::primitives {
                 const std::string text = body(mouth, "quantikz");
                 mouth.ingest(context.arena.copy(circuit(text, columns, rows, false)));
             },
-            [](syntax::Mouth&) {});
+            [](syntax::Mouth &) {
+            });
 
-        parser.mouth.bind("\\Qcircuit", [&context, circuit](syntax::Mouth& mouth) {
+        parser.mouth.bind("\\Qcircuit", [&context, circuit](syntax::Mouth &mouth) {
             std::string columns = "1em";
             std::string rows = "1em";
             while (mouth.lookahead().is('@')) {
@@ -881,14 +930,15 @@ namespace render::primitives {
                 const std::string which(mouth.read().text);
                 if (mouth.lookahead().is('=')) static_cast<void>(mouth.read());
                 std::string length;
-                while (!mouth.lookahead().empty() && !mouth.lookahead().is('@') && !mouth.lookahead().is(Category::Group, '{')) {
+                while (!mouth.lookahead().empty() && !mouth.lookahead().is('@') && !mouth.lookahead().is(
+                           Category::Group, '{')) {
                     length += mouth.read().text;
                 }
                 if (which == "C") columns = trim(length);
                 if (which == "R") rows = trim(length);
             }
             std::string text;
-            for (const syntax::Token& token : mouth.argument({}, 0)) {
+            for (const syntax::Token &token: mouth.argument({}, 0)) {
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
@@ -903,11 +953,12 @@ namespace render::primitives {
         // or into the one it is written in.
         context.blocks.watch(
             "forest",
-            [&context](syntax::Mouth& mouth) {
+            [&context](syntax::Mouth &mouth) {
                 mouth.ingest(context.arena.copy("\\@tree{" + body(mouth, "forest") + "}"));
             },
-            [](syntax::Mouth&) {});
-        parser.mouth.bind("\\Tree", [&context](syntax::Mouth& mouth) {
+            [](syntax::Mouth &) {
+            });
+        parser.mouth.bind("\\Tree", [&context](syntax::Mouth &mouth) {
             std::string text;
             int depth = 0;
             for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
@@ -918,10 +969,10 @@ namespace render::primitives {
             }
             mouth.ingest(context.arena.copy("\\@tree{" + text + "}"));
         });
-        parser.bind("\\@tree", [&context](syntax::Parser& parser) -> syntax::Node* {
-            syntax::Mouth& mouth = parser.mouth;
+        parser.bind("\\@tree", [&context](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
             std::string text;
-            for (const syntax::Token& token : mouth.argument({}, 0)) {
+            for (const syntax::Token &token: mouth.argument({}, 0)) {
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
@@ -933,24 +984,24 @@ namespace render::primitives {
             // Each label's width, set; then each subtree's, its label's or
             // its children's side by side and an em apart, whichever is wider.
             const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
-            const auto size = [&](this const auto& self, Branch& node) -> void {
-                for (Branch& child : node.children) self(child);
+            const auto size = [&](this const auto &self, Branch &node) -> void {
+                for (Branch &child: node.children) self(child);
 
                 mouth.ingest(context.arena.copy("{" + node.label + "}"));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const Selection restore = context.selection;
-                const memory::Slice<syntax::Node*> read = parser.parse('}');
+                const memory::Slice<syntax::Node *> read = parser.parse('}');
                 stamp(read, context);
                 context.selection = restore;
                 mouth.pop(syntax::semantics::Scope::Type::Group);
-                std::vector<layout::Node*> set;
-                for (const syntax::Node* child : read) compose(set, child, context);
+                std::vector<layout::Node *> set;
+                for (const syntax::Node *child: read) compose(set, child, context);
                 float wide = 2.0f * em / 3.0f;
-                for (const layout::Node* piece : set) wide += layout::Line::advance(piece);
+                for (const layout::Node *piece: set) wide += layout::Line::advance(piece);
 
                 float under = 0.0f;
-                for (const Branch& child : node.children) under += child.width;
+                for (const Branch &child: node.children) under += child.width;
                 if (!node.children.empty()) under += 10.0f * static_cast<float>(node.children.size() - 1);
                 node.width = std::max(wide, under);
             };
@@ -967,5 +1018,4 @@ namespace render::primitives {
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound diagram primitives");
     }
-
 }

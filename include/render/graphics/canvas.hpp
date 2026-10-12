@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace render::graphics {
-
     /// @brief A sheet a document draws straight lines onto.
     ///
     /// A canvas is a coordinate system, not a widget: it keeps every line
@@ -35,7 +34,8 @@ namespace render::graphics {
     public:
         /// @param width  The canvas's own width, in points.
         /// @param height The canvas's own height, in points.
-        Canvas(const float width, const float height) noexcept : size{width, height} {}
+        Canvas(const float width, const float height) noexcept : size{width, height} {
+        }
 
         /// @brief Draws a straight line between two points already in 2D.
         /// @param from, to Endpoints, in the canvas's own coordinates.
@@ -54,9 +54,9 @@ namespace render::graphics {
         /// @param dashed   False for a solid stroke, true for a dashed one.
         /// @complexity O(1) amortized.
         void line(
-            const Point3& from,
-            const Point3& to,
-            const Projection& view,
+            const Point3 &from,
+            const Point3 &to,
+            const Projection &view,
             Color color = black,
             float width = 1.0f,
             bool dashed = false
@@ -76,7 +76,7 @@ namespace render::graphics {
         /// @param up     And up and down: -1 its foot, 0 its middle, 1 its top.
         /// @param gap    Space kept between the point and the edge that faces it.
         /// @complexity O(1) amortized.
-        void place(Point2 at, layout::Node* box, int across, int up, float gap);
+        void place(Point2 at, layout::Node *box, int across, int up, float gap);
 
         /// @brief Fills a region: the outline through its corners, closed.
         ///
@@ -90,9 +90,9 @@ namespace render::graphics {
 
         /// @brief How much room a canvas takes where it is set.
         enum class Room : std::uint8_t {
-            Declared,   ///< Its declared size, whatever is drawn past it: a page overlay, pinned in place.
-            Grown,      ///< Its declared size, grown to take in anything drawn past it: a picture in the text.
-            Drawn       ///< Exactly what is drawn: a TikZ picture, which declares no size of its own.
+            Declared, ///< Its declared size, whatever is drawn past it: a page overlay, pinned in place.
+            Grown, ///< Its declared size, grown to take in anything drawn past it: a picture in the text.
+            Drawn ///< Exactly what is drawn: a TikZ picture, which declares no size of its own.
         };
 
         /// @brief Composes the box everything drawn so far sits inside.
@@ -113,36 +113,35 @@ namespace render::graphics {
         ///                 stands on the baseline; its bottom when none.
         /// @return The box; never null even when nothing was drawn.
         /// @complexity O(n) in the lines drawn.
-        [[nodiscard]] layout::Node* compose(memory::Arena& arena, Room room,
+        [[nodiscard]] layout::Node *compose(memory::Arena &arena, Room room,
                                             std::optional<float> baseline = std::nullopt) const;
 
     private:
         /// @brief One line, already in the canvas's own 2D space.
         struct Segment {
-            Point2 from;     ///< One end.
-            Point2 to;       ///< The other.
-            Color color;     ///< Stroke color.
-            float width;     ///< Stroke width, in points.
-            bool dashed;     ///< Dashed rather than solid.
+            Point2 from; ///< One end.
+            Point2 to; ///< The other.
+            Color color; ///< Stroke color.
+            float width; ///< Stroke width, in points.
+            bool dashed; ///< Dashed rather than solid.
         };
 
         /// @brief One box placed on the canvas: where its bottom left corner
         ///        lands, and the box.
         struct Label {
-            Point2 corner;         ///< Bottom left of the box's ink area, in the canvas's coordinates.
-            layout::Node* box;     ///< What is set there.
+            Point2 corner; ///< Bottom left of the box's ink area, in the canvas's coordinates.
+            layout::Node *box; ///< What is set there.
         };
 
         /// @brief One region filled.
         struct Region {
-            std::vector<Point2> corners;   ///< Its outline, in order.
-            Color color;                   ///< Its fill.
+            std::vector<Point2> corners; ///< Its outline, in order.
+            Color color; ///< Its fill.
         };
 
-        Point2 size;                    ///< The declared size: its width across, its height up.
-        std::vector<Segment> segments{};  ///< Every line drawn, in order.
-        std::vector<Label> labels{};    ///< Every box placed, in order.
-        std::vector<Region> regions{};  ///< Every region filled, in order.
+        Point2 size; ///< The declared size: its width across, its height up.
+        std::vector<Segment> segments{}; ///< Every line drawn, in order.
+        std::vector<Label> labels{}; ///< Every box placed, in order.
+        std::vector<Region> regions{}; ///< Every region filled, in order.
     };
-
 }

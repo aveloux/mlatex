@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace render::typography {
-
     /// @brief Fonts already built, reached by what was asked for.
     ///
     /// A Font is a face at a size, and the two are cached apart: a face --
@@ -49,24 +48,29 @@ namespace render::typography {
     public:
         /// @brief What a caller is asking for.
         struct Request {
-            std::string_view family{};   ///< Family or alias, as the Collection names it.
-            int weight{400};             ///< Stroke weight, 400 being regular.
-            int slant{0};                ///< Non-zero for an italic or oblique cut.
-            float size{12.0f};           ///< Size in points.
+            std::string_view family{}; ///< Family or alias, as the Collection names it.
+            int weight{400}; ///< Stroke weight, 400 being regular.
+            int slant{0}; ///< Non-zero for an italic or oblique cut.
+            float size{12.0f}; ///< Size in points.
         };
 
         /// @brief Builds an empty registry over a font collection.
         /// @param arena Allocator for buckets and entries.
         /// @param collection  Where faces come from; must outlive this object.
         /// @param buckets Bucket count for each cache; rounded up to a power of two.
-        Registry(memory::Arena& arena, Collection& collection, std::size_t buckets = 128) noexcept;
+        Registry(memory::Arena &arena, Collection &collection, std::size_t buckets = 128) noexcept;
 
         ~Registry() noexcept;
 
-        Registry(const Registry&) = delete("every font it built is found through it, and points into its tables");
-        Registry& operator=(const Registry&) = delete("every font it built is found through it, and points into its tables");
-        Registry(Registry&&) = delete("every font it built is found through it, and points into its tables");
-        Registry& operator=(Registry&&) = delete("every font it built is found through it, and points into its tables");
+        Registry(const Registry &) = delete("every font it built is found through it, and points into its tables");
+
+        Registry &operator=(const Registry &) = delete(
+            "every font it built is found through it, and points into its tables");
+
+        Registry(Registry &&) = delete("every font it built is found through it, and points into its tables");
+
+        Registry &operator=(Registry &&) = delete("every font it built is found through it, and points into its tables")
+        ;
 
         /// @brief The font for a request, building it on first sight.
         ///
@@ -77,7 +81,7 @@ namespace render::typography {
         /// @return The font, or nullptr when the family is unknown or the file
         ///         will not open.
         /// @complexity O(1) average after the first request for that family.
-        [[nodiscard]] Font* get(const Request& request) noexcept;
+        [[nodiscard]] Font *get(const Request &request) noexcept;
 
         /// @brief A face that draws a character the one in hand does not, in
         ///        the same design where there is one, at the same size.
@@ -99,9 +103,9 @@ namespace render::typography {
         /// @return A face that draws it, or nullptr when none does.
         /// @complexity O(1) once a character of its block has been asked
         ///             about for this face.
-        [[nodiscard]] const Font* cover(const Font& font, std::uint32_t code, bool outside = true) noexcept;
+        [[nodiscard]] const Font *cover(const Font &font, std::uint32_t code, bool outside = true) noexcept;
 
-        std::size_t fonts{0};       ///< How many distinct fonts have been built.
+        std::size_t fonts{0}; ///< How many distinct fonts have been built.
 
         /// How many distinct faces have been opened: at most one per family
         /// and cut a document actually used, whatever number of sizes it was
@@ -112,34 +116,33 @@ namespace render::typography {
     private:
         /// @brief One font, at the size it was asked for.
         struct Entry {
-            Request request{};      ///< What produced it.
-            Font font{};            ///< The face at this size.
-            Entry* next{nullptr};   ///< Next entry in this bucket.
+            Request request{}; ///< What produced it.
+            Font font{}; ///< The face at this size.
+            Entry *next{nullptr}; ///< Next entry in this bucket.
         };
 
         /// @brief One face, shared by every size of its family a Font wraps.
         struct Surface {
-            std::string_view family{};   ///< Family, as resolved and copied.
-            int weight{0};                ///< Stroke weight this face was opened for.
-            int slant{0};                  ///< Slant this face was opened for.
-            Face face{};                   ///< The file, opened.
-            Surface* next{nullptr};       ///< Next surface in this bucket.
+            std::string_view family{}; ///< Family, as resolved and copied.
+            int weight{0}; ///< Stroke weight this face was opened for.
+            int slant{0}; ///< Slant this face was opened for.
+            Face face{}; ///< The file, opened.
+            Surface *next{nullptr}; ///< Next surface in this bucket.
         };
 
         /// @brief What cover() found for a face and a block of characters.
         struct Cover {
-            const Font* font{nullptr};    ///< The face in hand.
-            std::uint32_t block{0};       ///< The character's block of 128.
-            bool outside{false};          ///< Whether the system's faces were looked in.
-            const Font* found{nullptr};   ///< The face that draws it, or null for none.
+            const Font *font{nullptr}; ///< The face in hand.
+            std::uint32_t block{0}; ///< The character's block of 128.
+            bool outside{false}; ///< Whether the system's faces were looked in.
+            const Font *found{nullptr}; ///< The face that draws it, or null for none.
         };
 
-        memory::Arena& arena;       ///< Storage for buckets and entries.
-        Collection& collection;     ///< Where faces come from.
-        std::vector<Cover> covers{};   ///< Every answer cover() gave, by face and block.
-        std::size_t slots{0};       ///< Bucket count, always a power of two.
-        Entry** table{nullptr};     ///< Font buckets.
-        Surface** surfaces{nullptr};   ///< Face buckets.
+        memory::Arena &arena; ///< Storage for buckets and entries.
+        Collection &collection; ///< Where faces come from.
+        std::vector<Cover> covers{}; ///< Every answer cover() gave, by face and block.
+        std::size_t slots{0}; ///< Bucket count, always a power of two.
+        Entry **table{nullptr}; ///< Font buckets.
+        Surface **surfaces{nullptr}; ///< Face buckets.
     };
-
 }
