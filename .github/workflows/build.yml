@@ -12,10 +12,10 @@ name: Build
 
 on:
   push:
-    branches: [main]
-    tags: ["v*"]
+    branches: [ main ]
+    tags: [ "v*" ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -85,19 +85,31 @@ jobs:
           # On macOS the libraries are built for the same 14.0 the engine is,
           # not for the runner's own version: a library built for a newer
           # macOS than its program draws a linker warning for every object in
-          # it, in every one of the tests, and runs on fewer machines.
+          # it, in every one of the tests, and runs on fewer machines. vcpkg's
+          # own triplet is read in, not edited -- an overlay of the same name
+          # includes it and adds the one line -- since where it lives is
+          # vcpkg's business: x64-osx is a community triplet, arm64-osx not.
+          overlay=()
           if [ "$RUNNER_OS" = "macOS" ]; then
-            echo 'set(VCPKG_OSX_DEPLOYMENT_TARGET 14.0)' >> "$RUNNER_TEMP/vcpkg/triplets/${{ matrix.triplet }}.cmake"
+            triplet=$(find "$RUNNER_TEMP/vcpkg/triplets" -name "${{ matrix.triplet }}.cmake" | head -n 1)
+            if [ -z "$triplet" ]; then
+              echo "vcpkg has no triplet named ${{ matrix.triplet }}"
+              exit 1
+            fi
+            mkdir -p "$RUNNER_TEMP/triplets"
+            printf 'include("%s")\nset(VCPKG_OSX_DEPLOYMENT_TARGET 14.0)\n' "$triplet" \
+              > "$RUNNER_TEMP/triplets/${{ matrix.triplet }}.cmake"
+            overlay=(--overlay-triplets="$RUNNER_TEMP/triplets")
           fi
 
           # Retry loop: Attempt vcpkg install up to 5 times if network drops or mirrors time out
           for i in {1..5}; do
             echo "Attempt $i to install libraries via vcpkg..."
-            if "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} \
+            if "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} "${overlay[@]}" \
                 harfbuzz libpng libjpeg-turbo libwebp zlib gperf; then
               break
             fi
-            
+          
             if [ $i -eq 5 ]; then
               echo "vcpkg install failed after 5 attempts."
               exit 1
