@@ -16,6 +16,7 @@
 #include <zlib.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <charconv>
@@ -162,12 +163,15 @@ namespace render {
         // name.
         std::vector<std::size_t> bodies;
         bodies.reserve(pages.count);
+        std::vector<std::array<float, 4> > extents; // what each page put ink on, for a fitted one's box
+        extents.reserve(pages.count);
 
         for (const layout::Pager::Page &sheet: pages) {
             const std::string_view content = composer.draw(sheet.nodes, sheet.notes, page.left, page.top);
             const std::size_t body = file.reserve();
             file.stream(body, "", content);
             bodies.push_back(body);
+            extents.push_back(composer.extent);
         }
 
         // Cut in parallel, written in order; see the class notes. A face goes
@@ -802,11 +806,29 @@ namespace render {
             file.open(leaf);
             file.bytes += "<</Type /Page\n/Parent ";
             number(file.bytes, tree);
-            file.bytes += " 0 R\n/MediaBox [0 0 ";
-            round(file.bytes, page.width);
-            file.bytes += ' ';
-            round(file.bytes, page.height);
-            file.bytes += "]\n/Contents ";
+            file.bytes += " 0 R\n/MediaBox [";
+
+            // A fitted page's box is what is drawn on it and its border, with
+            // nothing cut: the page description runs down from the top, a
+            // PDF's box up from the bottom. A page with nothing on it, or any
+            // other page, is the whole sheet.
+            if (const std::array<float, 4> &ink = extents[sheet]; page.fitted && ink[0] <= ink[2]) {
+                for (const float value: {
+                         ink[0] - page.border, page.height - ink[3] - page.border,
+                         ink[2] + page.border, page.height - ink[1] + page.border
+                     }) {
+                    fraction(file.bytes, value);
+                    file.bytes += ' ';
+                }
+                file.bytes.back() = ']';
+            } else {
+                file.bytes += "0 0 ";
+                round(file.bytes, page.width);
+                file.bytes += ' ';
+                round(file.bytes, page.height);
+                file.bytes += ']';
+            }
+            file.bytes += "\n/Contents ";
             number(file.bytes, body);
             file.bytes += " 0 R\n/Resources <</Font <<";
 

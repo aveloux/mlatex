@@ -21,7 +21,7 @@ namespace render {
     Wasm::Wasm() : Session(std::string(root)) {
     }
 
-#if defined(__WIN32)
+#if defined(__EMSCRIPTEN__)
 
     emscripten::val Wasm::bytes() const {
         const std::string &made = pdf;
@@ -69,6 +69,8 @@ namespace render {
                               [](Wasm &self, const std::string &name) { self.withdraw(name); }))
                 .function("typeset", emscripten::optional_override(
                               [](Wasm &self, const std::string &document) { return self.typeset(document); }))
+                .function("snippet", emscripten::optional_override(
+                              [](Wasm &self, const std::string &text) { return self.snippet(text); }))
                 .function("pdf", &Wasm::bytes)
                 .function("error", emscripten::optional_override(
                               [](const Wasm &self) { return self.error; }));

@@ -197,12 +197,35 @@ namespace protocols {
         ///        on again: offline, `\\httpget`, `\\httppost` and a picture
         ///        from `https://` are errors, and no request is sent. Off by
         ///        default; turn it on for documents the program did not write.
-        ///        Last in the struct, so a program built against an older
-        ///        header finds every other operation where it was.
         /// @param session The session.
         /// @param on      Nonzero for offline, zero to allow the network.
         /// @return 1 when the session was given; 0 otherwise.
         int (*offline)(Session *session, int on);
+
+        /// @brief Makes a PDF of a piece of LaTeX alone -- a formula, a
+        ///        table, a picture -- on a page cropped to it, for a program
+        ///        to show among its own: latex::Session::snippet.
+        ///
+        /// The piece is set as a `standalone` document with amsmath and
+        /// amssymb loaded, and is handed everything a document is. Like
+        /// operations added after the first, it comes after every other in
+        /// the struct, so a program built against an older header finds each
+        /// of them where it was.
+        ///
+        /// @code
+        /// const char* formula = "\\[ e^{i\\pi} + 1 = 0 \\]";
+        /// if (table->snippet(session, formula, strlen(formula), &pdf, &size)) show(pdf, size);
+        /// @endcode
+        ///
+        /// @param session The session.
+        /// @param text    The LaTeX, UTF-8, with no preamble; need not be
+        ///                zero-terminated.
+        /// @param length  How many bytes of it there are.
+        /// @param pdf     Receives the PDF's bytes, as Latex::typeset hands them.
+        /// @param size    Receives how many bytes the PDF is; 0 when there is none.
+        /// @return 1 when it compiled with nothing left broken; 0 otherwise,
+        ///         with the reasons in Latex::error.
+        int (*snippet)(Session *session, const char *text, size_t length, const unsigned char **pdf, size_t *size);
     } Latex;
 
     /// @brief The library's operations. The one function it exports.

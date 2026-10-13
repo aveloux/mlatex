@@ -128,6 +128,27 @@ namespace latex {
         ///         #pdf is empty when none could be made at all.
         bool typeset(std::string_view document);
 
+        /// @brief Makes a PDF of a piece of LaTeX alone -- a formula, a table,
+        ///        a picture -- on a page cropped to it.
+        ///
+        /// The piece is set as the body of a `standalone` document with
+        /// amsmath and amssymb loaded, so `$...$`, `\\[...\\]`, `align` and
+        /// `\\mathbb` read as they would in a paper, and the page is as large
+        /// as what it holds. Its first line is the document's first line, so
+        /// an error in it is reported on the line it is on. Everything the
+        /// session hands a document -- values, commands, files -- a piece is
+        /// handed too, and #pdf, #error and #pages are the piece's after it.
+        ///
+        /// @code
+        /// session.snippet(R"($\int_0^1 x^2\,dx = \frac{1}{3}$)");      // a formula in a line
+        /// session.snippet(R"(\[ e^{i\pi} + 1 = 0 \])");                 // displayed
+        /// show(session.pdf);
+        /// @endcode
+        ///
+        /// @param text The LaTeX to set, with no preamble of its own.
+        /// @return True when it compiled with nothing left broken, as typeset() says.
+        bool snippet(std::string_view text);
+
         std::filesystem::path assets{}; ///< The assets directory the session reads.
         Host host{}; ///< Everything the next document will be handed.
         std::string pdf{}; ///< The last PDF made, or nothing when none could be.

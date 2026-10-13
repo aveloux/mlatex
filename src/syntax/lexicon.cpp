@@ -8,12 +8,12 @@
 namespace syntax {
     /// @brief FNV-1a hash of a name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
-        std::size_t value = 14695981039346656037ull;
+        std::uint64_t value = 14695981039346656037ull; // sixty-four bits whatever a size_t is
         for (const char letter: name) {
             value ^= static_cast<unsigned char>(letter);
             value *= 1099511628211ull;
         }
-        return value;
+        return static_cast<std::size_t>(value ^ value >> 32);
     }
 
     Lexicon::Lexicon(memory::Arena &arena) : arena(arena), names{std::string_view{}}, table(1024, none) {

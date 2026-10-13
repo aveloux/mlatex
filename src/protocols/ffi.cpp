@@ -185,6 +185,21 @@ namespace protocols {
         return 1;
     }
 
+    /// @brief Latex::snippet.
+    static int snippet(Session *session, const char *text, const size_t length, const unsigned char **pdf,
+                       size_t *size) {
+        if (pdf) *pdf = nullptr;
+        if (size) *size = 0;
+        if (!session || !text) return 0;
+
+        const bool made = session->snippet(std::string_view(text, length));
+        if (const std::string &bytes = session->pdf; !bytes.empty()) {
+            if (pdf) *pdf = reinterpret_cast<const unsigned char *>(bytes.data());
+            if (size) *size = bytes.size();
+        }
+        return made ? 1 : 0;
+    }
+
     extern "C" {
     const Latex *engine(void) {
         static constexpr Latex table{
@@ -200,6 +215,7 @@ namespace protocols {
             .typeset = typeset,
             .error = error,
             .offline = offline,
+            .snippet = snippet,
         };
         return &table;
     }

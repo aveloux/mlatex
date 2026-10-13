@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <limits>
 
 namespace render {
     /// @brief Writes a number the way a page description wants it.
@@ -150,6 +151,8 @@ namespace render {
             });
             rule(&sheet, 0.0f, document.configuration.height);
         }
+        constexpr float far = std::numeric_limits<float>::infinity();
+        extent = {far, far, -far, -far};
 
         // A page arrives as the children of a column, so it is walked the way
         // a column is: down to each node's reference point, draw, then on past
@@ -239,7 +242,9 @@ namespace render {
             const float head = page.top - page.heading;
             const float foot = page.height - page.bottom + page.footing;
 
-            switch (own) {
+            // A fitted page is only what it holds: standalone's pages are
+            // always empty in their head and their foot.
+            switch (page.fitted ? Directive::Style::Empty : own) {
                 case Directive::Style::Plain:
                     if (furniture.face) {
                         const typography::Font *fonts[] = {furniture.face};
@@ -309,6 +314,13 @@ namespace render {
             return;
         }
         areas.push_back({left, top, right, bottom});
+    }
+
+    void Composer::reach(const float left, const float top, const float right, const float bottom) noexcept {
+        extent = {
+            std::min(extent[0], left), std::min(extent[1], top), std::max(extent[2], right),
+            std::max(extent[3], bottom)
+        };
     }
 
     std::string Composer::folio() const {
@@ -417,11 +429,27 @@ namespace render {
                         number(content, value == 0.0f ? 0.0f : value); // no "-0" for a cosine of a right angle
                         content += ' ';
                     }
-                    number(content, position + item->box().offset + map->x);
+                    const float across = position + item->box().offset + map->x;
+                    const float down = baseline + item->box().shift;
+                    number(content, across);
                     content += ' ';
-                    number(content, baseline + item->box().shift);
+                    number(content, down);
                     content += " cm\n";
+
+                    // What the contents draw is measured in the map's own
+                    // space, not the page's: the box's four corners, carried
+                    // through the map, are what it covers instead.
+                    const std::array<float, 4> before = extent;
                     inside(item, 0.0f, 0.0f);
+                    extent = before;
+                    const layout::Node::Box &shape = item->box();
+                    for (const float x: {0.0f, shape.width}) {
+                        for (const float y: {-shape.height, shape.depth}) {
+                            const float right = map->a * x + map->c * y + across;
+                            const float under = map->b * x + map->d * y + down;
+                            reach(right, under, right, under);
+                        }
+                    }
                     flush();
                     content += "Q\n";
                     filling = fill;
@@ -531,6 +559,7 @@ namespace render {
                     digits[(code >> 4) & 0xF], digits[code & 0xF]
                 };
                 content.append(written, sizeof(written));
+                reach(left, height - mark.height, left + mark.width, height + mark.depth);
                 if (!opened.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
 
                 // What the glyph stands for, onto the page's transcript: a
@@ -576,10 +605,13 @@ namespace render {
                 if (!segment.area.empty()) {
                     fill(segment.color);
                     for (std::size_t corner = 0; corner < segment.area.size(); ++corner) {
-                        number(content, position + segment.area[corner].x);
+                        const float x = position + segment.area[corner].x;
+                        const float y = baseline + segment.area[corner].y;
+                        number(content, x);
                         content += ' ';
-                        number(content, baseline + segment.area[corner].y);
+                        number(content, y);
                         content += corner == 0 ? " m\n" : " l\n";
+                        reach(x, y, x, y);
                     }
                     content += "h f\n";
                     break;
@@ -610,6 +642,13 @@ namespace render {
                 content += ' ';
                 number(content, baseline + segment.end.y);
                 content += " l S\n";
+
+                // Half the stroke's width either side of the line it follows.
+                const float half = segment.width * 0.5f;
+                reach(position + std::min(segment.start.x, segment.end.x) - half,
+                      baseline + std::min(segment.start.y, segment.end.y) - half,
+                      position + std::max(segment.start.x, segment.end.x) + half,
+                      baseline + std::max(segment.start.y, segment.end.y) + half);
                 break;
             }
             case layout::Node::Type::Bitmap: {
@@ -619,6 +658,8 @@ namespace render {
 
                 const layout::Node::Bitmap &bitmap = item->bitmap();
                 if (bitmap.width <= 0.0f || bitmap.height <= 0.0f) return;
+                if (!bitmap.drawing && !bitmap.source) return;
+                reach(position, baseline - bitmap.height, position + bitmap.width, baseline);
 
                 // A page of another PDF: its form, clipped to the drawn box
                 // and scaled so the window onto its page fills it. The form's
@@ -821,6 +862,7 @@ namespace render {
 
         const layout::Node::Rule &bar = item->rule();
         if (bar.width <= 0.0f || bar.height + bar.depth <= 0.0f) return;
+        reach(position, baseline - bar.height, position + bar.width, baseline + bar.depth);
 
         fill(bar.color);
 

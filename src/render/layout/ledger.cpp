@@ -18,15 +18,15 @@ namespace render::layout {
         // FNV-1a over the text, then the font and size folded in. The font is
         // a pointer into the arena and the size a float, so both are taken as
         // bits rather than as values.
-        std::size_t value = 1469598103934665603ull;
+        std::uint64_t value = 1469598103934665603ull; // sixty-four bits whatever a size_t is
         for (const char letter: key.text) {
-            value ^= static_cast<std::size_t>(static_cast<unsigned char>(letter));
+            value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }
         value ^= reinterpret_cast<std::uintptr_t>(key.font);
         value *= 1099511628211ull;
-        value ^= static_cast<std::size_t>(std::bit_cast<std::uint32_t>(key.size)) << 17;
-        return value;
+        value ^= static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(key.size)) << 17;
+        return static_cast<std::size_t>(value ^ value >> 32);
     }
 
     Ledger::Ledger(memory::Arena &arena, const std::size_t size) noexcept {

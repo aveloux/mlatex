@@ -310,6 +310,7 @@ namespace render::primitives {
             float width = 612.0f; // letter paper, as LaTeX's own default
             float height = 792.0f;
             float body = name == "beamer" ? 10.95f : 10.0f; // beamer's slides are eleven-point
+            float border = 0.5f; // standalone's own default
             bool turned = false;
             std::size_t columns = known == classes.end() ? 1 : known->columns;
             for (const auto piece: std::views::split(std::string_view(options), ',')) {
@@ -351,9 +352,17 @@ namespace render::primitives {
                     body = 10.95f;
                 } else if (option == "12pt") {
                     body = 12.0f;
+                } else if (option.starts_with("border=")) {
+                    border = measure(option.substr(7), mouth, context);
                 }
             }
             if (turned && width < height) std::swap(width, height);
+
+            // standalone's sheet is only where the text is set from: as tall
+            // as a PDF's page may be, so nothing it holds is broken over two,
+            // and every page cropped to what is on it once it is drawn.
+            const bool fitted = name == "standalone";
+            if (fitted) height = 14400.0f;
 
             // size10.clo, size11.clo and size12.clo: the baseline, the
             // indentation, the line's width -- the whole block's, when it is
@@ -382,6 +391,9 @@ namespace render::primitives {
             page.indent = indent;
             page.size = body;
             page.columns = columns;
+            page.fitted = fitted;
+            page.border = border;
+            if (fitted) page.indent = 0.0f;
             context.document.configuration = page;
             spread.assign(1, columns);
             publish();

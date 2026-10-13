@@ -30,12 +30,15 @@ namespace render {
     ///
     /// if (!session.typeset(source)) console.error(session.error());
     /// const pdf = session.pdf();                         // a Uint8Array of its own
+    ///
+    /// session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]");     // one formula, on a page its size
+    /// const formula = session.pdf();
     /// session.delete();                                  // as every bound object is
     /// @endcode
     ///
     /// Every operation is latex::Session's, under the same name, and does
     /// the same thing: `set`/`unset`, `define`/`forget`, `provide`/`withdraw`,
-    /// `typeset`, `pdf` and `error`. Only what JavaScript hands over differs:
+    /// `typeset`, `snippet`, `pdf` and `error`. Only what JavaScript hands over differs:
     /// a command is a JavaScript function, called with the arguments' text
     /// and turned back into text with `String()`; a file is a Uint8Array or a
     /// string; and the PDF comes back as a Uint8Array that owns its bytes,

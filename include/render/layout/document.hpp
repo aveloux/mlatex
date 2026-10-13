@@ -80,6 +80,12 @@ namespace render::layout {
             std::size_t columns{1}; ///< How many columns the class sets the text in: 2 for `[twocolumn]`.
             float gap{10.0f}; ///< Between two columns: `\\columnsep`.
             Pager::Placement placement{}; ///< Where floats may go: `\\topfraction` and the rest.
+
+            /// True for `standalone`: each page as large as what is drawn on
+            /// it and #border more on every side, rather than the sheet's
+            /// size -- a formula, a table or a picture on a page of its own.
+            bool fitted{false};
+            float border{0.5f}; ///< Around what a fitted page holds: `standalone`'s `border`.
         };
 
         /// @brief One block of the document.

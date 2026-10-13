@@ -122,7 +122,7 @@ namespace latex {
             "lmroman10-italic", "lmroman10-bold", "lmroman12-regular", "lmroman17-regular", "lmroman7-regular",
             "lmroman5-regular", "lmroman8-regular", "lmroman9-regular", "lmroman10-bolditalic", "lmmono10-regular",
         };
-        const auto warm = [&collection] {
+        [[maybe_unused]] const auto warm = [&collection] {
             for (const std::string_view family: likely) {
                 const render::typography::Collection::Entry *entry = collection.get(family);
                 if (!entry) continue;
@@ -628,6 +628,15 @@ namespace latex {
         const bool made = latex::typeset(assets, document, pdf, host, errors, &pages);
         error = errors.str();
         return made;
+    }
+
+    bool Session::snippet(const std::string_view text) {
+        // The preamble on the first line, before the piece's own, so the
+        // piece's lines are the document's lines.
+        std::string document = R"(\documentclass{standalone}\usepackage{amsmath,amssymb}\begin{document})";
+        document += text;
+        document += "\n\\end{document}\n";
+        return typeset(document);
     }
 
     std::filesystem::path locate(const std::filesystem::path &binary) {

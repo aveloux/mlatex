@@ -1,8 +1,10 @@
 #include "latex.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -123,6 +125,54 @@ int main() {
         latex::Session lost(latex::locate(__FILE__).parent_path() / "no-such-assets");
         assert((!lost.typeset("\\begin{document}x\\end{document}") && lost.pdf.empty() && !lost.error.empty()) &&
                "a session with no fonts makes nothing, and says why");
+    }
+
+    // --- A snippet, and standalone: a page as large as what it holds -------------------
+    {
+        // The first page's box as the PDF writes it, as its width and height.
+        const auto size = [](const std::string &pdf) {
+            std::array<double, 4> box{};
+            const std::size_t at = pdf.find("/MediaBox [");
+            if (at == std::string::npos) return std::array<double, 2>{};
+            const char *cursor = pdf.c_str() + at + 11;
+            for (double &value: box) {
+                char *stop = nullptr;
+                value = std::strtod(cursor, &stop);
+                cursor = stop;
+            }
+            return std::array<double, 2>{box[2] - box[0], box[3] - box[1]};
+        };
+
+        latex::Session session(latex::locate(__FILE__));
+        assert((session.snippet("$x^2 + y^2 = z^2$") && session.error.empty() && session.pdf.starts_with("%PDF-")) &&
+               "a formula is set alone");
+        const std::array<double, 2> formula = size(session.pdf);
+        assert((formula[0] > 30.0 && formula[0] < 120.0 && formula[1] > 5.0 && formula[1] < 30.0) &&
+               "on a page as wide and as tall as the formula, not a sheet of paper");
+        assert((!session.pages.empty() && holds(session.pages[0], "=")) && "and its text is still the formula's");
+
+        assert((session.snippet(R"(\[ \int_0^1 x^2\,dx = \frac{1}{3} \])") && session.error.empty()) &&
+               "a displayed formula, from amsmath's own document, is set alone too");
+        const std::array<double, 2> displayed = size(session.pdf);
+        assert((displayed[0] < 200.0 && displayed[1] > formula[1]) &&
+               "cropped to it, and as tall as an integral and a fraction are");
+
+        assert((session.snippet(R"(\begin{align} a &= b \\ c &= d \end{align})") && session.error.empty()) &&
+               "amsmath's environments are there without asking");
+        assert((session.snippet("$\\mathbb{R}$") && session.error.empty()) && "and amssymb's letters");
+
+        assert((!session.snippet("$x$\n\\nosuchcommand") &&
+                (session.error.starts_with("2:") || holds(session.error, "\n2:"))) &&
+               "a mistake is reported on the snippet's own line, not the preamble's");
+
+        const Result plain = typeset("\\documentclass{article}\\begin{document}Text.\\end{document}");
+        assert((holds(plain.pdf, "/MediaBox [0 0 612 792]")) && "any other class keeps the sheet");
+
+        const Result fitted = typeset("\\documentclass{standalone}\\begin{document}Text.\\end{document}");
+        const Result framed = typeset("\\documentclass[border=10pt]{standalone}\\begin{document}Text.\\end{document}");
+        const double grown = size(framed.pdf)[0] - size(fitted.pdf)[0];
+        assert((fitted.clean && size(fitted.pdf)[0] < 50.0) && "standalone crops a document written in full");
+        assert((framed.clean && grown > 18.5 && grown < 19.5) && "and its border is what border= says");
     }
 
     // --- A program's own command, package and picture ------------------------------------

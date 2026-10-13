@@ -55,12 +55,12 @@ namespace render::typography {
     /// @return Its hash.
     /// @complexity O(n) in the name's length, which is a file name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
-        std::size_t value = 1469598103934665603ull;
+        std::uint64_t value = 1469598103934665603ull; // sixty-four bits whatever a size_t is
         for (const char letter: name) {
-            value ^= static_cast<std::size_t>(static_cast<unsigned char>(fold(letter)));
+            value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(fold(letter)));
             value *= 1099511628211ull;
         }
-        return value;
+        return static_cast<std::size_t>(value ^ value >> 32);
     }
 
     /// @brief Compares a name as written against a family already folded.
@@ -87,7 +87,7 @@ namespace render::typography {
         // The views, not the entries: an entry an alias took over no longer
         // names the bytes it once held, and a Face may be reading them still
         // right up to this point.
-        for (const View &view: views) {
+        for ([[maybe_unused]] const View &view: views) {
 #if defined(_WIN32)
             UnmapViewOfFile(view.data);
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)

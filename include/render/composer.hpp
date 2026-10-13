@@ -157,6 +157,12 @@ namespace render {
         /// so reading it back costs nothing.
         std::vector<std::string> texts{};
 
+        /// What the page drawn last put ink on -- left, top, right and
+        /// bottom, from its top left as the layout engine measures -- with
+        /// left past right when nothing was drawn at all: what a fitted page
+        /// is cropped to. A page's color, painted edge to edge, is not ink.
+        std::array<float, 4> extent{};
+
     private:
         /// @brief How far below a node's top its reference point sits.
         ///
@@ -273,5 +279,13 @@ namespace render {
         /// @param right  Its right edge.
         /// @param bottom Its bottom.
         void cover(float left, float top, float right, float bottom);
+
+        /// @brief Takes in what was just drawn into the page's #extent.
+        /// @param left   Its left edge.
+        /// @param top    Its top, from the page's top.
+        /// @param right  Its right edge.
+        /// @param bottom Its bottom.
+        /// @complexity O(1).
+        void reach(float left, float top, float right, float bottom) noexcept;
     };
 }

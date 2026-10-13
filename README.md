@@ -66,7 +66,9 @@ once, in compiled code.
 - **Embeddable.** The same engine is available as a C++ library, a C library
   that any language with a foreign-function interface can bind, and a
   WebAssembly module. Programs can supply values, commands they implement,
-  and files from memory, then get the PDF back as bytes.
+  and files from memory, then get the PDF back as bytes -- a whole document,
+  or a snippet: one formula, table or picture on a page cropped to it, to
+  show inside an app or a web page.
 - **Safe by design.** A document cannot run shell commands (`\write18` does
   not exist), cannot write files, and never loads `.sty` or `.cls` code from
   disk. With `--offline` it cannot reach the network either. See
@@ -75,9 +77,11 @@ once, in compiled code.
 ## Status
 
 mLaTeX is pre-release software (version 0.1.0). The `aot` target, which
-writes the PDF directly, is complete. The `jit` and `wasm` targets of the
-command line are accepted but not yet implemented; the just-in-time target
-is reserved in [`src/jit`](src/jit/implementation.md). See
+writes the PDF directly, is complete. The command line's `jit` target is
+accepted but not yet implemented; it is reserved in
+[`src/jit`](src/jit/implementation.md). WebAssembly is not a target of the
+command line but a build of the engine itself, for browsers and Node; see
+[Embedding the engine](#embedding-the-engine). See
 [CHANGELOG.md](CHANGELOG.md) for what has been done and what is
 intentionally left out.
 
@@ -93,6 +97,7 @@ will include:
 | macOS    | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
 | Linux    | `.deb`, `.rpm`                       | `/opt/mlatex`                                       |
 | Linux    | `.tar.gz`, `.zip`                    | wherever it is unpacked                             |
+| Web      | `-wasm.zip`: `latex.js`, `latex.wasm`, `latex.data` | beside the page or script that loads it |
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
@@ -245,6 +250,18 @@ if (!session.typeset(document)) std::cerr << session.error;
 send(session.pdf);
 ```
 
+A whole document goes to `typeset`. A snippet -- a formula, a table, a
+picture, with no preamble -- goes to `snippet`, which sets it as a
+`standalone` document with amsmath and amssymb loaded and crops the page to
+it, for an app or a web page to show among its own content:
+
+```cpp
+session.snippet(R"(\[ \int_0^1 x^2\,dx = \frac{1}{3} \])");
+show(session.pdf);   // a page exactly the formula's size
+```
+
+`\documentclass{standalone}` does the same for a document written in full.
+
 **C**, or any language that can call C (Python's ctypes, C#'s P/Invoke,
 Rust, Go). The library exports a single function, `engine()`, declared in
 `include/protocols/ffi.hpp`:
@@ -259,10 +276,20 @@ size_t size;
 if (!table->typeset(session, source, strlen(source), &pdf, &size)) {
     fprintf(stderr, "%s", table->error(session));
 }
+
+const char* formula = "\\[ e^{i\\pi} + 1 = 0 \\]";
+table->snippet(session, formula, strlen(formula), &pdf, &size);
 table->dispose(session);
 ```
 
-**JavaScript**, through the WebAssembly module built with the `wasm` preset (see `include/render/wasm.hpp`):
+The library ships in every package: `latex_ffi.dll` on Windows,
+`liblatex_ffi.dylib` on macOS and `liblatex_ffi.so` on Linux, with
+`include/latex/ffi.hpp`.
+
+**JavaScript**, through the WebAssembly module: `latex.js`, `latex.wasm` and
+`latex.data` (the fonts), from the `mlatex-<version>-wasm.zip` of a release
+or built with the `wasm` preset (see `include/render/wasm.hpp`). It runs in a
+web page, a worker or Node:
 
 ```js
 const engine = await Latex();
@@ -270,6 +297,10 @@ const session = new engine.Session();
 session.set("customer", "Acme Ltd.");
 if (!session.typeset(source)) console.error(session.error());
 const pdf = session.pdf();
+
+session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]");
+const formula = session.pdf();   // a Uint8Array: hand it to PDF.js, or offer it as a download
+session.delete();
 ```
 
 ## Documentation

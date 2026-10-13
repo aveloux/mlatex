@@ -115,6 +115,18 @@ int main() {
     const Result attempted = typeset(session, fetching);
     assert((attempted.error.find("could not reach") != std::string::npos) && "online, the request is attempted");
 
+    // A snippet: one formula, on a page its own size, the PDF back in memory.
+    const std::string_view formula = "\\[ e^{i\\pi} + 1 = 0 \\]";
+    Result piece;
+    piece.clean = table->snippet(session, formula.data(), formula.size(), &piece.pdf, &piece.size);
+    assert((piece.clean == 1 && piece.pdf != nullptr && std::memcmp(piece.pdf, "%PDF-", 5) == 0) &&
+           "a snippet comes back as a PDF");
+    const std::string_view cropped(reinterpret_cast<const char *>(piece.pdf), piece.size);
+    assert((cropped.find("/MediaBox [0 0 612 792]") == std::string_view::npos) && "on a page cropped to it");
+    Result none;
+    none.clean = table->snippet(session, nullptr, 0, &none.pdf, &none.size);
+    assert((none.clean == 0 && none.pdf == nullptr && none.size == 0) && "no snippet, no PDF");
+
     // Nothing to typeset is refused without touching the session.
     Result nothing;
     nothing.clean = table->typeset(session, nullptr, 0, &nothing.pdf, &nothing.size);

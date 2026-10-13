@@ -1,7 +1,8 @@
 # Builds, tests and packages the engine on every platform and architecture
 # a release ships for, one runner each: CMake packages the architecture it
-# builds, so another architecture is another build. A pushed tag `v*` also
-# attaches every package to a GitHub release.
+# builds, so another architecture is another build -- and the WebAssembly
+# module, which runs wherever a browser or Node does, once. A pushed tag `v*`
+# also attaches every package to a GitHub release.
 #
 # Every runner gets a C++26 compiler with #embed: Visual Studio's clang-cl on
 # Windows, Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS.
@@ -254,10 +255,107 @@ jobs:
             bin/*.pdf
           if-no-files-found: error
 
+  # The engine as a WebAssembly module -- latex.js, latex.wasm and latex.data,
+  # the last the fonts -- for a web page, a worker or Node: one build, whatever
+  # runs it. Emscripten is pinned to the release the module was built and
+  # checked with; gperf is a tool the build runs, so it is the runner's own.
+  wasm:
+    name: WebAssembly
+    runs-on: ubuntu-24.04
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/.vcpkg-downloads
+      TREE: ${{ github.workspace }}/cmake-build-wasm
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache vcpkg's builds and downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            .vcpkg
+            .vcpkg-downloads
+          key: vcpkg-wasm32-emscripten-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: vcpkg-wasm32-emscripten-
+
+      - name: Install Emscripten and the libraries
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gperf ninja-build autoconf autoconf-archive automake libtool
+          git clone --depth 1 https://github.com/emscripten-core/emsdk "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install 6.0.10
+          "$RUNNER_TEMP/emsdk/emsdk" activate 6.0.10
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE" "$VCPKG_DOWNLOADS"
+          git clone --depth 1 https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
+          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet wasm32-emscripten harfbuzz libpng libjpeg-turbo libwebp zlib
+
+          echo "EMSDK=$EMSDK" >> "$GITHUB_ENV"
+          echo "TOOLCHAIN=$RUNNER_TEMP/vcpkg/scripts/buildsystems/vcpkg.cmake" >> "$GITHUB_ENV"
+
+      - name: Configure
+        shell: bash
+        run: |
+          source "$EMSDK/emsdk_env.sh"
+          cmake -B "$TREE" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
+            -DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
+            -DGPERF_EXECUTABLE="$(command -v gperf)"
+
+      - name: Build
+        shell: bash
+        run: |
+          source "$EMSDK/emsdk_env.sh"
+          cmake --build "$TREE" --target wasm
+
+      # What a page would call, through the module's own JavaScript: a
+      # snippet, cropped to the formula, and a document, on a sheet.
+      - name: Test
+        shell: bash
+        working-directory: ${{ env.TREE }}
+        run: |
+          node -e '
+            require("./latex.js")().then((engine) => {
+              const session = new engine.Session();
+              const check = (made, pdf, sheet, what) => {
+                const text = Buffer.from(pdf).toString("latin1");
+                if (!made || !text.startsWith("%PDF-") || text.includes("/MediaBox [0 0 612 792]") !== sheet) {
+                  console.error(what + " failed:\n" + session.error());
+                  process.exit(1);
+                }
+                console.log(what + ": " + pdf.length + " bytes");
+              };
+              check(session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]"), session.pdf(), false, "a snippet");
+              check(session.typeset("\\documentclass{article}\\begin{document}Hello.\\end{document}"),
+                    session.pdf(), true, "a document");
+              session.delete();
+            });
+          '
+
+      - name: Package
+        shell: bash
+        run: |
+          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          mkdir -p bin
+          (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
+
+      - name: Keep the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: mlatex-wasm
+          path: bin/*.zip
+          if-no-files-found: error
+
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: [ build, wasm ]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

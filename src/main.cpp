@@ -69,10 +69,9 @@ struct Option {
 static constexpr std::array options{
     Option{
         't', "target", "", "TARGET", "Target",
-        "What the document is made into: aot, a PDF now\n"
-        "(the default); jit, just in time; wasm, in\n"
-        "WebAssembly. The last two are taken and do\n"
-        "nothing yet."
+        "How the document is made: aot, a PDF now (the\n"
+        "default); jit, just in time, which is taken and\n"
+        "does nothing yet."
     },
     Option{
         'o', "output-directory", "", "DIR", "Output",
@@ -299,8 +298,8 @@ int main(int count, char *arguments[]) {
         if (called == "target") {
             const auto given = take();
             if (!given) return 2;
-            if (*given != "aot" && *given != "jit" && *given != "wasm") {
-                std::cerr << "mlatex: --target is aot, jit or wasm, not " << *given << '\n';
+            if (*given != "aot" && *given != "jit") {
+                std::cerr << "mlatex: --target is aot or jit, not " << *given << '\n';
                 return 2;
             }
             target = *given;
@@ -368,8 +367,8 @@ int main(int count, char *arguments[]) {
         }
     }
 
-    // Just in time and WebAssembly are where those targets go once they are
-    // built: each is taken, and nothing is done yet.
+    // Just in time is where that target goes once it is built: it is taken,
+    // and nothing is done yet.
     if (target != "aot") {
         if (!quiet) std::cout << "mlatex: --target=" << target << " is not built yet; nothing was typeset.\n";
         return 0;

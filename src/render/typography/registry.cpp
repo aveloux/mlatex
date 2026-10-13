@@ -16,14 +16,15 @@
 namespace render::typography {
     /// @brief Hashes a family and cut, folding the cut into the family's hash.
     /// @complexity O(n) in the family name's length.
-    static constexpr std::size_t digest(const std::string_view family, const int weight, const int slant) noexcept {
-        std::size_t value = 1469598103934665603ull;
+    static constexpr std::uint64_t digest(const std::string_view family, const int weight, const int slant) noexcept {
+        // Sixty-four bits whatever a size_t is: WebAssembly's is thirty-two.
+        std::uint64_t value = 1469598103934665603ull;
         for (const char letter: family) {
-            value ^= static_cast<std::size_t>(static_cast<unsigned char>(letter));
+            value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }
-        value ^= static_cast<std::size_t>(weight) * 1099511628211ull;
-        value ^= static_cast<std::size_t>(slant) << 21;
+        value ^= static_cast<std::uint64_t>(weight) * 1099511628211ull;
+        value ^= static_cast<std::uint64_t>(slant) << 21;
         return value;
     }
 
@@ -32,9 +33,9 @@ namespace render::typography {
     static constexpr std::size_t digest(const Registry::Request &request) noexcept {
         // The size is taken at hundredth-point resolution, which is finer
         // than any document distinguishes and keeps the key an integer.
-        std::size_t value = digest(request.family, request.weight, request.slant);
-        value ^= static_cast<std::size_t>(request.size * 100.0f) << 32;
-        return value;
+        std::uint64_t value = digest(request.family, request.weight, request.slant);
+        value ^= static_cast<std::uint64_t>(request.size * 100.0f) << 32;
+        return static_cast<std::size_t>(value ^ value >> 32);
     }
 
     Registry::Registry(memory::Arena &arena, Collection &collection, const std::size_t buckets) noexcept

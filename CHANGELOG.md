@@ -507,6 +507,13 @@ sees, newest work last within each group.
 - The logos drawn as LaTeX draws them: `\TeX`, `\LaTeX`, `\LaTeXe`.
 - A displayed equation too wide for its number moves left, or puts its
   number on the line below, as amsmath does.
+- **`standalone` crops its pages.** `\documentclass{standalone}` sets its
+  text as article does, with no indentation and nothing in its heads or
+  feet, on a sheet as tall as a PDF's page may be, and each page's box is
+  then what is drawn on it with `border=` round it -- half a point unless the
+  class's options say otherwise. The composer measures what every page puts
+  ink on as it draws it -- glyphs, rules, strokes, pictures, a rotated or
+  scaled box by its corners -- and any other class keeps the whole sheet.
 
 ### Pictures
 
@@ -695,8 +702,10 @@ as TeX does, so a script written for pdflatex runs it unchanged:
 folder the document's inputs are read from, the engine's
 `latex::Host::directories`) and `--time-statistics` (the engine's own
 report); a value after `=` or as the next argument, and `--` ending the
-options. `-t`/`--target` says what the document is made into: `aot`, a PDF
-ahead of time, the default; `jit` and `wasm` are taken and do nothing yet.
+options. `-t`/`--target` says how the document is made: `aot`, a PDF ahead
+of time, the default; `jit` is taken and does nothing yet. `wasm` is no
+longer one: WebAssembly is a build of the engine (see For programs), not
+something a document is made into.
 `--assets=DIR` names the engine's assets for a program installed away from
 them. A run says what it wrote as TeX does -- `Output written on paper.pdf
 (11 pages, 423495 bytes).` -- and a document named without an extension is
@@ -819,6 +828,21 @@ page's text goes.
   linkage its name is global, and GCC and MSVC refuse a function named as
   the engine's namespace is. Its visibility macro is `VISIBLE`, undefined
   again at the header's end, and the library's build defines `EXPORTING`.
+- **A snippet, as well as a document.** `latex::Session::snippet` sets a piece
+  of LaTeX with no preamble -- `$...$`, `\[...\]`, an `align`, a table, a
+  picture -- as a `standalone` document with amsmath and amssymb loaded, and
+  hands back a PDF whose page is cropped to it, for an app or a web page to
+  show among its own content. The piece's first line is the document's, so
+  a mistake in it is reported on its own line. The C library has it as
+  `snippet`, last in its struct so a program built against an older header
+  finds everything else where it was, and the WebAssembly module as
+  `session.snippet(text)`.
+- **The WebAssembly module is built and released.** The workflow builds it
+  with Emscripten 6.0.10 against vcpkg's `wasm32-emscripten` libraries, sets
+  a snippet and a document with it in Node through its own JavaScript, and
+  packs `latex.js`, `latex.wasm` and `latex.data` into
+  `mlatex-<version>-wasm.zip`, which a tagged release carries beside the
+  other packages.
 
 ### Speed
 
@@ -929,6 +953,10 @@ font folders are listed only for a script the engine carries no face for.
   standard library happened to pull it in with.
 - Three pipes in the workflow's PowerShell had been written `\vert{}`, which
   PowerShell cannot parse, and the Windows runners failed before building.
+- The WebAssembly module's bindings were behind `#if defined(__WIN32)`, which
+  Emscripten never defines, since a stray edit in `a323f9a`: the module built,
+  and handed JavaScript nothing. They are behind `__EMSCRIPTEN__` again, and
+  the workflow now calls them from Node, so it cannot happen silently.
 
 ### Tests
 
