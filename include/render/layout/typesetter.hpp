@@ -238,6 +238,13 @@ namespace render::layout {
             /// inside stepped down a size.
             bool stepped{false};
 
+            /// Spaced as a line is though set smaller: a fraction's parts,
+            /// whose signs and relations keep their room at the smaller size
+            /// where TeX would close `-b \\pm \\sqrt{b^2-4ac}` up to nothing.
+            /// A script inside one is a frame of its own, and stays as tight
+            /// as TeX sets it.
+            bool spaced{false};
+
             /// Where an inline formula's outer level goes, piece by piece, so
             /// a line may end after a relation or a binary operator there as
             /// TeX lets it; null inside anything built as a box of its own --

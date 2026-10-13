@@ -776,7 +776,7 @@ namespace render::layout {
                                                 ? node->category
                                                 : Category::Binary;
                 const auto pad = [&](const Category before, const Category after) {
-                    if (scope.style != Style::Text) return 0.0f;
+                    if (scope.style != Style::Text && !scope.spaced) return 0.0f;
                     return scope.quad * static_cast<float>(spacing[static_cast<std::size_t>(before)]
                                [static_cast<std::size_t>(after)]) / 18.0f;
                 };
@@ -1002,7 +1002,7 @@ namespace render::layout {
                         if (Node *box = render(child, scope)) pieces.push_back(box);
                         if (pieces.size() == before) continue;
 
-                        if (previous && scope.style == Style::Text) {
+                        if (previous && (scope.style == Style::Text || scope.spaced)) {
                             const std::uint8_t units =
                                     spacing[static_cast<std::size_t>(classify(previous, true))]
                                     [static_cast<std::size_t>(classify(child, false))];
@@ -1028,7 +1028,7 @@ namespace render::layout {
                     Node *box = render(child, scope);
                     if (!box) continue;
 
-                    if (previous && scope.style == Style::Text) {
+                    if (previous && (scope.style == Style::Text || scope.spaced)) {
                         const std::uint8_t units =
                                 spacing[static_cast<std::size_t>(classify(previous, true))]
                                 [static_cast<std::size_t>(classify(child, false))];
@@ -1239,6 +1239,7 @@ namespace render::layout {
                 // one is the size it is in a line, with its limits beside it.
                 Frame nested = frame(*scope.base, scope.target, inner, scope.alphabet);
                 nested.stepped = true;
+                nested.spaced = true;
 
                 Node *above = enclose(render(node->left, nested));
                 Node *below = enclose(render(node->right, nested));
@@ -1267,7 +1268,10 @@ namespace render::layout {
                         drop += shortfall * 0.5f;
                     }
                 } else {
-                    const float least = roomy ? scope.distance : scope.separation;
+                    // In a line, halfway from the font's least room to its
+                    // display room: TeX's single rule's width leaves a root's
+                    // sign or a descender all but resting on the bar.
+                    const float least = roomy ? scope.distance : (scope.separation + scope.distance) * 0.5f;
                     lift = std::max(lift, top + least + depth);
                     drop = std::max(drop, least + height - bottom);
                 }

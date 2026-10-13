@@ -507,6 +507,12 @@ sees, newest work last within each group.
 - The logos drawn as LaTeX draws them: `\TeX`, `\LaTeX`, `\LaTeXe`.
 - A displayed equation too wide for its number moves left, or puts its
   number on the line below, as amsmath does.
+- **A fraction in a line has room to read.** Its numerator and denominator
+  are a size down, as TeX sets them, but keep the space round their signs
+  and relations at that size where TeX closes `-b \pm \sqrt{b^2-4ac}` up to
+  nothing; an exponent or a subscript stays as tight as TeX's. Its parts
+  stand halfway from the font's least gap to its display gap from the bar,
+  where TeX's one rule's width left a root's sign resting on it.
 - **`standalone` crops its pages.** `\documentclass{standalone}` sets its
   text as article does, with no indentation and nothing in its heads or
   feet, on a sheet as tall as a PDF's page may be, and each page's box is

@@ -335,10 +335,12 @@ int main() {
         const memory::Slice<layout::Node *> pieces = typesetter.unfold(parse("a+b=c", false), *font);
         assert((pieces.size() > 1) && "an inline formula opens into pieces a line may break between");
 
-        // A fraction's parts stand clear of its bar as TeX's rule 15 has it:
-        // by the font's own least gap -- its bar's thickness in a line, three
-        // times that in a display -- whatever hangs from the numerator or
-        // rises from the denominator, a descender, a limit, a large operator.
+        // A fraction's parts stand clear of its bar as TeX's rule 15 has it,
+        // by the font's own least gap in a display -- three times its bar's
+        // thickness -- and in a line by halfway from its least to that, where
+        // TeX's one thickness leaves a root's sign all but on the bar:
+        // whatever hangs from the numerator or rises from the denominator, a
+        // descender, a limit, a large operator.
         struct Clear {
             float above{0.0f}; ///< From the numerator's lowest ink down to the bar.
             float below{0.0f}; ///< From the bar down to the denominator's highest ink.
@@ -376,11 +378,11 @@ int main() {
             return result;
         };
         for (const bool displayed: {false, true}) {
-            const float room = displayed ? table.distance : table.separation;
+            const float room = displayed ? table.distance : (table.separation + table.distance) * 0.5f;
             for (const std::string formula:
                  {
                      "\\frac{p}{q}", "\\frac{g}{h}", "\\frac{f}{g}", "\\frac{x^2}{y_1}",
-                     "\\frac{\\partial f}{\\partial x}",
+                     "\\frac{\\partial f}{\\partial x}", "\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}",
                      "\\frac{\\sqrt{x}}{\\pi}", "\\frac{\\sum_i a_i}{\\prod_j b_j}", "{a \\over b}"
                  }) {
                 const Clear measured = clear(formula, displayed);
@@ -395,6 +397,18 @@ int main() {
         const Clear half = clear("\\frac{1}{2}", false);
         assert((half.above > table.separation + 0.5f && half.below > table.separation + 0.5f) &&
                "the parts of a fraction in a line stand where the font's shifts put them");
+
+        // In a line, a fraction's parts keep their signs' room at the smaller
+        // size, where TeX closes them up; an exponent, set just as small, is
+        // as tight as TeX sets it. Measured from the a's ink to the plus's.
+        const auto room = [&](const std::string &formula, const std::size_t first) {
+            Drawing drawing;
+            walk(typesetter.lower(parse(formula, false), *font, 0.0f), 0.0f, 0.0f, drawing);
+            return drawing.glyphs[first + 1].left - drawing.glyphs[first].right;
+        };
+        const float spaced = room("\\frac{a+b}{c}", 0);
+        const float tight = room("x^{a+b}", 1);
+        assert((spaced > tight + 1.0f) && "a sign in a fraction's part has room round it; one in an exponent not");
 
         // TeX's own fractions, written between their parts; a stack with no
         // bar; a binomial, fenced; and a fraction in a matrix's cell, which is
