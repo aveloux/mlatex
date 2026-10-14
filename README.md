@@ -345,7 +345,7 @@ Everyone taking part is expected to follow the
 
 The project's Discord server is the place to ask questions, discuss
 contributions and follow its direction:
-[https://discord.gg/null](https://discord.gg/UUbPg5YtJF).
+[https://discord.gg/UUbPg5YtJF](https://discord.gg/UUbPg5YtJF).
 
 mLaTeX is maintained by Andres Hernandez ([\@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
 project or its direction, write to andromedeyz@hotmail.com. To report a
