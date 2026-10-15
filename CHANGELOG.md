@@ -972,6 +972,9 @@ font folders are listed only for a script the engine carries no face for.
   Every value along the way is now held within 2^53, where a double is still
   exact, so the product stops at the limit; `100000*100000/100000` still
   keeps its product past 32 bits until it is divided.
+- `\foreach \x in {0,0.1,...,1}` made its items by adding the step again and
+  again, so the rounding of each addition piled up; each item is now the
+  first plus a whole number of steps.
 
 ### Tests
 
@@ -1018,7 +1021,8 @@ font folders are listed only for a script the engine carries no face for.
   failure that leaves the value alone, and a range read to its own end and
   not its text's. 86 tests pass in Release.
 - Then: `\evaluate`'s powers of one, minus one and zero; `\numexpr`'s
-  products past 64 bits, either way, and past 32 until divided.
+  products past 64 bits, either way, and past 32 until divided; `\foreach`'s
+  ranges in tenths, counted down, and in letters.
 
 ### Documentation
 

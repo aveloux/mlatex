@@ -166,8 +166,12 @@ namespace syntax::primitives {
                         }
                     }
                     if (step == 0.0 || (end - first) / step > 10000.0) continue;
-                    for (double value = first + step; step > 0.0 ? value < end - 1e-9 : value > end + 1e-9;
-                         value += step) {
+                    // Counted in whole steps from the first rather than by
+                    // adding the step again and again, so no rounding piles
+                    // up however many items it makes.
+                    for (int count = 1; count <= 10000; ++count) {
+                        const double value = first + step * static_cast<double>(count);
+                        if (step > 0.0 ? value >= end - 1e-9 : value <= end + 1e-9) break;
                         const double rounded = std::round(value * 1e6) / 1e6;
                         const std::string text = rounded == std::floor(rounded)
                                                      ? std::to_string(static_cast<long long>(rounded))

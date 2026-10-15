@@ -77,5 +77,10 @@ int main() {
     sets("\\include{core/aliases}\\include{core/kernel}\\newcount\\n \\n=3 \\loop\\ifnum\\n>0 \\the\\n\\advance"
          "\\n by -1 \\repeat.",
          "321.", "plain TeX's \\loop, built on the kernel");
+    // Each pass is a group of its own, which this harness writes as braces.
+    sets("\\@foreach \\x in {0,0.1,...,0.5}{\\x}", "{0}{0.1}{0.2}{0.3}{0.4}{0.5}",
+         "a range in tenths, each a whole step");
+    sets("\\@foreach \\x in {3,2,...,0}{\\x}", "{3}{2}{1}{0}", "a range counted down");
+    sets("\\@foreach \\x in {a,...,d}{\\x}", "{a}{b}{c}{d}", "a range of letters");
     return 0;
 }
