@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-namespace render::primitives::mathematics {
+namespace render::primitives::notation {
     /// @brief Mathematics: where an expression starts, and what is an operator.
     ///
     /// @par Language
@@ -45,12 +45,12 @@ namespace render::primitives::mathematics {
     /// multiplication, then the postfix factorial. Structures -- fractions,
     /// roots, accents, matrices -- take brace arguments instead of operands
     /// and so sit outside the ordering entirely.
-    class Formulas {
+    class Equations {
     public:
         /// @brief Interns the control sequences this module binds, and
         ///        builds the grammar every formula is read by.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Formulas(syntax::Lexicon &lexicon);
+        explicit Equations(syntax::Lexicon &lexicon);
 
         /// @brief Installs the expression delimiters.
         /// @param parser  Parser to bind into.

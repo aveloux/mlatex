@@ -43,11 +43,11 @@ namespace syntax::primitives::data {
     /// commas -- or semicolons or tabs, as `separator=` or `\\DTLsetseparator`
     /// says -- and a field in double quotes may hold the separator and a
     /// doubled quote. Every value is text until it is read.
-    class Databases {
+    class Records {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Databases(Lexicon &lexicon) noexcept;
+        explicit Records(Lexicon &lexicon) noexcept;
 
         /// @brief Installs csvsimple's `\\csvautotabular`,
         ///        `\\csvautobooktabular` and `\\csvreader`, and datatool's

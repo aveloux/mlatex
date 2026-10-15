@@ -1,7 +1,7 @@
 /// @file
-/// @brief Databases implementation: csvsimple's CSV files and datatool's
+/// @brief Records implementation: csvsimple's CSV files and datatool's
 ///        databases, one table type for both.
-#include "syntax/primitives/data/databases.hpp"
+#include "syntax/primitives/data/records.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace syntax::primitives::data {
-    Databases::Databases(Lexicon &lexicon) noexcept {
+    Records::Records(Lexicon &lexicon) noexcept {
         static constexpr std::array<std::string_view, 20> names{
             "\\csvautotabular", "\\csvautobooktabular", "\\csvreader", "\\DTLnewdb", "\\DTLnewrow",
             "\\DTLnewdbentry", "\\DTLloaddb", "\\DTLforeach", "\\DTLdisplaydb", "\\DTLrowcount",
@@ -30,7 +30,7 @@ namespace syntax::primitives::data {
         for (const std::string_view name: names) lexicon.intern(name);
     }
 
-    std::vector<std::vector<std::string> > Databases::parse(const std::string_view text, const char separator) {
+    std::vector<std::vector<std::string> > Records::parse(const std::string_view text, const char separator) {
         std::vector<std::vector<std::string> > rows;
         std::vector<std::string> fields;
         std::string field;
@@ -79,7 +79,7 @@ namespace syntax::primitives::data {
         return rows;
     }
 
-    void Databases::operator()(Mouth &mouth, Context &context) const {
+    void Records::operator()(Mouth &mouth, Context &context) const {
         // A run of tokens as the text it was written as, a control word
         // spaced from a letter after it.
         const auto written = [](const std::span<const Token> tokens) {

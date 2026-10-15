@@ -15,7 +15,7 @@
 namespace syntax {
     /// The glossary, as it stands in assets.
     static constexpr char source[] = {
-#embed "../../assets/glossary.mtex" suffix(,)
+    #embed "../../assets/glossary.mtex" suffix(,)
         0
     };
 

@@ -1,5 +1,5 @@
 #include "memory/arena.hpp"
-#include "render/primitives/mathematics/formulas.hpp"
+#include "render/primitives/notation/equations.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/expression/parser.hpp"
 #include "syntax/lexicon.hpp"
@@ -76,7 +76,7 @@ static Tree parse(const std::string_view formula, const bool displayed = false) 
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     mouth.ingest(arena.copy(std::string(formula) + "$"));
 
-    const render::primitives::mathematics::Formulas expressions(lexicon);
+    const render::primitives::notation::Equations expressions(lexicon);
     expression::Parser parser(mouth, expressions.grammar, arena,
                               displayed ? expression::Node::Style::Display : expression::Node::Style::Inline);
     Tree tree;

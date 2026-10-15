@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-// The Formulas primitive: formulas in the text and on lines of their
+// The Equations primitive: formulas in the text and on lines of their
 // own -- inline, displayed, numbered, aligned -- with their fences,
 // matrices, accents and alphabets, and a paragraph that survives a formula
 // too wide for its line.

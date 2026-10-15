@@ -5,7 +5,7 @@
 /// An expression gets an expression parser of its own, taught the operators,
 /// run to its closing delimiter and then destroyed -- which is what returns
 /// the token after it to the expander instead of losing it.
-#include "render/primitives/mathematics/formulas.hpp"
+#include "render/primitives/notation/equations.hpp"
 #include "render/primitives/referencing/counters.hpp"
 #include "render/primitives/text/styles.hpp"
 #include "render/primitives/structure/tables.hpp"
@@ -26,7 +26,7 @@
 #include <string_view>
 #include <utility>
 
-namespace render::primitives::mathematics {
+namespace render::primitives::notation {
     using referencing::Counters;
     using structure::Tables;
     using text::Styles;
@@ -51,7 +51,7 @@ namespace render::primitives::mathematics {
         return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
     }
 
-    Formulas::Formulas(syntax::Lexicon &lexicon) : grammar(lexicon) {
+    Equations::Equations(syntax::Lexicon &lexicon) : grammar(lexicon) {
         lexicon.intern("$");
         lexicon.intern("\\(");
         lexicon.intern("\\[");
@@ -264,7 +264,7 @@ namespace render::primitives::mathematics {
         }
     }
 
-    layout::Node *Formulas::label(const Context &context, memory::Arena &arena, const std::string_view text) {
+    layout::Node *Equations::label(const Context &context, memory::Arena &arena, const std::string_view text) {
         if (text.empty()) return nullptr;
 
         // Upright whatever the text around it is: an equation's number in a
@@ -280,7 +280,7 @@ namespace render::primitives::mathematics {
         return layout::Line::horizontal(arena, shaped, 0.0f);
     }
 
-    void Formulas::count(syntax::Mouth &mouth, Context &context) const {
+    void Equations::count(syntax::Mouth &mouth, Context &context) const {
         if (!context.counters) return;
         context.counters->step("equation");
         numbered = Counters::print(mouth, "equation");
@@ -288,11 +288,11 @@ namespace render::primitives::mathematics {
         context.kind = "equation";
     }
 
-    void Formulas::retract(const Context &context) {
+    void Equations::retract(const Context &context) {
         if (context.counters) context.counters->set("equation", context.counters->value("equation") - 1);
     }
 
-    layout::Node *Formulas::line(memory::Arena &arena, layout::Node *body, layout::Node *mark,
+    layout::Node *Equations::line(memory::Arena &arena, layout::Node *body, layout::Node *mark,
                                     const float balance, const float column) {
         // A kern as wide as the widest number, on the left, balances the
         // number on the right, so the expression is centred on the column
@@ -350,7 +350,7 @@ namespace render::primitives::mathematics {
         return layout::Line::horizontal(arena, row, column);
     }
 
-    syntax::Node *Formulas::enter(
+    syntax::Node *Equations::enter(
         syntax::Parser &parser,
         Context &context,
         const bool display,
@@ -605,7 +605,7 @@ namespace render::primitives::mathematics {
         return node;
     }
 
-    void Formulas::operator()(syntax::Parser &parser, Context &context) const {
+    void Equations::operator()(syntax::Parser &parser, Context &context) const {
         parser.bind("$", [this, &context](syntax::Parser &parser) {
             syntax::Mouth &mouth = parser.mouth;
 

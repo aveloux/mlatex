@@ -6,7 +6,7 @@
 #include "render/primitives/text/colors.hpp"
 #include "render/primitives/context.hpp"
 #include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/mathematics/formulas.hpp"
+#include "render/primitives/notation/equations.hpp"
 #include "render/primitives/structure/floats.hpp"
 #include "render/primitives/structure/footnotes.hpp"
 #include "render/primitives/spacing/groups.hpp"
@@ -104,7 +104,7 @@ namespace render::primitives {
         structure::Sections sections; ///< `\\section` and the levels beneath it.
         spacing::Paragraphs paragraphs; ///< `\\noindent`, `\\centering` and the alignment blocks.
         structure::Lists lists; ///< `\\item` and the three list blocks.
-        mathematics::Formulas formulas; ///< `$`, `\\(`, `\\[`, `equation` and the matrices.
+        notation::Equations equations; ///< `$`, `\\(`, `\\[`, `equation` and the matrices.
         referencing::References references; ///< `\\label`, `\\ref` and `\\eqref`.
         referencing::Citations citations; ///< `\\cite`, `\\bibitem` and `thebibliography`.
         structure::Footnotes footnotes; ///< `\\footnote`.

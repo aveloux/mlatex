@@ -33,7 +33,7 @@ namespace syntax::expression {
             text[name.size()] = '\0';
 
             if (const auto *entry = Lookup::get(text, static_cast<unsigned int>(name.size()))) {
-                return Symbol{entry->codepoint, static_cast<Category>(entry->category)};
+                return Symbol{.codepoint = entry->codepoint, .category = static_cast<Category>(entry->category)};
             }
             return std::nullopt;
         }

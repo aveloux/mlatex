@@ -16,14 +16,14 @@ namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon &lexicon) noexcept
         : conditionals(lexicon), environments(lexicon), macros(lexicon), registers(lexicon),
           arithmetic(lexicon), loops(lexicon), packages(lexicon),
-          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), databases(lexicon) {
+          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {
     }
 
     void Wrapper::operator()(Mouth &mouth, Context &context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
         bind(mouth, context, conditionals, environments, macros, registers, arithmetic, loops, packages,
-             variables, decimals, hooks, strings, databases);
+             variables, decimals, hooks, strings, records);
 
         // Every word of the engine's own that is not LaTeX's, a second time
         // under an `@` name -- the way LaTeX's own internals are named, out of
@@ -67,7 +67,7 @@ namespace syntax::primitives {
             &conditionals.traceback(), &environments.traceback(), &macros.traceback(),
             &registers.traceback(), &arithmetic.traceback(), &loops.traceback(),
             &packages.traceback(), &variables.traceback(), &decimals.traceback(),
-            &hooks.traceback(), &strings.traceback(), &databases.traceback(),
+            &hooks.traceback(), &strings.traceback(), &records.traceback(),
         };
 
         std::size_t total = 0uz;

@@ -9,7 +9,7 @@
 #include "syntax/primitives/definitions/packages.hpp"
 #include "syntax/primitives/control/loops.hpp"
 #include "syntax/primitives/definitions/macros.hpp"
-#include "syntax/primitives/data/databases.hpp"
+#include "syntax/primitives/data/records.hpp"
 #include "syntax/primitives/control/conditionals.hpp"
 #include "syntax/primitives/data/strings.hpp"
 #include "syntax/primitives/calculations/registers.hpp"
@@ -83,7 +83,7 @@ namespace syntax::primitives {
         calculations::Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
         definitions::Hooks hooks; ///< `\\addtohook`, `\\usehook`.
         data::Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
-        data::Databases databases; ///< csvsimple's CSV files and datatool's databases.
+        data::Records records; ///< csvsimple's CSV files and datatool's databases.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

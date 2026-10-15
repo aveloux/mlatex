@@ -14,7 +14,7 @@ namespace render::primitives {
         : pages(lexicon), typefaces(lexicon), styles(lexicon), characters(lexicon), groups(lexicon),
           boxes(lexicon), glue(lexicon),
           rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
-          lists(lexicon), formulas(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
+          lists(lexicon), equations(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
           counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon),
           colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {
     }
@@ -27,7 +27,7 @@ namespace render::primitives {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
         bind(parser, context, pages, typefaces, styles, characters, groups, boxes, glue, rules,
-             penalties, tables, sections, paragraphs, lists, formulas, references, citations,
+             penalties, tables, sections, paragraphs, lists, equations, references, citations,
              footnotes, counters, theorems, floats, algorithms, illustrations, colors, requests, verbatim,
              plots, diagrams, languages);
 
@@ -44,7 +44,7 @@ namespace render::primitives {
         const std::array<const std::vector<syntax::Traceback> *, 23> parts{
             &pages.traceback(), &typefaces.traceback(), &styles.traceback(),
             &boxes.traceback(), &tables.traceback(), &sections.traceback(),
-            &paragraphs.traceback(), &lists.traceback(), &formulas.traceback(),
+            &paragraphs.traceback(), &lists.traceback(), &equations.traceback(),
             &references.traceback(), &citations.traceback(), &footnotes.traceback(),
             &counters.traceback(), &theorems.traceback(), &floats.traceback(), &algorithms.traceback(),
             &illustrations.traceback(),

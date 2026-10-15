@@ -334,7 +334,7 @@ namespace render::layout {
         memory::Arena &arena; ///< Allocator for blocks.
         memory::Arena &scratch; ///< Allocator for layout intermediates.
         const typography::Shaper &shaper; ///< Text into glyphs.
-        const Typesetter &typesetter; ///< Formulas into boxes.
+        const Typesetter &typesetter; ///< Equations into boxes.
         Ledger ledger; ///< Cache of already-shaped runs.
         Ledger words; ///< Cache of already-shaped words, penalties included.
         const typography::Hyphenator *hyphenation{nullptr}; ///< Where words may break.

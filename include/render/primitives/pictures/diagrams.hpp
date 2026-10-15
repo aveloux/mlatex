@@ -45,7 +45,7 @@ namespace render::primitives::pictures {
     /// centred over its children, each child joined to it.
     ///
     /// A display holding one of them alone is set as the picture it is --
-    /// see mathematics::Formulas -- and one inside a formula of other things as the
+    /// see notation::Equations -- and one inside a formula of other things as the
     /// grid of its objects, its arrows let go.
     ///
     /// @par Reported

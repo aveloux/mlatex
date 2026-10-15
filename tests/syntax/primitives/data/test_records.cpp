@@ -5,7 +5,7 @@
 #include "syntax/node.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/primitives/context.hpp"
-#include "syntax/primitives/data/databases.hpp"
+#include "syntax/primitives/data/records.hpp"
 #include "syntax/primitives/wrapper.hpp"
 #include "syntax/semantics/union.hpp"
 
@@ -15,7 +15,7 @@
 #include <string_view>
 #include <utility>
 
-// The Databases primitive: a CSV file handed in, read as csvsimple and
+// The Records primitive: a CSV file handed in, read as csvsimple and
 // datatool read one, and a database built in the document itself.
 
 /// The file every document here may read.
@@ -89,10 +89,10 @@ static void reports(const std::string_view document, const std::string_view need
 
 int main() {
     // --- A CSV file's text ----------------------------------------------------------------
-    const auto rows = syntax::primitives::data::Databases::parse(prices, ',');
+    const auto rows = syntax::primitives::data::Records::parse(prices, ',');
     assert((rows.size() == 4 && rows[0][0] == "Item" && rows[2][0] == "Cake, lemon" && rows[2][1] == "3.5") &&
            "a quoted field keeps its comma");
-    const auto doubled = syntax::primitives::data::Databases::parse("\"say \"\"hi\"\"\",x\r\n\r\n", ',');
+    const auto doubled = syntax::primitives::data::Records::parse("\"say \"\"hi\"\"\",x\r\n\r\n", ',');
     assert((doubled.size() == 1 && doubled[0][0] == "say \"hi\"" && doubled[0][1] == "x") &&
            "a doubled quote is one, a line end of two characters one, and a blank line none");
 
