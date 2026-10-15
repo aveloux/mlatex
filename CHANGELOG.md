@@ -1109,6 +1109,18 @@ font folders are listed only for a script the engine carries no face for.
   `along`, `up`); the PostScript reader keeps its `current` point and the
   `start` of the subpath as positions of their own. A curve's points are
   weighed once per step, `first` to `fourth`, rather than in one long sum.
+- **Text a primitive writes is a format.** What the syntax primitives build
+  to be read back -- a block's `\name:open`, a CSV row's
+  `\@shared\@define\thecsvrow{1}`, a `\begin{tabular}{...}`, an
+  `\ifnum ...\relax 1\else 0\fi` test -- and the paths and keys they look
+  up are `std::format` strings, not chains of `+` making a temporary at
+  every step; a decimal's fraction is a zero-filled width, `{:0{}}`. They
+  are clean under the clang-tidy checks CLion runs: raw string literals,
+  `std::cmp_less` where a signed number meets an unsigned size, explicit
+  conversions where an integer becomes a `long double`, every field of an
+  evaluation's state initialised, designated initialisers for a token and a
+  register's target, and no local hiding another (`\csname`'s name is
+  `built`, `\DTLsetseparator`'s `given`, the register reader `quantity`).
 
 ### Removed
 

@@ -45,7 +45,7 @@ namespace syntax::primitives {
         mouth.bind("\\ifx", [this, &mouth](Mouth &) {
             // A name \let made from a character is that character here, as
             // it is in TeX: `\let\next=[` and then `\ifx\next[` holds.
-            const auto meant = [&mouth](const Token token) {
+            const auto meant = [&mouth](const Token &token) {
                 const Mouth::Macro *found = mouth.macro(token.symbol);
                 return found && found->implicit && !found->body.empty() ? found->body.front() : token;
             };

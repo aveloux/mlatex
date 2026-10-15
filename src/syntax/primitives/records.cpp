@@ -154,23 +154,24 @@ namespace syntax::primitives {
                 preamble += numbers ? 'r' : 'l';
             }
             if (rules == "ruled") preamble += '|';
-            std::string text = "\\begin{tabular}{" + preamble + "}";
+            std::string text = std::format("\\begin{{tabular}}{{{}}}", preamble);
             text += rules == "booktabs" ? "\\toprule " : rules == "ruled" ? "\\hline " : "";
             for (std::size_t column = 0; column < table.keys.size(); ++column) {
-                text += (column == 0 ? "" : " & ") + (rules == "plain"
-                                                          ? "\\textbf{" + table.keys[column] + "}"
-                                                          : table.keys[column]);
+                if (column > 0) text += " & ";
+                text += rules == "plain" ? std::format("\\textbf{{{}}}", table.keys[column]) : table.keys[column];
             }
             text += "\\\\";
             text += rules == "booktabs" ? "\\midrule " : rules == "ruled" ? "\\hline " : "";
             for (const std::vector<std::string> &row: table.rows) {
                 for (std::size_t column = 0; column < table.keys.size(); ++column) {
-                    text += (column == 0 ? "" : " & ") + (column < row.size() ? row[column] : std::string{});
+                    if (column > 0) text += " & ";
+                    if (column < row.size()) text += row[column];
                 }
                 text += "\\\\";
             }
             text += rules == "booktabs" ? "\\bottomrule " : rules == "ruled" ? "\\hline " : "";
-            return text + "\\end{tabular}";
+            text += "\\end{tabular}";
+            return text;
         };
         // A CSV file as a table: its first line its names, or columns
         // numbered from 1 when it has none.
@@ -183,7 +184,9 @@ namespace syntax::primitives {
             } else {
                 std::size_t across = 0;
                 for (const auto &line: lines) across = std::max(across, line.size());
-                for (std::size_t column = 1; column <= across; ++column) table.keys.push_back(std::to_string(column));
+                for (std::size_t column = 1; column <= across; ++column) {
+                    table.keys.push_back(std::format("{}", column));
+                }
             }
             for (std::vector<std::string> &line: lines) {
                 line.resize(table.keys.size());
@@ -210,8 +213,9 @@ namespace syntax::primitives {
                     const auto [end, fault] = std::from_chars(key.data(), key.data() + key.size(), number);
                     if (fault == std::errc{} && end == key.data() + key.size() && number >= 1) column = number - 1;
                 }
-                if (macro.starts_with('\\') && column < row.size())
-                    text += "\\@shared\\@define" + macro + "{" + row[column] + "}";
+                if (macro.starts_with('\\') && column < row.size()) {
+                    text += std::format(R"(\@shared\@define{}{{{}}})", macro, row[column]);
+                }
             }
             return text;
         };
@@ -285,36 +289,35 @@ namespace syntax::primitives {
             if (!text) return;
 
             std::string out = centred ? "\\begin{center}" : "";
-            if (!spec.empty()) out += "\\begin{tabular}{" + spec + "}" + head;
+            if (!spec.empty()) out += std::format("\\begin{{tabular}}{{{}}}{}", spec, head);
             static constexpr std::array<std::string_view, 10> numerals{
                 "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"
             };
             for (std::size_t index = 0; index < table.rows.size(); ++index) {
                 const std::vector<std::string> &row = table.rows[index];
-                out += "\\@shared\\@define\\thecsvrow{" + std::to_string(index + 1) + "}";
+                out += std::format(R"(\@shared\@define\thecsvrow{{{}}})", index + 1);
                 for (std::size_t column = 0; column < row.size() && column < numerals.size(); ++column) {
-                    out += "\\@shared\\@define\\csvcol" + std::string(numerals[column]) + "{" + row[column] + "}";
+                    out += std::format(R"(\@shared\@define\csvcol{}{{{}}})", numerals[column], row[column]);
                 }
                 if (columns) {
                     for (std::size_t column = 0; column < table.keys.size(); ++column) {
-                        const std::string &key = table.keys[column];
-                        if (!key.empty() && std::ranges::all_of(key, [](const char letter) {
-                            return std::isalpha(static_cast<unsigned char>(letter)) != 0;
-                        })) {
-                            out += "\\@shared\\@define\\" + key + "{" + row[column] + "}";
+                        if (const std::string &key = table.keys[column];
+                            !key.empty() && std::ranges::all_of(key, [](const char letter) {
+                                return std::isalpha(static_cast<unsigned char>(letter)) != 0;
+                            })) {
+                            out += std::format(R"(\@shared\@define\{}{{{}}})", key, row[column]);
                         }
                     }
                 }
-                out += definitions(table, assignments, row) + body + after;
+                out += std::format("{}{}{}", definitions(table, assignments, row), body, after);
             }
-            if (!spec.empty()) out += foot + "\\end{tabular}";
+            if (!spec.empty()) out += std::format("{}\\end{{tabular}}", foot);
             if (centred) out += "\\end{center}";
             mouth.ingest(mouth.arena.copy(out), memory::Location{});
         });
 
-        // --- datatool -----------------------------------------------------------
         // A database by name, or none, reported where it was asked for.
-        const auto named = [this](Mouth &mouth, const std::string &name) -> Table * {
+        const auto named = [this](const Mouth &mouth, const std::string &name) -> Table * {
             const auto found = tables.find(name);
             if (found != tables.end()) return &found->second;
             tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
@@ -352,8 +355,8 @@ namespace syntax::primitives {
             }
         });
         mouth.bind("\\DTLsetseparator", [this](Mouth &mouth) {
-            const std::string written = Argument::text(mouth);
-            separator = written.empty() ? ',' : written.front();
+            const std::string given = Argument::text(mouth);
+            separator = given.empty() ? ',' : given.front();
         });
         mouth.bind("\\DTLsettabseparator", [this](Mouth &) { separator = '\t'; });
 
@@ -367,12 +370,12 @@ namespace syntax::primitives {
             if (!table) return;
             std::string out;
             for (std::size_t index = 0; index < table->rows.size(); ++index) {
-                out += "\\@shared\\@define\\DTLcurrentindex{" + std::to_string(index + 1) + "}";
-                out += std::string("\\@shared\\@define\\DTLiffirstrow[2]{") + (index == 0 ? "#1" : "#2") + "}";
-                out += std::string("\\@shared\\@define\\DTLiflastrow[2]{") + (index + 1 == table->rows.size()
-                                                                                  ? "#1"
-                                                                                  : "#2") + "}";
-                out += definitions(*table, assignments, table->rows[index]) + body;
+                const bool first = index == 0;
+                const bool last = index + 1 == table->rows.size();
+                out += std::format(R"(\@shared\@define\DTLcurrentindex{{{}}})", index + 1);
+                out += std::format(R"(\@shared\@define\DTLiffirstrow[2]{{{}}})", first ? "#1" : "#2");
+                out += std::format(R"(\@shared\@define\DTLiflastrow[2]{{{}}})", last ? "#1" : "#2");
+                out += std::format("{}{}", definitions(*table, assignments, table->rows[index]), body);
             }
             mouth.ingest(mouth.arena.copy(out), memory::Location{});
         });
@@ -385,7 +388,7 @@ namespace syntax::primitives {
         for (const bool rows: {true, false}) {
             mouth.bind(rows ? "\\DTLrowcount" : "\\DTLcolumncount", [named, rows](Mouth &mouth) {
                 if (const Table *table = named(mouth, Argument::text(mouth))) {
-                    mouth.ingest(mouth.arena.copy(std::to_string(rows ? table->rows.size() : table->keys.size())),
+                    mouth.ingest(mouth.arena.copy(std::format("{}", rows ? table->rows.size() : table->keys.size())),
                                  memory::Location{});
                 }
             });
@@ -409,11 +412,10 @@ namespace syntax::primitives {
             std::size_t down = 0;
             std::from_chars(row.data(), row.data() + row.size(), down);
             std::from_chars(column.data(), column.data() + column.size(), across);
-            const std::string value = down >= 1 && down <= table->rows.size() && across >= 1 && across <= table->keys.
-                                      size()
-                                          ? table->rows[down - 1][across - 1]
-                                          : std::string{};
-            mouth.ingest(mouth.arena.copy("\\@define" + std::string(target.front().text) + "{" + value + "}"),
+            const bool inside = down >= 1 && down <= table->rows.size() && across >= 1 &&
+                                across <= table->keys.size();
+            const std::string value = inside ? table->rows[down - 1][across - 1] : std::string{};
+            mouth.ingest(mouth.arena.copy(std::format("\\@define{}{{{}}}", target.front().text, value)),
                          memory::Location{});
         });
         // The value one column holds in the first row where another holds a value.
@@ -488,10 +490,8 @@ namespace syntax::primitives {
                     }
                 }
                 const double result = mean ? (counted == 0 ? 0.0 : total / static_cast<double>(counted)) : total;
-                mouth.ingest(
-                    mouth.arena.copy(
-                        "\\@define" + std::string(target.front().text) + "{" + std::format("{}", result) + "}"),
-                    memory::Location{});
+                mouth.ingest(mouth.arena.copy(std::format("\\@define{}{{{}}}", target.front().text, result)),
+                             memory::Location{});
             });
         }
 

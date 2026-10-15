@@ -174,7 +174,7 @@ namespace syntax::primitives {
                         if (step > 0.0 ? value >= end - 1e-9 : value <= end + 1e-9) break;
                         const double rounded = std::round(value * 1e6) / 1e6;
                         const std::string text = rounded == std::floor(rounded)
-                                                     ? std::to_string(static_cast<long long>(rounded))
+                                                     ? std::format("{}", static_cast<long long>(rounded))
                                                      : std::format("{}", rounded);
                         std::vector<Token> number;
                         for (const char digit: text) number.push_back(
@@ -222,7 +222,7 @@ namespace syntax::primitives {
                 }
                 if (!counter.empty()) {
                     produced.insert(produced.end(), {define, counter, open});
-                    for (const char digit: std::to_string(count)) {
+                    for (const char digit: std::format("{}", count)) {
                         produced.push_back(character(std::string_view(&digit, 1), Catcodes::Category::Other));
                     }
                     produced.push_back(close);

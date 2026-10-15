@@ -16,6 +16,7 @@
 
 #include <array>
 #include <format>
+#include <ranges>
 #include <span>
 #include <string>
 
@@ -91,7 +92,7 @@ namespace syntax::primitives {
                        const memory::Location origin) const {
         if (loaded(name)) return;
 
-        const std::string key = std::string(name) + "/main.mtex";
+        const std::string key = std::format("{}/main.mtex", name);
         const auto found = get(context, key);
 
         if (!found) {
@@ -99,7 +100,7 @@ namespace syntax::primitives {
             // xurl is url, soulutf8 is soul -- as the core names them: that
             // one, loaded, and this marked loaded beside it.
             packages.emplace(name);
-            if (const std::string *other = context.variables.get("alias." + std::string(name));
+            if (const std::string *other = context.variables.get(std::format("alias.{}", name));
                 other && *other != name) {
                 load(mouth, context, *other, origin);
                 return;
@@ -142,9 +143,10 @@ namespace syntax::primitives {
             // \bibliography and \printbibliography sets the list.
             const std::string folder = folders.empty() ? std::string{} : folders.back();
             if (name.ends_with(".bib")) {
-                for (const std::string &candidate: {folder.empty() ? name : folder + "/" + name, name}) {
+                for (const std::string &candidate: {folder.empty() ? name : std::format("{}/{}", folder, name), name}) {
                     if (!get(context, candidate)) continue;
-                    mouth.ingest(mouth.arena.copy("\\addbibresource{" + candidate + "}"), memory::Location{});
+                    mouth.ingest(mouth.arena.copy(std::format("\\addbibresource{{{}}}", candidate)),
+                                 memory::Location{});
                     return;
                 }
                 tracebacks.emplace_back(Traceback::Type::Primitive, origin, std::format("File `{}' not found", name));
@@ -157,13 +159,13 @@ namespace syntax::primitives {
             std::array<std::string, 6> candidates{};
             std::size_t count = 0;
             if (!folder.empty()) {
-                candidates[count++] = folder + "/" + name;
-                candidates[count++] = folder + "/" + name + ".mtex";
-                candidates[count++] = folder + "/" + name + ".tex";
+                candidates[count++] = std::format("{}/{}", folder, name);
+                candidates[count++] = std::format("{}/{}.mtex", folder, name);
+                candidates[count++] = std::format("{}/{}.tex", folder, name);
             }
             candidates[count++] = name;
-            candidates[count++] = name + ".mtex";
-            candidates[count++] = name + ".tex";
+            candidates[count++] = std::format("{}.mtex", name);
+            candidates[count++] = std::format("{}.tex", name);
 
             for (std::size_t index = 0; index < count; ++index) {
                 if (const auto found = get(context, candidates[index])) {
@@ -173,7 +175,7 @@ namespace syntax::primitives {
             }
 
             // A folder is a package, and reading one is loading it.
-            if (get(context, name + "/main.mtex")) {
+            if (get(context, std::format("{}/main.mtex", name))) {
                 load(mouth, context, name, origin);
                 return;
             }
@@ -211,10 +213,10 @@ namespace syntax::primitives {
             for (const std::string &name: asked) {
                 if (options.empty()) continue;
                 context.variables.assign(name, options);
-                context.variables.define(name + ".options", options);
+                context.variables.define(std::format("{}.options", name), options);
             }
-            for (auto name = asked.rbegin(); name != asked.rend(); ++name) {
-                load(mouth, context, *name, origin);
+            for (const std::string &name: std::views::reverse(asked)) {
+                load(mouth, context, name, origin);
             }
         };
 
@@ -243,8 +245,8 @@ namespace syntax::primitives {
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const bool found = !name.empty() && (get(context, name) || get(context, name + ".mtex") ||
-                                                 get(context, name + "/main.mtex"));
+            const bool found = !name.empty() && (get(context, name) || get(context, std::format("{}.mtex", name)) ||
+                                                 get(context, std::format("{}/main.mtex", name)));
             const std::vector<Token> &chosen = found ? present : absent;
             if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
         });

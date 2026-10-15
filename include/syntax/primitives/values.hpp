@@ -70,7 +70,7 @@ namespace syntax::primitives {
         /// @param mouth   Expander to read from.
         /// @param context Engine services, for scanning the index.
         /// @return The addressed slot, or std::nullopt on a malformed reference.
-        [[nodiscard]] std::optional<semantics::Registers::Target> slot(Mouth &mouth, Context &context) const;
+        [[nodiscard]] std::optional<semantics::Registers::Target> slot(Mouth &mouth, const Context &context) const;
 
         /// @brief Skips one optional noise word such as `=` or `by`.
         /// @param mouth Expander to read from.

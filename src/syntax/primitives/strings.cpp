@@ -52,13 +52,13 @@ namespace syntax::primitives {
         };
         // A count as written, or none for text that is not a whole number --
         // which is reported where it stands.
-        const auto number = [this](Mouth &mouth, const std::string_view text, const std::string_view name) {
+        const auto number = [this](const Mouth &mouth, const std::string_view text, const std::string_view name) {
             std::string_view trimmed = text;
             while (!trimmed.empty() && trimmed.front() == ' ') trimmed.remove_prefix(1);
             while (!trimmed.empty() && trimmed.back() == ' ') trimmed.remove_suffix(1);
             long long value = 0;
-            const auto [end, fault] = std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), value);
-            if (fault != std::errc{} || end != trimmed.data() + trimmed.size()) {
+            if (const auto [end, fault] = std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), value);
+                fault != std::errc{} || end != trimmed.data() + trimmed.size()) {
                 tracebacks.emplace_back(Traceback::Type::Argument, mouth.lookahead().location,
                                         std::format("{} needs a whole number, not '{}'", name, text));
                 return 0LL;
@@ -93,9 +93,9 @@ namespace syntax::primitives {
         // named in brackets after its arguments, `\\StrLen{word}[\\size]`.
         const auto give = [](Mouth &mouth, const std::string &result) {
             const std::vector<Token> named = mouth.argument(Mouth::Parameter{.optional = true}, 0);
-            const auto macro = std::ranges::find(named, Catcodes::Category::Escape, &Token::category);
-            if (macro != named.end()) {
-                mouth.ingest(mouth.arena.copy("\\@define" + std::string(macro->text) + "{" + result + "}"),
+            if (const auto macro = std::ranges::find(named, Catcodes::Category::Escape, &Token::category);
+                macro != named.end()) {
+                mouth.ingest(mouth.arena.copy(std::format("\\@define{}{{{}}}", macro->text, result)),
                              memory::Location{});
                 return;
             }
@@ -105,8 +105,9 @@ namespace syntax::primitives {
         const auto branch = [](Mouth &mouth, const bool held) {
             const std::vector<Token> yes = mouth.argument({}, 1);
             const std::vector<Token> no = mouth.argument({}, 1);
-            const std::vector<Token> &chosen = held ? yes : no;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<Token> &chosen = held ? yes : no; !chosen.empty()) {
+                mouth.stream().inject(std::span{chosen});
+            }
         };
         // A starred test reads its arguments as written; the text is the same.
         const auto star = [](Mouth &mouth) {
@@ -177,9 +178,8 @@ namespace syntax::primitives {
             });
         }
 
-        // --- The functions -----------------------------------------------------
         mouth.bind("\\StrLen", [length, give](Mouth &mouth) {
-            give(mouth, std::to_string(length(Argument::expanded(mouth))));
+            give(mouth, std::format("{}", length(Argument::expanded(mouth))));
         });
 
         // So many characters off one end or the other: kept, or let go.
@@ -286,7 +286,7 @@ namespace syntax::primitives {
                  at = text.find(part, at + part.size())) {
                 ++seen;
             }
-            give(mouth, std::to_string(seen));
+            give(mouth, std::format("{}", seen));
         });
         // Where the n-th time a piece stands starts, counted in characters
         // from 1; 0 when it stands there fewer times.
@@ -295,7 +295,7 @@ namespace syntax::primitives {
             const std::string text = Argument::expanded(mouth);
             const std::string part = Argument::expanded(mouth);
             const std::size_t at = locate(text, part, static_cast<std::size_t>(std::max(nth, 1LL)), 0);
-            give(mouth, at == std::string::npos ? std::string("0") : std::to_string(length(text.substr(0, at)) + 1));
+            give(mouth, std::format("{}", at == std::string::npos ? 0 : length(text.substr(0, at)) + 1));
         });
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Bound the string primitives");

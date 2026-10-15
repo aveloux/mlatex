@@ -128,7 +128,7 @@ namespace syntax::primitives {
         /// @brief Reads a `{name}` argument and interns it.
         /// @param mouth Expander to read from.
         /// @return The interned name, or none when the group was empty.
-        [[nodiscard]] Symbol title(Mouth &mouth) const;
+        [[nodiscard]] static Symbol title(Mouth &mouth);
 
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
         mutable std::vector<Symbol> open{}; ///< Names of the blocks currently entered.

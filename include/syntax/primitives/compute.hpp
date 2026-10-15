@@ -81,9 +81,9 @@ namespace syntax::primitives {
         struct Pass {
             Cursor &cursor; ///< Tokens of the expression.
             const semantics::Registers &registers; ///< Resolves register operands.
-            Symbol integer; ///< Interned `\\integer`.
+            Symbol integer{}; ///< Interned `\\integer`.
             const Compute &owner; ///< Records errors on this module.
-            Symbol modulo; ///< Interned `\\mod`.
+            Symbol modulo{}; ///< Interned `\\mod`.
             std::size_t level = 0; ///< Current parenthesis depth.
             bool sound = true; ///< Cleared by malformed input; result becomes 0.
             bool noted = false; ///< An overflow has already been reported.
@@ -99,7 +99,7 @@ namespace syntax::primitives {
 
         /// @brief Skips spaces and returns the next token without consuming it.
         /// @param pass The parse in progress; read from its own cursor.
-        [[nodiscard]] static Token lookahead(Pass &pass);
+        [[nodiscard]] static Token lookahead(const Pass &pass);
 
         /// @brief Clamps to the register range, reporting once if it had to.
         [[nodiscard]] static std::int64_t bound(Pass &pass, std::int64_t value);

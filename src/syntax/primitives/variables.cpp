@@ -75,7 +75,7 @@ namespace syntax::primitives {
             if (value.size() >= 2 && value.front() == '{' && value.back() == '}') {
                 value = trim(value.substr(1, value.size() - 2));
             }
-            if (!key.empty()) define(std::string(family) + "." + std::string(key), value);
+            if (!key.empty()) define(std::format("{}.{}", family, key), value);
         }
     }
 
@@ -155,7 +155,7 @@ namespace syntax::primitives {
                 return text;
             };
             const auto truth = [&mouth](const std::string &snippet) {
-                mouth.ingest(mouth.arena.copy("{" + snippet + "}"), memory::Location{});
+                mouth.ingest(mouth.arena.copy(std::format("{{{}}}", snippet)), memory::Location{});
                 return Argument::expanded(mouth).contains('1');
             };
 
@@ -177,17 +177,17 @@ namespace syntax::primitives {
                 const std::span<const Token> whole{test.data() + at, stop - at};
                 bool result = false;
                 if (!whole.empty() && named(whole.front(), "\\lengthtest")) {
+                    // The comparison without the braces round it, as \ifdim reads one.
                     const std::string inside = written(whole.subspan(1));
-                    result = truth("\\ifdim" + inside.substr(inside.starts_with("{") ? 1 : 0,
-                                                             inside.size() - (inside.starts_with("{") ? 2 : 0)) +
-                                   "\\relax 1\\else 0\\fi");
+                    const bool braced = inside.starts_with('{');
+                    const std::string bare = inside.substr(braced ? 1 : 0, inside.size() - (braced ? 2 : 0));
+                    result = truth(std::format(R"(\ifdim{}\relax 1\else 0\fi)", bare));
                 } else if (relation < stop) {
                     const std::string left = written({test.data() + at, relation - at});
                     const std::string right = written({test.data() + relation + 1, stop - relation - 1});
-                    result = truth(
-                        "\\ifnum " + left + std::string(test[relation].text) + right + "\\relax 1\\else 0\\fi");
+                    result = truth(std::format(R"(\ifnum {}{}{}\relax 1\else 0\fi)", left, test[relation].text, right));
                 } else {
-                    result = truth(written(whole) + "{1}{0}");
+                    result = truth(std::format("{}{{1}}{{0}}", written(whole)));
                 }
                 at = stop;
                 return result;
@@ -244,8 +244,9 @@ namespace syntax::primitives {
                 }
             };
 
-            const std::vector<Token> &chosen = expression() ? held : failed;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<Token> &chosen = expression() ? held : failed; !chosen.empty()) {
+                mouth.stream().inject(std::span{chosen});
+            }
         });
 
         mouth.bind("\\ifvariable", [this](Mouth &mouth) {
@@ -253,8 +254,9 @@ namespace syntax::primitives {
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const std::vector<Token> &chosen = get(name) ? present : absent;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<Token> &chosen = get(name) ? present : absent; !chosen.empty()) {
+                mouth.stream().inject(std::span{chosen});
+            }
         });
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Bound the variable primitives");

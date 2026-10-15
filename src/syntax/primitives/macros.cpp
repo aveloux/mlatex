@@ -41,7 +41,7 @@ namespace syntax::primitives {
         // end is marked with a name nothing means, which expand() therefore
         // hands back as it stands.
         const auto flatten = [this, &mouth, &lexicon](const std::vector<Token> &tokens) {
-            const Token end{finish, Catcodes::Category::Escape, {}, lexicon.resolve(finish)};
+            const Token end{.symbol = finish, .category = Catcodes::Category::Escape, .text = lexicon.resolve(finish)};
             mouth.stream().inject(std::span{&end, 1});
             mouth.stream().inject(std::span{tokens});
 
@@ -248,7 +248,9 @@ namespace syntax::primitives {
             const std::vector<Token> specification = mouth.argument({}, 0);
             const auto make = [&lexicon, &name](std::string_view text, Catcodes::Category category) {
                 const Symbol symbol = lexicon.intern(text);
-                return Token{symbol, category, name.location, lexicon.resolve(symbol)};
+                return Token{
+                    .symbol = symbol, .category = category, .location = name.location, .text = lexicon.resolve(symbol)
+                };
             };
 
             // What an o argument is when it was left out, spelled as xparse
@@ -341,8 +343,15 @@ namespace syntax::primitives {
                 const Symbol meaning = value ? truth : falsehood;
                 Mouth::Macro macro;
                 macro.body = {
-                    Token{alias, Catcodes::Category::Escape, name.location, lexicon.resolve(alias)}, name,
-                    Token{meaning, Catcodes::Category::Escape, name.location, lexicon.resolve(meaning)}
+                    Token{
+                        .symbol = alias, .category = Catcodes::Category::Escape, .location = name.location,
+                        .text = lexicon.resolve(alias)
+                    },
+                    name,
+                    Token{
+                        .symbol = meaning, .category = Catcodes::Category::Escape, .location = name.location,
+                        .text = lexicon.resolve(meaning)
+                    }
                 };
                 mouth.define(symbol, std::move(macro), global);
             }
@@ -429,8 +438,10 @@ namespace syntax::primitives {
                 at += span;
                 const Symbol symbol = lexicon.intern(piece);
                 tokens.push_back(Token{
-                    symbol, piece == " " ? Catcodes::Category::Space : Catcodes::Category::Other,
-                    location, lexicon.resolve(symbol)
+                    .symbol = symbol,
+                    .category = piece == " " ? Catcodes::Category::Space : Catcodes::Category::Other,
+                    .location = location,
+                    .text = lexicon.resolve(symbol)
                 });
             }
             return tokens;
@@ -474,14 +485,14 @@ namespace syntax::primitives {
             if (const Mouth::Macro *found = mouth.macro(token.symbol)) {
                 meaning = "macro:";
                 for (std::size_t index = 0; index < found->parameters.size(); ++index) {
-                    meaning += std::format("#{}", index + 1) + written(found->parameters[index].delimiters);
+                    meaning += std::format("#{}{}", index + 1, written(found->parameters[index].delimiters));
                 }
-                meaning += "->" + written(found->body);
+                meaning += std::format("->{}", written(found->body));
             } else if (token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active) {
                 meaning = mouth.known(token.symbol) ? std::string(token.text) : "undefined";
             } else {
-                meaning = (token.category == Catcodes::Category::Letter ? "the letter " : "the character ") +
-                          std::string(token.text);
+                const bool letter = token.category == Catcodes::Category::Letter;
+                meaning = std::format("the {} {}", letter ? "letter" : "character", token.text);
             }
             const std::vector<Token> tokens = spelled(meaning, token.location);
             mouth.stream().inject(std::span{tokens});
@@ -563,8 +574,11 @@ namespace syntax::primitives {
             const Token first = mouth.read();
             const Token second = mouth.read();
             const std::array<Token, 5> read{
-                Token{alias, Catcodes::Category::Escape, name.location, lexicon.resolve(alias)}, name, second, first,
-                second,
+                Token{
+                    .symbol = alias, .category = Catcodes::Category::Escape, .location = name.location,
+                    .text = lexicon.resolve(alias)
+                },
+                name, second, first, second,
             };
             mouth.stream().inject(std::span{read});
         });
@@ -590,14 +604,17 @@ namespace syntax::primitives {
         // it does in TeX, so writing it is harmless and defining it works.
         mouth.bind("\\csname", [this, &mouth, &lexicon](Mouth &) {
             const memory::Location location = mouth.lookahead().location;
-            std::string written = "\\";
+            std::string built = "\\";
             for (Token token = mouth.expand(); !token.empty() && token.symbol != terminate; token = mouth.expand()) {
-                written += token.text;
+                built += token.text;
             }
 
-            const Symbol symbol = lexicon.intern(written);
+            const Symbol symbol = lexicon.intern(built);
             if (!mouth.known(symbol)) mouth.lend(symbol, relax);
-            const Token made{symbol, Catcodes::Category::Escape, location, lexicon.resolve(symbol)};
+            const Token made{
+                .symbol = symbol, .category = Catcodes::Category::Escape, .location = location,
+                .text = lexicon.resolve(symbol)
+            };
             mouth.stream().inject(std::span{&made, 1});
         });
 
@@ -643,8 +660,9 @@ namespace syntax::primitives {
                                 (wanted.front().text == "\\bgroup" && next.is(Catcodes::Category::Group, '{')));
             if (!next.empty()) mouth.stream().inject(std::span{&next, 1});
 
-            const std::vector<Token> &chosen = match ? matching : otherwise;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<Token> &chosen = match ? matching : otherwise; !chosen.empty()) {
+                mouth.stream().inject(std::span{chosen});
+            }
         });
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Debug, "Bound definition primitives");

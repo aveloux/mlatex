@@ -21,7 +21,7 @@ namespace syntax::primitives {
         modulo = lexicon.intern("\\mod");
     }
 
-    Token Compute::lookahead(Pass &pass) {
+    Token Compute::lookahead(const Pass &pass) {
         while (!pass.cursor.empty() &&
                pass.cursor.lookahead(0).category == Catcodes::Category::Space) {
             pass.cursor.advance();
@@ -181,10 +181,13 @@ namespace syntax::primitives {
             // expression arrives as a plain token run and a Cursor over it
             // behaves like any stream.
             const std::string expanded = Argument::expanded(mouth);
-            mouth.ingest(mouth.arena.copy("{" + expanded + "}"));
+            mouth.ingest(mouth.arena.copy(std::format("{{{}}}", expanded)));
             Cursor stream(mouth.argument({}, 0));
 
-            Pass pass{stream, context.registers, integer, *this, modulo};
+            Pass pass{
+                .cursor = stream, .registers = context.registers, .integer = integer, .owner = *this,
+                .modulo = modulo
+            };
             const std::int64_t value = expression(pass);
 
             if (pass.sound && !lookahead(pass).empty()) {
@@ -201,8 +204,7 @@ namespace syntax::primitives {
             for (const char symbol: digits) {
                 const Symbol bound = mouth.lexicon.intern(std::string_view(&symbol, 1));
                 produced.push_back(Token{
-                    bound, Catcodes::Category::Other, memory::Location{},
-                    mouth.lexicon.resolve(bound)
+                    .symbol = bound, .category = Catcodes::Category::Other, .text = mouth.lexicon.resolve(bound)
                 });
             }
             mouth.stream().inject(produced);

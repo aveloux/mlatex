@@ -20,7 +20,7 @@ namespace syntax::primitives {
     Blocks::Blocks(Lexicon &lexicon) noexcept : lexicon(&lexicon) {
     }
 
-    Symbol Blocks::title(Mouth &mouth) const {
+    Symbol Blocks::title(Mouth &mouth) {
         const std::string joined = Argument::text(mouth);
         if (joined.empty()) return none;
         return mouth.lexicon.intern(joined);
@@ -70,13 +70,13 @@ namespace syntax::primitives {
     void Blocks::operator()(Mouth &mouth, Context &) const {
         // A name as one token, and a character as one: what a definition
         // built here is written in.
-        const auto word = [](Mouth &mouth, const std::string &name) {
+        const auto word = [](const Mouth &mouth, const std::string &name) {
             const Symbol symbol = mouth.lexicon.intern(name);
             return Token{
                 .symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)
             };
         };
-        const auto brace = [](Mouth &mouth, const char written) {
+        const auto brace = [](const Mouth &mouth, const char written) {
             const Symbol symbol = mouth.lexicon.intern(std::string_view(&written, 1));
             return Token{
                 .symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)
@@ -95,15 +95,17 @@ namespace syntax::primitives {
             open.push_back(name);
 
             const auto slot = static_cast<std::size_t>(name);
-            const bool transparent = slot < hooks.size() && hooks[slot].transparent && !hooks[slot].own;
-            if (!transparent) mouth.push(semantics::Scope::Type::Environment);
+            if (const bool transparent = slot < hooks.size() && hooks[slot].transparent && !hooks[slot].own;
+                !transparent) {
+                mouth.push(semantics::Scope::Type::Environment);
+            }
 
             // After the scope opens, so a hook that defines something has it
             // undone when the block closes. A transparent block opens none of
             // its own, and manages whatever scope it needs itself.
             if (every.entering) every.entering(mouth);
             if (slot < hooks.size() && hooks[slot].own) {
-                const Token code = word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":open");
+                const Token code = word(mouth, std::format("\\{}:open", mouth.lexicon.resolve(name)));
                 mouth.stream().inject(std::span{&code, 1});
             } else if (slot < hooks.size() && hooks[slot].entering) {
                 hooks[slot].entering(mouth);
@@ -113,7 +115,7 @@ namespace syntax::primitives {
                 // document, a package or the glossary defines, the glossary's
                 // read as the expander meets it -- and a name meaning nothing
                 // is reported, and set as a group.
-                const Token call = word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)));
+                const Token call = word(mouth, std::format("\\{}", mouth.lexicon.resolve(name)));
                 if (mouth.known(call.symbol) || (mouth.reader.means && mouth.reader.means(call.symbol)) ||
                     Glossary::get(call.text)) {
                     mouth.stream().inject(std::span{&call, 1});
@@ -174,18 +176,18 @@ namespace syntax::primitives {
             if (slot < hooks.size() && hooks[slot].own) {
                 closing.push_back(name);
                 const std::array<Token, 2> code{
-                    word(mouth, "\\" + std::string(mouth.lexicon.resolve(name)) + ":close"),
+                    word(mouth, std::format("\\{}:close", mouth.lexicon.resolve(name))),
                     word(mouth, "\\end:finish")
                 };
                 mouth.stream().inject(std::span{code});
                 return;
             }
             if (!(slot < hooks.size() && (hooks[slot].entering || hooks[slot].leaving))) {
-                const Token ending = word(mouth, "\\end" + std::string(mouth.lexicon.resolve(name)));
-                if (mouth.known(ending.symbol) || (mouth.reader.means && mouth.reader.means(ending.symbol)) ||
+                if (const Token ending = word(mouth, std::format("\\end{}", mouth.lexicon.resolve(name)));
+                    mouth.known(ending.symbol) || (mouth.reader.means && mouth.reader.means(ending.symbol)) ||
                     Glossary::get(ending.text)) {
                     closing.push_back(name);
-                    const std::array<Token, 2> code{ending, word(mouth, "\\end:finish")};
+                    const std::array code{ending, word(mouth, "\\end:finish")};
                     mouth.stream().inject(std::span{code});
                     return;
                 }
@@ -232,9 +234,9 @@ namespace syntax::primitives {
             const bool native = !hook.own && (hook.entering || hook.leaving);
             if (providing && (hook.own || native)) return;
             if (renewing && native) {
-                tracebacks.emplace_back(Traceback::Type::Warning, origin,
-                                        "renewenvironment " + name +
-                                        ": the engine sets this block itself, and still does");
+                tracebacks.emplace_back(
+                    Traceback::Type::Warning, origin,
+                    std::format("renewenvironment {}: the engine sets this block itself, and still does", name));
                 return;
             }
             hook.own = true;
@@ -242,7 +244,7 @@ namespace syntax::primitives {
             std::vector<Token> written;
             written.push_back(word(mouth, "\\@spanning"));
             written.push_back(word(mouth, described ? "\\@declare" : "\\@define"));
-            written.push_back(word(mouth, "\\" + name + ":open"));
+            written.push_back(word(mouth, std::format("\\{}:open", name)));
             if (described) written.push_back(brace(mouth, '{'));
             written.insert(written.end(), parameters.begin(), parameters.end());
             if (described) written.push_back(brace(mouth, '}'));
@@ -250,7 +252,7 @@ namespace syntax::primitives {
             written.insert(written.end(), begin.begin(), begin.end());
             written.push_back(brace(mouth, '}'));
             written.push_back(word(mouth, "\\@define"));
-            written.push_back(word(mouth, "\\" + name + ":close"));
+            written.push_back(word(mouth, std::format("\\{}:close", name)));
             written.push_back(brace(mouth, '{'));
             written.insert(written.end(), end.begin(), end.end());
             written.push_back(brace(mouth, '}'));

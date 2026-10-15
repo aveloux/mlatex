@@ -38,35 +38,37 @@ namespace syntax::primitives {
         }
     }
 
-    std::optional<semantics::Registers::Target> Values::slot(Mouth &mouth, Context &context) const {
-        const Token lead = mouth.read();
-        if (lead.category != Catcodes::Category::Escape) {
-            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
+    std::optional<semantics::Registers::Target> Values::slot(Mouth &mouth, const Context &context) const {
+        const auto [symbol, category, location, text] = mouth.read();
+        if (category != Catcodes::Category::Escape) {
+            tracebacks.emplace_back(Traceback::Type::Register, location,
                                     "expected a register reference");
             return std::nullopt;
         }
 
         // A bound name addresses its slot directly: \set\tally = 7.
-        if (const auto bound = context.registers.target(lead.symbol)) {
+        if (const auto bound = context.registers.target(symbol)) {
             return bound;
         }
 
-        const auto kind = context.registers.bank(lead.symbol);
+        const auto kind = context.registers.bank(symbol);
         if (!kind) {
-            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
-                                    std::format("{} is not a register", lead.text));
+            tracebacks.emplace_back(Traceback::Type::Register, location,
+                                    std::format("{} is not a register", text));
             return std::nullopt;
         }
 
         const auto index = Number::integer(mouth, context.registers);
-        if (!index || *index < 0 || *index >= static_cast<std::int32_t>(semantics::Registers::slots)) {
-            tracebacks.emplace_back(Traceback::Type::Register, lead.location,
+        if (!index || *index < 0 || std::cmp_greater_equal(*index, semantics::Registers::slots)) {
+            tracebacks.emplace_back(Traceback::Type::Register, location,
                                     std::format("{} needs a slot number between 0 and {}",
-                                                lead.text, semantics::Registers::slots - 1));
+                                                text, semantics::Registers::slots - 1));
             return std::nullopt;
         }
 
-        return semantics::Registers::Target{*kind, static_cast<std::size_t>(*index), false};
+        return semantics::Registers::Target{
+            .type = *kind, .slot = static_cast<std::size_t>(*index), .character = false
+        };
     }
 
     void Values::operator()(Mouth &mouth, Context &context) const {
@@ -117,7 +119,7 @@ namespace syntax::primitives {
 
         // Reading a value depends on the bank: an integer slot scans an
         // integer, a dimension or glue slot scans a dimension.
-        const auto value = [this, &context](Mouth &mouth, const Type kind) -> std::optional<std::int32_t> {
+        const auto quantity = [this, &context](Mouth &mouth, const Type kind) -> std::optional<std::int32_t> {
             // A value may be produced by \evaluate or a macro; Number scans
             // rather than expands, so the stream is settled first.
             if (kind == Type::Count) {
@@ -232,13 +234,13 @@ namespace syntax::primitives {
             // A sum of terms, a term a product of factors, a factor a signed
             // quantity or a bracketed sum. A length times or over a number
             // is a length; what multiplies or divides is always a number.
-            const auto sum = [&](this const auto &self, const bool length, const bool bracketed) -> std::int64_t {
-                const auto factor = [&](const bool measured) -> std::int64_t {
             // Every value along the way is held within 2^53: far past what a
             // register keeps, short of where 64 bits wrap round, and exact in
             // a double -- so a product of products stops there instead of
             // overflowing, and the clamp at the end still has a number to clamp.
             constexpr auto limit = static_cast<std::int64_t>(1) << 53;
+            const auto sum = [&](this const auto &self, const bool length, const bool bracketed) -> std::int64_t {
+                const auto factor = [&](const bool measured) -> std::int64_t {
                     blanks();
                     const bool negative = stream.lookahead().is('-');
                     if (negative || stream.lookahead().is('+')) {
@@ -382,7 +384,7 @@ namespace syntax::primitives {
                 if (name.empty()) return;
                 skip(mouth, "=");
                 const auto index = Number::integer(mouth, context.registers);
-                if (!index || *index < 0 || *index >= static_cast<std::int32_t>(semantics::Registers::slots)) {
+                if (!index || *index < 0 || std::cmp_greater_equal(*index, semantics::Registers::slots)) {
                     tracebacks.emplace_back(Traceback::Type::Register, name.location,
                                             std::format("{} needs a register number between 0 and 255", primitive));
                     return;
@@ -418,7 +420,7 @@ namespace syntax::primitives {
         };
         mouth.bind("\\toks", [&context, store](Mouth &mouth) {
             const auto index = Number::integer(mouth, context.registers);
-            if (index && *index >= 0 && *index < static_cast<std::int32_t>(semantics::Registers::slots)) {
+            if (index && *index >= 0 && std::cmp_less(*index, semantics::Registers::slots)) {
                 store(mouth, static_cast<std::size_t>(*index));
             }
         });
@@ -432,7 +434,7 @@ namespace syntax::primitives {
             if (name.empty()) return;
             skip(mouth, "=");
             const auto index = Number::integer(mouth, context.registers);
-            if (index && *index >= 0 && *index < static_cast<std::int32_t>(semantics::Registers::slots)) {
+            if (index && *index >= 0 && std::cmp_less(*index, semantics::Registers::slots)) {
                 list(mouth, name, static_cast<std::size_t>(*index));
             }
         });
@@ -563,8 +565,9 @@ namespace syntax::primitives {
                 std::size_t index = indexed ? 0 : listed[lead.symbol] - 1uz;
                 if (indexed) {
                     const auto scanned = Number::integer(mouth, context.registers);
-                    if (!scanned || *scanned < 0 || *scanned >= static_cast<std::int32_t>(semantics::Registers::slots))
+                    if (!scanned || *scanned < 0 || std::cmp_greater_equal(*scanned, semantics::Registers::slots)) {
                         return;
+                    }
                     index = static_cast<std::size_t>(*scanned);
                 }
                 if (!lists[index].empty()) mouth.stream().inject(std::span{lists[index]});
@@ -577,7 +580,9 @@ namespace syntax::primitives {
             if (lead.symbol == numexpr || lead.symbol == dimexpr) {
                 mouth.read();
                 held = calculate(mouth, lead.symbol == dimexpr).value_or(0);
-                target = semantics::Registers::Target{lead.symbol == dimexpr ? Type::Dimension : Type::Count, 0, false};
+                target = semantics::Registers::Target{
+                    .type = lead.symbol == dimexpr ? Type::Dimension : Type::Count, .slot = 0, .character = false
+                };
             } else {
                 target = slot(mouth, context);
                 if (!target) return;
@@ -624,12 +629,12 @@ namespace syntax::primitives {
             mouth.ingest(mouth.arena.copy(text));
         });
 
-        mouth.bind("\\set", [this, &context, value, &mouth](Mouth &) {
+        mouth.bind("\\set", [this, &context, quantity, &mouth](Mouth &) {
             const auto target = slot(mouth, context);
             if (!target) return;
 
             skip(mouth, "=");
-            const auto scanned = value(mouth, target->type);
+            const auto scanned = quantity(mouth, target->type);
             if (!scanned) {
                 tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
                                         "\\set needs a value");
@@ -653,7 +658,7 @@ namespace syntax::primitives {
         // The three arithmetic primitives differ only in the operation, so
         // they share one body. Arithmetic is done in std::int64_t and clamped,
         // because a register holds exactly 32 bits.
-        const auto modify = [this, &context, value](Mouth &mouth, const char operation) {
+        const auto modify = [this, &context, quantity](Mouth &mouth, const char operation) {
             const auto target = slot(mouth, context);
             if (!target) return;
 
@@ -662,7 +667,7 @@ namespace syntax::primitives {
             // TeX's \multiply and \divide do whatever the register is.
             skip(mouth, "by");
             const auto scanned = operation == '+'
-                                     ? value(mouth, target->type)
+                                     ? quantity(mouth, target->type)
                                      : Number::integer(mouth, context.registers);
             if (!scanned) {
                 tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,

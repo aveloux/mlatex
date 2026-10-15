@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace syntax::primitives {
@@ -241,12 +243,11 @@ namespace syntax::primitives {
                     return static_cast<std::int64_t>(std::llround(std::sqrt(real) * scale));
                 }
                 if (name == "abs") return first < 0 ? -first : first;
-                if (name == "round") return static_cast<std::int64_t>(std::llround(
-                                                static_cast<long double>(first) / step)) * step;
-                if (name == "floor") return static_cast<std::int64_t>(
-                                                std::floor(static_cast<long double>(first) / step)) * step;
-                if (name == "ceil") return static_cast<std::int64_t>(std::ceil(static_cast<long double>(first) / step))
-                                           * step;
+                // How many of the places' steps the value is, rounded each way.
+                const long double steps = static_cast<long double>(first) / static_cast<long double>(step);
+                if (name == "round") return static_cast<std::int64_t>(std::llround(steps)) * step;
+                if (name == "floor") return static_cast<std::int64_t>(std::floor(steps)) * step;
+                if (name == "ceil") return static_cast<std::int64_t>(std::ceil(steps)) * step;
                 if (name == "trunc") return first / step * step;
                 if (name == "min") return std::ranges::min(arguments);
                 if (name == "max") return std::ranges::max(arguments);
@@ -329,18 +330,16 @@ namespace syntax::primitives {
 
     std::string Decimals::write(const std::int64_t value) {
         const std::uint64_t size = magnitude(value);
-        std::uint64_t fraction = size % static_cast<std::uint64_t>(scale);
+        const std::uint64_t whole = size / static_cast<std::uint64_t>(scale);
+        const std::uint64_t fraction = size % static_cast<std::uint64_t>(scale);
+        const std::string_view sign = value < 0 ? "-" : "";
+        if (fraction == 0) return std::format("{}{}", sign, whole);
 
-        std::string text = value < 0 ? "-" : "";
-        text += std::to_string(size / static_cast<std::uint64_t>(scale));
-        if (fraction != 0) {
-            std::string digits = std::to_string(fraction);
-            digits.insert(0, static_cast<std::size_t>(precision) - digits.size(), '0');
-            while (!digits.empty() && digits.back() == '0') digits.pop_back();
-            text += '.';
-            text += digits;
-        }
-        return text;
+        // The fraction at its full places, leading zeros kept and trailing
+        // ones dropped: 0.05 is `05` and then `.05`.
+        std::string digits = std::format("{:0{}}", fraction, precision);
+        while (digits.ends_with('0')) digits.pop_back();
+        return std::format("{}{}.{}", sign, whole, digits);
     }
 
     void Decimals::operator()(Mouth &mouth, Context &context) const {
@@ -395,19 +394,14 @@ namespace syntax::primitives {
 
             std::uint64_t divisor = 1;
             for (int step = 0; step < places; ++step) divisor *= 10;
-            const std::string whole = std::to_string(size / divisor);
+            const std::string whole = std::format("{}", size / divisor);
 
             std::string figures = amount < 0 && size != 0 ? "-" : "";
             for (std::size_t index = 0; index < whole.size(); ++index) {
                 if (index > 0 && (whole.size() - index) % 3 == 0) figures += grouping;
                 figures += whole[index];
             }
-            if (places > 0) {
-                std::string digits = std::to_string(size % divisor);
-                digits.insert(0, static_cast<std::size_t>(places) - digits.size(), '0');
-                figures += point;
-                figures += digits;
-            }
+            if (places > 0) figures += std::format("{}{:0{}}", point, size % divisor, places);
             mouth.ingest(mouth.arena.copy(figures));
         });
 

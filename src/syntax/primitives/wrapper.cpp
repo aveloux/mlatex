@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstddef>
+#include <format>
 #include <string>
 #include <string_view>
 
@@ -41,8 +42,8 @@ namespace syntax::primitives {
             "iffile", "iftest",
         };
         for (const std::string_view word: vocabulary) {
-            const Symbol plain = mouth.lexicon.intern("\\" + std::string(word));
-            mouth.lend(mouth.lexicon.intern("\\@" + std::string(word)), plain);
+            const Symbol plain = mouth.lexicon.intern(std::format("\\{}", word));
+            mouth.lend(mouth.lexicon.intern(std::format("\\@{}", word)), plain);
         }
 
         // LaTeX's two document hooks: what \\AtBeginDocument gathered runs as
