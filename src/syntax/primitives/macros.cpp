@@ -550,12 +550,15 @@ namespace syntax::primitives {
         };
         for (const bool upper: {true, false}) {
             mouth.bind(upper ? "\\uppercase" : "\\lowercase", [&mouth, cased, upper](Mouth &) {
-                const std::vector<Token> tokens = cased(mouth.argument({}, 1), upper);
-                if (!tokens.empty()) mouth.stream().inject(std::span{tokens});
+                if (const std::vector<Token> tokens = cased(mouth.argument({}, 1), upper); !tokens.empty()) {
+                    mouth.stream().inject(std::span{tokens});
+                }
             });
             mouth.bind(upper ? "\\MakeUppercase" : "\\MakeLowercase", [&mouth, cased, flatten, upper](Mouth &) {
-                const std::vector<Token> tokens = cased(flatten(mouth.argument({}, 1)), upper);
-                if (!tokens.empty()) mouth.stream().inject(std::span{tokens});
+                if (const std::vector<Token> tokens = cased(flatten(mouth.argument({}, 1)), upper);
+                    !tokens.empty()) {
+                    mouth.stream().inject(std::span{tokens});
+                }
             });
         }
 

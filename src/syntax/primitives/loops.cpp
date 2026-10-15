@@ -85,8 +85,7 @@ namespace syntax::primitives {
             Token counter{};
             blank();
             while (!mouth.lookahead().empty()) {
-                const Token token = mouth.lookahead();
-                if (token.category == Catcodes::Category::Escape) {
+                if (const Token token = mouth.lookahead(); token.category == Catcodes::Category::Escape) {
                     variables.push_back(mouth.read());
                 } else if (token.is('/') || token.category == Catcodes::Category::Space) {
                     mouth.read();
@@ -118,9 +117,11 @@ namespace syntax::primitives {
                     list.push_back(token);
                     continue;
                 }
-                const Mouth::Macro *macro = mouth.macro(token.symbol);
-                if (macro && macro->parameters.empty()) list.insert(list.end(), macro->body.begin(), macro->body.end());
-                else list.push_back(token);
+                if (const Mouth::Macro *macro = mouth.macro(token.symbol); macro && macro->parameters.empty()) {
+                    list.insert(list.end(), macro->body.begin(), macro->body.end());
+                } else {
+                    list.push_back(token);
+                }
             }
             std::vector<std::vector<Token> > items(1);
             int depth = 0;
@@ -155,13 +156,13 @@ namespace syntax::primitives {
                 } else {
                     double first = 0.0;
                     double end = 0.0;
-                    double before = 0.0;
                     patch::decimal(from.data(), from.data() + from.size(), first);
                     patch::decimal(to.data(), to.data() + to.size(), end);
                     double step = 1.0;
                     if (index >= 2) {
                         const std::string earlier = spelled(items[index - 2]);
-                        if (patch::decimal(earlier.data(), earlier.data() + earlier.size(), before).ec == std::errc{}) {
+                        if (double before = 0.0;
+                            patch::decimal(earlier.data(), earlier.data() + earlier.size(), before).ec == std::errc{}) {
                             step = first - before;
                         }
                     }

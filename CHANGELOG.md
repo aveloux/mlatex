@@ -1125,6 +1125,10 @@ font folders are listed only for a script the engine carries no face for.
   evaluation's state initialised, designated initialisers for a token and a
   register's target, and no local hiding another (`\csname`'s name is
   `built`, `\DTLsetseparator`'s `given`, the register reader `quantity`).
+  A value read only for its test is an if-initialiser, as CLion has it,
+  the 128-bit product's halves are `alpha`, `beta`, `theta` and `gamma`,
+  `\DTLsort`'s comparison is a named `before`, and the date's registers
+  take `std::tm`'s fields with no cast.
 - **And so does the render layer's.** Every BibTeX house style writes its
   entry as a template -- ACM's `{}. In \emph{{{}}}{}. {}{}.` -- and so do
   TikZ's paths and messages, beamer's overlays, longtable's caption macro,

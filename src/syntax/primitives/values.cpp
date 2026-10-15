@@ -104,10 +104,10 @@ namespace syntax::primitives {
 #endif
             const std::array<std::pair<std::string_view, std::int32_t>, 4> date{
                 {
-                    {"\\time", static_cast<std::int32_t>(local.tm_hour * 60 + local.tm_min)},
-                    {"\\year", static_cast<std::int32_t>(local.tm_year + 1900)},
-                    {"\\month", static_cast<std::int32_t>(local.tm_mon + 1)},
-                    {"\\day", static_cast<std::int32_t>(local.tm_mday)},
+                    {"\\time", local.tm_hour * 60 + local.tm_min},
+                    {"\\year", local.tm_year + 1900},
+                    {"\\month", local.tm_mon + 1},
+                    {"\\day", local.tm_mday},
                 }
             };
             for (std::size_t index = 0; index < date.size(); ++index) {
@@ -559,8 +559,8 @@ namespace syntax::primitives {
             if (lead.symbol == mouth.lexicon.intern("\\value")) return;
 
             // A token list: what it holds, as it was given.
-            const bool indexed = lead.symbol == toks;
-            if (indexed || (lead.symbol < listed.size() && listed[lead.symbol] != 0)) {
+            if (const bool indexed = lead.symbol == toks;
+                indexed || (lead.symbol < listed.size() && listed[lead.symbol] != 0)) {
                 mouth.read();
                 std::size_t index = indexed ? 0 : listed[lead.symbol] - 1uz;
                 if (indexed) {

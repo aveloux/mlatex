@@ -173,7 +173,7 @@ namespace syntax::primitives {
 
         mouth.bind("\\ifodd", [this, &context, &mouth](Mouth &) {
             const auto value = Number::integer(mouth, context.registers);
-            path(mouth, value.has_value() && (*value % 2) != 0);
+            path(mouth, value.has_value() && *value % 2 != 0);
         });
 
         mouth.bind("\\ifcase", [this, &context, &mouth](Mouth &) {

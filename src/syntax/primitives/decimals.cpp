@@ -19,16 +19,16 @@
 
 namespace syntax::primitives {
     Decimals::Wide Decimals::multiply(const std::uint64_t left, const std::uint64_t right) noexcept {
-        const std::uint64_t mask = 0xFFFFFFFFull;
-        const std::uint64_t a = left & mask, b = left >> 32;
-        const std::uint64_t c = right & mask, d = right >> 32;
+        constexpr std::uint64_t mask = 0xFFFFFFFFull;
+        const std::uint64_t alpha = left & mask, beta = left >> 32;
+        const std::uint64_t theta = right & mask, gamma = right >> 32;
 
-        const std::uint64_t low = a * c;
-        const std::uint64_t middle = b * c + (low >> 32);
-        const std::uint64_t cross = a * d + (middle & mask);
+        const std::uint64_t low = alpha * theta;
+        const std::uint64_t middle = beta * theta + (low >> 32);
+        const std::uint64_t cross = alpha * gamma + (middle & mask);
 
         return Wide{
-            .high = b * d + (middle >> 32) + (cross >> 32),
+            .high = beta * gamma + (middle >> 32) + (cross >> 32),
             .low = (cross << 32) | (low & mask)
         };
     }
@@ -362,13 +362,13 @@ namespace syntax::primitives {
             // Places are optional and two by default: an amount is money
             // unless the document says otherwise.
             int places = 2;
-            const std::vector<Token> written = mouth.argument(Mouth::Parameter{.optional = true}, 0);
-            if (!written.empty()) {
+            if (const std::vector<Token> written = mouth.argument(Mouth::Parameter{.optional = true}, 0);
+                !written.empty()) {
                 std::string digits;
                 for (const Token &token: written) digits += token.text;
                 std::string error;
-                const std::optional<std::int64_t> read = evaluate(digits, context.variables, error);
-                if (!read || *read < 0 || *read % scale != 0 || *read / scale > precision) {
+                if (const std::optional<std::int64_t> read = evaluate(digits, context.variables, error);
+                    !read || *read < 0 || *read % scale != 0 || *read / scale > precision) {
                     tracebacks.emplace_back(Traceback::Type::Argument, origin,
                                             std::format("\\amount: places must be a whole number from 0 to {}",
                                                         precision));

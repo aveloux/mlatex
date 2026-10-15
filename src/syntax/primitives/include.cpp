@@ -233,8 +233,9 @@ namespace syntax::primitives {
             const std::vector<Token> present = mouth.argument({}, 1);
             const std::vector<Token> absent = mouth.argument({}, 1);
 
-            const std::vector<Token> &chosen = loaded(name) ? present : absent;
-            if (!chosen.empty()) mouth.stream().inject(std::span{chosen});
+            if (const std::vector<Token> &chosen = loaded(name) ? present : absent; !chosen.empty()) {
+                mouth.stream().inject(std::span{chosen});
+            }
         };
 
         // Whether a file could be read -- one handed in, or one of the

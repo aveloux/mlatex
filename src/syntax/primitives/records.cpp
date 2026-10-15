@@ -450,24 +450,24 @@ namespace syntax::primitives {
                 const auto column = static_cast<std::size_t>(std::ranges::find(table->keys, key) - table->keys.begin());
                 if (column < table->keys.size()) order.emplace_back(column, value == "descending" || value == "desc");
             }
-            std::ranges::stable_sort(table->rows,
-                                     [&order](const std::vector<std::string> &left,
-                                              const std::vector<std::string> &right) {
-                                         for (const auto &[column, descending]: order) {
-                                             double first = 0.0;
-                                             double second = 0.0;
-                                             const auto one = patch::decimal(
-                                                 left[column].data(), left[column].data() + left[column].size(), first);
-                                             const auto two = patch::decimal(
-                                                 right[column].data(), right[column].data() + right[column].size(),
-                                                 second);
-                                             const bool numbers = one.ec == std::errc{} && two.ec == std::errc{};
-                                             const bool less = numbers ? first < second : left[column] < right[column];
-                                             const bool more = numbers ? first > second : left[column] > right[column];
-                                             if (less || more) return descending ? more : less;
-                                         }
-                                         return false;
-                                     });
+            const auto before = [&order](const std::vector<std::string> &left,
+                                         const std::vector<std::string> &right) {
+                for (const auto &[column, descending]: order) {
+                    double first = 0.0;
+                    double second = 0.0;
+                    const auto one = patch::decimal(left[column].data(),
+                                                    left[column].data() + left[column].size(), first);
+                    const auto two = patch::decimal(right[column].data(),
+                                                    right[column].data() + right[column].size(), second);
+                    const bool numbers = one.ec == std::errc{} && two.ec == std::errc{};
+                    const bool less = numbers ? first < second : left[column] < right[column];
+                    if (const bool more = numbers ? first > second : left[column] > right[column]; less || more) {
+                        return descending ? more : less;
+                    }
+                }
+                return false;
+            };
+            std::ranges::stable_sort(table->rows, before);
         });
         // A column's total, or its mean, kept in a macro.
         for (const bool mean: {false, true}) {
