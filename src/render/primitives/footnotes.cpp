@@ -149,7 +149,7 @@ namespace render::primitives {
             return call(parser.arena, raised, note(parser, context, label), origin);
         });
 
-        parser.bind("\\footnotemark", [&context, number, current](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\footnotemark", [&context, number, current](const syntax::Parser &parser) -> syntax::Node * {
             const memory::Location origin = parser.mouth.lookahead().location;
             const std::string label = number(parser.mouth);
             return call(parser.arena, mark(context, parser.arena, label, current()), nullptr, origin);

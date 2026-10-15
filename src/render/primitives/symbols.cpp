@@ -292,7 +292,7 @@ namespace render::primitives {
         // element or a bracket is lowered, a charge after ^ -- or a sign that
         // ends an element -- raised, an arrow drawn as one; a number that
         // starts a term stays a coefficient.
-        parser.bind("\\ce", [](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\ce", [](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             const std::string formula = syntax::Argument::text(mouth);
             std::string written;

@@ -2381,7 +2381,7 @@ namespace render::primitives {
             }
         });
 
-        parser.bind("\\includegraphics", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\includegraphics", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -2674,7 +2674,7 @@ namespace render::primitives {
         // than appended directly from the Mouth-level leaving hook above, so
         // the picture lands where its block stood in the parse, by the same
         // clock every other node does.
-        parser.bind(flush, [this](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind(flush, [this](const syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             layout::Node *built = pending;

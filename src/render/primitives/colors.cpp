@@ -181,7 +181,7 @@ namespace render::primitives {
 
         // \color: the text from here to the end of the group or block it is
         // written in, in a color -- which the text keeps as it is read.
-        parser.bind("\\color", [&context, tint](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\color", [&context, tint](const syntax::Parser &parser) -> syntax::Node * {
             context.selection.color(tint(parser.mouth));
             return nullptr;
         });
@@ -216,7 +216,7 @@ namespace render::primitives {
         });
 
         // \pagecolor: what every page is painted in behind its text.
-        parser.bind("\\pagecolor", [&context, tint](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\pagecolor", [&context, tint](const syntax::Parser &parser) -> syntax::Node * {
             context.document.furniture.background = *tint(parser.mouth);
             return nullptr;
         });

@@ -91,7 +91,7 @@ namespace render::primitives {
         };
 
         for (const auto &[name, elastic, block]: measured) {
-            parser.bind(name, [&context, elastic, block](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(name, [&context, elastic, block](const syntax::Parser &parser) -> syntax::Node * {
                 syntax::Mouth &mouth = parser.mouth;
                 memory::Arena &arena = parser.arena;
                 const memory::Location origin = mouth.lookahead().location;
@@ -187,7 +187,7 @@ namespace render::primitives {
 
         for (const auto &[name, width, stretch, shrink, order, block]: named) {
             parser.bind(
-                name, [&context, width, stretch, shrink, order, block](syntax::Parser &parser) -> syntax::Node * {
+                name, [&context, width, stretch, shrink, order, block](const syntax::Parser &parser) -> syntax::Node * {
                     memory::Arena &arena = parser.arena;
                     const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -219,7 +219,7 @@ namespace render::primitives {
         // TeX's tie: an ordinary word space that a line may not break at,
         // for "Mr.~Smith" and "Figure~3". Measured from the face itself
         // rather than an em fraction, so it matches the spaces around it.
-        parser.bind("~", [&context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("~", [&context](const syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -245,7 +245,7 @@ namespace render::primitives {
         // in a box .44em wide, as LaTeX's own.
         for (const bool dotted: {false, true}) {
             parser.bind(dotted ? "\\dotfill" : "\\hrulefill",
-                        [&context, dotted](syntax::Parser &parser) -> syntax::Node * {
+                        [&context, dotted](const syntax::Parser &parser) -> syntax::Node * {
                             memory::Arena &arena = parser.arena;
                             const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -279,7 +279,7 @@ namespace render::primitives {
         // makes for a space, so it stretches, shrinks and breaks as the
         // spaces around it do. A backslash ending a line is the same thing,
         // the line's end standing for the space.
-        const auto spaced = [&context](syntax::Parser &parser) -> syntax::Node * {
+        const auto spaced = [&context](const syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -302,7 +302,7 @@ namespace render::primitives {
         // TeX's \ignorespaces: the blanks after it are the source's layout,
         // and are read past -- expanding as it goes, so a `\label` standing
         // between them is still run.
-        parser.bind("\\ignorespaces", [](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\ignorespaces", [](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
                 if (token.category == syntax::Catcodes::Category::Space) continue;

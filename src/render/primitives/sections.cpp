@@ -656,7 +656,7 @@ namespace render::primitives {
             }
         };
         for (std::size_t which = 0; which < named.size(); ++which) {
-            parser.bind(named[which].first, [this, &context, which](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(named[which].first, [this, &context, which](const syntax::Parser &parser) -> syntax::Node * {
                 syntax::Mouth &mouth = parser.mouth;
                 if (!context.variables.get("contents.bare")) context.paged = true;
                 const syntax::Token mark{
@@ -668,7 +668,7 @@ namespace render::primitives {
                                                            named[which].second)));
                 return nullptr;
             });
-            parser.bind(marks[which], [this, which](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(marks[which], [this, which](const syntax::Parser &parser) -> syntax::Node * {
                 auto *place = parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
                                                                  parser.mouth.lookahead().location);
                 places.emplace_back(which, place);
@@ -783,7 +783,7 @@ namespace render::primitives {
         // The index itself, as LaTeX's theindex sets it: on a page of its own
         // in two columns under an unnumbered heading, \indexname, and what
         // follows it on a new page; its lines known once every page is.
-        parser.bind("\\printindex", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\printindex", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             if (terms.empty()) return nullptr;
@@ -797,7 +797,7 @@ namespace render::primitives {
             mouth.ingest(R"(\twocolumn[\csname\@bibkind\endcsname*{\indexname}])");
             return nullptr;
         });
-        parser.bind(marks[3], [this](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind(marks[3], [this](const syntax::Parser &parser) -> syntax::Node * {
             auto *place = parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
                                                              parser.mouth.lookahead().location);
             places.emplace_back(3, place);

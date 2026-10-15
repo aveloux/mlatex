@@ -1148,6 +1148,12 @@ font folders are listed only for a script the engine carries no face for.
   taken by reference, and every local that hid another has a name of its
   own (`stroke`, `breadth`, `settings`, `beside`, `entered`, `ruling`,
   `styling`, `indentation`, `abbreviation`, `joined`, `separator`).
+- **A handler that only reads its parser or its expander takes it `const`.**
+  A primitive's lambda that reaches the arena and the expander through
+  the parser's references, or reads the expander without moving it on --
+  `\bibitem`, `\bibliography`, `\printbibliography` and their like -- takes
+  `const syntax::Parser &` or `const syntax::Mouth &`, as CLion asks; each
+  was tried by compiling, and kept only where nothing it does needs more.
 
 ### Removed
 

@@ -346,7 +346,7 @@ namespace render::primitives {
                  std::tuple{fixed, layout::Node::Directive::Command::Hold, true},
                  std::tuple{release, layout::Node::Directive::Command::Release, false}
              }) {
-            parser.bind(symbol, [this, command, stays](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(symbol, [this, command, stays](const syntax::Parser &parser) -> syntax::Node * {
                 memory::Arena &arena = parser.arena;
                 auto *mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 layout::Node::Directive order{.command = command, .fixed = stays};
@@ -366,7 +366,7 @@ namespace render::primitives {
         // A barrier no waiting float passes: every float still waiting is
         // set before what follows it, on pages of their own. placeins's
         // \\FloatBarrier is this.
-        parser.bind("\\@floatbarrier", [](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\@floatbarrier", [](const syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             auto *mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
             mark->directive({.command = layout::Node::Directive::Command::Barrier});

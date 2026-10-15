@@ -247,7 +247,7 @@ namespace render::primitives {
         // rest comes to is read after it. polyglossia's options for it may
         // come first: `\@language[numerals=maghrib]{arabic}`.
         parser.bind("\\@language",
-                    [this, order, named, spoken, options, remember](syntax::Parser &parser) -> syntax::Node * {
+                    [this, order, named, spoken, options, remember](const syntax::Parser &parser) -> syntax::Node * {
                         syntax::Mouth &mouth = parser.mouth;
                         const std::string given = options(mouth);
                         const Language *language = named(mouth);

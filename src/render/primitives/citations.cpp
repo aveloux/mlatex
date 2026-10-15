@@ -144,7 +144,7 @@ namespace render::primitives {
                 mouth.ingest(context.arena.copy(R"(\par\leftskip=0pt\noindent )"));
             });
 
-        parser.bind("\\bibitem", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\bibitem", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
@@ -1183,7 +1183,7 @@ namespace render::primitives {
             mouth.ingest(context.arena.copy(written));
         };
 
-        parser.bind("\\bibliography", [this, compile, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\bibliography", [this, compile, &context](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             std::vector<std::string> files;
             for (const auto piece: std::views::split(syntax::Argument::text(mouth), ',')) {
@@ -1235,7 +1235,7 @@ namespace render::primitives {
         });
         // biblatex's list, its heading as its options say: `heading=none`
         // for none, `bibintoc` listed in the contents, `title={...}` its own.
-        parser.bind("\\printbibliography", [this, compile](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\printbibliography", [this, compile](const syntax::Parser &parser) -> syntax::Node * {
             std::string options;
             for (const syntax::Token &token: parser.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;

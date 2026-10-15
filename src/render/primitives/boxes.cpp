@@ -1066,7 +1066,7 @@ namespace render::primitives {
             if (!name.empty()) mouth.stream().inject(std::span{name});
             return number(mouth);
         };
-        parser.bind("\\newsavebox", [](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\newsavebox", [](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             std::vector<syntax::Token> name = mouth.argument({}, 0);
             const syntax::Symbol symbol = mouth.lexicon.intern("\\newbox");
@@ -1093,7 +1093,7 @@ namespace render::primitives {
                         if (index) keep(*index, box);
                         return nullptr;
                     });
-        parser.bind("\\usebox", [slot, take](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\usebox", [slot, take](const syntax::Parser &parser) -> syntax::Node * {
             const memory::Location origin = parser.mouth.lookahead().location;
             const auto index = slot(parser.mouth);
             layout::Node *box = index ? take(parser.arena, *index) : nullptr;

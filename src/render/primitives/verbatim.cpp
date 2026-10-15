@@ -205,7 +205,7 @@ namespace render::primitives {
             return nullptr;
         });
 
-        parser.bind(start, [this, &context, option, typed, current](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind(start, [this, &context, option, typed, current](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             memory::Arena &arena = parser.arena;
             const memory::Location origin = mouth.lookahead().location;
