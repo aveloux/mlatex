@@ -249,7 +249,7 @@ namespace render::primitives {
                             memory::Arena &arena = parser.arena;
                             const memory::Location origin = parser.mouth.lookahead().location;
 
-                            layout::Node *leader = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                            auto *leader = arena.compose<layout::Node>(layout::Node::Type::Rule);
                             leader->rule({.height = 0.4f});
                             if (const typography::Font *font = context.selection.text(); dotted && font) {
                                 const typography::Font *fonts[] = {font};

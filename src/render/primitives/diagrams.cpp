@@ -115,10 +115,10 @@ namespace render::primitives {
         std::string out = std::format("\\begin{{tikzpicture}}[baseline=([yshift=-0.25em]cd.center)]"
                                       "\\matrix[matrix of math nodes, column sep={}, row sep={}, nodes={{{}}}] (cd) {{",
                                       diagram.columns, diagram.rows, diagram.nodes);
-        for (std::size_t row = 0; row < diagram.cells.size(); ++row) {
-            for (std::size_t column = 0; column < diagram.cells[row].size(); ++column) {
+        for (const std::vector<std::string> &row: diagram.cells) {
+            for (std::size_t column = 0; column < row.size(); ++column) {
                 if (column > 0) out += " & ";
-                out += diagram.cells[row][column];
+                out += row[column];
             }
             out += " \\\\ ";
         }
@@ -129,17 +129,18 @@ namespace render::primitives {
         };
         for (const Arrow &arrow: diagram.arrows) {
             if (!present(arrow.row, arrow.column) || !present(arrow.down, arrow.across)) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                        std::format(
-                                            "a diagram's arrow from row {}, column {} goes to no object and is not drawn",
-                                            arrow.row, arrow.column));
+                tracebacks.emplace_back(
+                    syntax::Traceback::Type::Warning, origin,
+                    std::format("a diagram's arrow from row {}, column {} goes to no object and is not drawn",
+                                arrow.row, arrow.column));
                 continue;
             }
             out += std::format("\\draw[{}] (cd-{}-{}) to ", arrow.style, arrow.row, arrow.column);
-            for (const std::string &label: arrow.labels) out += label + " ";
+            for (const std::string &label: arrow.labels) out += std::format("{} ", label);
             out += std::format("(cd-{}-{});", arrow.down, arrow.across);
         }
-        return out + "\\end{tikzpicture}";
+        out += "\\end{tikzpicture}";
+        return out;
     }
 
     Diagrams::Branch Diagrams::branch(const std::string_view text, std::size_t &at) {
@@ -263,21 +264,21 @@ namespace render::primitives {
                 for (std::size_t column = 0; column < row.size(); ++column) {
                     std::string_view cell = row[column];
                     if (cell.starts_with("|[")) cell = trim(cell.substr(std::min(cell.find("]|") + 2, cell.size())));
-                    out += (column > 0 ? " & " : "") + std::string(cell);
+                    if (column > 0) out += " & ";
+                    out += cell;
                 }
                 out += " \\\\ ";
             }
-            return out + "}";
+            out += '}';
+            return out;
         };
         // A label's text as a TikZ node on its arrow, in script size: on the
         // arrow's left, or its right when swapped, with `auto`; across it
         // with `description`; or where a side it names puts it.
         const auto label = [](const std::string_view text, const bool swapped, const std::string_view options) {
-            const bool placed = options.find("above") != std::string_view::npos || options.find("below") !=
-                                std::string_view::npos ||
-                                options.find("left") != std::string_view::npos || options.find("right") !=
-                                std::string_view::npos;
-            const bool across = options.find("description") != std::string_view::npos;
+            const bool placed = options.contains("above") || options.contains("below") ||
+                                options.contains("left") || options.contains("right");
+            const bool across = options.contains("description");
             std::string written = "font=\\scriptsize,inner sep=0.5ex,";
             if (across) written += "fill=white,";
             else if (!placed) written += swapped ? "auto,swap," : "auto,";
@@ -326,7 +327,7 @@ namespace render::primitives {
                     if (key == "column sep" || key == "sep") diagram.columns = sized(value, 0);
                     if (key == "row sep" || key == "sep") diagram.rows = sized(value, 1);
                     if (key == "ampersand replacement") separator = trim(value);
-                    if (key == "arrows" || key == "every arrow/.append style") every += std::string(value) + ",";
+                    if (key == "arrows" || key == "every arrow/.append style") every += std::format("{},", value);
                     if (key == "cells" && value.starts_with("nodes=")) {
                         std::string_view nodes = trim(value.substr(6));
                         if (nodes.starts_with('{') && nodes.ends_with('}')) nodes = nodes.substr(1, nodes.size() - 2);
@@ -464,7 +465,7 @@ namespace render::primitives {
                                            item.starts_with("outer sep") || item == "cramped") {
                                     // Drawn as a plain arrow.
                                 } else {
-                                    style += std::string(item) + ",";
+                                    style += std::format("{},", item);
                                 }
                             }
                             if (!old.empty()) labels.push_back({std::string(old.front()), {false, std::string{}}});
@@ -485,11 +486,11 @@ namespace render::primitives {
                                                    direction, 'r')) -
                                                static_cast<std::size_t>(std::ranges::count(direction, 'l'));
                             }
-                            arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," +
-                                          style;
+                            arrow.style = std::format("{}{}-{},{}", doubled ? "double,double distance=1.6pt," : "",
+                                                      foot, head, style);
                             for (const auto &[written, how]: labels) {
                                 std::string extra = how.second;
-                                if (across && extra.find("description") == std::string::npos) extra += ",description";
+                                if (across && !extra.contains("description")) extra += ",description";
                                 arrow.labels.push_back(label(written, how.first != swapped, extra));
                             }
                             diagram.arrows.push_back(std::move(arrow));
@@ -582,15 +583,15 @@ namespace render::primitives {
                                     } else if (shape.starts_with('|')) {
                                         foot = "|";
                                         shape.remove_prefix(1);
-                                    } else if (shape.starts_with("<")) {
+                                    } else if (shape.starts_with('<')) {
                                         foot = "<";
                                         shape.remove_prefix(1);
-                                    } else if (shape.starts_with(">")) {
+                                    } else if (shape.starts_with('>')) {
                                         foot = ">";
                                         shape.remove_prefix(1);
                                     }
                                     head = shape.ends_with(">>") ? ">>" : shape.ends_with('>') ? ">" : "";
-                                    if (shape.find('=') != std::string_view::npos) doubled = true;
+                                    if (shape.contains('=')) doubled = true;
                                     if (shape.starts_with("--")) style += "dashed,";
                                     if (shape.starts_with('.')) style += "dotted,";
                                 } else if (kind == '<') {
@@ -640,8 +641,8 @@ namespace render::primitives {
                                      static_cast<std::size_t>(std::ranges::count(direction, 'u'));
                         arrow.across = arrow.column + static_cast<std::size_t>(std::ranges::count(direction, 'r')) -
                                        static_cast<std::size_t>(std::ranges::count(direction, 'l'));
-                        arrow.style = (doubled ? "double,double distance=1.6pt," : "") + foot + "-" + head + "," +
-                                      style;
+                        arrow.style = std::format("{}{}-{},{}", doubled ? "double,double distance=1.6pt," : "", foot,
+                                                  head, style);
                         diagram.arrows.push_back(std::move(arrow));
                     }
 
@@ -677,17 +678,17 @@ namespace render::primitives {
                                 const std::size_t shut = std::min(closing(entry, 0), entry.size() - 1);
                                 const std::string_view shape = entry.substr(1, shut - 1);
                                 entry.remove_prefix(shut + 1);
-                                if (shape.find('o') != std::string_view::npos) options += "circle,";
+                                if (shape.contains('o')) options += "circle,";
                                 if (!shape.starts_with('F')) continue;
                                 options += "draw,";
-                                if (shape.find('-') != std::string_view::npos) options += "dashed,";
-                                if (shape.find('.') != std::string_view::npos) options += "dotted,";
-                                if (shape.find('=') != std::string_view::npos) options += "double,";
+                                if (shape.contains('-')) options += "dashed,";
+                                if (shape.contains('.')) options += "dotted,";
+                                if (shape.contains('=')) options += "double,";
                                 if (const std::size_t colon = shape.find(':'); colon != std::string_view::npos) {
                                     std::string_view radius = trim(shape.substr(colon + 1));
                                     if (radius.starts_with('<') && radius.ends_with('>'))
                                         radius = radius.substr(1, radius.size() - 2);
-                                    options += "rounded corners=" + std::string(radius.empty() ? "4pt" : radius) + ",";
+                                    options += std::format("rounded corners={},", radius.empty() ? "4pt" : radius);
                                 }
                             } else if (head == '!' || head == '=') {
                                 entry.remove_prefix(1);
@@ -713,7 +714,8 @@ namespace render::primitives {
                                 const std::vector<std::vector<std::string> > rows = grid(lines, "\x01");
                                 content = "{\\begin{array}{c}";
                                 for (std::size_t line = 0; line < rows.size(); ++line) {
-                                    content += (line > 0 ? "\\\\\\text{" : "\\text{") + rows[line].front() + "}";
+                                    if (line > 0) content += "\\\\";
+                                    content += std::format("\\text{{{}}}", rows[line].front());
                                 }
                                 content += "\\end{array}}";
                                 break;
@@ -725,9 +727,8 @@ namespace render::primitives {
                                 break;
                             }
                         }
-                        object = "|[" + options + "inner sep={" + margin + "}]| " + (trim(content).empty()
-                                     ? "{}"
-                                     : content);
+                        object = std::format("|[{}inner sep={{{}}}]| {}", options, margin,
+                                             trim(content).empty() ? "{}" : content);
                     }
                     diagram.cells.back().emplace_back(trim(object));
                 }
@@ -823,17 +824,17 @@ namespace render::primitives {
                                           "\\matrix[column sep={}, row sep={}] (q) {{", columns, rows);
             std::string after;
             const std::vector<std::vector<std::string> > lines = grid(text, "&");
-            for (std::size_t r = 0; r < lines.size(); ++r) {
-                std::size_t first = lines[r].size();
+            for (std::size_t row = 0; row < lines.size(); ++row) {
+                std::size_t first = lines[row].size();
                 std::size_t last = 0;
-                for (std::size_t c = 0; c < lines[r].size(); ++c) {
-                    if (lines[r][c].empty()) continue;
-                    first = std::min(first, c);
-                    last = c;
+                for (std::size_t column = 0; column < lines[row].size(); ++column) {
+                    if (lines[row][column].empty()) continue;
+                    first = std::min(first, column);
+                    last = column;
                 }
-                std::vector<bool> classical(lines[r].size(), false);
-                for (std::size_t c = 0; c < lines[r].size(); ++c) {
-                    const std::string_view cell = lines[r][c];
+                std::vector<bool> classical(lines[row].size(), false);
+                for (std::size_t column = 0; column < lines[row].size(); ++column) {
+                    const std::string_view cell = lines[row][column];
                     // Its command, and the argument it takes, if any.
                     std::string_view name;
                     std::string_view argument;
@@ -848,7 +849,7 @@ namespace render::primitives {
                         if (at < cell.size() && cell[at] == '{') argument = cell.substr(
                                                                      at + 1, closing(cell, at) - at - 1);
                     }
-                    const std::string called = std::format("q-{}-{}", r + 1, c + 1);
+                    const std::string called = std::format("q-{}-{}", row + 1, column + 1);
                     const std::string shown = maths ? std::format("${}$", argument) : std::string(argument);
                     std::string node = "\\node[inner sep=0] {};";
                     if (name == "gate" || name == "multigate") {
@@ -880,27 +881,29 @@ namespace render::primitives {
                         after += std::format("\\draw ({0}.south) ++(-0.2em,0.2em) -- ++(0.55em,0.75em);"
                                              "\\draw ({0}.center) ++(-0.5em,-0.25em) arc (160:20:0.53em);", called);
                     } else if (name == "cw" || name == "cwx") {
-                        classical[c] = true;
+                        classical[column] = true;
                     }
-                    out += (c > 0 ? " & " : "") + node;
+                    if (column > 0) out += " & ";
+                    out += node;
                     // What joins it to another wire: a control's line.
                     if ((name == "ctrl" || name == "octrl" || name == "ctrlo" || name == "swap" || name == "qwx" ||
                          name == "cwx") && !argument.empty()) {
                         int reach = 0;
                         std::from_chars(argument.data(), argument.data() + argument.size(), reach);
-                        const int target = static_cast<int>(r) + 1 + reach;
+                        const int target = static_cast<int>(row) + 1 + reach;
                         if (reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target,
-                                                                            c + 1);
+                                                                            column + 1);
                     }
                 }
                 out += " \\\\ ";
-                for (std::size_t c = first; c < last; ++c) {
+                for (std::size_t column = first; column < last; ++column) {
                     after += std::format("\\draw{} (q-{}-{}) -- (q-{}-{});",
-                                         classical[c + 1] ? "[double, double distance=1pt]" : "",
-                                         r + 1, c + 1, r + 1, c + 2);
+                                         classical[column + 1] ? "[double, double distance=1pt]" : "",
+                                         row + 1, column + 1, row + 1, column + 2);
                 }
             }
-            return out + "};" + after + "\\end{tikzpicture}";
+            out += std::format("}};{}\\end{{tikzpicture}}", after);
+            return out;
         };
 
         context.blocks.watch(
@@ -954,7 +957,7 @@ namespace render::primitives {
         context.blocks.watch(
             "forest",
             [&context](syntax::Mouth &mouth) {
-                mouth.ingest(context.arena.copy("\\@tree{" + body(mouth, "forest") + "}"));
+                mouth.ingest(context.arena.copy(std::format("\\@tree{{{}}}", body(mouth, "forest"))));
             },
             [](syntax::Mouth &) {
             });
@@ -967,7 +970,7 @@ namespace render::primitives {
                 if (token.is('[')) ++depth;
                 if (token.is(']') && --depth == 0) break;
             }
-            mouth.ingest(context.arena.copy("\\@tree{" + text + "}"));
+            mouth.ingest(context.arena.copy(std::format("\\@tree{{{}}}", text)));
         });
         parser.bind("\\@tree", [&context](syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
@@ -987,7 +990,7 @@ namespace render::primitives {
             const auto size = [&](this const auto &self, Branch &node) -> void {
                 for (Branch &child: node.children) self(child);
 
-                mouth.ingest(context.arena.copy("{" + node.label + "}"));
+                mouth.ingest(context.arena.copy(std::format("{{{}}}", node.label)));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const Selection restore = context.selection;

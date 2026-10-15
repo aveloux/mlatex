@@ -9,7 +9,9 @@
 #include "logger.hpp"
 #include "syntax/argument.hpp"
 
+#include <algorithm>
 #include <array>
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -247,71 +249,37 @@ namespace render::primitives {
                 std::string text;
                 if (const auto first = base.empty() ? 0u : static_cast<unsigned char>(base.front());
                     first != 0 && first < 128 && !composed[row][first].empty()) {
-                    text = std::string(composed[row][first]) + base.substr(1);
+                    text = std::format("{}{}", composed[row][first], base.substr(1));
                 }
                 if (text.empty()) {
                     // The letter's own bytes, then the mark: a combining mark
                     // follows the character it sits on.
                     std::size_t span = base.empty() ? 0 : 1;
                     while (span < base.size() && (static_cast<unsigned char>(base[span]) & 0xC0) == 0x80) ++span;
-                    const std::string_view mark = accent == '\''
-                                                      ? "\xCC\x81" // U+0301 acute
-                                                      : accent == '`'
-                                                            ? "\xCC\x80" // U+0300 grave
-                                                            : accent == '^'
-                                                                  ? "\xCC\x82" // U+0302 circumflex
-                                                                  : accent == '"'
-                                                                        ? "\xCC\x88" // U+0308 diaeresis
-                                                                        : accent == '~'
-                                                                              ? "\xCC\x83" // U+0303 tilde
-                                                                              : accent == '='
-                                                                                  ? "\xCC\x84" // U+0304 macron
-                                                                                  : accent == '.'
-                                                                                      ? "\xCC\x87"
-                                                                                      // U+0307 dot above
-                                                                                      : accent == 'u'
-                                                                                          ? "\xCC\x86"
-                                                                                          // U+0306 breve
-                                                                                          : accent == 'v'
-                                                                                              ? "\xCC\x8C"
-                                                                                              // U+030C caron
-                                                                                              : accent
-                                                                                                      ==
-                                                                                                      'H'
-                                                                                                      ? "\xCC\x8B"
-                                                                                                      // U+030B double acute
-                                                                                                      : accent
-                                                                                                              ==
-                                                                                                              'c'
-                                                                                                              ? "\xCC\xA7"
-                                                                                                              // U+0327 cedilla
-                                                                                                              : accent
-                                                                                                                      ==
-                                                                                                                      'k'
-                                                                                                                      ? "\xCC\xA8"
-                                                                                                                      // U+0328 ogonek
-                                                                                                                      : accent
-                                                                                                                              ==
-                                                                                                                              'r'
-                                                                                                                              ? "\xCC\x8A"
-                                                                                                                              // U+030A ring above
-                                                                                                                              : accent
-                                                                                                                                      ==
-                                                                                                                                      'd'
-                                                                                                                                      ? "\xCC\xA3"
-                                                                                                                                      // U+0323 dot below
-                                                                                                                                      : accent
-                                                                                                                                              ==
-                                                                                                                                              'b'
-                                                                                                                                              ? "\xCC\xB1"
-                                                                                                                                              // U+0331 macron below
-                                                                                                                                              : accent
-                                                                                                                                                      ==
-                                                                                                                                                      't'
-                                                                                                                                                      ? "\xCD\xA1"
-                                                                                                                                                      // U+0361 double inverted breve
-                                                                                                                                                      : "";
-                    text = base.substr(0, span) + std::string(mark) + base.substr(span);
+                    // The combining mark each accent command sets.
+                    static constexpr std::array<std::pair<char, std::string_view>, 16> combining{
+                        {
+                            {'\'', "\xCC\x81"}, // U+0301 acute
+                            {'`', "\xCC\x80"}, // U+0300 grave
+                            {'^', "\xCC\x82"}, // U+0302 circumflex
+                            {'"', "\xCC\x88"}, // U+0308 diaeresis
+                            {'~', "\xCC\x83"}, // U+0303 tilde
+                            {'=', "\xCC\x84"}, // U+0304 macron
+                            {'.', "\xCC\x87"}, // U+0307 dot above
+                            {'u', "\xCC\x86"}, // U+0306 breve
+                            {'v', "\xCC\x8C"}, // U+030C caron
+                            {'H', "\xCC\x8B"}, // U+030B double acute
+                            {'c', "\xCC\xA7"}, // U+0327 cedilla
+                            {'k', "\xCC\xA8"}, // U+0328 ogonek
+                            {'r', "\xCC\x8A"}, // U+030A ring above
+                            {'d', "\xCC\xA3"}, // U+0323 dot below
+                            {'b', "\xCC\xB1"}, // U+0331 macron below
+                            {'t', "\xCD\xA1"}, // U+0361 double inverted breve
+                        }
+                    };
+                    const auto found = std::ranges::find(combining, accent, &std::pair<char, std::string_view>::first);
+                    const std::string_view mark = found != combining.end() ? found->second : std::string_view{};
+                    text = std::format("{}{}{}", base.substr(0, span), mark, base.substr(span));
                 }
 
                 return parser.arena.compose<syntax::Node>(
@@ -346,7 +314,7 @@ namespace render::primitives {
                 } else if (letter >= '0' && letter <= '9' && at > 0 && element(formula[at - 1])) {
                     std::string count;
                     while (at < formula.size() && formula[at] >= '0' && formula[at] <= '9') count += formula[at++];
-                    written += "$_{" + count + "}$";
+                    written += std::format("$_{{{}}}$", count);
                 } else if (letter == '^') {
                     std::string charge;
                     ++at;
@@ -356,10 +324,10 @@ namespace render::primitives {
                     } else {
                         while (at < formula.size() && formula[at] != ' ') charge += formula[at++];
                     }
-                    written += "$^{" + charge + "}$";
+                    written += std::format("$^{{{}}}$", charge);
                 } else if ((letter == '+' || letter == '-') && at > 0 && element(formula[at - 1]) &&
                            (at + 1 == formula.size() || formula[at + 1] == ' ')) {
-                    written += std::string("$^{") + letter + "}$";
+                    written += std::format("$^{{{}}}$", letter);
                     ++at;
                 } else {
                     written += letter;

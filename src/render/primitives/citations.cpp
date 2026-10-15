@@ -54,9 +54,9 @@ namespace render::primitives {
             }
             return joined;
         };
-        const std::string before = citation.before.empty() ? std::string{} : citation.before + " ";
-        const std::string after = citation.note.empty() ? std::string{} : ", " + citation.note;
-        const auto numbered = [&] { return "[" + before + join(text, ", ") + after + "]"; };
+        const std::string before = citation.before.empty() ? std::string{} : std::format("{} ", citation.before);
+        const std::string after = citation.note.empty() ? std::string{} : std::format(", {}", citation.note);
+        const auto numbered = [&] { return std::format("[{}{}{}]", before, join(text, ", "), after); };
 
         switch (citation.form) {
             case Form::Number: return join(text, ", ");
@@ -67,23 +67,21 @@ namespace render::primitives {
                     return mark && !mark->year.empty() ? mark->year : text(mark);
                 }, ", ");
             case Form::Loose:
-                return yeared
-                           ? before + join([](const Mark *mark) {
-                               return mark->author + " " + mark->year;
-                           }, "; ") + after
-                           : before + join(text, ", ") + after;
-            case Form::Comma:
-                return yeared
-                           ? before + join([](const Mark *mark) {
-                               return mark->author + ", " + mark->year;
-                           }, "; ") + after
-                           : before + join(text, ", ") + after;
+            case Form::Comma: {
+                // `Knuth 1984` or `Knuth, 1984`, and no brackets round them.
+                const std::string_view separator = citation.form == Form::Loose ? " " : ", ";
+                const std::string listed = yeared
+                                               ? join([separator](const Mark *mark) {
+                                                   return std::format("{}{}{}", mark->author, separator, mark->year);
+                                               }, "; ")
+                                               : join(text, ", ");
+                return std::format("{}{}{}", before, listed, after);
+            }
             case Form::Parenthetical:
-                return yeared
-                           ? "(" + before + join([](const Mark *mark) { return mark->author + ", " + mark->year; },
-                                                 "; ") +
-                             after + ")"
-                           : numbered();
+                if (!yeared) return numbered();
+                return std::format("({}{}{})", before, join([](const Mark *mark) {
+                    return std::format("{}, {}", mark->author, mark->year);
+                }, "; "), after);
             case Form::Plain:
                 if (!yeared) return numbered();
                 [[fallthrough]];
@@ -93,8 +91,8 @@ namespace render::primitives {
                     std::string written;
                     for (std::size_t index = 0; index < found.size(); ++index) {
                         if (index > 0) written += "; ";
-                        written += found[index]->author + " (" + (index == 0 ? before : "") + found[index]->year +
-                                (index + 1 == found.size() ? after : "") + ")";
+                        written += std::format("{} ({}{}{})", found[index]->author, index == 0 ? before : "",
+                                               found[index]->year, index + 1 == found.size() ? after : "");
                     }
                     return written;
                 }
@@ -103,8 +101,8 @@ namespace render::primitives {
                 for (std::size_t index = 0; index < found.size(); ++index) {
                     if (index > 0) written += "; ";
                     const Mark *mark = found[index];
-                    if (mark && !mark->author.empty()) written += mark->author + " ";
-                    written += "[" + text(mark) + (index + 1 == found.size() ? after : "") + "]";
+                    if (mark && !mark->author.empty()) written += std::format("{} ", mark->author);
+                    written += std::format("[{}{}]", text(mark), index + 1 == found.size() ? after : "");
                 }
                 return written;
             }
@@ -122,7 +120,7 @@ namespace render::primitives {
             [this, &context](syntax::Mouth &mouth) {
                 std::string sample = "[";
                 for (const syntax::Token &token: mouth.argument({}, 0)) sample += token.text;
-                sample += "]";
+                sample += ']';
 
                 widest = 0.0f;
                 if (const typography::Font *font = context.selection.text()) {
@@ -138,12 +136,12 @@ namespace render::primitives {
                 // the article class, \\footnotesize in IEEE's.
                 const std::string head = heading.value_or("\\@bibheading");
                 heading.reset();
-                mouth.ingest(context.arena.copy(head + "\\bibfont "));
+                mouth.ingest(context.arena.copy(std::format("{}\\bibfont ", head)));
             },
             [&context](syntax::Mouth &mouth) {
                 // The last entry ends here, and what follows is back at the
                 // column's own margin.
-                mouth.ingest(context.arena.copy(std::string("\\par\\leftskip=0pt\\noindent ")));
+                mouth.ingest(context.arena.copy(R"(\par\leftskip=0pt\noindent )"));
             });
 
         parser.bind("\\bibitem", [this, &context](syntax::Parser &parser) -> syntax::Node * {
@@ -169,7 +167,7 @@ namespace render::primitives {
             Mark &mark = marks[key];
             if (mark.defined) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                        "Citation `" + key + "' multiply defined");
+                                        std::format("Citation `{}' multiply defined", key));
                 return nullptr;
             }
 
@@ -181,9 +179,9 @@ namespace render::primitives {
                 mark.author = given.substr(0, open);
                 while (!mark.author.empty() && mark.author.back() == ' ') mark.author.pop_back();
                 mark.year = given.substr(open + 1, close - open - 1);
-                mark.text = std::to_string(entries);
+                mark.text = std::format("{}", entries);
             } else {
-                mark.text = given.empty() ? std::to_string(entries) : given;
+                mark.text = given.empty() ? std::format("{}", entries) : given;
             }
             mark.defined = true;
             mark.anchor = context.anchors++;
@@ -220,7 +218,7 @@ namespace render::primitives {
             if (font && !hung) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy("[" + mark.text + "]"), {});
+                        context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(std::format("[{}]", mark.text)), {});
                 label = layout::Line::horizontal(arena, shaped, 0.0f);
             }
             const float width = label ? label->box().width : 0.0f;
@@ -310,7 +308,7 @@ namespace render::primitives {
 
                 const std::string written = syntax::Argument::text(mouth);
                 for (const auto piece: std::views::split(written, ',')) {
-                    std::string_view key(piece.begin(), piece.end());
+                    std::string_view key(piece.data(), piece.size());
                     while (!key.empty() && key.front() == ' ') key.remove_prefix(1);
                     while (!key.empty() && key.back() == ' ') key.remove_suffix(1);
                     if (!key.empty()) citation.keys.emplace_back(key);
@@ -321,7 +319,7 @@ namespace render::primitives {
                 }
 
                 std::string text = print(citation, context);
-                if (name == "\\citeyearpar") text = "(" + text + ")";
+                if (name == "\\citeyearpar") text = std::format("({})", text);
                 citation.node = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text), origin);
 
                 // A key not yet in the list is filled in once its \bibitem is read.
@@ -348,7 +346,7 @@ namespace render::primitives {
         parser.mouth.bind("\\nocite", [this](syntax::Mouth &mouth) {
             const std::string written = syntax::Argument::text(mouth);
             for (const auto piece: std::views::split(written, ',')) {
-                std::string_view key(piece.begin(), piece.end());
+                std::string_view key(piece.data(), piece.size());
                 while (!key.empty() && key.front() == ' ') key.remove_prefix(1);
                 while (!key.empty() && key.back() == ' ') key.remove_suffix(1);
                 if (!key.empty()) extra.emplace_back(key);
@@ -383,7 +381,7 @@ namespace render::primitives {
             };
 
             for (const std::string &file: files) {
-                const std::string name = file.ends_with(".bib") ? file : file + ".bib";
+                const std::string name = file.ends_with(".bib") ? file : std::format("{}.bib", file);
                 const std::string *text = nullptr;
                 if (context.files) {
                     if (const auto found = context.files->find(name); found != context.files->end())
@@ -435,10 +433,10 @@ namespace render::primitives {
                             joined += source.substr(begin, at - begin);
                             if (at < source.size()) ++at;
                         } else {
-                            const std::string name = word();
-                            if (name.empty()) break;
-                            const auto defined = strings.find(name);
-                            joined += defined != strings.end() ? defined->second : name;
+                            const std::string abbreviation = word();
+                            if (abbreviation.empty()) break;
+                            const auto defined = strings.find(abbreviation);
+                            joined += defined != strings.end() ? defined->second : abbreviation;
                         }
                         blanks();
                         if (at < source.size() && source[at] == '#') {
@@ -708,7 +706,7 @@ namespace render::primitives {
                     if (!written.empty()) written += ' ';
                     written += part;
                 }
-                if (!name.junior.empty()) written += ", " + name.junior;
+                if (!name.junior.empty()) written += std::format(", {}", name.junior);
                 return written;
             };
             // A list of them: `A`, `A and B`, `A, B, and C`; `others` is
@@ -751,21 +749,24 @@ namespace render::primitives {
                 if (people.empty()) people = names(field(entry, "editor"));
                 const std::string year = field(entry, "year");
                 std::string sorted;
-                for (const Name &person: people) sorted += folded(person.von + person.last + " " + person.first) + "  ";
+                for (const Name &person: people) {
+                    const std::string whole = std::format("{}{} {}", person.von, person.last, person.first);
+                    sorted += std::format("{}  ", folded(whole));
+                }
                 if (people.empty()) sorted = folded(entry.key);
-                entry.order = sorted + "   " + year + "   " + folded(field(entry, "title"));
+                entry.order = std::format("{}   {}   {}", sorted, year, folded(field(entry, "title")));
 
                 if (named) {
                     std::string author;
                     const auto surname = [](const Name &person) {
-                        return person.von.empty() ? person.last : person.von + " " + person.last;
+                        return person.von.empty() ? person.last : std::format("{} {}", person.von, person.last);
                     };
                     if (people.empty()) author = entry.key;
                     else if (people.size() == 1) author = surname(people[0]);
                     else if (people.size() == 2 && people[1].last != "others")
-                        author = surname(people[0]) + " and " + surname(people[1]);
-                    else author = surname(people[0]) + " et~al.";
-                    entry.label = author + "(" + (year.empty() ? "?" : year) + ")";
+                        author = std::format("{} and {}", surname(people[0]), surname(people[1]));
+                    else author = std::format("{} et~al.", surname(people[0]));
+                    entry.label = std::format("{}({})", author, year.empty() ? "?" : year);
                 } else if (alpha) {
                     std::string made;
                     const auto letters = [](const std::string &text, const std::size_t count) {
@@ -781,16 +782,16 @@ namespace render::primitives {
                         return kept;
                     };
                     if (people.empty()) made = letters(entry.key, 3);
-                    else if (people.size() == 1) made = letters(people[0].von + people[0].last, 3);
+                    else if (people.size() == 1) made = letters(std::format("{}{}", people[0].von, people[0].last), 3);
                     else {
                         for (std::size_t index = 0; index < std::min<std::size_t>(
                                                         people.size(), people.size() > 4 ? 3 : 4); ++index) {
                             made += letters(people[index].last, 1);
                         }
-                        if (people.size() > 4) made += "+";
+                        if (people.size() > 4) made += '+';
                     }
-                    entry.label = made + (year.size() >= 2 ? year.substr(year.size() - 2) : year);
-                    entry.order = entry.label + "   " + entry.order;
+                    entry.label = std::format("{}{}", made, year.size() >= 2 ? year.substr(year.size() - 2) : year);
+                    entry.order = std::format("{}   {}", entry.label, entry.order);
                 }
             }
 
@@ -860,13 +861,14 @@ namespace render::primitives {
             // natbib's styles print a URL, and say what \url is where no
             // package has: typewriter text, as theirs does, a line ending
             // after a slash where it must.
-            std::string written = preamble.empty() ? std::string{} : preamble + "\n";
+            std::string written = preamble.empty() ? std::string{} : std::format("{}\n", preamble);
             if (natural || house != House::Standard)
                 written += "\\providecommand{\\url}[1]{\\texttt{\\@breakable{#1}}}\n";
             if (house == House::Springer) written += "\\providecommand{\\doi}[1]{\\url{https://doi.org/#1}}\n";
-            written += std::format("\\begin{{thebibliography}}{{{}}}\n", alpha
-                                                                             ? std::string("MMM99")
-                                                                             : std::to_string(chosen.size()));
+            // The widest label: alpha's three letters and two digits, or the
+            // entries' count.
+            if (alpha) written += "\\begin{thebibliography}{MMM99}\n";
+            else written += std::format("\\begin{{thebibliography}}{{{}}}\n", chosen.size());
             // A given name as initials, `D.~E.`, or packed as Springer packs
             // them, `D.E.`.
             const auto initialed = [](const std::string &given, const std::string_view between) {
@@ -890,29 +892,32 @@ namespace render::primitives {
                 return made;
             };
             const auto surname = [](const Name &person) {
-                return person.von.empty() ? person.last : person.von + " " + person.last;
+                return person.von.empty() ? person.last : std::format("{} {}", person.von, person.last);
             };
             // A house's list of names: each written its way, joined its way.
             const auto roll = [&](const std::vector<Name> &people, const auto &write, const std::string_view pair,
                                   const std::string_view final) {
-                std::string written;
+                std::string joined;
                 for (std::size_t index = 0; index < people.size(); ++index) {
-                    if (index > 0) written += people.size() == 2 ? pair : index + 1 == people.size() ? final : ", ";
-                    written += people[index].last == "others" ? std::string("et~al.") : write(people[index]);
+                    if (index > 0) joined += people.size() == 2 ? pair : index + 1 == people.size() ? final : ", ";
+                    joined += people[index].last == "others" ? std::string("et~al.") : write(people[index]);
                 }
-                return written;
+                return joined;
             };
+            // `D.~E. Knuth, Jr`, `Donald E. Knuth` and `Knuth, D.E.`.
             const auto forward = [&](const Name &person) {
-                std::string given = initialed(person.first, "~");
-                return (given.empty() ? std::string{} : given + "~") + surname(person) +
-                       (person.junior.empty() ? std::string{} : ", " + person.junior);
+                const std::string given = initialed(person.first, "~");
+                const std::string junior = person.junior.empty() ? std::string{} : std::format(", {}", person.junior);
+                return given.empty()
+                           ? std::format("{}{}", surname(person), junior)
+                           : std::format("{}~{}{}", given, surname(person), junior);
             };
             const auto full = [&](const Name &person) {
-                return (person.first.empty() ? std::string{} : person.first + " ") + surname(person);
+                return person.first.empty() ? surname(person) : std::format("{} {}", person.first, surname(person));
             };
             const auto backward = [&](const Name &person) {
-                std::string given = initialed(person.first, "");
-                return surname(person) + (given.empty() ? std::string{} : ", " + given);
+                const std::string given = initialed(person.first, "");
+                return given.empty() ? surname(person) : std::format("{}, {}", surname(person), given);
             };
 
             for (const Entry &entry: chosen) {
@@ -927,7 +932,7 @@ namespace render::primitives {
                 };
                 const auto with = [](const std::string &value, const std::string &prefix,
                                      const std::string &suffix = "") {
-                    return value.empty() ? std::string{} : prefix + value + suffix;
+                    return value.empty() ? std::string{} : std::format("{}{}{}", prefix, value, suffix);
                 };
                 const std::string &type = entry.type;
                 const std::vector<Name> authors = names(field(entry, "author"));
@@ -935,7 +940,11 @@ namespace render::primitives {
                 const std::string title = field(entry, "title");
                 const std::string year = field(entry, "year");
                 const std::string month = field(entry, "month");
-                const std::string when = month.empty() ? year : year.empty() ? month : month + " " + year;
+                const std::string when = month.empty()
+                                             ? year
+                                             : year.empty()
+                                                   ? month
+                                                   : std::format("{} {}", month, year);
                 const std::string volume = field(entry, "volume");
                 const std::string number = field(entry, "number");
                 const std::string span = pages(field(entry, "pages"));
@@ -943,7 +952,10 @@ namespace render::primitives {
                 const std::string address = field(entry, "address");
                 const std::string edited = editors.empty()
                                                ? std::string{}
-                                               : list(editors) + (editors.size() > 1 ? ", editors" : ", editor");
+                                               : std::format("{}, {}", list(editors),
+                                                             editors.size() > 1 ? "editors" : "editor");
+                // `[Knu84]` before the key, for the styles that label their entries.
+                const std::string option = named || alpha ? std::format("[{}]", entry.label) : std::string{};
 
                 // A house style's entry, written whole.
                 if (house != House::Standard && !natural) {
@@ -974,7 +986,9 @@ namespace render::primitives {
                             } else if (type == "book" || type == "booklet" || type == "proceedings") {
                                 parts = {
                                     with(field(entry, "edition"), "", "~ed."),
-                                    address + (address.empty() || publisher.empty() ? "" : ": ") + publisher, when
+                                    std::format("{}{}{}", address, address.empty() || publisher.empty() ? "" : ": ",
+                                                publisher),
+                                    when
                                 };
                             } else if (type == "inproceedings" || type == "conference" || type == "incollection") {
                                 parts = {with(booktitle, "in \\emph{", "}"), address, when, with(span, "pp.~")};
@@ -983,7 +997,7 @@ namespace render::primitives {
                                     type == "phdthesis" ? "Ph.D. dissertation" : "Master's thesis", place, address, when
                                 };
                             } else if (type == "techreport") {
-                                parts = {place, address, "Tech. Rep." + with(number, "~"), when};
+                                parts = {place, address, std::format("Tech. Rep.{}", with(number, "~")), when};
                             } else {
                                 parts = {field(entry, "howpublished"), with(field(entry, "eprint"), "arXiv:"), when};
                             }
@@ -995,110 +1009,110 @@ namespace render::primitives {
                             }
                             if (!title.empty()) {
                                 if (!text.empty()) text += ", ";
-                                if (quoted) text += "``" + title + (rest.empty() ? ".''" : ",'' ");
-                                else text += "\\emph{" + title + "}" + (rest.empty() ? "." : ", ");
+                                if (quoted) text += std::format("``{}{}", title, rest.empty() ? ".''" : ",'' ");
+                                else text += std::format("\\emph{{{}}}{}", title, rest.empty() ? "." : ", ");
                             } else if (!rest.empty()) {
                                 text += ", ";
                             }
                             text += rest;
                             if (!rest.empty()) text += '.';
-                            if (!url.empty()) text += " [Online]. Available: \\url{" + url + "}";
+                            if (!url.empty()) text += std::format(" [Online]. Available: \\url{{{}}}", url);
                             break;
                         }
                         case House::Acm: {
                             // Author and Author. 2020. Title. \emph{Journal} 1, 2 (Jan. 2020), 3--4.
-                            text = roll(authors.empty() ? editors : authors, full, " and ", ", and ") + ". " +
-                                   (year.empty() ? std::string{} : year + ". ");
+                            text = std::format("{}. ", roll(authors.empty() ? editors : authors, full, " and ",
+                                                            ", and "));
+                            if (!year.empty()) text += std::format("{}. ", year);
                             if (type == "article") {
-                                text += title + ". " + with(journal, "\\emph{", "}") + with(volume, " ") +
-                                        with(number, ", ") + with(when, " (", ")") + with(span, ", ") + ".";
+                                text += std::format("{}. {}{}{}{}{}.", title, with(journal, "\\emph{", "}"),
+                                                    with(volume, " "), with(number, ", "), with(when, " (", ")"),
+                                                    with(span, ", "));
                             } else if (paper) {
-                                text += title + ". In \\emph{" + booktitle + "}" + with(address, " (", ")") + ". " +
-                                        with(publisher, "", ", ") + with(span, "", "") + ".";
+                                text += std::format("{}. In \\emph{{{}}}{}. {}{}.", title, booktitle,
+                                                    with(address, " (", ")"), with(publisher, "", ", "), span);
                             } else if (type == "book" || type == "booklet" || type == "proceedings") {
-                                text += "\\emph{" + title + "}. " + publisher + with(address, ", ") + ".";
+                                text += std::format("\\emph{{{}}}. {}{}.", title, publisher, with(address, ", "));
                             } else {
-                                text += title + ". " + with(field(entry, "howpublished"), "", ".");
+                                text += std::format("{}. {}", title, with(field(entry, "howpublished"), "", "."));
                             }
                             text += with(doi, " \\url{https://doi.org/", "}");
                             break;
                         }
                         case House::Springer: {
                             // Author, F., Author, S.: Title. Journal \textbf{2}(5), 99--110 (2016)
-                            text = roll(authors.empty() ? editors : authors, backward, ", ", ", ") + ": " + title +
-                                   ". ";
+                            text = std::format("{}: {}. ",
+                                               roll(authors.empty() ? editors : authors, backward, ", ", ", "), title);
                             if (type == "article") {
-                                text += journal + with(volume, " \\textbf{", "}") + with(number, "(", ")") +
-                                        with(span, ", ") + with(year, " (", ")");
+                                text += std::format("{}{}{}{}{}", journal, with(volume, " \\textbf{", "}"),
+                                                    with(number, "(", ")"), with(span, ", "), with(year, " (", ")"));
                             } else if (paper) {
-                                text += "In: " +
-                                        with(roll(editors, backward, ", ", ", "), "",
-                                             editors.size() > 1 ? " (eds.) " : " (ed.) ") +
-                                        booktitle + ". " + with(field(entry, "series"), "", ", ") + with(
-                                            volume, "vol.~", ", ") +
-                                        with(span, "pp.~", ". ") + place + with(address, place.empty() ? "" : ", ") +
-                                        with(year, " (", ")");
+                                const std::string eds = with(roll(editors, backward, ", ", ", "), "",
+                                                             editors.size() > 1 ? " (eds.) " : " (ed.) ");
+                                text += std::format("In: {}{}. {}{}{}{}{}{}", eds, booktitle,
+                                                    with(field(entry, "series"), "", ", "), with(volume, "vol.~", ", "),
+                                                    with(span, "pp.~", ". "), place,
+                                                    with(address, place.empty() ? "" : ", "), with(year, " (", ")"));
                             } else {
-                                text += place + with(address, place.empty() ? "" : ", ") + with(year, " (", ")");
+                                text += std::format("{}{}{}", place, with(address, place.empty() ? "" : ", "),
+                                                    with(year, " (", ")"));
                             }
                             text += with(doi, " \\doi{", "}");
                             break;
                         }
                         case House::Siam: {
                             // {\sc D.~E. Knuth}, {\em Title}, Journal, 1 (2020), pp.~3--4.
-                            text = "{\\sc " + roll(authors.empty() ? editors : authors, forward, " and ", ", and ") +
-                                   "}, {\\em " + title + "}";
+                            text = std::format("{{\\sc {}}}, {{\\em {}}}",
+                                               roll(authors.empty() ? editors : authors, forward, " and ", ", and "),
+                                               title);
                             if (type == "article") {
-                                text += with(journal, ", ") + with(volume, ", ") + with(year, " (", ")") + with(
-                                    span, ", pp.~");
+                                text += std::format("{}{}{}{}", with(journal, ", "), with(volume, ", "),
+                                                    with(year, " (", ")"), with(span, ", pp.~"));
                             } else if (paper) {
-                                text += with(booktitle, ", in ") + with(address, ", ") + with(year, ", ") + with(
-                                            publisher, ", ") +
-                                        with(span, ", pp.~");
+                                text += std::format("{}{}{}{}{}", with(booktitle, ", in "), with(address, ", "),
+                                                    with(year, ", "), with(publisher, ", "), with(span, ", pp.~"));
                             } else {
-                                text += with(place, ", ") + with(address, ", ") + with(year, ", ");
+                                text += std::format("{}{}{}", with(place, ", "), with(address, ", "), with(year, ", "));
                             }
                             text += '.';
                             break;
                         }
                         case House::Elsevier: {
                             // A.~B. Author, C. Author, Title, Journal 1~(2) (2020) 3--4.
-                            text = roll(authors.empty() ? editors : authors, forward, ", ", ", ") + ", " + title;
+                            text = std::format("{}, {}", roll(authors.empty() ? editors : authors, forward, ", ", ", "),
+                                               title);
                             if (type == "article") {
-                                text += with(journal, ", ") + with(volume, " ") + with(number, "~(", ")") + with(
-                                            year, " (", ")") +
-                                        with(span, " ");
+                                text += std::format("{}{}{}{}{}", with(journal, ", "), with(volume, " "),
+                                                    with(number, "~(", ")"), with(year, " (", ")"), with(span, " "));
                             } else if (paper) {
-                                text += with(booktitle, ", in: ") + with(publisher, ", ") + with(address, ", ") + with(
-                                            year, ", ") +
-                                        with(span, ", pp. ");
+                                text += std::format("{}{}{}{}{}", with(booktitle, ", in: "), with(publisher, ", "),
+                                                    with(address, ", "), with(year, ", "), with(span, ", pp. "));
                             } else {
-                                text += with(place, ", ") + with(address, ", ") + with(year, ", ");
+                                text += std::format("{}{}{}", with(place, ", "), with(address, ", "), with(year, ", "));
                             }
-                            text += '.' + with(doi, " \\url{https://doi.org/", "}");
+                            text += std::format(".{}", with(doi, " \\url{https://doi.org/", "}"));
                             break;
                         }
                         case House::Ams: {
                             // D.~E. Knuth, \emph{Title}, Journal \textbf{1} (2020), no.~2, 3--4.
-                            text = roll(authors.empty() ? editors : authors, forward, " and ", ", and ") + ", \\emph{" +
-                                   title + "}";
+                            text = std::format("{}, \\emph{{{}}}",
+                                               roll(authors.empty() ? editors : authors, forward, " and ", ", and "),
+                                               title);
                             if (type == "article") {
-                                text += with(journal, ", ") + with(volume, " \\textbf{", "}") + with(year, " (", ")") +
-                                        with(number, ", no.~") + with(span, ", ");
+                                text += std::format("{}{}{}{}{}", with(journal, ", "), with(volume, " \\textbf{", "}"),
+                                                    with(year, " (", ")"), with(number, ", no.~"), with(span, ", "));
                             } else if (paper) {
-                                text += with(booktitle, ", ") + with(address, " (", ")") + with(publisher, ", ") +
-                                        with(year, ", ") + with(span, ", pp.~");
+                                text += std::format("{}{}{}{}{}", with(booktitle, ", "), with(address, " (", ")"),
+                                                    with(publisher, ", "), with(year, ", "), with(span, ", pp.~"));
                             } else {
-                                text += with(place, ", ") + with(address, ", ") + with(year, ", ");
+                                text += std::format("{}{}{}", with(place, ", "), with(address, ", "), with(year, ", "));
                             }
                             text += '.';
                             break;
                         }
                         case House::Standard: break;
                     }
-                    written += "\\bibitem" + (named || alpha ? "[" + entry.label + "]" : std::string{}) + "{" + entry.
-                            key +
-                            "}\n" + text + "\n\n";
+                    written += std::format("\\bibitem{}{{{}}}\n{}\n\n", option, entry.key, text);
                     continue;
                 }
 
@@ -1107,13 +1121,14 @@ namespace render::primitives {
 
                 const bool whole = type == "book" || type == "phdthesis" || type == "manual" || type == "proceedings" ||
                                    type == "booklet";
-                if (!title.empty()) add(whole ? "\\emph{" + title + "}" : titled(title));
+                if (!title.empty()) add(whole ? std::format("\\emph{{{}}}", title) : titled(title));
 
                 if (type == "article") {
-                    std::string place = with(field(entry, "journal"), "\\emph{", "}");
-                    std::string reference = volume + with(number, "(", ")") + with(
-                                                span, volume.empty() && number.empty() ? "pages " : ":");
-                    add(place + with(reference, place.empty() ? "" : ", ") + with(when, ", "));
+                    const std::string place = with(field(entry, "journal"), "\\emph{", "}");
+                    const std::string reference = std::format("{}{}{}", volume, with(number, "(", ")"),
+                                                              with(span, volume.empty() && number.empty() ? "pages "
+                                                                                                          : ":"));
+                    add(std::format("{}{}{}", place, with(reference, place.empty() ? "" : ", "), with(when, ", ")));
                 } else if (type == "book" || type == "booklet" || type == "proceedings") {
                     // The edition in lower case after the publisher, as plain
                     // changes its case mid-sentence: `Addison-Wesley, second
@@ -1122,26 +1137,26 @@ namespace render::primitives {
                     if (!edition.empty() && !(publisher.empty() && address.empty())) {
                         edition.front() = static_cast<char>(std::tolower(static_cast<unsigned char>(edition.front())));
                     }
-                    add(publisher + with(address, publisher.empty() ? "" : ", ") + with(edition, ", ", " edition") +
-                        with(when, ", "));
+                    add(std::format("{}{}{}{}", publisher, with(address, publisher.empty() ? "" : ", "),
+                                    with(edition, ", ", " edition"), with(when, ", ")));
                 } else if (type == "inproceedings" || type == "conference" || type == "incollection") {
-                    std::string place = "In " + with(edited, "", ", ") +
-                                        with(field(entry, "booktitle"), "\\emph{", "}");
-                    place += with(volume, ", volume ") + with(span, ", pages ") + with(address, ", ") +
-                            with(when, ", ");
-                    add(place);
+                    add(std::format("In {}{}{}{}{}{}", with(edited, "", ", "),
+                                    with(field(entry, "booktitle"), "\\emph{", "}"), with(volume, ", volume "),
+                                    with(span, ", pages "), with(address, ", "), with(when, ", ")));
                     add(publisher);
                 } else if (type == "phdthesis" || type == "mastersthesis") {
-                    add(std::string(type == "phdthesis" ? "PhD thesis" : "Master's thesis") +
-                        with(field(entry, "school"), ", ") + with(address, ", ") + with(when, ", "));
+                    add(std::format("{}{}{}{}", type == "phdthesis" ? "PhD thesis" : "Master's thesis",
+                                    with(field(entry, "school"), ", "), with(address, ", "), with(when, ", ")));
                 } else if (type == "techreport") {
-                    add(std::string(field(entry, "type").empty() ? "Technical Report" : field(entry, "type")) +
-                        with(number, " ") + with(field(entry, "institution"), ", ") + with(when, ", "));
+                    const std::string kind = field(entry, "type");
+                    add(std::format("{}{}{}{}", kind.empty() ? "Technical Report" : kind, with(number, " "),
+                                    with(field(entry, "institution"), ", "), with(when, ", ")));
                 } else if (type == "manual") {
-                    add(field(entry, "organization") + with(address, ", ") + with(when, ", "));
+                    add(std::format("{}{}{}", field(entry, "organization"), with(address, ", "), with(when, ", ")));
                 } else {
                     // misc, online, unpublished and every type BibTeX does not know.
-                    add(field(entry, "howpublished") + with(field(entry, "eprint"), "arXiv:") + with(when, ", "));
+                    add(std::format("{}{}{}", field(entry, "howpublished"), with(field(entry, "eprint"), "arXiv:"),
+                                    with(when, ", ")));
                 }
                 add(field(entry, "note"));
                 if (natural) add(with(field(entry, "url"), "\\url{", "}"));
@@ -1152,8 +1167,7 @@ namespace render::primitives {
                     if (!blocks[index].ends_with('.') || blocks[index].ends_with("al.")) text += '.';
                     if (index + 1 < blocks.size()) text += "\n\\newblock ";
                 }
-                written += "\\bibitem" + (named || alpha ? "[" + entry.label + "]" : std::string{}) + "{" + entry.key +
-                        "}\n" + text + "\n\n";
+                written += std::format("\\bibitem{}{{{}}}\n{}\n\n", option, entry.key, text);
             }
             written += "\\end{thebibliography}\n";
 
@@ -1182,7 +1196,7 @@ namespace render::primitives {
             // that it does not name already, so `\bibliography{}` sets those.
             for (const std::string &resource: resources) {
                 const auto same = [&resource](const std::string &file) {
-                    return (file.ends_with(".bib") ? file : file + ".bib") == resource;
+                    return (file.ends_with(".bib") ? file : std::format("{}.bib", file)) == resource;
                 };
                 if (std::ranges::none_of(files, same)) files.push_back(resource);
             }
@@ -1190,8 +1204,9 @@ namespace render::primitives {
             // A file handed in, or one beside the document.
             const auto readable = [&context](const std::string &name) -> const std::string * {
                 if (context.files) {
-                    if (const auto found = context.files->find(name); found != context.files->end()) return &found->
-                            second;
+                    if (const auto found = context.files->find(name); found != context.files->end()) {
+                        return &found->second;
+                    }
                 }
                 return context.disk ? context.disk(name) : nullptr;
             };
@@ -1203,14 +1218,14 @@ namespace render::primitives {
             // LaTeX sets it: the \jobname's .bbl, read where \bibliography
             // stands.
             const bool named = std::ranges::any_of(files, [&readable](const std::string &file) {
-                return readable(file.ends_with(".bib") ? file : file + ".bib") != nullptr;
+                return readable(file.ends_with(".bib") ? file : std::format("{}.bib", file)) != nullptr;
             });
             if (!named) {
                 std::string job;
                 if (const syntax::Mouth::Macro *macro = mouth.macro(mouth.lexicon.intern("\\jobname"))) {
                     for (const syntax::Token &token: macro->body) job += token.text;
                 }
-                if (const std::string *made = job.empty() ? nullptr : readable(job + ".bbl")) {
+                if (const std::string *made = job.empty() ? nullptr : readable(std::format("{}.bbl", job))) {
                     mouth.ingest(*made);
                     return nullptr;
                 }
@@ -1244,8 +1259,10 @@ namespace render::primitives {
             }
             if (kind == "none") heading = std::string{};
             else if (kind.contains("intoc") || title != "\\@bibtitle") {
-                heading = "\\csname\\@bibkind\\endcsname*{" + title + "}" +
-                          (kind.contains("intoc") ? "\\addcontentsline{toc}{\\@bibkind}{" + title + "}" : "");
+                const std::string listed = kind.contains("intoc")
+                                               ? std::format(R"(\addcontentsline{{toc}}{{\@bibkind}}{{{}}})", title)
+                                               : std::string{};
+                heading = std::format(R"(\csname\@bibkind\endcsname*{{{}}}{})", title, listed);
             }
             compile(parser.mouth, resources);
             return nullptr;

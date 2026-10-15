@@ -107,10 +107,10 @@ namespace render::primitives {
                 std::string kind(piece.begin(), piece.end());
                 std::erase(kind, ' ');
                 if (kind.empty() || (kind[0] >= '0' && kind[0] <= '9')) continue;
-                defaults[kind] += "," + options;
+                defaults[kind] += std::format(",{}", options);
                 named = true;
             }
-            if (!named) defaults[""] += "," + options;
+            if (!named) defaults[""] += std::format(",{}", options);
         });
 
         for (const auto &[name, marker]: environments) {
@@ -118,7 +118,7 @@ namespace render::primitives {
                 name,
                 [this, &context, marker, measure, name](syntax::Mouth &mouth) {
                     Level level{.marker = marker};
-                    std::string options = defaults[""] + "," + defaults[std::string(name)] + ",";
+                    std::string options = std::format("{},{},", defaults[""], defaults[std::string(name)]);
                     for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                         options += token.text;
                     }
@@ -170,10 +170,10 @@ namespace render::primitives {
                                 level.around = 0.0f;
                             } else if (key == "itemsep" || key == "topsep") {
                                 (key == "itemsep" ? level.spacing : level.around) =
-                                        std::max(primitives::measure(std::string(value), mouth, context), 0.0f);
+                                        std::max(primitives::measure(value, mouth, context), 0.0f);
                             } else if (equals == std::string_view::npos && key.find_first_of("aAiI1") !=
                                        std::string_view::npos &&
-                                       key.size() <= 6 && key.find('\\') == std::string_view::npos) {
+                                       key.size() <= 6 && !key.contains('\\')) {
                                 // enumitem's short labels: the first a, A, i, I or 1 stands
                                 // for the number in that form -- `(a)`, `i.`, `1)`.
                                 const std::size_t at = key.find_first_of("aAiI1");
@@ -239,10 +239,11 @@ namespace render::primitives {
                             }
                         };
                         std::vector<std::pair<std::string, std::string_view> > spellings{
-                            {"\\the" + counter + " ", "\\arabic*"}
+                            {std::format("\\the{} ", counter), "\\arabic*"}
                         };
-                        for (const auto &[form, star]: forms) spellings.emplace_back(
-                            std::string(form) + "{" + counter + "}", star);
+                        for (const auto &[form, star]: forms) {
+                            spellings.emplace_back(std::format("{}{{{}}}", form, counter), star);
+                        }
                         for (const auto &[spelled, star]: spellings) {
                             for (std::size_t found = level.label.find(spelled); found != std::string::npos;
                                  found = level.label.find(spelled, found + star.size())) {
@@ -355,19 +356,19 @@ namespace render::primitives {
                         switch ((depth - 1) % 4) {
                             case 0:
                                 number = Numeral::arabic(value);
-                                label = number + ".";
+                                label = std::format("{}.", number);
                                 break;
                             case 1:
                                 number = Numeral::alphabetic(value, false);
-                                label = "(" + number + ")";
+                                label = std::format("({})", number);
                                 break;
                             case 2:
                                 number = Numeral::roman(value, false);
-                                label = number + ".";
+                                label = std::format("{}.", number);
                                 break;
                             default:
                                 number = Numeral::alphabetic(value, true);
-                                label = number + ".";
+                                label = std::format("{}.", number);
                                 break;
                         }
                         // What a `\\label` after this item refers to.
@@ -404,7 +405,7 @@ namespace render::primitives {
                 if (level.marker == Marker::Description) {
                     context.selection.text(Styles::resolve(context, Styles::Cut::Bold, font->size()));
                 }
-                mouth.ingest(arena.copy("{" + label + "}"));
+                mouth.ingest(arena.copy(std::format("{{{}}}", label)));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const memory::Slice<syntax::Node *> read = parser.parse('}');

@@ -5,6 +5,7 @@
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 
+#include <format>
 #include <string>
 
 namespace render::primitives {
@@ -24,13 +25,13 @@ namespace render::primitives {
             const std::string url = syntax::Argument::text(mouth);
             if (context.offline) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                        "\\httpget of '" + url + "' refused: the run is offline");
+                                        std::format("\\httpget of '{}' refused: the run is offline", url));
                 return directive(arena, nullptr, origin);
             }
             const auto response = protocols::compose("GET", url);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                        "\\httpget could not reach '" + url + "'");
+                                        std::format("\\httpget could not reach '{}'", url));
                 return directive(arena, nullptr, origin);
             }
 
@@ -47,14 +48,14 @@ namespace render::primitives {
             const std::string body = syntax::Argument::text(mouth);
             if (context.offline) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                        "\\httppost to '" + url + "' refused: the run is offline");
+                                        std::format("\\httppost to '{}' refused: the run is offline", url));
                 return directive(arena, nullptr, origin);
             }
 
             const auto response = protocols::compose("POST", url, body);
             if (!response) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                        "\\httppost could not reach '" + url + "'");
+                                        std::format("\\httppost could not reach '{}'", url));
                 return directive(arena, nullptr, origin);
             }
 

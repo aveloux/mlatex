@@ -48,6 +48,7 @@ namespace render::primitives {
         ///        what follows is hidden goes with the group; whether a frame
         ///        has paused does not.
         Selection &operator=(const Selection &other) noexcept {
+            if (this == &other) return *this;
             tint = other.tint;
             prose = other.prose;
             maths = other.maths;

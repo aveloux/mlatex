@@ -43,7 +43,7 @@ namespace render::primitives {
         // its own, then whatever the parser reads.
         const auto named = [&variables](const std::string_view name) {
             const std::string_view bare = trim(name);
-            if (const std::string *defined = variables.get("color." + std::string(bare))) {
+            if (const std::string *defined = variables.get(std::format("color.{}", bare))) {
                 return graphics::Color::parse(*defined);
             }
             return graphics::Color::parse(bare);
@@ -66,7 +66,7 @@ namespace render::primitives {
 
             const graphics::Color other = index + 1 < parts.size()
                                               ? named(parts[index + 1])
-                                              : graphics::Color{1.0f, 1.0f, 1.0f, 1.0f};
+                                              : graphics::white;
             color = {
                 color.red * part + other.red * (1.0f - part), color.green * part + other.green * (1.0f - part),
                 color.blue * part + other.blue * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)
@@ -84,10 +84,10 @@ namespace render::primitives {
                 return std::isxdigit(static_cast<unsigned char>(digit)) != 0;
             });
             if (!hex) return std::nullopt;
-            return "#" + std::string(value);
+            return std::format("#{}", value);
         }
 
-        std::array < float, 4 > numbers{};
+        std::array<float, 4> numbers{};
         std::size_t count = 0;
         for (const auto piece: std::views::split(value, ',')) {
             if (count == numbers.size()) return std::nullopt;
@@ -140,7 +140,7 @@ namespace render::primitives {
                     std::format("\\definecolor{{{}}}: '{}' is not a color in the '{}' model", name, value, model));
                 return;
             }
-            context.variables.define("color." + std::string(trim(name)), *color);
+            context.variables.define(std::format("color.{}", trim(name)), *color);
         });
 
         parser.mouth.bind("\\colorlet", [this, &context](syntax::Mouth &mouth) {
@@ -157,7 +157,7 @@ namespace render::primitives {
 
             // Resolved now, as xcolor does: a later change to what it was
             // made from does not reach back into it.
-            context.variables.define("color." + std::string(trim(name)), write(resolve(value, context.variables)));
+            context.variables.define(std::format("color.{}", trim(name)), write(resolve(value, context.variables)));
         });
 
         // A color as a document names one: `[rgb]{0.1,0.2,0.3}` in a model of

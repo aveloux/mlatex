@@ -23,7 +23,7 @@ namespace render::primitives {
         lexicon.intern("\\font");
     }
 
-    void Typeface::operator()(syntax::Parser &parser, Context &context) const {
+    void Typeface::operator()(const syntax::Parser &parser, Context &context) const {
         parser.mouth.bind("\\textfont", [this, &context](syntax::Mouth &mouth) {
             const std::string name = syntax::Argument::text(mouth);
             const typography::Font *font = context.registry.get({
@@ -34,7 +34,7 @@ namespace render::primitives {
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument,
                                         mouth.lookahead().location,
-                                        "No font family named '" + name + "'");
+                                        std::format("No font family named '{}'", name));
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace render::primitives {
             if (!font) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument,
                                         mouth.lookahead().location,
-                                        "No font family named '" + name + "'");
+                                        std::format("No font family named '{}'", name));
                 return;
             }
 
@@ -66,9 +66,9 @@ namespace render::primitives {
         // selecting it, so the two steps a document usually wants together are
         // written once and used many times.
         parser.mouth.bind("\\font", [this, &context](syntax::Mouth &mouth) {
-            const syntax::Token target = mouth.read();
-            if (target.category != syntax::Catcodes::Category::Escape) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
+            const auto [symbol, category, location, text] = mouth.read();
+            if (category != syntax::Catcodes::Category::Escape) {
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, location,
                                         "\\font needs a control sequence to name the face");
                 return;
             }
@@ -94,8 +94,8 @@ namespace render::primitives {
                 name = syntax::Argument::text(mouth);
             } else {
                 while (true) {
-                    const syntax::Token next = mouth.lookahead();
-                    if (next.empty() || next.category == syntax::Catcodes::Category::Space ||
+                    if (const syntax::Token next = mouth.lookahead();
+                        next.empty() || next.category == syntax::Catcodes::Category::Space ||
                         next.category == syntax::Catcodes::Category::Escape) {
                         break;
                     }
@@ -120,17 +120,17 @@ namespace render::primitives {
 
             const typography::Font *font = context.registry.get({.family = name, .size = size});
             if (!font) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument, target.location,
-                                        "No font family named '" + name + "'");
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, location,
+                                        std::format("No font family named '{}'", name));
                 return;
             }
 
-            mouth.bind(target.symbol, [&context, font](syntax::Mouth &) {
+            mouth.bind(symbol, [&context, font](syntax::Mouth &) {
                 context.selection.text(font);
             });
 
             Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                        "Bound {} to '{}' at {} points", target.text, name, size);
+                        "Bound {} to '{}' at {} points", text, name, size);
         });
 
         // `\\@face{main}{TeX Gyre Termes}`: a face named as the system names

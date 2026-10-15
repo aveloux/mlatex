@@ -33,7 +33,7 @@ namespace render::primitives {
 
             // What the group is entered with, so that whatever it selects
             // inside is put back on the way out.
-            const Selection kept = context.selection;
+            const Selection entered = context.selection;
 
             mouth.push(syntax::semantics::Scope::Type::Group);
             syntax::Symbol matched = syntax::none;
@@ -43,7 +43,7 @@ namespace render::primitives {
 
             // Stamped while the selection is still the group's own.
             stamp(children, context);
-            context.selection = kept;
+            context.selection = entered;
 
             // A paragraph's shape set inside -- `{\centering ...\par}`,
             // `{\raggedleft ...\par}` -- is the group's own too: kept on the

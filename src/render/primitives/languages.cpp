@@ -150,7 +150,9 @@ namespace render::primitives {
             typography::Hyphenator &made = hyphenators.emplace_back();
             read.push_back(language.patterns);
             const std::string file = std::format("hyph-{}.pat.txt", language.patterns);
-            if (made.embed(file) == 0 && !context.patterns.empty()) made.compose(context.patterns + "/" + file);
+            if (made.embed(file) == 0 && !context.patterns.empty()) {
+                made.compose(std::format("{}/{}", context.patterns, file));
+            }
             return &made;
         };
 
@@ -291,8 +293,8 @@ namespace render::primitives {
                 ](const std::string_view name, const bool whole, const std::string_view fixed) {
             context.blocks.watch(
                 name,
-                [this, whole, fixed = std::string(fixed)](syntax::Mouth &mouth) {
-                    const std::string language = fixed.empty() ? syntax::Argument::expanded(mouth) : fixed;
+                [this, whole, given = std::string(fixed)](syntax::Mouth &mouth) {
+                    const std::string language = given.empty() ? syntax::Argument::expanded(mouth) : given;
                     kept.push_back(current);
                     const Language *known = get(language);
                     mouth.ingest(mouth.arena.copy(

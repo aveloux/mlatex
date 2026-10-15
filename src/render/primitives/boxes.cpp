@@ -570,14 +570,14 @@ namespace render::primitives {
                                                        std::string options, const bool beamer) {
             const bool box = kind == "tcolorbox";
             const bool shaded = kind.starts_with("shaded") || kind.starts_with("snugshade") || beamer;
-            float rule = shaded ? 0.0f : box ? 0.5f : kind == "leftbar" ? 3.0f : 0.4f;
+            float stroke = shaded ? 0.0f : box ? 0.5f : kind == "leftbar" ? 3.0f : 0.4f;
             float room = beamer ? 4.0f : box || kind == "mdframed" ? 6.0f : 9.0f;
-            const float line = static_cast<float>(context.registers.get(
+            const float breadth = static_cast<float>(context.registers.get(
                                    Registers::Type::Dimension, Registers::reserved + 1)) / 65536.0f;
-            float outer = line;
+            float outer = breadth;
             if (box) {
                 if (const std::string written = setting(options, "boxrule"); !written.empty()) {
-                    rule = std::max(measure(written, mouth, context), 0.0f);
+                    stroke = std::max(measure(written, mouth, context), 0.0f);
                 }
                 if (const std::string written = setting(options, "left"); !written.empty()) {
                     room = std::max(measure(written, mouth, context), 0.0f);
@@ -588,8 +588,8 @@ namespace render::primitives {
                     outer = measure(written, mouth, context);
                 }
             }
-            const float width = std::max(outer - 2.0f * (room + rule), 20.0f);
-            frames.push_back({std::string(kind), std::move(options), width, rule, room});
+            const float width = std::max(outer - 2.0f * (room + stroke), 20.0f);
+            frames.push_back({std::string(kind), std::move(options), width, stroke, room});
             // Inside, a line is the frame's inside.
             context.registers.set(Registers::Type::Dimension, Registers::reserved + 1,
                                   static_cast<std::int32_t>(width * 65536.0f), false);
@@ -618,11 +618,11 @@ namespace render::primitives {
             context.blocks.watch(
                 name,
                 [this, name, beamer, enclose, spelled](syntax::Mouth &mouth) {
-                    std::string options;
+                    std::string settings;
                     if (name == "mdframed" || name == "tcolorbox") {
-                        options = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                        settings = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                     }
-                    if (name == "tcolorbox") options = preset + "," + options;
+                    if (name == "tcolorbox") settings = std::format("{},{}", preset, settings);
                     if (beamer) {
                         // An overlay, `<2->`, is read and let go: every slide
                         // of a frame is the one page here.
@@ -635,10 +635,10 @@ namespace render::primitives {
                                                            : name == "exampleblock"
                                                                  ? "example"
                                                                  : "structure";
-                        options = std::format("title={{{}}},colframe={},colback={}!10", syntax::Argument::text(mouth),
+                        settings = std::format("title={{{}}},colframe={},colback={}!10", syntax::Argument::text(mouth),
                                               color, color);
                     }
-                    enclose(mouth, beamer ? "tcolorbox" : name, std::move(options), beamer);
+                    enclose(mouth, beamer ? "tcolorbox" : name, std::move(settings), beamer);
                 },
                 [closing, beamer](syntax::Mouth &mouth) { closing(mouth, beamer); });
         }
@@ -650,7 +650,7 @@ namespace render::primitives {
         //   \begin{note}{Careful} ... \end{note}
         // the first argument optional when a default is given.
         parser.mouth.bind("\\tcbset", [this, spelled](syntax::Mouth &mouth) {
-            preset += "," + spelled(mouth.argument({}, 0));
+            preset += std::format(",{}", spelled(mouth.argument({}, 0)));
         });
         for (const std::string_view command: {"\\newtcolorbox", "\\renewtcolorbox", "\\DeclareTColorBox"}) {
             parser.mouth.bind(command, [this, &context, enclose, closing, spelled](syntax::Mouth &mouth) {
@@ -661,13 +661,13 @@ namespace render::primitives {
                 std::from_chars(written.data(), written.data() + written.size(), count);
                 const bool defaulted = mouth.lookahead().is('[');
                 const std::string fallback = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                const std::string options = spelled(mouth.argument({}, 0));
+                const std::string settings = spelled(mouth.argument({}, 0));
                 if (name.empty() || boxed.contains(name)) return;
                 boxed.insert(name);
                 context.blocks.watch(
                     name,
-                    [this, enclose, spelled, count, defaulted, fallback, options](syntax::Mouth &mouth) {
-                        std::string filled = options;
+                    [this, enclose, spelled, count, defaulted, fallback, settings](syntax::Mouth &mouth) {
+                        std::string filled = settings;
                         for (int index = 1; index <= count; ++index) {
                             std::string value;
                             if (index == 1 && defaulted) {
@@ -677,13 +677,13 @@ namespace render::primitives {
                             } else {
                                 value = spelled(mouth.argument({}, 0));
                             }
-                            const std::string mark = "#" + std::to_string(index);
+                            const std::string mark = std::format("#{}", index);
                             for (std::size_t at = filled.find(mark); at != std::string::npos;
                                  at = filled.find(mark, at + value.size())) {
                                 filled.replace(at, mark.size(), value);
                             }
                         }
-                        enclose(mouth, "tcolorbox", preset + "," + filled, false);
+                        enclose(mouth, "tcolorbox", std::format("{},{}", preset, filled), false);
                     },
                     [closing](syntax::Mouth &mouth) { closing(mouth, false); });
             });
@@ -712,12 +712,18 @@ namespace render::primitives {
             const bool bar = kind == "leftbar";
             const layout::Node::Color edge = colored(option(box ? "colframe" : "linecolor"),
                                                      box
-                                                         ? layout::Node::Color{0.25f, 0.25f, 0.25f}
+                                                         ? layout::Node::Color{
+                                                             .red = 0.25f, .green = 0.25f, .blue = 0.25f
+                                                         }
                                                          : layout::Node::Color{});
             const layout::Node::Color back = colored(option(box ? "colback" : "backgroundcolor"),
                                                      box
-                                                         ? layout::Node::Color{0.95f, 0.95f, 0.95f}
-                                                         : layout::Node::Color{1.0f, 1.0f, 1.0f});
+                                                         ? layout::Node::Color{
+                                                             .red = 0.95f, .green = 0.95f, .blue = 0.95f
+                                                         }
+                                                         : layout::Node::Color{
+                                                             .red = 1.0f, .green = 1.0f, .blue = 1.0f
+                                                         });
             layout::Node *body = column(arena, children, span, opened);
 
             // The column as a row as tall as it is, which the frame goes round.
@@ -729,7 +735,7 @@ namespace render::primitives {
                 only[0] = stack;
                 return layout::Line::horizontal(arena, only, 0.0f);
             };
-            const auto row = [&arena](std::vector<layout::Node *> nodes) {
+            const auto beside = [&arena](std::vector<layout::Node *> nodes) {
                 const memory::Slice<layout::Node *> list = arena.allocate<layout::Node *>(nodes.size());
                 std::ranges::copy(nodes, list.begin());
                 return layout::Line::horizontal(arena, list, 0.0f);
@@ -775,7 +781,7 @@ namespace render::primitives {
                     .width = stroke, .height = height, .depth = depth, .color = edge
                 }));
             }
-            layout::Node *whole = row(pieces);
+            layout::Node *whole = beside(pieces);
 
             // tcolorbox's title: a bar of the frame's color, the title in
             // white bold on it, then the body under it.
@@ -789,8 +795,8 @@ namespace render::primitives {
                 const typography::Font *restore = context.selection.text();
                 const layout::Node::Color *painted = context.selection.color();
                 context.selection.color(arena.compose<layout::Node::Color>(
-                    colored(option("coltitle"), layout::Node::Color{1.0f, 1.0f, 1.0f})));
-                mouth.ingest(arena.copy("{" + option("fonttitle") + " " + title + "}"));
+                    colored(option("coltitle"), layout::Node::Color{.red = 1.0f, .green = 1.0f, .blue = 1.0f})));
+                mouth.ingest(arena.copy(std::format("{{{} {}}}", option("fonttitle"), title)));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const memory::Slice<syntax::Node *> heading = parser.parse('}');
@@ -801,11 +807,11 @@ namespace render::primitives {
 
                 std::vector<layout::Node *> written;
                 for (const syntax::Node *child: heading) compose(written, child, context);
-                layout::Node *words = row(written);
+                layout::Node *words = beside(written);
                 const float tall = words->box().height + room;
                 const float low = words->box().depth + room;
                 const layout::Node::Color banner = colored(option("colbacktitle"), edge);
-                parts.push_back(directive(arena, row({
+                parts.push_back(directive(arena, beside({
                                               paint({.width = width, .height = tall, .depth = low, .color = banner}),
                                               kern(-width + room + stroke), words
                                           }),
@@ -865,13 +871,13 @@ namespace render::primitives {
         context.blocks.watch(
             "columns",
             [this](syntax::Mouth &mouth) {
-                std::string options;
+                std::string settings;
                 for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                    options += token.text;
+                    settings += token.text;
                 }
-                const bool top = options.find('t') != std::string::npos || options.find('T') != std::string::npos;
-                spreads.push_back({top ? 't' : options.find('b') != std::string::npos ? 'b' : 'c', false});
-                mouth.ingest("\\par\\noindent\\hfill\\ignorespaces ");
+                const bool top = settings.contains('t') || settings.contains('T');
+                spreads.push_back({top ? 't' : settings.contains('b') ? 'b' : 'c', false});
+                mouth.ingest(R"(\par\noindent\hfill\ignorespaces )");
             },
             [this](syntax::Mouth &mouth) {
                 if (spreads.empty()) return;
@@ -951,7 +957,7 @@ namespace render::primitives {
         using Registers = syntax::semantics::Registers;
         const auto number = [&context](syntax::Mouth &mouth) -> std::optional<std::size_t> {
             const auto index = syntax::Number::integer(mouth, context.registers);
-            if (!index || *index < 0 || *index >= static_cast<std::int32_t>(Registers::slots)) return std::nullopt;
+            if (!index || *index < 0 || std::cmp_greater_equal(*index, Registers::slots)) return std::nullopt;
             return static_cast<std::size_t>(*index);
         };
         // TeX's tests of a box register: whether it is empty, or holds a box
@@ -1032,7 +1038,7 @@ namespace render::primitives {
                     box = layout::Line::vertical(arena, list, 0.0f);
                 } else {
                     tracebacks.emplace_back(syntax::Traceback::Type::Argument, kind.location,
-                                            "\\setbox needs \\hbox, \\vbox or \\mbox after its number");
+                                            R"(\setbox needs \hbox, \vbox or \mbox after its number)");
                     if (!kind.empty()) mouth.stream().inject(std::span{&kind, 1});
                 }
                 if (slot) keep(*slot, box);

@@ -23,6 +23,7 @@
 #include <charconv>
 #include <cmath>
 #include <format>
+#include <limits>
 #include <optional>
 #include <span>
 #include <string>
@@ -50,6 +51,9 @@ namespace render::primitives {
     static constexpr std::array<std::string_view, Sections::levels> counted{
         "chapter", "section", "subsection", "subsubsection"
     };
+
+    /// The level a heading the table of contents does not list is given.
+    static constexpr std::size_t unlisted = std::numeric_limits<std::size_t>::max();
 
     Sections::Sections(syntax::Lexicon &lexicon) noexcept {
         // Interned now so that the first use of a heading does not pay for it
@@ -157,7 +161,7 @@ namespace render::primitives {
             // Where it stands, for its page, and -- when it is numbered at a
             // level a table of contents lists -- the entry it makes there.
             const std::size_t index = context.anchors++;
-            if (listed != static_cast<std::size_t>(-1)) {
+            if (listed != unlisted) {
                 memory::Slice<syntax::Node *> shown = title;
                 if (!brief.empty()) {
                     shown = arena.allocate<syntax::Node *>(1);
@@ -166,12 +170,12 @@ namespace render::primitives {
                 context.entries.push_back({"toc", listed, number, shown, index});
                 // hyperref's bookmark for it, in the file's outline.
                 if (context.variables.get("links")) {
-                    context.document.metadata.bookmarks.push_back(
-                        {
-                            listed,
-                            (number.empty() ? std::string{} : number + " ") + (brief.empty() ? context.title : brief),
-                            index
-                        });
+                    const std::string &called = brief.empty() ? context.title : brief;
+                    context.document.metadata.bookmarks.push_back({
+                        .level = listed,
+                        .title = number.empty() ? called : std::format("{} {}", number, called),
+                        .anchor = index
+                    });
                 }
             }
 
@@ -344,7 +348,7 @@ namespace render::primitives {
                 const float body = context.document.configuration.size;
                 const typography::Font *font =
                         Styles::resolve(context, Styles::Cut::Bold, Styles::measure(body, enlargement[level]));
-                const std::size_t listed = listing ? level : static_cast<std::size_t>(-1);
+                const std::size_t listed = listing ? level : unlisted;
 
                 // A look of the class's own, or titlesec's: its face built
                 // from the body's by each change in turn, at its size; its
@@ -365,7 +369,7 @@ namespace render::primitives {
                     if (look.unlabelled) {
                         number.clear();
                     } else if (!number.empty() && !look.label.empty()) {
-                        mouth.ingest(arena.copy("{" + look.label + "}"));
+                        mouth.ingest(arena.copy(std::format("{{{}}}", look.label)));
                         number = syntax::Argument::expanded(mouth);
                     }
                     const float ex = body * 0.4306f;
@@ -386,14 +390,14 @@ namespace render::primitives {
                 std::string above;
                 if (!number.empty()) {
                     mouth.ingest(appendix ? "{\\appendixname}" : "{\\chaptername}");
-                    above = syntax::Argument::expanded(mouth) + " " + number;
+                    above = std::format("{} {}", syntax::Argument::expanded(mouth), number);
                 }
                 const typography::Font *title =
                         Styles::resolve(context, Styles::Cut::Bold, Styles::measure(body, Styles::Size::Hugest));
                 return heading(parser, title, number, spacing[level], origin, listed, brief, above, font, true);
             };
             parser.bind(names[level], handler);
-            parser.bind(std::string(names[level]) + ":native", handler);
+            parser.bind(std::format("{}:native", names[level]), handler);
         }
 
         // A level's look, as titlesec's \\titleformat gives it and the
@@ -503,7 +507,7 @@ namespace render::primitives {
             look.display = shape == "display";
             // A label of `*` keeps the number as the counter prints it, as
             // titlesec's starred \\titleformat does.
-            look.unlabelled = label.find_first_not_of(" ") == std::string::npos;
+            look.unlabelled = label.find_first_not_of(' ') == std::string::npos;
             look.label = label.starts_with('*') ? std::string{} : label;
             if (!sep.empty()) look.sep = measure(sep, mouth, context);
             scan(format, look);
@@ -519,7 +523,7 @@ namespace render::primitives {
         // level past subsubsection, or a heading of a name of its own below
         // it, runs in at the start of its paragraph, in its style.
         parser.mouth.bind("\\@startsection", [this, leveled, scan, natural](syntax::Mouth &mouth) {
-            const std::string name = "\\" + syntax::Argument::text(mouth);
+            const std::string name = std::format("\\{}", syntax::Argument::text(mouth));
             const std::string depth = syntax::Argument::expanded(mouth);
             static_cast<void>(syntax::Argument::text(mouth));
             const std::string above = syntax::Argument::expanded(mouth);
@@ -530,7 +534,7 @@ namespace render::primitives {
             if (!level) {
                 int number = 0;
                 std::from_chars(depth.data(), depth.data() + depth.size(), number);
-                if (number >= 0 && number < static_cast<int>(levels)) level = static_cast<std::size_t>(number);
+                if (number >= 0 && std::cmp_less(number, levels)) level = static_cast<std::size_t>(number);
             }
             if (!level || below.starts_with('-')) {
                 std::string written;
@@ -538,7 +542,7 @@ namespace render::primitives {
                     written += token.text;
                     if (token.text.size() > 1 && token.text.front() == '\\') written += ' ';
                 }
-                mouth.ingest(mouth.arena.copy("\\@runin{" + written + "}"));
+                mouth.ingest(mouth.arena.copy(std::format("\\@runin{{{}}}", written)));
                 return;
             }
             if (leveled(name)) {
@@ -547,7 +551,7 @@ namespace render::primitives {
                 look.spacing = {natural(above, mouth), natural(below, mouth)};
                 looks[*level] = std::move(look);
             }
-            const syntax::Symbol native = mouth.lexicon.intern(std::string(names[*level]) + ":native");
+            const syntax::Symbol native = mouth.lexicon.intern(std::format("{}:native", names[*level]));
             const syntax::Token token{
                 .symbol = native, .category = syntax::Catcodes::Category::Escape,
                 .text = mouth.lexicon.resolve(native)
@@ -596,7 +600,7 @@ namespace render::primitives {
                 context.counters->step("part");
                 const std::string number = Counters::print(mouth, "part");
                 mouth.ingest("{\\partname}");
-                label = syntax::Argument::expanded(mouth) + " " + number;
+                label = std::format("{} {}", syntax::Argument::expanded(mouth), number);
                 context.anchor = number;
                 context.kind = "part";
             }
@@ -606,7 +610,7 @@ namespace render::primitives {
                                                            Styles::measure(body, Styles::Size::Huge));
             const typography::Font *lead = Styles::resolve(context, Styles::Cut::Bold,
                                                            Styles::measure(body, Styles::Size::Larger));
-            return heading(parser, font, label, {4.0f, 3.0f}, origin, static_cast<std::size_t>(-1), brief, label, lead);
+            return heading(parser, font, label, {4.0f, 3.0f}, origin, unlisted, brief, label, lead);
         });
 
         // From here the outermost numbered level -- a chapter if the
@@ -761,7 +765,7 @@ namespace render::primitives {
             for (const std::string_view level: cut(sides.front(), '!')) {
                 const std::vector<std::string_view> parts = cut(level, '@');
                 term.keys.push_back(trim(parts.front()));
-                mouth.ingest(arena.copy("{" + trim(parts.back()) + "}"));
+                mouth.ingest(arena.copy(std::format("{{{}}}", trim(parts.back()))));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const memory::Slice<syntax::Node *> shown = parser.parse('}');
@@ -790,7 +794,7 @@ namespace render::primitives {
                 .text = mouth.lexicon.resolve(marks[3])
             };
             mouth.stream().inject(std::span{&mark, 1});
-            mouth.ingest("\\twocolumn[\\csname\\@bibkind\\endcsname*{\\indexname}]");
+            mouth.ingest(R"(\twocolumn[\csname\@bibkind\endcsname*{\indexname}])");
             return nullptr;
         });
         parser.bind(marks[3], [this](syntax::Parser &parser) -> syntax::Node * {
@@ -866,7 +870,7 @@ namespace render::primitives {
                 for (const Context::Entry &entry: context.entries) {
                     if (entry.list != lists[which]) continue;
                     const bool contents = which == 0;
-                    if (contents && static_cast<int>(entry.level) > deepest) continue;
+                    if (contents && std::cmp_greater(entry.level, deepest)) continue;
                     const std::size_t depth = contents
                                                   ? entry.level - (
                                                         chaptered ? 0 : std::min<std::size_t>(entry.level, 1))
@@ -949,9 +953,11 @@ namespace render::primitives {
             for (const auto &[which, place]: places) {
                 if (which != 3) continue;
                 std::vector<const Term *> sorted;
+                sorted.reserve(terms.size());
                 for (const Term &term: terms) sorted.push_back(&term);
                 const auto path = [&order](const Term *term) {
                     std::vector<std::string> keys;
+                    keys.reserve(term->keys.size());
                     for (const std::string &key: term->keys) keys.push_back(order(key));
                     return keys;
                 };
@@ -998,11 +1004,14 @@ namespace render::primitives {
                                                              ? std::string{}
                                                              : encap.substr(brace + 1);
                                     if (target.ends_with('}')) target.pop_back();
-                                    see = (encap.starts_with("seealso") ? "see also " : "see ") + target;
+                                    see = std::format("{} {}", encap.starts_with("seealso") ? "see also" : "see",
+                                                      target);
                                 } else if (encap == "(") {
                                     opened = page;
                                 } else if (encap == ")" && !opened.empty()) {
-                                    pages.emplace_back(opened == page ? page : opened + "\xE2\x80\x93" + page, regular);
+                                    // A range, its ends joined by an en dash.
+                                    pages.emplace_back(
+                                        opened == page ? page : std::format("{}\xE2\x80\x93{}", opened, page), regular);
                                     opened.clear();
                                 } else if (pages.empty() || pages.back().first != page) {
                                     pages.emplace_back(page, encap.contains("bf")
@@ -1029,8 +1038,9 @@ namespace render::primitives {
                                     ++run;
                                 }
                                 if (run - index >= 3 && whole(pages[index].first) >= 0) {
-                                    joined.emplace_back(pages[index].first + "\xE2\x80\x93" + pages[run - 1].first,
-                                                        pages[index].second);
+                                    joined.emplace_back(
+                                        std::format("{}\xE2\x80\x93{}", pages[index].first, pages[run - 1].first),
+                                        pages[index].second);
                                     index = run;
                                 } else {
                                     joined.push_back(pages[index++]);

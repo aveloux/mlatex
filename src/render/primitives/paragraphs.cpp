@@ -10,6 +10,7 @@
 #include "syntax/number.hpp"
 
 #include <array>
+#include <format>
 #include <span>
 #include <utility>
 
@@ -75,7 +76,7 @@ namespace render::primitives {
                 const auto scanned = syntax::Number::dimension(mouth, context.registers);
                 if (!scanned) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Dimension, origin,
-                                            std::string(name) + " needs a dimension");
+                                            std::format("{} needs a dimension", name));
                     return nullptr;
                 }
 

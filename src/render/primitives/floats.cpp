@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 #include <span>
 #include <tuple>
 #include <string_view>
@@ -74,19 +75,19 @@ namespace render::primitives {
             const bool ahead = floats.size() < 2 || !floats[floats.size() - 2].captioned;
             const int value = context.counters->value(parent);
             if (ahead) context.counters->set(parent, value + 1);
-            context.anchor = Counters::print(mouth, parent) + number;
+            context.anchor = std::format("{}{}", Counters::print(mouth, parent), number);
             if (ahead) context.counters->set(parent, value);
-            number = "(" + number + ")";
+            number = std::format("({})", number);
         } else if (!floats.empty()) {
             floats.back().captioned = true;
         }
 
         // Named by `\\<kind>name`, as LaTeX names its own -- \\figurename,
         // \\tablename -- and the float package a float of a new kind.
-        const std::string macro = "\\" + kind + "name";
+        const std::string macro = std::format("\\{}name", kind);
         std::string name;
         if (!sub) {
-            mouth.ingest(context.arena.copy("{" + macro + "}"));
+            mouth.ingest(context.arena.copy(std::format("{{{}}}", macro)));
             name = syntax::Argument::expanded(mouth);
             if (name == macro) name = kind == "algorithm" ? "Algorithm" : name;
         }
@@ -96,7 +97,7 @@ namespace render::primitives {
         const std::string *labelfont = context.variables.get("caption.labelfont");
         const std::string *font = context.variables.get("caption.font");
         const std::string *labelsep = context.variables.get("caption.labelsep");
-        const bool bold = ruled || (labelfont && labelfont->find("bf") != std::string::npos);
+        const bool bold = ruled || (labelfont && labelfont->contains("bf"));
         std::string separator = ruled || sub ? " " : ": ";
         if (labelsep && *labelsep == "period") separator = ". ";
         if (labelsep && (*labelsep == "space" || *labelsep == "quad")) separator = " ";
@@ -104,14 +105,14 @@ namespace render::primitives {
 
         const layout::Document::Configuration &page = context.document.configuration;
         Styles::Size step = Styles::Size::Normal;
-        if (font && font->find("small") != std::string::npos) step = Styles::Size::Small;
-        if (font && font->find("footnotesize") != std::string::npos) step = Styles::Size::Footnote;
-        if (font && font->find("scriptsize") != std::string::npos) step = Styles::Size::Script;
+        if (font && font->contains("small")) step = Styles::Size::Small;
+        if (font && font->contains("footnotesize")) step = Styles::Size::Footnote;
+        if (font && font->contains("scriptsize")) step = Styles::Size::Script;
         const float size = Styles::measure(page.size, step);
 
         const typography::Font *face = Styles::resolve(context, Styles::Cut::Current, size);
         if (!face) face = restore;
-        if (font && font->find("it") != std::string::npos) {
+        if (font && font->contains("it")) {
             context.selection.text(face);
             face = Styles::resolve(context, Styles::Cut::Italic, size);
         }
@@ -130,7 +131,7 @@ namespace render::primitives {
         context.selection.text(restore);
 
         const typography::Font *labelled[] = {heavy ? heavy : face};
-        const std::string label = name.empty() ? number : name + (number.empty() ? "" : " " + number);
+        const std::string label = name.empty() ? number : number.empty() ? name : std::format("{} {}", name, number);
         const memory::Slice<layout::Node *> shaped =
                 context.shaper.shape(memory::Slice{labelled, 1uz}, arena.copy(label), {});
         layout::Node *head = layout::Line::horizontal(arena, shaped, 0.0f);
@@ -293,7 +294,7 @@ namespace render::primitives {
                     mouth.stream().inject(std::span{&mark, 1});
                 },
                 [this](syntax::Mouth &mouth) {
-                    const bool ruled = !floats.empty() && floats.back().ruled;
+                    const bool ruling = !floats.empty() && floats.back().ruled;
                     const bool across = !floats.empty() && floats.back().across;
                     if (!floats.empty()) floats.pop_back();
 
@@ -306,7 +307,7 @@ namespace render::primitives {
                     };
                     mouth.stream().inject(std::span{&mark, 1});
                     if (across) mouth.ingest("\\par\\@columns0 ");
-                    mouth.ingest(ruled
+                    mouth.ingest(ruling
                                      ? "\\par\\vskip 2pt\\hrule height 0.4pt\\vskip 12pt plus 2pt minus 2pt"
                                      "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent "
                                      : "\\par\\vskip 12pt plus 2pt minus 2pt"

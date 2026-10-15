@@ -56,7 +56,7 @@ namespace render::primitives {
                 }
                 return std::string(value);
             }
-            const std::string *set = context.variables.get("lst." + std::string(key));
+            const std::string *set = context.variables.get(std::format("lst.{}", key));
             return set ? *set : std::string{};
         };
 
@@ -102,7 +102,7 @@ namespace render::primitives {
 
         // Inline: the text after \verb, \Verb, \lstinline or \mintinline, one box.
         for (const std::string_view name: {"\\verb", "\\Verb", "\\lstinline", "\\mintinline"}) {
-            parser.bind(name, [this, typed, current, name](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(name, [this, typed, current, name](const syntax::Parser &parser) -> syntax::Node * {
                 syntax::Mouth &mouth = parser.mouth;
                 const memory::Location origin = mouth.lookahead().location;
                 const syntax::Token text = mouth.read();
@@ -139,8 +139,8 @@ namespace render::primitives {
                     const bool listing = name == "lstlisting" || name == "minted";
                     const bool unread = name == "comment" || name == "CCSXML" || name.starts_with("luacode");
                     openings.push_back({
-                        listing ? "lstlisting" : unread ? "comment" : "verbatim",
-                        std::move(options)
+                        .kind = listing ? "lstlisting" : unread ? "comment" : "verbatim",
+                        .options = std::move(options)
                     });
                     const syntax::Token mark{
                         .symbol = start, .category = syntax::Catcodes::Category::Escape,
@@ -172,7 +172,7 @@ namespace render::primitives {
         }
 
         // \lstinputlisting[options]{file}: a listing of a file handed in.
-        parser.bind("\\lstinputlisting", [this, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\lstinputlisting", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
@@ -190,8 +190,8 @@ namespace render::primitives {
                                         std::format("\\lstinputlisting: no file named '{}' was handed in", name));
                 return nullptr;
             }
-            openings.push_back({"lstlisting", std::move(options)});
-            const std::array<syntax::Token, 2> marked{
+            openings.push_back({.kind = "lstlisting", .options = std::move(options)});
+            const std::array marked{
                 syntax::Token{
                     .symbol = start, .category = syntax::Catcodes::Category::Escape,
                     .text = mouth.lexicon.resolve(start)
@@ -236,8 +236,8 @@ namespace render::primitives {
                     };
                     if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                     mouth.stream().inject(std::span{&mark, 1});
-                    mouth.ingest(arena.copy("\\captionof{lstlisting}{" + caption + "}" +
-                                            (label.empty() ? std::string{} : "\\label{" + label + "}")));
+                    const std::string labelled = label.empty() ? std::string{} : std::format("\\label{{{}}}", label);
+                    mouth.ingest(arena.copy(std::format("\\captionof{{lstlisting}}{{{}}}{}", caption, labelled)));
                     return nullptr;
                 }
             }
@@ -312,8 +312,9 @@ namespace render::primitives {
                     constexpr float separation = 10.0f;
                     const typography::Font *fonts[] = {small};
                     layout::Node *number = layout::Line::horizontal(
-                        arena, context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(std::to_string(index + 1)),
-                                                    {}),
+                        arena,
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz},
+                                             arena.copy(std::format("{}", index + 1)), {}),
                         0.0f);
                     const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(4);
                     row[0] = arena.compose<layout::Node>(layout::Node::Type::Kern);

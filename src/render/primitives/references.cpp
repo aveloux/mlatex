@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 #include <ranges>
 #include <span>
 #include <string_view>
@@ -39,16 +40,19 @@ namespace render::primitives {
                        : std::string("??");
         }
 
-        std::string number = mark.kind == "equation" && form != Form::Number ? "(" + mark.text + ")" : mark.text;
+        std::string number = mark.kind == "equation" && form != Form::Number
+                                 ? std::format("({})", mark.text)
+                                 : mark.text;
         if (form == Form::Number || mark.kind.empty()) return number;
 
         // The name the document or cleveref gave the kind, or the kind itself.
-        const std::string *named = context.variables.get((form == Form::Capital ? "Cref." : "cref.") + mark.kind);
+        const std::string *named = context.variables.get(
+            std::format("{}.{}", form == Form::Capital ? "Cref" : "cref", mark.kind));
         std::string name = named ? *named : mark.kind;
         if (!named && form == Form::Capital && !name.empty() && name[0] >= 'a' && name[0] <= 'z') {
             name[0] = static_cast<char>(name[0] - 'a' + 'A');
         }
-        return name + " " + number;
+        return std::format("{} {}", name, number);
     }
 
     References::Hyperlink References::hyperlink(Context &context, const std::string_view target,
@@ -56,7 +60,7 @@ namespace render::primitives {
                                                 const std::string_view kind) {
         if (!context.variables.get("links")) return {};
         const auto option = [&context](const std::string_view key) {
-            return context.variables.get("hyperref." + std::string(key));
+            return context.variables.get(std::format("hyperref.{}", key));
         };
         const auto on = [&option](const std::string_view key) {
             const std::string *value = option(key);
@@ -76,12 +80,12 @@ namespace render::primitives {
         made.open = context.arena.compose<layout::Node>(layout::Node::Type::Directive);
         made.open->directive({
             .command = layout::Node::Directive::Command::Link, .target = context.arena.copy(target),
-            .border = hidden || colored ? Color{0.0f, 0.0f, 0.0f, 0.0f} : frame, .index = anchor
+            .border = hidden || colored ? Color{.alpha = 0.0f} : frame, .index = anchor
         });
         made.close = context.arena.compose<layout::Node>(layout::Node::Type::Directive);
         made.close->directive({.command = layout::Node::Directive::Command::Unlink});
         if (colored) {
-            const std::string *named = option(std::string(kind) + "color");
+            const std::string *named = option(std::format("{}color", kind));
             if (!named) named = option("allcolors");
             const std::string_view fallback = kind == "url" ? "magenta" : kind == "cite" ? "green" : "red";
             const auto [red, green, blue, alpha] = Colors::resolve(named ? std::string_view(*named) : fallback,
@@ -119,7 +123,7 @@ namespace render::primitives {
             Mark &mark = marks[name];
             if (mark.defined) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                        "Label `" + name + "' multiply defined");
+                                        std::format("Label `{}' multiply defined", name));
                 return;
             }
 
@@ -239,8 +243,8 @@ namespace render::primitives {
                     std::string plural;
                     if (alike) {
                         const std::string *named = context.variables.get(
-                            (form == Form::Capital ? "Crefs." : "crefs.") + kind);
-                        plural = named ? *named : kind + "s";
+                            std::format("{}.{}", form == Form::Capital ? "Crefs" : "crefs", kind));
+                        plural = named ? *named : std::format("{}s", kind);
                         if (!named && form == Form::Capital && plural[0] >= 'a' && plural[0] <= 'z') {
                             plural[0] = static_cast<char>(plural[0] - 'a' + 'A');
                         }
@@ -256,7 +260,8 @@ namespace render::primitives {
                         const Form spelled = index == 0 ? form : Form::Named;
                         std::string written = "??";
                         if (alike) {
-                            written = (index == 0 ? plural + " " : std::string{}) + write(each, Form::Number, context);
+                            const std::string number = write(each, Form::Number, context);
+                            written = index == 0 ? std::format("{} {}", plural, number) : number;
                         } else if (each.defined) {
                             written = write(each, spelled, context);
                         }
@@ -356,7 +361,7 @@ namespace render::primitives {
                 if (marks[label].defined || std::ranges::contains(said, label)) continue;
                 said.push_back(label);
                 tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                        "Reference `" + label + "' undefined");
+                                        std::format("Reference `{}' undefined", label));
             }
         });
 

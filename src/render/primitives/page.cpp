@@ -117,7 +117,7 @@ namespace render::primitives {
                 if (!scanned) {
                     tracebacks.emplace_back(
                         syntax::Traceback::Type::Dimension, mouth.lookahead().location,
-                        std::string(name) + " needs a dimension");
+                        std::format("{} needs a dimension", name));
                     return;
                 }
 
@@ -299,7 +299,7 @@ namespace render::primitives {
                 }
             };
             const auto known = std::ranges::find(classes, std::string_view(name), &Class::name);
-            const std::string module = name + "/main.mtex";
+            const std::string module = std::format("{}/main.mtex", name);
             const bool carried = syntax::modules::get(module).has_value();
             if (known == classes.end() && !carried) {
                 tracebacks.emplace_back(
@@ -370,7 +370,7 @@ namespace render::primitives {
             const bool eleven = body > 10.5f && body < 11.5f;
             const bool twelve = body >= 11.5f;
             const float baseline = twelve ? 14.5f : eleven ? 13.6f : 12.0f;
-            const float indent = twelve ? 18.0f : eleven ? 17.0f : 15.0f;
+            const float indentation = twelve ? 18.0f : eleven ? 17.0f : 15.0f;
             const float line = columns > 1
                                    ? std::min(twelve ? 450.0f : eleven ? 430.0f : 410.0f, width - 108.0f)
                                    : std::min(twelve ? 390.0f : eleven ? 360.0f : 345.0f, width - 144.0f);
@@ -388,7 +388,7 @@ namespace render::primitives {
             page.top = top;
             page.bottom = height - top - tall;
             page.leading = baseline;
-            page.indent = indent;
+            page.indent = indentation;
             page.size = body;
             page.columns = columns;
             page.fitted = fitted;
@@ -611,7 +611,7 @@ namespace render::primitives {
                                 for (++next; next < body.size() && !body[next].is(']'); ++next)
                                     written += body[next].text;
                                 std::from_chars(written.data(), written.data() + written.size(), step);
-                                text += "[" + written + "]";
+                                text += std::format("[{}]", written);
                                 at = std::min(next + 1, body.size());
                             } else {
                                 ++step;
@@ -633,7 +633,7 @@ namespace render::primitives {
                                     spec = given.value_or("");
                                     next = after(past);
                                     if (next < body.size() && body[next].is(']')) ++next;
-                                    text += "\\begin{" + name + "}";
+                                    text += std::format("\\begin{{{}}}", name);
                                     defaults.push_back(spec);
                                     at = next;
                                     continue;
@@ -647,15 +647,20 @@ namespace render::primitives {
                                 if (given) {
                                     count(*given);
                                     if (std::ranges::contains(shown, name)) {
-                                        text += name == "onlyenv"
-                                                    ? "\\@onslide{" + *given + "}{"
-                                                    : name == "invisibleenv"
-                                                          ? "{\\@onslide{" + *given + "}{\\@conceal}{}"
-                                                          : "{\\@onslide{" + *given + "}{}{\\@conceal}";
+                                        // `\@onslide{2}{` opens what only those slides show;
+                                        // the others what they hide, or what they show.
+                                        if (name == "onlyenv") {
+                                            text += std::format(R"(\@onslide{{{}}}{{)", *given);
+                                        } else if (name == "invisibleenv") {
+                                            text += std::format(R"({{\@onslide{{{}}}{{\@conceal}}{{}})", *given);
+                                        } else {
+                                            text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}})", *given);
+                                        }
                                         closings.emplace_back(name, name == "onlyenv" ? "}{}" : "}");
                                     } else {
-                                        text += "{\\@onslide{" + *given + "}{}{\\@conceal}\\begin{" + name + "}";
-                                        closings.emplace_back(name, "\\end{" + name + "}}");
+                                        text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}}\begin{{{}}})", *given,
+                                                            name);
+                                        closings.emplace_back(name, std::format("\\end{{{}}}}}", name));
                                     }
                                     at = past;
                                     continue;
@@ -666,7 +671,7 @@ namespace render::primitives {
                                 at = end;
                                 continue;
                             }
-                            text += std::string(token.text) + "{" + name + "}";
+                            text += std::format("{}{{{}}}", token.text, name);
                             at = end;
                             continue;
                         }
@@ -687,12 +692,12 @@ namespace render::primitives {
                             const auto [given, past] = overlay(next);
                             if (given) {
                                 count(*given);
-                                text += "<" + *given + ">";
+                                text += std::format("<{}>", *given);
                                 at = past;
                             } else {
                                 if (token.text == "\\item" && !defaults.empty() && !defaults.back().empty()) {
                                     count(defaults.back());
-                                    text += "<" + defaults.back() + ">";
+                                    text += std::format("<{}>", defaults.back());
                                 }
                                 at += 1;
                             }
@@ -715,7 +720,7 @@ namespace render::primitives {
                     } else {
                         std::string slides = text;
                         for (int copy = 2; copy <= last; ++copy) {
-                            slides += std::format("\\end{{frame}}\\begin{{frame}}<@{}>", copy) + text;
+                            slides += std::format("\\end{{frame}}\\begin{{frame}}<@{}>{}", copy, text);
                         }
                         mouth.ingest(context.arena.copy(slides));
                     }
@@ -940,10 +945,10 @@ namespace render::primitives {
                                 // scrheadings -- setting the heads and feet a fancy page
                                 // draws.
                                 syntax::Mouth &mouth = parser.mouth;
-                                const syntax::Symbol defined = mouth.lexicon.intern("\\ps@" + name);
+                                const syntax::Symbol defined = mouth.lexicon.intern(std::format("\\ps@{}", name));
                                 if (!mouth.known(defined)) {
                                     tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                                            "Unknown page style '" + name + "'");
+                                                            std::format("Unknown page style '{}'", name));
                                     return directive(arena, nullptr, origin);
                                 }
                                 const syntax::Token call{
@@ -975,7 +980,7 @@ namespace render::primitives {
                 order.capital = name == "Alph";
             } else {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "Unknown page numbering '" + name + "'");
+                                        std::format("Unknown page numbering '{}'", name));
                 return directive(arena, nullptr, origin);
             }
 
@@ -1034,7 +1039,7 @@ namespace render::primitives {
             const bool every = places.find_first_of("LCR") == std::string::npos;
             layout::Document::Furniture &furniture = context.document.furniture;
             for (std::size_t place = 0; place < 3; ++place) {
-                if (!every && places.find("LCR"[place]) == std::string::npos) continue;
+                if (!every && !places.contains("LCR"[place])) continue;
                 if (head) furniture.head[place] = nodes;
                 if (foot) furniture.foot[place] = nodes;
             }

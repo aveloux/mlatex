@@ -44,7 +44,7 @@ namespace render::primitives {
         /// @brief Installs the font primitives.
         /// @param parser  Parser whose expander to bind into.
         /// @param context Engine services; faces come from its registry.
-        void operator()(syntax::Parser &parser, Context &context) const;
+        void operator()(const syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded.
         ///

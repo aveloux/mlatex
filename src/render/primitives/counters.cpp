@@ -12,6 +12,7 @@
 #include <cctype>
 #include <charconv>
 #include <optional>
+#include <format>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -26,7 +27,7 @@ namespace render::primitives {
     static std::optional<std::int32_t> integer(syntax::Mouth &mouth,
                                                const syntax::semantics::Registers &registers) {
         const std::string expanded = syntax::Argument::expanded(mouth);
-        mouth.ingest(mouth.arena.copy("{" + expanded + "}"));
+        mouth.ingest(mouth.arena.copy(std::format("{{{}}}", expanded)));
         syntax::Cursor value(mouth.argument({}, 0));
         return syntax::Number::integer(value, registers);
     }
@@ -60,11 +61,11 @@ namespace render::primitives {
         };
         const auto character = [&](const char written, const syntax::Catcodes::Category category) {
             const syntax::Symbol bound = lexicon.intern(std::string_view(&written, 1));
-            body.push_back(syntax::Token{bound, category, memory::Location{}, lexicon.resolve(bound)});
+            body.push_back(syntax::Token{.symbol = bound, .category = category, .text = lexicon.resolve(bound)});
         };
 
         if (!parent.empty()) {
-            word("\\the" + std::string(parent));
+            word(std::format("\\the{}", parent));
             character('.', syntax::Catcodes::Category::Other);
         }
         word(std::string(numeral));
@@ -77,7 +78,7 @@ namespace render::primitives {
 
         // Global, as LaTeX's counters are: a counter made inside a group
         // still prints once the group is over.
-        mouth.define(lexicon.intern("\\the" + std::string(name)), syntax::Mouth::Macro{.body = std::move(body)}, true);
+        mouth.define(lexicon.intern(std::format("\\the{}", name)), syntax::Mouth::Macro{.body = std::move(body)}, true);
     }
 
     void Counters::define(syntax::Mouth &mouth, const std::string_view name, const std::string_view parent,
@@ -131,7 +132,7 @@ namespace render::primitives {
     }
 
     std::string Counters::print(syntax::Mouth &mouth, const std::string_view name) {
-        mouth.ingest(mouth.arena.copy("{\\the" + std::string(name) + "}"));
+        mouth.ingest(mouth.arena.copy(std::format("{{\\the{}}}", name)));
         return syntax::Argument::expanded(mouth);
     }
 
@@ -153,7 +154,7 @@ namespace render::primitives {
             }
             if (counters.contains(name)) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "Counter '" + name + "' already exists");
+                                        std::format("Counter '{}' already exists", name));
                 return;
             }
             // Reset with its parent, but printed as a number of its own, as
@@ -167,7 +168,8 @@ namespace render::primitives {
         // that change one.
         const auto known = [this](const std::string &name, const memory::Location origin) {
             if (counters.contains(name)) return true;
-            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, "No counter '" + name + "' defined");
+            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
+                                    std::format("No counter '{}' defined", name));
             return false;
         };
 
@@ -194,7 +196,7 @@ namespace render::primitives {
             // made: set from the page this lands on, as \@folio says.
             if (name == "page") {
                 if (const auto scanned = integer(mouth, context.registers); scanned && *scanned >= 0) {
-                    mouth.ingest(context.arena.copy("\\@folio{" + std::to_string(*scanned) + "}"));
+                    mouth.ingest(context.arena.copy(std::format("\\@folio{{{}}}", *scanned)));
                 }
                 return;
             }
@@ -267,7 +269,7 @@ namespace render::primitives {
                 const auto found = counters.find(key);
                 if (found == counters.end()) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                            "No counter '" + key + "' defined");
+                                            std::format("No counter '{}' defined", key));
                     mouth.ingest("??");
                     return;
                 }
@@ -315,7 +317,7 @@ namespace render::primitives {
             const auto [end, fault] = std::from_chars(written.data(), written.data() + written.size(), value);
             if (fault != std::errc{} || end != written.data() + written.size()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "A number is wanted in words, not '" + written + "'");
+                                        std::format("A number is wanted in words, not '{}'", written));
                 return;
             }
             const bool ordinal = style == "ordinal" || style == "Ordinal" || style == "ORDINAL";

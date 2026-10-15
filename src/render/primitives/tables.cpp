@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <format>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -152,11 +153,11 @@ namespace render::primitives {
                     // arguments put in, read in its place.
                     if (const auto code = static_cast<unsigned char>(letter); customs && code < customs->size() &&
                                                                               !(*customs)[code].body.empty()) {
-                        const Tables::Custom &made = (*customs)[code];
-                        std::string expanded = made.body;
-                        for (int index = 1; index <= made.count; ++index) {
+                        const auto &[count, body] = (*customs)[code];
+                        std::string expanded = body;
+                        for (int index = 1; index <= count; ++index) {
                             const std::string argument(enclosed(text, at));
-                            const std::string mark = "#" + std::to_string(index);
+                            const std::string mark = std::format("#{}", index);
                             for (std::size_t found = expanded.find(mark); found != std::string::npos;
                                  found = expanded.find(mark, found + argument.size())) {
                                 expanded.replace(found, mark.size(), argument);
@@ -410,15 +411,17 @@ namespace render::primitives {
                     // them, with room under it; `\\caption*` its text alone.
                     std::string caption;
                     if (breakable) {
-                        const std::string across = "\\multicolumn{" + std::to_string(opening.columns.size()) + "}{c}";
-                        caption = "\\@define\\caption{\\@ifstar\\@longplain\\@longcaption}"
-                                  "\\@define\\@longcaption[2][]{" + across +
-                                  "{\\makebox[0pt][c]{\\captionof{table}[#1]{#2}}\\rule[-1em]{0pt}{1em}}}"
-                                  "\\@define\\@longplain#1{" + across +
-                                  "{\\makebox[0pt][c]{#1}\\rule[-1em]{0pt}{1em}}}";
+                        // `{0}` is the span across every column, in each of the two.
+                        const std::string across = std::format(R"(\multicolumn{{{}}}{{c}})", opening.columns.size());
+                        caption = std::format(
+                            R"(\@define\caption{{\@ifstar\@longplain\@longcaption}})"
+                            R"(\@define\@longcaption[2][]{{{0}{{\makebox[0pt][c]{{\captionof{{table}}[#1]{{#2}}}})"
+                            R"(\rule[-1em]{{0pt}}{{1em}}}}}})"
+                            R"(\@define\@longplain#1{{{0}{{\makebox[0pt][c]{{#1}}\rule[-1em]{{0pt}}{{1em}}}}}})",
+                            across);
                     }
                     openings.push_back(std::move(opening));
-                    mouth.ingest(context.arena.copy(caption + "\\tabular "));
+                    mouth.ingest(context.arena.copy(std::format("{}\\tabular ", caption)));
                 },
                 [](syntax::Mouth &mouth) { mouth.ingest("\\endtabular "); });
         }
@@ -612,7 +615,7 @@ namespace render::primitives {
             // The rows up to the last of longtable's marks, which said what
             // part they are, and which parts were given at all.
             std::size_t marked = 0;
-            std::array < bool, 5 > given{};
+            std::array<bool, 5> given{};
             std::vector<Stroke> trailing;
             bool closed = false;
 
@@ -683,7 +686,7 @@ namespace render::primitives {
                     std::size_t at = 0;
                     for (const Cell &item: current.cells) at += item.span;
                     if (at < opening.columns.size() && !opening.columns[at].head.empty()) {
-                        mouth.ingest(context.arena.copy(opening.columns[at].head + " "));
+                        mouth.ingest(context.arena.copy(std::format("{} ", opening.columns[at].head)));
                     }
                 }
 
@@ -973,7 +976,7 @@ namespace render::primitives {
                        thin * static_cast<float>(format.before) +
                        (index + 1 == count ? thin * static_cast<float>(format.after) : 0.0f);
             };
-            const std::size_t stretched = static_cast<std::size_t>(
+            const auto stretched = static_cast<std::size_t>(
                 std::ranges::count_if(columns, [](const Column &format) { return format.stretch; }));
             if (stretched > 0) {
                 const float target = opening.width.empty()

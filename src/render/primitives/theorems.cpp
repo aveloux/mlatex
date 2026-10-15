@@ -11,6 +11,7 @@
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 
+#include <format>
 #include <ranges>
 #include <span>
 #include <string>
@@ -39,7 +40,7 @@ namespace render::primitives {
             const auto found = styles.find(name);
             if (found == styles.end()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Argument, mouth.lookahead().location,
-                                        "No theorem style named '" + name + "'");
+                                        std::format("No theorem style named '{}'", name));
                 style = Style::Plain;
                 return;
             }
@@ -57,9 +58,9 @@ namespace render::primitives {
             const std::string heading = syntax::Argument::text(mouth);
             for (int remaining = 0; remaining < 3; ++remaining) static_cast<void>(syntax::Argument::text(mouth));
 
-            const bool slanted = body.find("\\itshape") != std::string::npos ||
-                                 body.find("\\slshape") != std::string::npos;
-            const bool quiet = heading.find("\\itshape") != std::string::npos;
+            const bool slanted = body.contains("\\itshape") ||
+                                 body.contains("\\slshape");
+            const bool quiet = heading.contains("\\itshape");
             styles[name] = slanted ? Style::Plain : quiet ? Style::Remark : Style::Definition;
         });
 
@@ -89,26 +90,24 @@ namespace render::primitives {
                 const std::string body = kind.style == Style::Plain ? "{\\itshape\\ignorespaces " : "{\\ignorespaces ";
                 // The head: the name and its number, bold -- italic in the
                 // remark style.
-                const std::string title = number.empty() ? kind.title : kind.title + " " + number;
-                const std::string opening = std::string(around) + "\\noindent " +
-                                            (kind.style == Style::Remark
-                                                 ? "{\\itshape " + title + "}"
-                                                 : "{\\bfseries " + title + "}");
+                const std::string title = number.empty() ? kind.title : std::format("{} {}", kind.title, number);
+                const std::string_view face = kind.style == Style::Remark ? "\\itshape" : "\\bfseries";
+                const std::string opening = std::format("{}\\noindent {{{} {}}}", around, face, title);
 
                 // Read in the order written: the head, the note in its
                 // parentheses, and the body. Each is put in front of the one
                 // after it, so they go in last first.
                 if (note.empty()) {
-                    mouth.ingest(context.arena.copy(opening + stop + "\\ " + body));
+                    mouth.ingest(context.arena.copy(std::format("{}{}\\ {}", opening, stop, body)));
                     return;
                 }
-                mouth.ingest(context.arena.copy("})" + stop + "\\ " + body));
+                mouth.ingest(context.arena.copy(std::format("}}){}\\ {}", stop, body)));
                 mouth.stream().inject(std::span{note});
-                mouth.ingest(context.arena.copy(opening + "\\ ({\\normalfont "));
+                mouth.ingest(context.arena.copy(std::format("{}\\ ({{\\normalfont ", opening)));
             };
         };
         const syntax::Mouth::Handler leaving = [](syntax::Mouth &mouth) {
-            mouth.ingest("}\\par\\vskip 8pt plus 2pt minus 4pt\\noindent ");
+            mouth.ingest(R"(}\par\vskip 8pt plus 2pt minus 4pt\noindent )");
         };
 
         // \newtheorem{name}{Title}, \newtheorem{name}[shared]{Title},
@@ -142,12 +141,14 @@ namespace render::primitives {
             }
 
             // What \cref calls it, unless the document or cleveref said.
-            if (!context.variables.get("cref." + name)) {
+            if (const std::string key = std::format("cref.{}", name); !context.variables.get(key)) {
                 std::string lower = title;
                 if (!lower.empty() && lower[0] >= 'A' && lower[0] <= 'Z') lower[0] = static_cast<char>(lower[0] + 32);
-                context.variables.define("cref." + name, lower);
+                context.variables.define(key, lower);
             }
-            if (!context.variables.get("Cref." + name)) context.variables.define("Cref." + name, title);
+            if (const std::string key = std::format("Cref.{}", name); !context.variables.get(key)) {
+                context.variables.define(key, title);
+            }
 
             const bool fresh = !kinds.contains(name);
             kinds[name] = std::move(kind);
@@ -168,10 +169,10 @@ namespace render::primitives {
             if (!title.empty() && title[0] >= 'a' && title[0] <= 'z') title[0] = static_cast<char>(title[0] - 32);
             std::string within;
             std::string shared;
-            std::string style;
+            std::string styling;
             bool starred = false;
             for (const auto piece: std::views::split(std::string_view{keys}, ',')) {
-                const std::string_view option(piece.begin(), piece.end());
+                const std::string_view option(piece.data(), piece.size());
                 const std::size_t equals = option.find('=');
                 const auto trimmed = [](std::string_view text) {
                     while (!text.empty() && (text.front() == ' ' || text.front() == '{')) text.remove_prefix(1);
@@ -185,15 +186,14 @@ namespace render::primitives {
                 if (key == "name" || key == "title" || key == "heading") title = value;
                 if (key == "numberwithin" || key == "within" || key == "parent") within = value;
                 if (key == "sibling" || key == "numberlike" || key == "sharenumber") shared = value;
-                if (key == "style") style = value;
+                if (key == "style") styling = value;
                 if (key == "numbered" && value == "no") starred = true;
             }
-            std::string call = style.empty() ? std::string{} : "\\theoremstyle{" + style + "}";
-            call += starred ? "\\newtheorem*{" : "\\newtheorem{";
-            call += name + "}";
-            if (!shared.empty()) call += "[" + shared + "]";
-            call += "{" + title + "}";
-            if (!within.empty()) call += "[" + within + "]";
+            std::string call = styling.empty() ? std::string{} : std::format("\\theoremstyle{{{}}}", styling);
+            call += std::format("\\newtheorem{}{{{}}}", starred ? "*" : "", name);
+            if (!shared.empty()) call += std::format("[{}]", shared);
+            call += std::format("{{{}}}", title);
+            if (!within.empty()) call += std::format("[{}]", within);
             mouth.ingest(mouth.arena.copy(call));
         });
 
@@ -205,21 +205,21 @@ namespace render::primitives {
                 const std::vector<syntax::Token> note =
                         mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
                 if (note.empty()) {
-                    mouth.ingest(context.arena.copy(std::string(around) +
-                                                    "\\noindent{\\itshape\\proofname.}\\ {\\ignorespaces "));
+                    mouth.ingest(context.arena.copy(
+                        std::format(R"({}\noindent{{\itshape\proofname.}}\ {{\ignorespaces )", around)));
                     return;
                 }
                 mouth.ingest(".}\\ {\\ignorespaces ");
                 mouth.stream().inject(std::span{note});
-                mouth.ingest(context.arena.copy(std::string(around) + "\\noindent{\\itshape "));
+                mouth.ingest(context.arena.copy(std::format("{}\\noindent{{\\itshape ", around)));
             },
-            [](syntax::Mouth &mouth) { mouth.ingest("\\qed}\\par\\vskip 8pt plus 2pt minus 4pt\\noindent "); },
+            [](syntax::Mouth &mouth) { mouth.ingest(R"(\qed}\par\vskip 8pt plus 2pt minus 4pt\noindent )"); },
             /*transparent=*/true);
 
         // The end of a proof's mark, carried out to the margin by glue of the
         // second infinite order, which outpulls the paragraph's own fill;
         // held to the word before it, and a quad clear of it at the least.
-        parser.bind("\\qed", [&context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\qed", [&context](const syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;

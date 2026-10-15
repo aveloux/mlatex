@@ -21,6 +21,7 @@
 #include <cmath>
 #include <ranges>
 #include <span>
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -395,7 +396,7 @@ namespace render::primitives {
                 const std::string text = !tagged.empty()
                                              ? std::exchange(tagged, std::string{})
                                              : !numbered.empty()
-                                                   ? "(" + std::exchange(numbered, std::string{}) + ")"
+                                                   ? std::format("({})", std::exchange(numbered, std::string{}))
                                                    : std::string{};
                 layout::Node *mark = text.empty() ? nullptr : label(context, arena, text);
                 return displayed(context, arena,
@@ -506,7 +507,7 @@ namespace render::primitives {
                     const std::string text = !row.tag.empty()
                                                  ? row.tag
                                                  : !row.number.empty()
-                                                       ? "(" + row.number + ")"
+                                                       ? std::format("({})", row.number)
                                                        : std::string{};
                     labels[index] = label(context, arena, text);
                     if (labels[index]) widest = std::max(widest, labels[index]->box().width);
@@ -531,7 +532,7 @@ namespace render::primitives {
             const std::string text = !tagged.empty()
                                          ? std::exchange(tagged, std::string{})
                                          : !numbered.empty()
-                                               ? "(" + std::exchange(numbered, std::string{}) + ")"
+                                               ? std::format("({})", std::exchange(numbered, std::string{}))
                                                : std::string{};
             layout::Node *mark = label(context, arena, text);
             const float gap = maths->size();
@@ -580,7 +581,7 @@ namespace render::primitives {
         if (display && (!numbered.empty() || !tagged.empty())) {
             const std::string text = !tagged.empty()
                                          ? std::exchange(tagged, std::string{})
-                                         : "(" + numbered + ")";
+                                         : std::format("({})", numbered);
             numbered.clear();
 
             layout::Node *expression = tree && maths
@@ -734,7 +735,7 @@ namespace render::primitives {
                 for (const Tables::Column &column: Tables::preamble(mouth.argument({}, 0))) {
                     letters += column.align;
                 }
-                mouth.ingest(context.arena.copy("\\array{" + letters + "}{"));
+                mouth.ingest(context.arena.copy(std::format("\\array{{{}}}{{", letters)));
             },
             [](syntax::Mouth &mouth) { mouth.ingest("}"); },
             /*transparent=*/true);
@@ -758,7 +759,7 @@ namespace render::primitives {
             const bool bare = mouth.lookahead().is('*');
             if (bare) mouth.read();
             const std::string text = syntax::Argument::text(mouth);
-            const std::string shown = bare ? text : "(" + text + ")";
+            const std::string shown = bare ? text : std::format("({})", text);
             context.anchor = text;
             context.kind = "equation";
 

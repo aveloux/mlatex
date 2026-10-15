@@ -54,9 +54,9 @@ namespace render::primitives {
         const std::string_view stem = dash == std::string_view::npos ? name : name.substr(0, dash);
         const bool capital = !written.empty() && written.front() >= 'A' && written.front() <= 'Z';
         bool bold = says("bold");
-        Shape shape = prefix.find("caps") != std::string_view::npos
+        Shape shape = prefix.contains("caps")
                           ? Shape::Caps
-                          : prefix.find("slant") != std::string_view::npos
+                          : prefix.contains("slant")
                                 ? Shape::Slanted
                                 : says("italic") || says("oblique")
                                       ? Shape::Italic
@@ -141,7 +141,7 @@ namespace render::primitives {
                                                               : size < 15.0f
                                                                     ? 12
                                                                     : 17;
-        std::array < char, 128 > buffer{};
+        std::array<char, 128> buffer{};
         for (const int design: {optical, 10}) {
             const auto end = family == Family::Other
                                  ? std::format_to_n(buffer.data(), buffer.size(), "{}-{}", base, ending).out
@@ -158,7 +158,7 @@ namespace render::primitives {
 
     float Styles::measure(const float body, const Size step) noexcept {
         // LaTeX's size10.clo, size11.clo and size12.clo, \tiny to \Huge.
-        static constexpr std::array<std::array < float, 10>, 3 > tables{
+        static constexpr std::array<std::array<float, 10>, 3> tables{
                                                                  {
                                                                      {
                                                                          5.0f, 7.0f, 8.0f, 9.0f, 10.0f, 12.0f, 14.4f,
@@ -174,7 +174,7 @@ namespace render::primitives {
                                                                      },
                                                                  }
                                                              };
-        static constexpr std::array<float, 3> bodies{10.0f, 10.95f, 12.0f};
+        static constexpr std::array bodies{10.0f, 10.95f, 12.0f};
 
         std::size_t nearest = 0;
         for (std::size_t index = 1; index < bodies.size(); ++index) {
@@ -202,28 +202,28 @@ namespace render::primitives {
         // stays bold, and every change of face keeps the size in use.
         static constexpr std::array<Style, 21> styles{
             {
-                {"\\textrm", "\\rmfamily", Cut::Roman, Size::Normal},
-                {"\\textsf", "\\sffamily", Cut::Sans, Size::Normal},
-                {"\\texttt", "\\ttfamily", Cut::Mono, Size::Normal},
-                {"\\textmd", "\\mdseries", Cut::Medium, Size::Normal},
-                {"\\textbf", "\\bfseries", Cut::Bold, Size::Normal},
-                {"\\textup", "\\upshape", Cut::Upright, Size::Normal},
-                {"\\textit", "\\itshape", Cut::Italic, Size::Normal},
-                {"\\textsl", "\\slshape", Cut::Slanted, Size::Normal},
-                {"\\textsc", "\\scshape", Cut::Caps, Size::Normal},
-                {"\\emph", "\\em", Cut::Emphasis, Size::Normal},
-                {"\\textnormal", "\\normalfont", Cut::Normal, Size::Normal},
+                {.bounded = "\\textrm", .running = "\\rmfamily", .cut = Cut::Roman, .size = Size::Normal},
+                {.bounded = "\\textsf", .running = "\\sffamily", .cut = Cut::Sans, .size = Size::Normal},
+                {.bounded = "\\texttt", .running = "\\ttfamily", .cut = Cut::Mono, .size = Size::Normal},
+                {.bounded = "\\textmd", .running = "\\mdseries", .cut = Cut::Medium, .size = Size::Normal},
+                {.bounded = "\\textbf", .running = "\\bfseries", .cut = Cut::Bold, .size = Size::Normal},
+                {.bounded = "\\textup", .running = "\\upshape", .cut = Cut::Upright, .size = Size::Normal},
+                {.bounded = "\\textit", .running = "\\itshape", .cut = Cut::Italic, .size = Size::Normal},
+                {.bounded = "\\textsl", .running = "\\slshape", .cut = Cut::Slanted, .size = Size::Normal},
+                {.bounded = "\\textsc", .running = "\\scshape", .cut = Cut::Caps, .size = Size::Normal},
+                {.bounded = "\\emph", .running = "\\em", .cut = Cut::Emphasis, .size = Size::Normal},
+                {.bounded = "\\textnormal", .running = "\\normalfont", .cut = Cut::Normal, .size = Size::Normal},
 
-                {"\\texttiny", "\\tiny", Cut::Current, Size::Tiny},
-                {"\\textscript", "\\scriptsize", Cut::Current, Size::Script},
-                {"\\textfootnote", "\\footnotesize", Cut::Current, Size::Footnote},
-                {"\\textsmall", "\\small", Cut::Current, Size::Small},
-                {"\\textnormalsize", "\\normalsize", Cut::Current, Size::Normal},
-                {"\\textlarge", "\\large", Cut::Current, Size::Large},
-                {"\\textLarge", "\\Large", Cut::Current, Size::Larger},
-                {"\\textLARGE", "\\LARGE", Cut::Current, Size::Largest},
-                {"\\texthuge", "\\huge", Cut::Current, Size::Huge},
-                {"\\textHuge", "\\Huge", Cut::Current, Size::Hugest},
+                {.bounded = "\\texttiny", .running = "\\tiny", .cut = Cut::Current, .size = Size::Tiny},
+                {.bounded = "\\textscript", .running = "\\scriptsize", .cut = Cut::Current, .size = Size::Script},
+                {.bounded = "\\textfootnote", .running = "\\footnotesize", .cut = Cut::Current, .size = Size::Footnote},
+                {.bounded = "\\textsmall", .running = "\\small", .cut = Cut::Current, .size = Size::Small},
+                {.bounded = "\\textnormalsize", .running = "\\normalsize", .cut = Cut::Current, .size = Size::Normal},
+                {.bounded = "\\textlarge", .running = "\\large", .cut = Cut::Current, .size = Size::Large},
+                {.bounded = "\\textLarge", .running = "\\Large", .cut = Cut::Current, .size = Size::Larger},
+                {.bounded = "\\textLARGE", .running = "\\LARGE", .cut = Cut::Current, .size = Size::Largest},
+                {.bounded = "\\texthuge", .running = "\\huge", .cut = Cut::Current, .size = Size::Huge},
+                {.bounded = "\\textHuge", .running = "\\Huge", .cut = Cut::Current, .size = Size::Hugest},
             }
         };
 
@@ -243,7 +243,7 @@ namespace render::primitives {
             // the selection when it closes.
             // Bound in the parser rather than the expander, so the text read
             // before it is set apart first and keeps the face it was read in.
-            parser.bind(running, [this, &context, select, cut, size](syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(running, [this, &context, select, cut, size](const syntax::Parser &parser) -> syntax::Node * {
                 const typography::Font *font = select(cut, size);
                 if (!font) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Primitive,
@@ -340,7 +340,7 @@ namespace render::primitives {
             const typography::Font *current = context.selection.text();
             if (!current) return nullptr;
             const float points = pending.size.value_or(current->size());
-            for (const std::optional<Cut> cut: {pending.family, pending.series, pending.shape}) {
+            for (const std::optional cut: {pending.family, pending.series, pending.shape}) {
                 if (!cut) continue;
                 if (const typography::Font *font = resolve(context, *cut, points)) context.selection.text(font);
             }
@@ -370,7 +370,7 @@ namespace render::primitives {
         // family's own name: the body in it, and the normal face after.
         context.blocks.watch(
             "document",
-            [&context](syntax::Mouth &mouth) {
+            [&context](const syntax::Mouth &mouth) {
                 std::string written = "\\familydefault";
                 for (int depth = 0; depth < 3 && written.starts_with('\\'); ++depth) {
                     const syntax::Mouth::Macro *macro = mouth.macro(mouth.lexicon.intern(written));

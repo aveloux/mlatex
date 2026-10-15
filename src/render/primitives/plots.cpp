@@ -291,7 +291,7 @@ namespace render::primitives {
                     // scales the other with it.
                     const auto length = [&](const std::string_view key, const float fallback) {
                         const auto written = find(settings, key);
-                        return written ? measure(std::string(*written), mouth, context) : fallback;
+                        return written ? measure(*written, mouth, context) : fallback;
                     };
                     const bool only = has("scale only axis");
                     const double across = length(
@@ -444,11 +444,17 @@ namespace render::primitives {
                             const std::vector<std::string_view> items = split(*written);
                             for (std::size_t index = 0; index < items.size(); ++index) {
                                 if (trim(items[index]) == "..." && index >= 2 && index + 1 < items.size()) {
-                                    const auto a = number(items[index - 2]), b = number(items[index - 1]);
-                                    const auto c = number(items[index + 1]);
-                                    if (a && b && c && *b > *a) {
-                                        for (double v = *b + (*b - *a); v < *c - 1e-9 * (*b - *a); v += *b - *a) found.
-                                                push_back(v);
+                                    const auto start = number(items[index - 2]);
+                                    const auto following = number(items[index - 1]);
+                                    const auto limit = number(items[index + 1]);
+                                    if (start && following && limit && *following > *start) {
+                                        // Counted in whole steps from the first, so no
+                                        // rounding piles up along a long axis.
+                                        const double step = *following - *start;
+                                        const double steps = (*limit - *start) / step - 1e-9;
+                                        for (int count = 2; count < steps; ++count) {
+                                            found.push_back(*start + step * static_cast<double>(count));
+                                        }
                                     }
                                     continue;
                                 }
@@ -457,22 +463,31 @@ namespace render::primitives {
                             return found;
                         }
                         if (log) {
-                            for (double k = std::ceil(lo - 1e-9); k <= hi + 1e-9; k += 1.0) found.push_back(
-                                std::pow(10.0, k));
+                            for (auto exponent = static_cast<int>(std::ceil(lo - 1e-9)); exponent <= hi + 1e-9;
+                                 ++exponent) {
+                                found.push_back(std::pow(10.0, exponent));
+                            }
                             return found;
                         }
                         const double raw = (hi - lo) / std::max(1.0, span / 35.0);
                         const double magnitude = std::pow(10.0, std::floor(std::log10(raw)));
                         const double normal = raw / magnitude;
-                        const double step = magnitude * (normal < 1.414
+                        // A round step near the raw one -- 1, 2, 5 or 10 of its
+                        // magnitude -- each taken up to where it is geometrically
+                        // halfway to the next: the square roots of 2, 10 and 50.
+                        const double step = magnitude * (normal < std::numbers::sqrt2
                                                              ? 1.0
-                                                             : normal < 3.162
+                                                             : normal < std::sqrt(10.0)
                                                                    ? 2.0
-                                                                   : normal < 7.071
+                                                                   : normal < std::sqrt(50.0)
                                                                          ? 5.0
                                                                          : 10.0);
-                        for (double v = std::ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) {
-                            found.push_back(std::abs(v) < step * 1e-9 ? 0.0 : v);
+                        // Each tick a whole number of steps from zero, so no
+                        // rounding piles up from one tick to the next.
+                        for (auto count = static_cast<long long>(std::ceil(lo / step - 1e-9));
+                             static_cast<double>(count) * step <= hi + step * 1e-9; ++count) {
+                            const double tick = static_cast<double>(count) * step;
+                            found.push_back(std::abs(tick) < step * 1e-9 ? 0.0 : tick);
                         }
                         return found;
                     };
@@ -499,7 +514,7 @@ namespace render::primitives {
                         while (text.ends_with('0')) text.pop_back();
                         if (text.ends_with('.')) text.pop_back();
                         if (text == "-0") text = "0";
-                        return "$" + text + "$";
+                        return std::format("${}$", text);
                     };
 
                     std::string out;
@@ -876,8 +891,7 @@ namespace render::primitives {
                             bool faceted; // its edges drawn darker
                         };
                         std::vector<Face> faces;
-                        for (std::size_t index = 0; index < axis.plots.size(); ++index) {
-                            const Plot &plot = axis.plots[index];
+                        for (const Plot &plot: axis.plots) {
                             if (plot.solid.empty()) continue;
                             const Pairs own = read(plot.options);
                             const bool surface = find(own, "surf").has_value();
@@ -932,7 +946,9 @@ namespace render::primitives {
                             } else {
                                 out += std::format("\\draw[{}] ", face.color);
                             }
-                            for (const std::array<double, 3> &corner: face.corners) out += at(corner) + " -- ";
+                            for (const std::array<double, 3> &corner: face.corners) {
+                                out += std::format("{} -- ", at(corner));
+                            }
                             out.resize(out.size() - 4);
                             out += face.filled ? " -- cycle;" : ";";
                         }
@@ -967,14 +983,14 @@ namespace render::primitives {
                                     if (!std::ranges::all_of(plot.solid[step], [](const double value) {
                                         return std::isfinite(value);
                                     })) {
-                                        if (path.find(" -- ") != std::string::npos) out += std::format(
+                                        if (path.contains(" -- ")) out += std::format(
                                             "\\draw[{}{}] {};", color, kept, path);
                                         path.clear();
                                         continue;
                                     }
                                     path += (path.empty() ? "" : " -- ") + at(share(plot.solid[step]));
                                 }
-                                if (path.find(" -- ") != std::string::npos) out += std::format("\\draw[{}{}] {};",
+                                if (path.contains(" -- ")) out += std::format("\\draw[{}{}] {};",
                                                                                 color, kept, path);
                             }
                             for (const std::array<double, 3> &spot: plot.solid) {
@@ -1078,7 +1094,7 @@ namespace render::primitives {
                         if (!whole || outline.size() < 3) continue;
 
                         std::string paint = region.cycled
-                                                ? std::string(cycle[index % cycle.size()].first) + "!40!white"
+                                                ? std::format("{}!40!white", cycle[index % cycle.size()].first)
                                                 : "";
                         std::optional<double> shade;
                         for (const auto &[key, value]: read(region.options)) {
@@ -1095,7 +1111,9 @@ namespace render::primitives {
                         }
                         out += std::format("\\fill[{}] ", paint);
                         for (const auto &[x, y]: outline) {
-                            out += point(std::clamp(px(x), 0.0, wide), std::clamp(py(y), 0.0, tall)) + " -- ";
+                            const std::string corner = point(std::clamp(px(x), 0.0, wide),
+                                                             std::clamp(py(y), 0.0, tall));
+                            out += std::format("{} -- ", corner);
                         }
                         out += "cycle;";
                     }
@@ -1146,7 +1164,7 @@ namespace render::primitives {
                                     (static_cast<double>(index) - (static_cast<double>(bars) - 1.0) / 2.0) *
                                     (bar + 2.0);
                             const double base = std::clamp(ylog ? 0.0 : py(0.0), 0.0, tall);
-                            const std::string paint = fill.empty() ? color + "!30!white" : fill;
+                            const std::string paint = fill.empty() ? std::format("{}!30!white", color) : fill;
                             for (const auto &[x, y]: plot.points) {
                                 if (!std::isfinite(x) || !std::isfinite(y)) continue;
                                 const double centre = px(x) + shift;
@@ -1169,7 +1187,7 @@ namespace render::primitives {
                                     for (std::size_t at = 0; at < run.size(); ++at) {
                                         out += (at ? " -- " : "") + point(run[at].first, run[at].second);
                                     }
-                                    out += ";";
+                                    out += ';';
                                 }
                                 run.clear();
                             };
@@ -1319,14 +1337,14 @@ namespace render::primitives {
                         std::string rows;
                         for (std::size_t index = 0; index < entries; ++index) {
                             const Legend &sample = samples[index];
-                            std::string image = sample.bar
-                                                    ? "\\rule{0.8em}{0.8em}"
-                                                    : sample.line && !sample.mark.empty()
-                                                          ? "\\rule[0.55ex]{0.5em}{0.6pt}$\\bullet$\\rule[0.55ex]{0.5em}{0.6pt}"
-                                                          : sample.line
-                                                                ? "\\rule[0.55ex]{1.2em}{0.6pt}"
-                                                                : "$\\bullet$";
-                            rows += std::format("\\textcolor{{{}}}{{{}}} & {}\\\\", sample.color, image,
+                            // A bar's square, a line with its mark across it, a
+                            // line, or a mark alone.
+                            std::string image = "$\\bullet$";
+                            if (sample.bar) image = "\\rule{0.8em}{0.8em}";
+                            else if (sample.line && !sample.mark.empty()) {
+                                image = R"(\rule[0.55ex]{0.5em}{0.6pt}$\bullet$\rule[0.55ex]{0.5em}{0.6pt})";
+                            } else if (sample.line) image = "\\rule[0.55ex]{1.2em}{0.6pt}";
+                            rows += std::format(R"(\textcolor{{{}}}{{{}}} & {}\\)", sample.color, image,
                                                 axis.legends[index]);
                         }
                         const std::string_view where = find(settings, "legend pos").value_or("north east");
@@ -1547,14 +1565,12 @@ namespace render::primitives {
                                   };
                                   std::array<std::optional<std::size_t>, 4> erring{};
                                   for (std::size_t axle = 0; axle < 2; ++axle) {
-                                      const std::string letter = axle == 0 ? "x" : "y";
-                                      const auto both = errant(letter + " error");
-                                      erring[2 * axle] = errant(letter + " error minus").has_value()
-                                                             ? errant(letter + " error minus")
-                                                             : both;
-                                      erring[2 * axle + 1] = errant(letter + " error plus").has_value()
-                                                                 ? errant(letter + " error plus")
-                                                                 : both;
+                                      const char letter = axle == 0 ? 'x' : 'y';
+                                      const auto both = errant(std::format("{} error", letter));
+                                      const auto minus = errant(std::format("{} error minus", letter));
+                                      const auto plus = errant(std::format("{} error plus", letter));
+                                      erring[2 * axle] = minus ? minus : both;
+                                      erring[2 * axle + 1] = plus ? plus : both;
                                   }
                                   for (const std::vector<std::string> &row: rows) {
                                       if (xi >= row.size() || yi >= row.size()) continue;
@@ -1580,13 +1596,15 @@ namespace render::primitives {
                                                      ? std::string{}
                                                      : std::string(spec.substr(1, close - 1));
                                   if (!find(read(plot.between), "of")) {
-                                      tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                                              "\\addplot: fill between needs the plots it lies between, of=f and g");
+                                      tracebacks.emplace_back(
+                                          syntax::Traceback::Type::Argument, origin,
+                                          "\\addplot: fill between needs the plots it lies between, of=f and g");
                                   }
                               } else if (spec.starts_with("gnuplot") || spec.starts_with("shell") || spec.starts_with(
                                              "file")) {
-                                  tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
-                                                          "\\addplot: a plot from gnuplot, a shell or a file of points is not drawn here");
+                                  tracebacks.emplace_back(
+                                      syntax::Traceback::Type::Warning, origin,
+                                      "\\addplot: a plot from gnuplot, a shell or a file of points is not drawn here");
                               } else {
                                   // A function of x, sampled across its domain; or two, for a
                                   // parametric curve, `({cos(x)}, {sin(x)})`.
@@ -1638,16 +1656,16 @@ namespace render::primitives {
                                           0.0, 2000.0);
                                       const bool curve = rows < 1.0 || (parts.size() == 3 && std::ranges::none_of(
                                                                             parts, [](const std::string_view part) {
-                                                                                return part.find('y') !=
-                                                                                    std::string_view::npos;
+                                                                                return part.contains('y');
                                                                             }));
-                                      for (double row = 0.0; row < (curve ? 1.0 : rows); row += 1.0) {
+                                      for (int row = 0; row < (curve ? 1.0 : rows); ++row) {
                                           const double y = curve
                                                                ? gap
-                                                               : bottom + (top - bottom) * row / std::max(
-                                                                     rows - 1.0, 1.0);
-                                          for (double step = 0.0; step < count; step += 1.0) {
-                                              const double x = low + (high - low) * step / (count - 1.0);
+                                                               : bottom + (top - bottom) * static_cast<double>(row) /
+                                                                 std::max(rows - 1.0, 1.0);
+                                          for (int step = 0; step < count; ++step) {
+                                              const double x = low + (high - low) * static_cast<double>(step) /
+                                                               (count - 1.0);
                                               std::array<double, 3> spot{x, y, gap};
                                               if (parts.size() == 3) {
                                                   for (std::size_t axle = 0; axle < 3; ++axle) {
@@ -1664,8 +1682,8 @@ namespace render::primitives {
                                       }
                                       if (!curve) plot.columns = static_cast<std::size_t>(count);
                                   }
-                                  for (double step = 0.0; step < count && !three; step += 1.0) {
-                                      const double x = low + (high - low) * step / (count - 1.0);
+                                  for (int step = 0; step < count && !three; ++step) {
+                                      const double x = low + (high - low) * static_cast<double>(step) / (count - 1.0);
                                       const auto y = calculate(along, x);
                                       const auto t = across.empty() ? std::optional<double>(x) : calculate(across, x);
                                       plot.points.emplace_back(t && y ? *t : gap, t && y ? *y : gap);
@@ -1723,10 +1741,11 @@ namespace render::primitives {
             std::size_t across = 0;
             for (const std::vector<std::string> &row: table) across = std::max(across, row.size());
             if (across == 0) return;
-            std::string written = "\\begin{tabular}{" + std::string(across, 'c') + "}";
+            std::string written = std::format("\\begin{{tabular}}{{{}}}", std::string(across, 'c'));
             for (std::size_t index = 0; index < table.size(); ++index) {
                 for (std::size_t cell = 0; cell < table[index].size(); ++cell) {
-                    written += (cell == 0 ? "" : " & ") + table[index][cell];
+                    if (cell > 0) written += " & ";
+                    written += table[index][cell];
                 }
                 written += "\\\\";
                 const bool named = index == 0 && std::ranges::any_of(table[index], [](const std::string &item) {

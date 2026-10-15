@@ -7,12 +7,13 @@
 #include <array>
 #include <cctype>
 #include <cstdint>
+#include <format>
 #include <string_view>
 #include <utility>
 
 namespace render::primitives {
     std::string Numeral::arabic(const int value) {
-        return std::to_string(value);
+        return std::format("{}", value);
     }
 
     std::string Numeral::roman(int value, const bool upper) {
@@ -66,23 +67,24 @@ namespace render::primitives {
 
         // The cardinal, a group of three digits at a time.
         std::string written = [](this const auto &self, const std::int64_t number) -> std::string {
-            if (number < 0) return "minus " + self(-number);
+            if (number < 0) return std::format("minus {}", self(-number));
             if (number < 20) return std::string(ones[static_cast<std::size_t>(number)]);
             if (number < 100) {
                 std::string text(tens[static_cast<std::size_t>(number / 10)]);
-                if (number % 10 != 0) text += "-" + std::string(ones[static_cast<std::size_t>(number % 10)]);
+                if (number % 10 != 0) text += std::format("-{}", ones[static_cast<std::size_t>(number % 10)]);
                 return text;
             }
             if (number < 1000) {
-                std::string text = std::string(ones[static_cast<std::size_t>(number / 100)]) + " hundred";
-                if (number % 100 != 0) text += " and " + self(number % 100);
+                std::string text = std::format("{} hundred", ones[static_cast<std::size_t>(number / 100)]);
+                if (number % 100 != 0) text += std::format(" and {}", self(number % 100));
                 return text;
             }
             for (const auto &[size, name]: scales) {
                 if (number < size) continue;
-                std::string text = self(number / size) + " " + std::string(name);
-                if (const std::int64_t rest = number % size; rest != 0)
-                    text += (rest < 100 ? " and " : " ") + self(rest);
+                std::string text = std::format("{} {}", self(number / size), name);
+                if (const std::int64_t rest = number % size; rest != 0) {
+                    text += std::format("{}{}", rest < 100 ? " and " : " ", self(rest));
+                }
                 return text;
             }
             return {};
@@ -106,6 +108,6 @@ namespace render::primitives {
             written.replace(written.size() - 1, 1, "ieth");
             return written;
         }
-        return written + "th";
+        return std::format("{}th", written);
     }
 }

@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <format>
 #include <string>
 
 namespace render::primitives {
@@ -18,7 +19,7 @@ namespace render::primitives {
         lexicon.intern("\\algorithmclose");
     }
 
-    syntax::Node *Algorithms::line(syntax::Parser &parser, Context &context, const bool numbered) const {
+    syntax::Node *Algorithms::line(const syntax::Parser &parser, const Context &context, const bool numbered) const {
         memory::Arena &arena = parser.arena;
         const memory::Location origin = parser.mouth.lookahead().location;
 
@@ -50,7 +51,7 @@ namespace render::primitives {
             if (const typography::Font *font = Styles::resolve(context, Styles::Cut::Normal, small)) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped = context.shaper.shape(
-                    memory::Slice{fonts, 1uz}, arena.copy(Numeral::arabic(block.lines) + ":"), {});
+                    memory::Slice{fonts, 1uz}, arena.copy(std::format("{}:", Numeral::arabic(block.lines))), {});
                 label = layout::Line::horizontal(arena, shaped, 0.0f);
             }
         }
@@ -99,11 +100,13 @@ namespace render::primitives {
             },
             [this](syntax::Mouth &mouth) {
                 if (!blocks.empty()) blocks.pop_back();
-                mouth.ingest("\\par\\vskip 2pt\\leftskip=0pt\\noindent ");
+                mouth.ingest(R"(\par\vskip 2pt\leftskip=0pt\noindent )");
             });
 
-        parser.bind("\\State", [this, &context](syntax::Parser &parser) { return line(parser, context, true); });
-        parser.bind("\\Statex", [this, &context](syntax::Parser &parser) { return line(parser, context, false); });
+        parser.bind("\\State", [this, &context](const syntax::Parser &parser) { return line(parser, context, true); });
+        parser.bind("\\Statex", [this, &context](const syntax::Parser &parser) {
+            return line(parser, context, false);
+        });
 
         // A block's opening line is set before its lines step in, and its
         // closing line after they step back out: the package writes these

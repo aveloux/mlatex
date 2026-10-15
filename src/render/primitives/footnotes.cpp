@@ -16,7 +16,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdlib>
+#include <charconv>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -120,9 +120,15 @@ namespace render::primitives {
             if (given.empty()) {
                 context.counters->step("footnote");
             } else {
+                // The number as written, blanks around it let go; what is
+                // no number at all sets 0, as LaTeX's would complain and do.
                 std::string digits;
-                for (const syntax::Token &token: given) digits += token.text;
-                context.counters->set("footnote", std::atoi(digits.c_str()));
+                for (const syntax::Token &token: given) {
+                    if (token.category != syntax::Catcodes::Category::Space) digits += token.text;
+                }
+                int value = 0;
+                std::from_chars(digits.data(), digits.data() + digits.size(), value);
+                context.counters->set("footnote", value);
             }
             return Counters::print(mouth, "footnote");
         };

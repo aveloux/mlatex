@@ -65,7 +65,7 @@ namespace render::primitives {
         /// @param context  Engine services.
         /// @param numbered True for a `\\State`, false for a `\\Statex`.
         /// @return The nodes that open the line.
-        [[nodiscard]] syntax::Node *line(syntax::Parser &parser, Context &context, bool numbered) const;
+        [[nodiscard]] syntax::Node *line(const syntax::Parser &parser, const Context &context, bool numbered) const;
 
         /// How far each block steps its lines in, in ems: algorithmicx's
         /// `\\algorithmicindent`.

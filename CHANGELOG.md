@@ -974,7 +974,10 @@ font folders are listed only for a script the engine carries no face for.
   keeps its product past 32 bits until it is divided.
 - `\foreach \x in {0,0.1,...,1}` made its items by adding the step again and
   again, so the rounding of each addition piled up; each item is now the
-  first plus a whole number of steps.
+  first plus a whole number of steps. So are a TikZ grid's lines, a
+  pgfplots axis's ticks and its `xtick={0,0.1,...,1}`, and a function's
+  samples, each counted with an integer; the tick step's thresholds are the
+  square roots of 2, 10 and 50 they were written as approximations of.
 
 ### Tests
 
@@ -1108,7 +1111,8 @@ font folders are listed only for a script the engine carries no face for.
   `c`, `d`, `x`), as a projection is where its three axes land (`across`,
   `along`, `up`); the PostScript reader keeps its `current` point and the
   `start` of the subpath as positions of their own. A curve's points are
-  weighed once per step, `first` to `fourth`, rather than in one long sum.
+  weighed once per step, its four Bernstein `weights`, rather than in one
+  long sum.
 - **Text a primitive writes is a format.** What the syntax primitives build
   to be read back -- a block's `\name:open`, a CSV row's
   `\@shared\@define\thecsvrow{1}`, a `\begin{tabular}{...}`, an
@@ -1121,6 +1125,25 @@ font folders are listed only for a script the engine carries no face for.
   evaluation's state initialised, designated initialisers for a token and a
   register's target, and no local hiding another (`\csname`'s name is
   `built`, `\DTLsetseparator`'s `given`, the register reader `quantity`).
+- **And so does the render layer's.** Every BibTeX house style writes its
+  entry as a template -- ACM's `{}. In \emph{{{}}}{}. {}{}.` -- and so do
+  TikZ's paths and messages, beamer's overlays, longtable's caption macro,
+  a theorem's head, the index's page ranges and every `Unknown ...` report.
+  The accents' sixteen combining marks are a table where they were a
+  ternary sixteen deep, three empty branches of TikZ options it lets go are
+  one list, `ignored`, and the quantum circuit's `r` and `c` are its `row`
+  and `column`. clang-tidy's fixes went in where they were right --
+  `contains` for a membership test, a character where a one-letter string
+  was, raw strings for TeX, `std::cmp_less` and its kin -- and one was
+  turned down: it rewrote `listed != static_cast<std::size_t>(-1)` as a
+  comparison with -1 that always holds, so the sentinel is a named
+  `unlisted`. A selection assigned to itself no longer counts as a change, a
+  footnote's number is read with `std::from_chars` rather than `atoi`, a
+  label's text is a `std::string_view` of the split it came from rather
+  than one built from iterators, the values a message is built from are
+  taken by reference, and every local that hid another has a name of its
+  own (`stroke`, `breadth`, `settings`, `beside`, `entered`, `ruling`,
+  `styling`, `indentation`, `abbreviation`, `joined`, `separator`).
 
 ### Removed
 

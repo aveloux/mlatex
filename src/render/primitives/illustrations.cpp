@@ -160,7 +160,7 @@ namespace render::primitives {
                 if (value.starts_with('{') && value.ends_with('}')) value = value.substr(1, value.size() - 2);
                 const std::string name(trim(key.substr(0, key.find('/'))));
                 if (key.ends_with("/.style")) styles[name] = std::string(value);
-                else styles[name] += "," + std::string(value);
+                else styles[name] += std::format(",{}", value);
                 continue;
             }
             if (equals == std::string_view::npos && depth < 8) {
@@ -212,13 +212,23 @@ namespace render::primitives {
         double high = 5.0;
         int samples = 25;
 
-        const auto fail = [this, origin](std::string message) {
-            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, std::move(message));
+        const auto fail = [this, origin](const std::string &message) {
+            tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, message);
         };
         // What TikZ draws and this engine does not: the picture is drawn
         // without it, and the document hears so.
-        const auto miss = [this, origin](std::string message) {
-            tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin, std::move(message));
+        const auto miss = [this, origin](const std::string &message) {
+            tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin, message);
+        };
+        // What TikZ reads and this engine lets go, drawing just as well
+        // without: a plot's variable and smoothing (it is drawn through its
+        // points in straight lines), a corner's rounding (its stroke runs
+        // within a point or two of the sharp one's), an arrow's default
+        // shape, how much a line is cut short, and what only a node's text
+        // uses. Each is a word, so its key is the whole option.
+        static constexpr std::array<std::string_view, 16> ignored{
+            "variable", "smooth", "sharp plot", "mark", "tension", "rounded corners", "sharp corners", ">",
+            "shorten >", "shorten <", "node distance", "auto", "on grid", "font", "text", "align",
         };
 
         static constexpr std::array<std::pair<std::string_view, float>, 7> widths{
@@ -252,7 +262,7 @@ namespace render::primitives {
             } else if (option == "-") {
                 head = foot = Tip::None;
             } else if (key == "bend left" || key == "bend right" || key == "out" || key == "in" || key == "looseness") {
-                curving += std::string(option) + ",";
+                curving += std::format("{},", option);
             } else if (option == "double" || key == "double distance") {
                 doubled = distance(value, 1.0f).value_or(0.6f);
             } else if (key == "shift left" || key == "shift right") {
@@ -271,15 +281,12 @@ namespace render::primitives {
                 head = foot = Tip::None;
             } else if (key == "line width") {
                 if (const auto length = distance(value, 1.0f)) width = *length;
-                else miss("\\draw: '" + std::string(value) + "' is not a line width");
+                else miss(std::format("\\draw: '{}' is not a line width", value));
             } else if (key == "color") {
                 ink = Colors::resolve(value, context.variables);
             } else if (key == "draw") {
                 stroking = true;
                 if (!value.empty()) ink = Colors::resolve(value, context.variables);
-            } else if (option == "rounded corners" || key == "rounded corners" || option == "sharp corners") {
-                // Drawn sharp: a rounded corner's stroke runs within a
-                // point or two of the sharp one's.
             } else if (key == "fill") {
                 painting = true;
                 if (!value.empty()) tint = Colors::resolve(value, context.variables);
@@ -288,11 +295,11 @@ namespace render::primitives {
                 if (patch::decimal(value.data(), value.data() + value.size(), alpha).ec == std::errc{}) {
                     ink.alpha = std::clamp(alpha, 0.0f, 1.0f);
                 } else {
-                    miss("\\draw: '" + std::string(value) + "' is not an opacity");
+                    miss(std::format("\\draw: '{}' is not an opacity", value));
                 }
             } else if (key == "step") {
                 if (const auto length = distance(value, centimetre); length && *length > 0.0f) step = *length * scale;
-                else miss("\\draw: '" + std::string(value) + "' is not a grid step");
+                else miss(std::format("\\draw: '{}' is not a grid step", value));
             } else if (key == "domain") {
                 // A plot's: over what, in how many steps, and in what name --
                 // x, as a function of it is read.
@@ -305,15 +312,9 @@ namespace render::primitives {
             } else if (key == "samples") {
                 std::from_chars(value.data(), value.data() + value.size(), samples);
                 samples = std::clamp(samples, 2, 2000);
-            } else if (key == "variable" || option == "smooth" || option == "sharp plot" || key == "mark" ||
-                       key == "tension") {
-                // Read and let go: a plot is drawn through its points, in
-                // straight lines, whatever its variable is called.
-            } else if (key == ">" || key == "shorten >" || key == "shorten <" || key == "node distance" ||
-                       option == "auto" || option == "on grid" || key == "font" || key == "text" || key == "align") {
-                // Read and let go: an arrow's default shape, how much a line
-                // is cut short, and what only a node's text uses.
-            } else if (equals == std::string_view::npos && option.find('-') != std::string_view::npos &&
+            } else if (std::ranges::contains(ignored, key)) {
+                // Read and let go, as `ignored` says.
+            } else if (equals == std::string_view::npos && option.contains('-') &&
                        option.find_first_not_of(
                            "-<>|{}[]=.0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") ==
                        std::string_view::npos) {
@@ -337,7 +338,7 @@ namespace render::primitives {
                         written = written.substr(1, written.size() - 2);
                     if (written.empty()) return Tip::None;
                     if (written == "|") return Tip::Bar;
-                    if (written.find("hook") != std::string_view::npos) {
+                    if (written.contains("hook")) {
                         return written.starts_with("right") ? Tip::Crook : Tip::Hook;
                     }
                     if (written == ">>" || written == "<<") return Tip::Twice;
@@ -352,10 +353,10 @@ namespace render::primitives {
                 // black is what it said.
                 ink = Colors::resolve(option, context.variables);
                 if (ink == graphics::black && !option.starts_with("black")) {
-                    miss("\\draw: the option '" + std::string(option) + "' is not one this engine draws");
+                    miss(std::format("\\draw: the option '{}' is not one this engine draws", option));
                 }
             } else {
-                miss("\\draw: the option '" + std::string(key) + "' is not one this engine draws");
+                miss(std::format("\\draw: the option '{}' is not one this engine draws", key));
             }
         }
 
@@ -463,10 +464,10 @@ namespace render::primitives {
             }
             float dx = 0.0f;
             float dy = 0.0f;
-            if (anchor.find("east") != std::string_view::npos) dx = 1.0f;
-            if (anchor.find("west") != std::string_view::npos) dx = -1.0f;
-            if (anchor.find("north") != std::string_view::npos) dy = 1.0f;
-            if (anchor.find("south") != std::string_view::npos) dy = -1.0f;
+            if (anchor.contains("east")) dx = 1.0f;
+            if (anchor.contains("west")) dx = -1.0f;
+            if (anchor.contains("north")) dy = 1.0f;
+            if (anchor.contains("south")) dy = -1.0f;
             if (dx == 0.0f && dy == 0.0f) {
                 float angle = 0.0f;
                 if (patch::decimal(anchor.data(), anchor.data() + anchor.size(), angle).ec != std::errc{}) return
@@ -527,53 +528,52 @@ namespace render::primitives {
             // towards it, `(a)!1cm!(b)`.
             if (inside.size() >= 2 && inside.front() == '$' && inside.back() == '$') {
                 const std::string_view body = inside.substr(1, inside.size() - 2);
-                std::size_t step = 0;
+                std::size_t place = 0;
                 const auto blank = [&] {
-                    while (step < body.size() && (body[step] == ' ' || body[step] == '\n')) ++step;
+                    while (place < body.size() && (body[place] == ' ' || body[place] == '\n')) ++place;
                 };
                 const auto point = [&]() -> std::optional<graphics::Point2> {
                     blank();
-                    if (step >= body.size() || body[step] != '(') return std::nullopt;
-                    const std::size_t shut = closing(body, step);
+                    if (place >= body.size() || body[place] != '(') return std::nullopt;
+                    const std::size_t shut = closing(body, place);
                     if (shut == std::string_view::npos) return std::nullopt;
-                    const auto found = self(body.substr(step + 1, shut - step - 1));
-                    step = shut + 1;
+                    const auto found = self(body.substr(place + 1, shut - place - 1));
+                    place = shut + 1;
                     return found;
                 };
                 graphics::Point2 sum{};
-                for (blank(); step < body.size(); blank()) {
+                for (blank(); place < body.size(); blank()) {
                     float sign = 1.0f;
-                    if (body[step] == '+' || body[step] == '-') {
-                        sign = body[step] == '-' ? -1.0f : 1.0f;
-                        ++step;
+                    if (body[place] == '+' || body[place] == '-') {
+                        sign = body[place] == '-' ? -1.0f : 1.0f;
+                        ++place;
                         blank();
                     }
                     float factor = 1.0f;
-                    if (step < body.size() && body[step] != '(') {
-                        std::size_t star = step;
+                    if (place < body.size() && body[place] != '(') {
+                        std::size_t star = place;
                         while (star < body.size() && body[star] != '*') {
                             star = body[star] == '{' ? std::min(closing(body, star), body.size() - 1) + 1 : star + 1;
                         }
-                        const auto written = Plots::calculate(body.substr(step, star - step), 0.0);
-                        if (!written || star >= body.size()) return std::nullopt;
-                        factor = static_cast<float>(*written);
-                        step = star + 1;
+                        const auto amount = Plots::calculate(body.substr(place, star - place), 0.0);
+                        if (!amount || star >= body.size()) return std::nullopt;
+                        factor = static_cast<float>(*amount);
+                        place = star + 1;
                     }
                     auto term = point();
                     if (!term) return std::nullopt;
-                    for (blank(); step < body.size() && body[step] == '!'; blank()) {
-                        const std::size_t mark = body.find('!', step + 1);
+                    for (blank(); place < body.size() && body[place] == '!'; blank()) {
+                        const std::size_t mark = body.find('!', place + 1);
                         if (mark == std::string_view::npos) return std::nullopt;
-                        const std::string_view part = trim(body.substr(step + 1, mark - step - 1));
-                        step = mark + 1;
+                        const std::string_view part = trim(body.substr(place + 1, mark - place - 1));
+                        place = mark + 1;
                         blank();
                         float angle = 0.0f;
-                        if (const std::size_t open = body.find('(', step); open != std::string_view::npos &&
-                                                                           body.substr(step, open - step).find(':') !=
-                                                                           std::string_view::npos) {
-                            const std::string_view turned = body.substr(step, body.find(':', step) - step);
+                        if (const std::size_t open = body.find('(', place);
+                            open != std::string_view::npos && body.substr(place, open - place).contains(':')) {
+                            const std::string_view turned = body.substr(place, body.find(':', place) - place);
                             angle = distance(turned, 1.0f).value_or(0.0f) * std::numbers::pi_v<float> / 180.0f;
-                            step = body.find(':', step) + 1;
+                            place = body.find(':', place) + 1;
                         }
                         const auto toward = point();
                         if (!toward) return std::nullopt;
@@ -678,13 +678,13 @@ namespace render::primitives {
                 const float share = static_cast<float>(index) / static_cast<float>(pieces);
                 const float rest = 1.0f - share;
                 // The four points' Bernstein weights at this share of the way.
-                const float first = rest * rest * rest;
-                const float second = 3.0f * rest * rest * share;
-                const float third = 3.0f * rest * share * share;
-                const float fourth = share * share * share;
+                const std::array weights{
+                    rest * rest * rest, 3.0f * rest * rest * share, 3.0f * rest * share * share, share * share * share
+                };
                 const graphics::Point2 point{
-                    .across = first * from.across + second * one.across + third * two.across + fourth * to.across,
-                    .up = first * from.up + second * one.up + third * two.up + fourth * to.up
+                    .across = weights[0] * from.across + weights[1] * one.across + weights[2] * two.across +
+                              weights[3] * to.across,
+                    .up = weights[0] * from.up + weights[1] * one.up + weights[2] * two.up + weights[3] * to.up
                 };
                 segment(previous, point);
                 previous = point;
@@ -836,9 +836,9 @@ namespace render::primitives {
                 } else if (key == "text width") {
                     wide = std::string(value);
                 } else if (key == "font") {
-                    before += std::string(value) + " ";
+                    before += std::format("{} ", value);
                 } else if (key == "text" || key == "color") {
-                    before += "\\color{" + std::string(value) + "}";
+                    before += std::format("\\color{{{}}}", value);
                 } else if (key == "align" || option == "text centered" || option == "text badly centered") {
                     centred = key != "align" || value == "center";
                 } else if (beyond && equals != std::string_view::npos) {
@@ -850,14 +850,14 @@ namespace render::primitives {
                                     value_or(apart);
                     }
                 } else if (key == "anchor") {
-                    if (value.find("west") != std::string_view::npos) across = -1;
-                    if (value.find("east") != std::string_view::npos) across = 1;
-                    if (value.find("south") != std::string_view::npos) up = -1;
-                    if (value.find("north") != std::string_view::npos) up = 1;
+                    if (value.contains("west")) across = -1;
+                    if (value.contains("east")) across = 1;
+                    if (value.contains("south")) up = -1;
+                    if (value.contains("north")) up = 1;
                 } else if (key == "pos") {
-                    float written = 0.5f;
-                    patch::decimal(value.data(), value.data() + value.size(), written);
-                    share = written;
+                    float given = 0.5f;
+                    patch::decimal(value.data(), value.data() + value.size(), given);
+                    share = given;
                 } else if (option == "midway" || option == "near start" || option == "near end" ||
                            option == "very near start" || option == "very near end" || option == "at start" ||
                            option == "at end") {
@@ -875,10 +875,10 @@ namespace render::primitives {
                 } else if (option == "sloped") {
                     // Set level: a label is read across the page, not along its line.
                 } else if (equals == std::string_view::npos) {
-                    if (option.find("right") != std::string_view::npos) across = -1;
-                    if (option.find("left") != std::string_view::npos) across = 1;
-                    if (option.find("above") != std::string_view::npos) up = -1;
-                    if (option.find("below") != std::string_view::npos) up = 1;
+                    if (option.contains("right")) across = -1;
+                    if (option.contains("left")) across = 1;
+                    if (option.contains("above")) up = -1;
+                    if (option.contains("below")) up = 1;
                 }
             }
 
@@ -890,7 +890,7 @@ namespace render::primitives {
                     point = (*spot)[0];
                     const float length = std::hypot((*spot)[1].across, (*spot)[1].up);
                     if (side != 0 && length > 0.0f) {
-                        const float turned = static_cast<float>(swapped ? -side : side);
+                        const auto turned = static_cast<float>(swapped ? -side : side);
                         const float nx = -(*spot)[1].up / length * turned;
                         const float ny = (*spot)[1].across / length * turned;
                         across = nx > 0.38f ? -1 : nx < -0.38f ? 1 : 0;
@@ -903,12 +903,14 @@ namespace render::primitives {
             // into a horizontal box -- set in a paragraph of its own when
             // it has a width -- and none when it sets nothing.
             std::string source = std::string(content);
-            if (!wide.empty()) source = "\\parbox{" + wide + "}{" + (centred ? "\\centering " : "") + source + "}";
-            source = before + source;
+            if (!wide.empty()) {
+                source = std::format("\\parbox{{{}}}{{{}{}}}", wide, centred ? "\\centering " : "", source);
+            }
+            source = std::format("{}{}", before, source);
             layout::Node *setting = [&]() -> layout::Node * {
                 syntax::Mouth &mouth = parser.mouth;
                 memory::Arena &arena = parser.arena;
-                mouth.ingest(arena.copy("{" + source + "}"));
+                mouth.ingest(arena.copy(std::format("{{{}}}", source)));
                 mouth.read();
 
                 mouth.push(syntax::semantics::Scope::Type::Group);
@@ -947,12 +949,12 @@ namespace render::primitives {
                 if (const auto found = landmarks.find(std::string(beside)); found != landmarks.end()) {
                     const Landmark &other = found->second;
                     centre = other.centre;
-                    if (toward.find("right") != std::string_view::npos) centre.across += other.across + apart + half;
-                    if (toward.find("left") != std::string_view::npos) centre.across -= other.across + apart + half;
-                    if (toward.find("above") != std::string_view::npos) centre.up += other.up + apart + rise;
-                    if (toward.find("below") != std::string_view::npos) centre.up -= other.up + apart + rise;
+                    if (toward.contains("right")) centre.across += other.across + apart + half;
+                    if (toward.contains("left")) centre.across -= other.across + apart + half;
+                    if (toward.contains("above")) centre.up += other.up + apart + rise;
+                    if (toward.contains("below")) centre.up -= other.up + apart + rise;
                 } else {
-                    miss("\\draw: no node named '" + std::string(beside) + "' to set a node beside");
+                    miss(std::format("\\draw: no node named '{}' to set a node beside", beside));
                 }
             }
 
@@ -972,21 +974,24 @@ namespace render::primitives {
                 } else if (corner > 0.0f) {
                     // A quarter circle at each corner, from the bottom right
                     // round against the clock.
-                    const float bend = std::min({corner, reach, height});
-                    const std::array<std::array < float, 3>, 4 > corners{
-                                                                 {
-                                                                     {reach - bend, -height + bend, -90.0f},
-                                                                     {reach - bend, height - bend, 0.0f},
-                                                                     {-reach + bend, height - bend, 90.0f},
-                                                                     {-reach + bend, -height + bend, 180.0f},
-                                                                 }
-                                                             };
-                    for (const auto &[x, y, from]: corners) {
+                    const float radius = std::min({corner, reach, height});
+                    // Each corner's centre, across and up from the node's, and
+                    // the angle its quarter starts at.
+                    const std::array<std::array<float, 3>, 4> corners{
+                        {
+                            {reach - radius, -height + radius, -90.0f},
+                            {reach - radius, height - radius, 0.0f},
+                            {-reach + radius, height - radius, 90.0f},
+                            {-reach + radius, -height + radius, 180.0f},
+                        }
+                    };
+                    for (const auto &[horizontal, vertical, from]: corners) {
                         for (int step = 0; step <= 6; ++step) {
                             const float angle = (from + 15.0f * static_cast<float>(step)) * std::numbers::pi_v<float> /
                                                 180.0f;
                             outline.push_back({
-                                centre.across + x + bend * std::cos(angle), centre.up + y + bend * std::sin(angle)
+                                .across = centre.across + horizontal + radius * std::cos(angle),
+                                .up = centre.up + vertical + radius * std::sin(angle)
                             });
                         }
                     }
@@ -1049,7 +1054,7 @@ namespace render::primitives {
             if (at < text.size() && text[at] == '(') {
                 const auto read = coordinate();
                 if (!read) {
-                    miss("\\draw: a coordinate in '" + std::string(trim(text)) + "' is not one this engine reads");
+                    miss(std::format("\\draw: a coordinate in '{}' is not one this engine reads", trim(text)));
                     return;
                 }
                 graphics::Point2 point = *read;
@@ -1130,11 +1135,20 @@ namespace render::primitives {
                         const float right = std::max(current.across, point.across);
                         const float bottom = std::min(current.up, point.up);
                         const float top = std::max(current.up, point.up);
-                        for (float x = std::ceil(left / step - 0.001f) * step; x <= right + 0.001f; x += step) {
-                            segment({x, bottom}, {x, top});
+                        // The lines counted first and each placed a whole number
+                        // of steps from the first, so no rounding piles up
+                        // across a wide grid.
+                        const float leftmost = std::ceil(left / step - 0.001f) * step;
+                        const float lowest = std::ceil(bottom / step - 0.001f) * step;
+                        const auto columns = static_cast<int>(std::floor((right + 0.001f - leftmost) / step));
+                        const auto rows = static_cast<int>(std::floor((top + 0.001f - lowest) / step));
+                        for (int line = 0; line <= columns; ++line) {
+                            const float across = leftmost + static_cast<float>(line) * step;
+                            segment({.across = across, .up = bottom}, {.across = across, .up = top});
                         }
-                        for (float y = std::ceil(bottom / step - 0.001f) * step; y <= top + 0.001f; y += step) {
-                            segment({left, y}, {right, y});
+                        for (int line = 0; line <= rows; ++line) {
+                            const float up = lowest + static_cast<float>(line) * step;
+                            segment({.across = left, .up = up}, {.across = right, .up = up});
                         }
                         break;
                     }
@@ -1163,7 +1177,7 @@ namespace render::primitives {
                 continue;
             }
             if (relative) {
-                fail("\\draw: a '+' in '" + std::string(trim(text)) + "' stands before no coordinate");
+                fail(std::format("\\draw: a '+' in '{}' stands before no coordinate", trim(text)));
                 return;
             }
 
@@ -1416,7 +1430,7 @@ namespace render::primitives {
                     std::string out;
                     for (std::size_t index = 0; index < written.size();) {
                         const bool named = written[index] == '\\' && index + 2 <= written.size() &&
-                                           std::string_view{"pxyn"}.find(written[index + 1]) != std::string_view::npos
+                                           std::string_view{"pxyn"}.contains(written[index + 1])
                                            &&
                                            (index + 2 == written.size() ||
                                             !((written[index + 2] >= 'a' && written[index + 2] <= 'z') ||
@@ -1483,14 +1497,14 @@ namespace render::primitives {
                         const auto point = resolve(substitute(text.substr(at + 1, shut - at - 1)));
                         at = shut + 1;
                         if (!point) {
-                            miss("\\draw: let's \\p" + name + " is not a point this engine reads");
+                            miss(std::format("\\draw: let's \\p{} is not a point this engine reads", name));
                             return;
                         }
-                        const float x = point->across / scale;
-                        const float y = point->up / scale;
-                        registers.emplace_back("p" + name, std::format("{:.4f}pt,{:.4f}pt", x, y));
-                        registers.emplace_back("x" + name, std::format("{:.4f}pt", x));
-                        registers.emplace_back("y" + name, std::format("{:.4f}pt", y));
+                        const float across = point->across / scale;
+                        const float up = point->up / scale;
+                        registers.emplace_back(std::format("p{}", name), std::format("{:.4f}pt,{:.4f}pt", across, up));
+                        registers.emplace_back(std::format("x{}", name), std::format("{:.4f}pt", across));
+                        registers.emplace_back(std::format("y{}", name), std::format("{:.4f}pt", up));
                     } else {
                         std::string_view formula;
                         if (at < text.size() && text[at] == '{') {
@@ -1512,15 +1526,16 @@ namespace render::primitives {
                                                             std::numeric_limits<double>::quiet_NaN(),
                                                             std::numeric_limits<double>::quiet_NaN(), &measured);
                         if (!value) {
-                            miss("\\draw: let's \\n" + name + " = {" + std::string(trim(formula)) +
-                                 "} is not a formula this engine works out");
+                            miss(std::format("\\draw: let's \\n{} = {{{}}} is not a formula this engine works out",
+                                             name, trim(formula)));
                             return;
                         }
-                        registers.emplace_back("n" + name, std::format("{:.4f}", *value) + (measured ? "pt" : ""));
+                        registers.emplace_back(std::format("n{}", name),
+                                               std::format("{:.4f}{}", *value, measured ? "pt" : ""));
                     }
                 }
                 if (!closed) {
-                    fail("\\draw: a let's registers are \\p and \\n, each set with '=', up to 'in'");
+                    fail(R"(\draw: a let's registers are \p and \n, each set with '=', up to 'in')");
                     return;
                 }
                 rewritten = substitute(text.substr(at));
@@ -1563,12 +1578,12 @@ namespace render::primitives {
                         if (const auto found = std::ranges::find(loops, option,
                                                                  &std::pair<std::string_view, std::string_view>::first);
                             found != loops.end()) {
-                            shape += std::string(found->second) + ",looseness=8,";
-                        } else if (key == "bend left" || key == "bend right" || key == "out" || key == "in" || key ==
-                                   "looseness") {
-                            shape += std::string(option) + ",";
+                            shape += std::format("{},looseness=8,", found->second);
+                        } else if (key == "bend left" || key == "bend right" || key == "out" || key == "in" ||
+                                   key == "looseness") {
+                            shape += std::format("{},", option);
                         } else {
-                            own += "," + std::string(option);
+                            own += std::format(",{}", option);
                         }
                     }
                     skip();
@@ -1592,19 +1607,18 @@ namespace render::primitives {
                 }
                 std::string from;
                 for (const auto &[name, mark]: landmarks) {
-                    if (resting == &mark) from = "(" + name + ")";
+                    if (resting == &mark) from = std::format("({})", name);
                 }
                 if (from.empty()) from = std::format("({:.3f}pt,{:.3f}pt)", current.across / scale, current.up / scale);
                 const std::size_t aim = at;
                 std::string_view target = text.substr(aim, close + 1 - aim);
                 if (trim(target.substr(1, target.size() - 2)).empty()) target = from;
                 at = close + 1;
-                draw(parser, std::string(options) + own,
-                     from + " to[" + shape + "] " + std::string(text.substr(middle, aim - middle)) +
-                     std::string(target),
+                draw(parser, std::format("{}{}", options, own),
+                     std::format("{} to[{}] {}{}", from, shape, text.substr(middle, aim - middle), target),
                      origin, context, true, false);
             } else {
-                miss("\\draw: '" + std::string(trim(text.substr(at))) + "' is not a path this engine draws");
+                miss(std::format("\\draw: '{}' is not a path this engine draws", trim(text.substr(at))));
                 return;
             }
         }
@@ -1805,12 +1819,12 @@ namespace render::primitives {
                     weight = 1.0f;
                     dashed = false;
                     view = graphics::Projection::isometric();
-                    mouth.ingest(context.arena.copy("\\@picturemode{" + corner[0] + "}{" + corner[1] + "}"),
+                    mouth.ingest(context.arena.copy(std::format("\\@picturemode{{{}}}{{{}}}", corner[0], corner[1])),
                                  memory::Location{});
                     return;
                 }
 
-                std::array < float, 2 > size{};
+                std::array<float, 2> size{};
                 measure(mouth, context.registers, size);
 
                 canvases.emplace_back(size[0], size[1]);
@@ -1829,7 +1843,7 @@ namespace render::primitives {
         context.blocks.watch(
             "overlay",
             [this, &context](syntax::Mouth &mouth) {
-                std::array < float, 4 > placement{};
+                std::array<float, 4> placement{};
                 measure(mouth, context.registers, placement);
 
                 canvases.emplace_back(placement[2], placement[3]);
@@ -1967,7 +1981,8 @@ namespace render::primitives {
                             written += token.text;
                         }
                     }
-                    mouth.ingest(parser.arena.copy("\\texttt{\\@breakable{" + written + "}}"), memory::Location{});
+                    mouth.ingest(parser.arena.copy(std::format("\\texttt{{\\@breakable{{{}}}}}", written)),
+                                 memory::Location{});
                     return nullptr;
                 }
 
@@ -1975,7 +1990,7 @@ namespace render::primitives {
                 const std::string text = path(mouth, options);
                 if (canvases.empty()) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                            std::string(name) + " needs an open picture");
+                                            std::format("{} needs an open picture", name));
                     return nullptr;
                 }
                 draw(parser, options, text, origin, context, stroked, filled);
@@ -1993,7 +2008,7 @@ namespace render::primitives {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\node needs an open picture");
                 return nullptr;
             }
-            draw(parser, "", "node[" + options + "] " + text, origin, context, false, false);
+            draw(parser, "", std::format("node[{}] {}", options, text), origin, context, false, false);
             return nullptr;
         });
 
@@ -2004,7 +2019,7 @@ namespace render::primitives {
             std::string options;
             const std::string text = path(mouth, options);
             if (canvases.empty()) return nullptr;
-            draw(parser, "", "coordinate " + text, origin, context, false, false);
+            draw(parser, "", std::format("coordinate {}", text), origin, context, false, false);
             return nullptr;
         });
 
@@ -2053,7 +2068,7 @@ namespace render::primitives {
                 const std::string_view inside = std::string_view{text}.substr(
                     at + 1, std::min(close, text.size()) - at - 1);
                 if (letter == '(') name = trim(inside);
-                if (letter == '[') options += "," + std::string(inside);
+                if (letter == '[') options += std::format(",{}", inside);
                 if (letter == '{') {
                     body = inside;
                     break;
@@ -2079,7 +2094,7 @@ namespace render::primitives {
                 if (option == "matrix of math nodes") math = true;
                 if (key == "column sep") across = distance(value, 1.0f, em).value_or(across);
                 if (key == "row sep") down = distance(value, 1.0f, em).value_or(down);
-                if (key == "nodes") every += std::string(value) + ",";
+                if (key == "nodes") every += std::format("{},", value);
                 if (key == "name") name = value;
                 if (key == "anchor") anchor = value;
                 if (key == "draw") framed = true;
@@ -2127,7 +2142,7 @@ namespace render::primitives {
                         cell.options += std::string(written.substr(2, shut - 2));
                         written = trim(written.substr(std::min(shut + 2, written.size())));
                     }
-                    if (!written.empty()) cell.text = math ? "$" + std::string(written) + "$" : std::string(written);
+                    if (!written.empty()) cell.text = math ? std::format("${}$", written) : std::string(written);
                     cell.present = !written.empty() || cell.options.size() > every.size();
                 }
                 grid.back().push_back(std::move(cell));
@@ -2170,8 +2185,8 @@ namespace render::primitives {
                 columns = std::max(columns, row.size());
                 for (Cell &cell: row) {
                     if (!cell.present) continue;
-                    draw(parser, "", "node[" + cell.options + "] (\x01) at (0,0) {" + cell.text + "}", origin, context,
-                         false, false);
+                    draw(parser, "", std::format("node[{}] (\x01) at (0,0) {{{}}}", cell.options, cell.text), origin,
+                         context, false, false);
                     if (const auto found = landmarks.find("\x01"); found != landmarks.end()) {
                         cell.mark = found->second;
                         landmarks.erase(found);
@@ -2205,16 +2220,16 @@ namespace render::primitives {
             const float height = grid.empty() ? 0.0f : -(ys.back() - tall.back());
 
             // Its point, and the corner or side of it that stands there.
-            draw(parser, "", "coordinate (\x01) at " + where, origin, context, false, false);
+            draw(parser, "", std::format("coordinate (\x01) at {}", where), origin, context, false, false);
             graphics::Point2 centre{};
             if (const auto found = landmarks.find("\x01"); found != landmarks.end()) {
                 centre = found->second.centre;
                 landmarks.erase(found);
             }
-            if (anchor.find("west") != std::string::npos) centre.across += width * 0.5f;
-            if (anchor.find("east") != std::string::npos) centre.across -= width * 0.5f;
-            if (anchor.find("north") != std::string::npos) centre.up -= height * 0.5f;
-            if (anchor.find("south") != std::string::npos) centre.up += height * 0.5f;
+            if (anchor.contains("west")) centre.across += width * 0.5f;
+            if (anchor.contains("east")) centre.across -= width * 0.5f;
+            if (anchor.contains("north")) centre.up -= height * 0.5f;
+            if (anchor.contains("south")) centre.up += height * 0.5f;
 
             for (std::size_t r = 0; r < grid.size(); ++r) {
                 for (std::size_t c = 0; c < grid[r].size(); ++c) {
@@ -2324,7 +2339,7 @@ namespace render::primitives {
                 return;
             }
 
-            std::array < float, 4 > coordinates{};
+            std::array<float, 4> coordinates{};
             measure(mouth, context.registers, coordinates);
 
             canvases.back().line(
@@ -2339,7 +2354,7 @@ namespace render::primitives {
                 return;
             }
 
-            std::array < float, 6 > coordinates{};
+            std::array<float, 6> coordinates{};
             measure(mouth, context.registers, coordinates);
 
             canvases.back().line(
@@ -2382,14 +2397,14 @@ namespace render::primitives {
             }
             const std::string source = syntax::Argument::text(mouth);
 
-            std::array < float, 2 > size{};
+            std::array<float, 2> size{};
             const bool given = mouth.lookahead().is(syntax::Catcodes::Category::Group, '{');
             if (given) measure(mouth, context.registers, size);
 
             // A drawing written as TikZ, as tikzscale reads one: the file
             // read in where the picture stands.
             if (source.ends_with(".tikz") || source.ends_with(".pgf")) {
-                mouth.ingest(arena.copy("\\input{" + source + "}"), memory::Location{});
+                mouth.ingest(arena.copy(std::format("\\input{{{}}}", source)), memory::Location{});
                 return nullptr;
             }
 
@@ -2407,7 +2422,7 @@ namespace render::primitives {
             };
             std::span<const std::byte> encoded;
             for (std::size_t tried = 0; context.files && tried < extensions.size() && encoded.empty(); ++tried) {
-                if (const auto file = context.files->find(source + std::string(extensions[tried]));
+                if (const auto file = context.files->find(std::format("{}{}", source, extensions[tried]));
                     file != context.files->end()) {
                     encoded = std::as_bytes(std::span{file->second});
                 }
@@ -2415,7 +2430,7 @@ namespace render::primitives {
             for (std::size_t folder = 0; context.disk && folder <= folders.size() && encoded.empty(); ++folder) {
                 const std::string prefix = folder == 0 ? std::string{} : folders[folder - 1];
                 for (const std::string_view extension: extensions) {
-                    if (const std::string *file = context.disk(prefix + source + std::string(extension))) {
+                    if (const std::string *file = context.disk(std::format("{}{}{}", prefix, source, extension))) {
                         encoded = std::as_bytes(std::span{*file});
                         break;
                     }
@@ -2426,8 +2441,9 @@ namespace render::primitives {
             std::optional<std::vector<std::uint8_t> > received;
             if (encoded.empty() && (source.starts_with("http://") || source.starts_with("https://"))) {
                 if (context.offline) {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                            "\\includegraphics of '" + source + "' refused: the run is offline");
+                    tracebacks.emplace_back(
+                        syntax::Traceback::Type::Primitive, origin,
+                        std::format("\\includegraphics of '{}' refused: the run is offline", source));
                     return directive(arena, nullptr, origin, true);
                 }
                 received = protocols::get(source, "");
@@ -2439,7 +2455,7 @@ namespace render::primitives {
             const bool example = encoded.empty() && base.starts_with("example-image");
             if (encoded.empty() && !example) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
-                                        "\\includegraphics could not read '" + source + "'");
+                                        std::format("\\includegraphics could not read '{}'", source));
                 return directive(arena, nullptr, origin, true);
             }
 
@@ -2453,7 +2469,7 @@ namespace render::primitives {
                 return text;
             };
             int leaf = 1;
-            std::array < float, 4 > window{};
+            std::array<float, 4> window{};
             bool windowed = false;
             bool trimmed = false;
             for (std::size_t start = 0; start <= keys.size();) {
@@ -2533,8 +2549,8 @@ namespace render::primitives {
                 } else {
                     tracebacks.emplace_back(
                         syntax::Traceback::Type::Warning, origin,
-                        "\\includegraphics: '" + source +
-                        "' is in a form this engine does not draw; its place is kept");
+                        std::format("\\includegraphics: '{}' is in a form this engine does not draw; its place is kept",
+                                    source));
                 }
                 std::string width = given
                                         ? std::format("{:.2f}pt", size[0])
@@ -2554,8 +2570,8 @@ namespace render::primitives {
                     if (key == "width") width = item.substr(equals + 1);
                     if (key == "height" || key == "totalheight") height = item.substr(equals + 1);
                 }
-                if (height.empty()) height = std::format("\\dimexpr({})*{}/{}\\relax", width, down, across);
-                mouth.ingest(arena.copy("\\fbox{\\makebox[" + width + "]{\\rule{0pt}{" + height + "}}}"));
+                if (height.empty()) height = std::format(R"(\dimexpr({})*{}/{}\relax)", width, down, across);
+                mouth.ingest(arena.copy(std::format(R"(\fbox{{\makebox[{}]{{\rule{{0pt}}{{{}}}}}}})", width, height)));
                 return directive(arena, nullptr, origin, true);
             }
 
@@ -2627,8 +2643,8 @@ namespace render::primitives {
                             // Read above: which part of a PDF is drawn.
                         } else {
                             tracebacks.emplace_back(syntax::Traceback::Type::Warning, mouth.lookahead().location,
-                                                    "\\includegraphics: the '" + std::string(key) +
-                                                    "' key is not supported");
+                                                    std::format("\\includegraphics: the '{}' key is not supported",
+                                                                key));
                         }
                     }
 
