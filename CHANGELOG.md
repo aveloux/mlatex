@@ -1198,6 +1198,19 @@ font folders are listed only for a script the engine carries no face for.
   typography -- so a layout node is still `layout::Node` inside every
   module, and a source names the classes it takes from other clusters once,
   after its namespace opens, as `using text::Styles;`.
+- **The clusters are named for what they stand for**, the way definitions
+  is, not for what kind of thing they handle. The syntax primitives are in
+  definitions, logic (conditionals, loops, environments), arithmetic
+  (integers, decimals, registers) and bookkeeping (strings, records); the
+  render primitives in typesetting (styles, typefaces, colors, characters,
+  languages, verbatim), arrangement (boxes, glue, groups, paragraphs,
+  penalties, rules), composition (pages, sections, lists, floats, footnotes,
+  theorems, tables, algorithms), referencing, mathematics (equations),
+  figures (illustrations, plots, diagrams) and retrieval (requests). The
+  arithmetic module is integers, beside decimals. Folders, namespaces and
+  tests move together; the render layer's own layout, graphics and
+  typography keep their names, so `layout::Node` inside a module is still
+  the engine's node.
 - The table of contents reads each entry as a structured binding, and the
   boxes its number is set in are its `numeral`, apart from the entry's
   `number`; the counters' installer takes its parser `const`, a footnote's

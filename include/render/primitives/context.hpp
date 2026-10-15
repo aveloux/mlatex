@@ -10,7 +10,7 @@
 #include "syntax/node.hpp"
 #include "syntax/number.hpp"
 #include "syntax/parser.hpp"
-#include "syntax/primitives/control/environments.hpp"
+#include "syntax/primitives/logic/environments.hpp"
 #include "syntax/primitives/definitions/variables.hpp"
 #include "syntax/semantics/registers.hpp"
 #include "typography/collection.hpp"
@@ -151,7 +151,7 @@ namespace render::primitives {
         typography::Collection &collection; ///< Where font files come from.
         const typography::Shaper &shaper; ///< Text into positioned glyphs.
         const syntax::expression::Unicodes &unicodes; ///< Maths symbol names.
-        const syntax::primitives::control::Environments &environments; ///< Named blocks, for a module that hooks one.
+        const syntax::primitives::logic::Environments &environments; ///< Named blocks, for a module that hooks one.
         const syntax::primitives::definitions::Variables &variables;
         ///< Named values: colors a document defined, among others.
         memory::Arena &arena; ///< Allocator for anything that outlives a pass.

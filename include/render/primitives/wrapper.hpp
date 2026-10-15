@@ -1,34 +1,34 @@
 #pragma once
 
-#include "render/primitives/structure/algorithms.hpp"
-#include "render/primitives/spacing/boxes.hpp"
+#include "render/primitives/composition/algorithms.hpp"
+#include "render/primitives/arrangement/boxes.hpp"
 #include "render/primitives/referencing/citations.hpp"
-#include "render/primitives/text/colors.hpp"
+#include "render/primitives/typesetting/colors.hpp"
 #include "render/primitives/context.hpp"
 #include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/notation/equations.hpp"
-#include "render/primitives/structure/floats.hpp"
-#include "render/primitives/structure/footnotes.hpp"
-#include "render/primitives/spacing/groups.hpp"
-#include "render/primitives/structure/lists.hpp"
-#include "render/primitives/structure/pages.hpp"
-#include "render/primitives/spacing/paragraphs.hpp"
-#include "render/primitives/network/requests.hpp"
-#include "render/primitives/spacing/penalties.hpp"
-#include "render/primitives/pictures/plots.hpp"
-#include "render/primitives/pictures/diagrams.hpp"
-#include "render/primitives/pictures/illustrations.hpp"
-#include "render/primitives/text/languages.hpp"
+#include "render/primitives/mathematics/equations.hpp"
+#include "render/primitives/composition/floats.hpp"
+#include "render/primitives/composition/footnotes.hpp"
+#include "render/primitives/arrangement/groups.hpp"
+#include "render/primitives/composition/lists.hpp"
+#include "render/primitives/composition/pages.hpp"
+#include "render/primitives/arrangement/paragraphs.hpp"
+#include "render/primitives/retrieval/requests.hpp"
+#include "render/primitives/arrangement/penalties.hpp"
+#include "render/primitives/figures/plots.hpp"
+#include "render/primitives/figures/diagrams.hpp"
+#include "render/primitives/figures/illustrations.hpp"
+#include "render/primitives/typesetting/languages.hpp"
 #include "render/primitives/referencing/references.hpp"
-#include "render/primitives/spacing/rules.hpp"
-#include "render/primitives/structure/sections.hpp"
-#include "render/primitives/spacing/glue.hpp"
-#include "render/primitives/text/styles.hpp"
-#include "render/primitives/text/characters.hpp"
-#include "render/primitives/structure/tables.hpp"
-#include "render/primitives/structure/theorems.hpp"
-#include "render/primitives/text/typefaces.hpp"
-#include "render/primitives/text/verbatim.hpp"
+#include "render/primitives/arrangement/rules.hpp"
+#include "render/primitives/composition/sections.hpp"
+#include "render/primitives/arrangement/glue.hpp"
+#include "render/primitives/typesetting/styles.hpp"
+#include "render/primitives/typesetting/characters.hpp"
+#include "render/primitives/composition/tables.hpp"
+#include "render/primitives/composition/theorems.hpp"
+#include "render/primitives/typesetting/typefaces.hpp"
+#include "render/primitives/typesetting/verbatim.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
@@ -91,35 +91,35 @@ namespace render::primitives {
         [[nodiscard]] std::vector<syntax::Traceback> traceback() const;
 
     private:
-        structure::Pages pages; ///< `\\documentclass`, the sheet and the margins.
-        text::Typefaces typefaces; ///< `\\textfont`, `\\mathfont` and `\\font`.
-        text::Styles styles; ///< `\\textbf`, `\\emph`, `\\large` and the rest.
-        text::Characters characters; ///< The characters a document cannot type for itself.
-        spacing::Groups groups; ///< The brace group, and the scope it bounds.
-        spacing::Boxes boxes; ///< `\\hbox`, `\\vbox` and `\\vtop`.
-        spacing::Glue glue; ///< Glue and kerns.
-        spacing::Rules rules; ///< `\\rule`, `\\hrule` and `\\vrule`.
-        spacing::Penalties penalties; ///< `\\penalty` and the forced breaks.
-        structure::Tables tables; ///< `\\halign`.
-        structure::Sections sections; ///< `\\section` and the levels beneath it.
-        spacing::Paragraphs paragraphs; ///< `\\noindent`, `\\centering` and the alignment blocks.
-        structure::Lists lists; ///< `\\item` and the three list blocks.
-        notation::Equations equations; ///< `$`, `\\(`, `\\[`, `equation` and the matrices.
+        composition::Pages pages; ///< `\\documentclass`, the sheet and the margins.
+        typesetting::Typefaces typefaces; ///< `\\textfont`, `\\mathfont` and `\\font`.
+        typesetting::Styles styles; ///< `\\textbf`, `\\emph`, `\\large` and the rest.
+        typesetting::Characters characters; ///< The characters a document cannot type for itself.
+        arrangement::Groups groups; ///< The brace group, and the scope it bounds.
+        arrangement::Boxes boxes; ///< `\\hbox`, `\\vbox` and `\\vtop`.
+        arrangement::Glue glue; ///< Glue and kerns.
+        arrangement::Rules rules; ///< `\\rule`, `\\hrule` and `\\vrule`.
+        arrangement::Penalties penalties; ///< `\\penalty` and the forced breaks.
+        composition::Tables tables; ///< `\\halign`.
+        composition::Sections sections; ///< `\\section` and the levels beneath it.
+        arrangement::Paragraphs paragraphs; ///< `\\noindent`, `\\centering` and the alignment blocks.
+        composition::Lists lists; ///< `\\item` and the three list blocks.
+        mathematics::Equations equations; ///< `$`, `\\(`, `\\[`, `equation` and the matrices.
         referencing::References references; ///< `\\label`, `\\ref` and `\\eqref`.
         referencing::Citations citations; ///< `\\cite`, `\\bibitem` and `thebibliography`.
-        structure::Footnotes footnotes; ///< `\\footnote`.
+        composition::Footnotes footnotes; ///< `\\footnote`.
         referencing::Counters counters; ///< `\\newcounter`, `\\stepcounter`, `\\setcounter` and their printed forms.
-        structure::Theorems theorems; ///< `\\newtheorem`, `\\theoremstyle`, the proof block and `\\qed`.
-        structure::Floats floats; ///< `figure`, `table`, `algorithm`, `\\caption` and `\\captionof`.
-        structure::Algorithms algorithms; ///< The `algorithmic` block, `\\State` and `\\Statex`.
-        pictures::Illustrations illustrations;
+        composition::Theorems theorems; ///< `\\newtheorem`, `\\theoremstyle`, the proof block and `\\qed`.
+        composition::Floats floats; ///< `figure`, `table`, `algorithm`, `\\caption` and `\\captionof`.
+        composition::Algorithms algorithms; ///< The `algorithmic` block, `\\State` and `\\Statex`.
+        figures::Illustrations illustrations;
         ///< The `picture`/`overlay` blocks, their line primitives, and `\\includegraphics`/`\\caption`.
-        text::Colors colors; ///< `\\textcolor`, `\\definecolor`, `\\colorlet`.
-        network::Requests requests; ///< `\\httpget`, `\\httppost`.
-        text::Verbatim verbatim; ///< `\\verb`, `verbatim`, `lstlisting` and `\\lstinline`.
-        pictures::Plots plots; ///< pgfplots' axes and what `\\addplot` draws in them.
-        pictures::Diagrams diagrams; ///< tikz-cd's, xy-pic's and amscd's diagrams, circuits and trees, as TikZ.
-        text::Languages languages; ///< A language's patterns, direction and captions, and `otherlanguage`.
+        typesetting::Colors colors; ///< `\\textcolor`, `\\definecolor`, `\\colorlet`.
+        retrieval::Requests requests; ///< `\\httpget`, `\\httppost`.
+        typesetting::Verbatim verbatim; ///< `\\verb`, `verbatim`, `lstlisting` and `\\lstinline`.
+        figures::Plots plots; ///< pgfplots' axes and what `\\addplot` draws in them.
+        figures::Diagrams diagrams; ///< tikz-cd's, xy-pic's and amscd's diagrams, circuits and trees, as TikZ.
+        typesetting::Languages languages; ///< A language's patterns, direction and captions, and `otherlanguage`.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

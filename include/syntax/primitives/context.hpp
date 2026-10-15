@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-namespace syntax::primitives::control {
+namespace syntax::primitives::logic {
     class Conditionals;
 }
 
@@ -19,7 +19,7 @@ namespace syntax::primitives::definitions {
 
 namespace syntax::primitives {
     // Declared above for the same reason, and a necessary one:
-    // control/conditionals.hpp includes this header, so including it back
+    // logic/conditionals.hpp includes this header, so including it back
     // would close the cycle. Context only holds a reference.
 
     /// @brief Files a program embedding the engine hands it from memory, by
@@ -70,7 +70,7 @@ namespace syntax::primitives {
     /// never outlives the one definition it was written for.
     struct Context {
         semantics::Registers &registers; ///< The register bank, scoped by Union.
-        control::Conditionals &conditionals; ///< Conditionals, for a module that needs to branch.
+        logic::Conditionals &conditionals; ///< Conditionals, for a module that needs to branch.
         const definitions::Variables &variables; ///< Named values, for a module that reads one by name.
 
         bool global{false}; ///< The next definition or assignment outlives its group.

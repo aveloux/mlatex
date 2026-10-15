@@ -1,18 +1,18 @@
 #pragma once
 
 #include "syntax/mouth.hpp"
-#include "syntax/primitives/control/environments.hpp"
-#include "syntax/primitives/calculations/arithmetic.hpp"
+#include "syntax/primitives/logic/environments.hpp"
+#include "syntax/primitives/arithmetic/integers.hpp"
 #include "syntax/primitives/context.hpp"
-#include "syntax/primitives/calculations/decimals.hpp"
+#include "syntax/primitives/arithmetic/decimals.hpp"
 #include "syntax/primitives/definitions/hooks.hpp"
 #include "syntax/primitives/definitions/packages.hpp"
-#include "syntax/primitives/control/loops.hpp"
+#include "syntax/primitives/logic/loops.hpp"
 #include "syntax/primitives/definitions/macros.hpp"
-#include "syntax/primitives/data/records.hpp"
-#include "syntax/primitives/control/conditionals.hpp"
-#include "syntax/primitives/data/strings.hpp"
-#include "syntax/primitives/calculations/registers.hpp"
+#include "syntax/primitives/bookkeeping/records.hpp"
+#include "syntax/primitives/logic/conditionals.hpp"
+#include "syntax/primitives/bookkeeping/strings.hpp"
+#include "syntax/primitives/arithmetic/registers.hpp"
 #include "syntax/primitives/definitions/variables.hpp"
 #include "syntax/traceback.hpp"
 
@@ -70,20 +70,20 @@ namespace syntax::primitives {
 
         // Declared first because Context is built from the conditionals and the
         // other modules are handed that same Context.
-        control::Conditionals conditionals; ///< Conditionals; Context holds a reference to this.
-        control::Environments environments; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
+        logic::Conditionals conditionals; ///< Conditionals; Context holds a reference to this.
+        logic::Environments environments; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
         definitions::Macros macros; ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
-        calculations::Registers registers; ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
-        calculations::Arithmetic arithmetic; ///< `\\evaluate`.
-        control::Loops loops; ///< `\\repeat`, `\\group`, `\\ungroup`.
+        arithmetic::Registers registers; ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
+        arithmetic::Integers integers; ///< `\\evaluate`.
+        logic::Loops loops; ///< `\\repeat`, `\\group`, `\\ungroup`.
         definitions::Packages packages; ///< `\\include`, `\\input` and the package primitives.
         definitions::Variables variables;
         ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`: what a
                                 ///< Context reads and a caller hands values in through before a run.
-        calculations::Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
+        arithmetic::Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
         definitions::Hooks hooks; ///< `\\addtohook`, `\\usehook`.
-        data::Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
-        data::Records records; ///< csvsimple's CSV files and datatool's databases.
+        bookkeeping::Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
+        bookkeeping::Records records; ///< csvsimple's CSV files and datatool's databases.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

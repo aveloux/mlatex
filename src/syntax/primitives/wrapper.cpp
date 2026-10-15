@@ -15,14 +15,14 @@
 namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon &lexicon) noexcept
         : conditionals(lexicon), environments(lexicon), macros(lexicon), registers(lexicon),
-          arithmetic(lexicon), loops(lexicon), packages(lexicon),
+          integers(lexicon), loops(lexicon), packages(lexicon),
           variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {
     }
 
     void Wrapper::operator()(Mouth &mouth, Context &context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
-        bind(mouth, context, conditionals, environments, macros, registers, arithmetic, loops, packages,
+        bind(mouth, context, conditionals, environments, macros, registers, integers, loops, packages,
              variables, decimals, hooks, strings, records);
 
         // Every word of the engine's own that is not LaTeX's, a second time
@@ -65,7 +65,7 @@ namespace syntax::primitives {
         // reports even though the module had recorded them.
         const std::vector<Traceback> *lists[] = {
             &conditionals.traceback(), &environments.traceback(), &macros.traceback(),
-            &registers.traceback(), &arithmetic.traceback(), &loops.traceback(),
+            &registers.traceback(), &integers.traceback(), &loops.traceback(),
             &packages.traceback(), &variables.traceback(), &decimals.traceback(),
             &hooks.traceback(), &strings.traceback(), &records.traceback(),
         };

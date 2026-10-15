@@ -7,7 +7,7 @@
 /// as in running text -- and leave nothing behind there. The references are
 /// parser primitives, because they produce text.
 #include "render/primitives/referencing/references.hpp"
-#include "render/primitives/text/colors.hpp"
+#include "render/primitives/typesetting/colors.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
@@ -21,7 +21,7 @@
 #include <vector>
 
 namespace render::primitives::referencing {
-    using text::Colors;
+    using typesetting::Colors;
 
     References::References(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\label");
