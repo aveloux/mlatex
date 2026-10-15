@@ -19,7 +19,7 @@ int main() {
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
 
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers, core.relay, core.variables};
+    syntax::primitives::Context context{state.registers, core.conditionals, core.variables};
     core(mouth, context);
 
     // Each module's names are bound: one from each of several.

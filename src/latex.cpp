@@ -246,7 +246,7 @@ namespace latex {
         };
 
         syntax::primitives::Wrapper core(lexicon);
-        syntax::primitives::Context expansion{state.registers, core.relay, core.variables};
+        syntax::primitives::Context expansion{state.registers, core.conditionals, core.variables};
         expansion.files = &host.files;
         expansion.disk = disk;
         core(mouth, expansion);
@@ -291,7 +291,7 @@ namespace latex {
         const render::primitives::Wrapper visuals(lexicon);
         render::primitives::Context rendering{
             composer.document, typesetter, state.registers, registry, collection,
-            shaper, unicodes, core.blocks, core.variables, arena, selection
+            shaper, unicodes, core.environments, core.variables, arena, selection
         };
         rendering.files = &host.files;
         rendering.disk = disk;
@@ -406,8 +406,8 @@ namespace latex {
             collect(visuals.traceback());
         }
 
-        if (const std::size_t unclosed = core.blocks.depth(); unclosed != 0 && !again) {
-            const std::string_view innermost = core.blocks.innermost();
+        if (const std::size_t unclosed = core.environments.depth(); unclosed != 0 && !again) {
+            const std::string_view innermost = core.environments.innermost();
             errors << (innermost == "document"
                            ? std::string("*** (job aborted, no legal \\end found)")
                            : std::format("error (environment): \\begin{{{}}} ended by \\end{{document}}",

@@ -10,8 +10,8 @@
 #include "syntax/node.hpp"
 #include "syntax/number.hpp"
 #include "syntax/parser.hpp"
-#include "syntax/primitives/blocks.hpp"
-#include "syntax/primitives/variables.hpp"
+#include "syntax/primitives/control/environments.hpp"
+#include "syntax/primitives/definitions/variables.hpp"
 #include "syntax/semantics/registers.hpp"
 #include "typography/collection.hpp"
 #include "typography/font.hpp"
@@ -28,8 +28,11 @@
 #include <utility>
 #include <vector>
 
-namespace render::primitives {
+namespace render::primitives::referencing {
     class Counters;
+}
+
+namespace render::primitives {
 
     /// @brief Which font a primitive should be using right now.
     ///
@@ -148,8 +151,9 @@ namespace render::primitives {
         typography::Collection &collection; ///< Where font files come from.
         const typography::Shaper &shaper; ///< Text into positioned glyphs.
         const syntax::expression::Unicodes &unicodes; ///< Maths symbol names.
-        const syntax::primitives::Blocks &blocks; ///< Named blocks, for a module that hooks one.
-        const syntax::primitives::Variables &variables; ///< Named values: colors a document defined, among others.
+        const syntax::primitives::control::Environments &environments; ///< Named blocks, for a module that hooks one.
+        const syntax::primitives::definitions::Variables &variables;
+        ///< Named values: colors a document defined, among others.
         memory::Arena &arena; ///< Allocator for anything that outlives a pass.
         Selection &selection; ///< Which font is in use.
 
@@ -231,7 +235,7 @@ namespace render::primitives {
         /// @brief The named counters, which headings, equations, theorems and
         ///        captions all number through; set by Wrapper before any
         ///        module is installed.
-        const Counters *counters{nullptr};
+        const referencing::Counters *counters{nullptr};
     };
 
     /// @brief A module: anything callable as `(syntax::Parser&, Context&)`.

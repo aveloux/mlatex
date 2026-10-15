@@ -126,7 +126,7 @@ it is written so; sets `\languagename`; and reads its captions and date from
 ```
 
 Adding a language is a file of that shape under `src/modules/babel/`, and a
-line in the table in `src/render/primitives/languages.cpp` giving each name
+line in the table in `src/render/primitives/text/languages.cpp` giving each name
 it goes by, its captions file, its patterns and their minima, and its
 direction. A language with no captions file keeps the captions in force; one
 with no patterns breaks no word.
@@ -346,7 +346,7 @@ which runs a document through the expander and the parser and compares the
 text, and `typeset()`, which runs the whole engine and reads the PDF's text
 back. A new package should add its name to the list there and its checks
 beside the others, and a line to the index in `src/modules/main.mtex`. A
-class's module is checked the same way from `tests/render/primitives/test_page.cpp`,
+class's module is checked the same way from `tests/render/primitives/structure/test_pages.cpp`,
 and the glossary's lines from `tests/syntax/test_glossary.cpp`.
 
 `tests/packages/` holds one small document for each package and class the

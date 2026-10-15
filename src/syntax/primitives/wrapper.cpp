@@ -14,16 +14,16 @@
 
 namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon &lexicon) noexcept
-        : relay(lexicon), blocks(lexicon), macros(lexicon), values(lexicon),
-          compute(lexicon), loops(lexicon), include(lexicon),
-          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {
+        : conditionals(lexicon), environments(lexicon), macros(lexicon), registers(lexicon),
+          arithmetic(lexicon), loops(lexicon), packages(lexicon),
+          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), databases(lexicon) {
     }
 
     void Wrapper::operator()(Mouth &mouth, Context &context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
-        bind(mouth, context, relay, blocks, macros, values, compute, loops, include,
-             variables, decimals, hooks, strings, records);
+        bind(mouth, context, conditionals, environments, macros, registers, arithmetic, loops, packages,
+             variables, decimals, hooks, strings, databases);
 
         // Every word of the engine's own that is not LaTeX's, a second time
         // under an `@` name -- the way LaTeX's own internals are named, out of
@@ -50,7 +50,7 @@ namespace syntax::primitives {
         // the document's own block opens, and what \\AtEndDocument gathered
         // as it closes -- the one place two modules here meet, which is why
         // it is wired here rather than in either.
-        blocks.watch(
+        environments.watch(
             "document",
             [this](Mouth &mouth) { hooks.run(mouth, "begindocument"); },
             [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); });
@@ -60,14 +60,14 @@ namespace syntax::primitives {
     }
 
     std::vector<Traceback> Wrapper::traceback() const {
-        // Every module, conditionals included: relay keeps its own list like
+        // Every module, conditionals included: they keep their own list like
         // the rest, so leaving it out here lost runaway and unclosed-\if
         // reports even though the module had recorded them.
         const std::vector<Traceback> *lists[] = {
-            &relay.traceback(), &blocks.traceback(), &macros.traceback(),
-            &values.traceback(), &compute.traceback(), &loops.traceback(),
-            &include.traceback(), &variables.traceback(), &decimals.traceback(),
-            &hooks.traceback(), &strings.traceback(), &records.traceback(),
+            &conditionals.traceback(), &environments.traceback(), &macros.traceback(),
+            &registers.traceback(), &arithmetic.traceback(), &loops.traceback(),
+            &packages.traceback(), &variables.traceback(), &decimals.traceback(),
+            &hooks.traceback(), &strings.traceback(), &databases.traceback(),
         };
 
         std::size_t total = 0uz;

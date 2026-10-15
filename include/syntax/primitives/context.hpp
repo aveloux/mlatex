@@ -9,11 +9,18 @@
 #include <map>
 #include <string>
 
-namespace syntax::primitives {
-    // Same reason, and a necessary one: relay.hpp includes this header, so
-    // including it back would close the cycle. Context only holds a reference.
-    class Relay;
+namespace syntax::primitives::control {
+    class Conditionals;
+}
+
+namespace syntax::primitives::definitions {
     class Variables;
+}
+
+namespace syntax::primitives {
+    // Declared above for the same reason, and a necessary one:
+    // control/conditionals.hpp includes this header, so including it back
+    // would close the cycle. Context only holds a reference.
 
     /// @brief Files a program embedding the engine hands it from memory, by
     ///        name: packages, inputs and pictures alike.
@@ -63,8 +70,8 @@ namespace syntax::primitives {
     /// never outlives the one definition it was written for.
     struct Context {
         semantics::Registers &registers; ///< The register bank, scoped by Union.
-        Relay &relay; ///< Conditionals, for a module that needs to branch.
-        const Variables &variables; ///< Named values, for a module that reads one by name.
+        control::Conditionals &conditionals; ///< Conditionals, for a module that needs to branch.
+        const definitions::Variables &variables; ///< Named values, for a module that reads one by name.
 
         bool global{false}; ///< The next definition or assignment outlives its group.
         bool spanning{false}; ///< The next macro's arguments may hold `\\par`.

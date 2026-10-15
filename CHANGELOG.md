@@ -1162,8 +1162,8 @@ font folders are listed only for a script the engine carries no face for.
   moved in its struct can never be filled with its neighbour's value. A
   table's rows are packed as many to a line as fit, and a row too wide for
   one line breaks before the same field in every row of its table.
-  `\definecolor`'s numbers are `first` to `fourth` -- red, green and blue
-  in one model, cyan, magenta, yellow and black in another.
+  The numbers a colour is defined by are `first` to `fourth` -- red, green
+  and blue in one model, cyan, magenta, yellow and black in another.
 - **A struct one function uses is that function's own.** The accented
   letters, xcolor's named colours, libjpeg's error path, the compiled
   hyphenation trie, the WinHTTP handle and the command line's options were
@@ -1177,6 +1177,28 @@ font folders are listed only for a script the engine carries no face for.
   parser's `delimiter`, which only reads it; the parser no longer takes or
   holds a `Unicodes` it never used, and the brackets it knows are
   designated initialisers.
+- **The primitives are grouped by what they do.** `syntax/primitives/` and
+  `render/primitives/` keep their wrapper and context and hold a folder per
+  cluster, each folder its own namespace, its tests beside it under
+  `tests/`: `syntax::primitives::definitions` (macros, variables, hooks,
+  packages), `control` (conditionals, loops, environments), `calculations`
+  (arithmetic, decimals, registers) and `data` (strings, databases); and
+  `render::primitives::text` (styles, typefaces, colors, characters,
+  languages, verbatim), `spacing` (boxes, glue, groups, paragraphs,
+  penalties, rules), `structure` (pages, sections, lists, floats,
+  footnotes, theorems, tables, algorithms), `referencing` (references,
+  citations, counters, numerals), `mathematics` (formulas), `pictures`
+  (illustrations, plots, diagrams) and `network` (requests). Modules whose
+  names said less than they do are renamed, their classes, wrapper members
+  and tests with them: relay → conditionals, blocks → environments,
+  compute → arithmetic, values → registers, include → packages, records →
+  databases, expressions → formulas, symbols → characters, spacing → glue,
+  page → pages, typeface → typefaces, numeral → numerals -- so
+  `core.relay` is `core.conditionals` and `context.blocks` is
+  `context.environments`. A cluster's name is never one the render layer
+  already has (`layout`, `graphics`, `typography`), so `layout::Node`
+  still means the layout's node inside every module, and a source names the
+  classes it takes from other clusters once at its top, `using text::Styles;`.
 - The table of contents reads each entry as a structured binding, and the
   boxes its number is set in are its `numeral`, apart from the entry's
   `number`; the counters' installer takes its parser `const`, a footnote's

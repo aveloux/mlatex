@@ -32,7 +32,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     syntax::Lexicon lexicon(arena);
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     syntax::primitives::Wrapper core(lexicon);
-    syntax::primitives::Context context{state.registers, core.relay, core.variables};
+    syntax::primitives::Context context{state.registers, core.conditionals, core.variables};
     core(mouth, context);
     mouth.ingest(arena.copy("\\include{core/aliases}\\include{core/kernel}" + std::string(document)));
     syntax::Parser parser(mouth, arena);

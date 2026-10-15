@@ -11,10 +11,10 @@
 
 namespace render::primitives {
     Wrapper::Wrapper(syntax::Lexicon &lexicon) noexcept
-        : page(lexicon), typeface(lexicon), styles(lexicon), symbols(lexicon), groups(lexicon),
-          boxes(lexicon), spacing(lexicon),
+        : pages(lexicon), typefaces(lexicon), styles(lexicon), characters(lexicon), groups(lexicon),
+          boxes(lexicon), glue(lexicon),
           rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
-          lists(lexicon), expressions(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
+          lists(lexicon), formulas(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
           counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon),
           colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {
     }
@@ -26,8 +26,8 @@ namespace render::primitives {
 
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
-        bind(parser, context, page, typeface, styles, symbols, groups, boxes, spacing, rules,
-             penalties, tables, sections, paragraphs, lists, expressions, references, citations,
+        bind(parser, context, pages, typefaces, styles, characters, groups, boxes, glue, rules,
+             penalties, tables, sections, paragraphs, lists, formulas, references, citations,
              footnotes, counters, theorems, floats, algorithms, illustrations, colors, requests, verbatim,
              plots, diagrams, languages);
 
@@ -42,9 +42,9 @@ namespace render::primitives {
         // Colors reports only a color it was asked to define and could not;
         // one it is asked to use and cannot read is just black.
         const std::array<const std::vector<syntax::Traceback> *, 23> parts{
-            &page.traceback(), &typeface.traceback(), &styles.traceback(),
+            &pages.traceback(), &typefaces.traceback(), &styles.traceback(),
             &boxes.traceback(), &tables.traceback(), &sections.traceback(),
-            &paragraphs.traceback(), &lists.traceback(), &expressions.traceback(),
+            &paragraphs.traceback(), &lists.traceback(), &formulas.traceback(),
             &references.traceback(), &citations.traceback(), &footnotes.traceback(),
             &counters.traceback(), &theorems.traceback(), &floats.traceback(), &algorithms.traceback(),
             &illustrations.traceback(),

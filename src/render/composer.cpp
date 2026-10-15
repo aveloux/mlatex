@@ -12,7 +12,7 @@
 /// so nothing below has to think about it.
 #include "render/composer.hpp"
 #include "layout/line.hpp"
-#include "render/primitives/numeral.hpp"
+#include "render/primitives/referencing/numerals.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -326,9 +326,9 @@ namespace render {
     std::string Composer::folio() const {
         using Numbering = layout::Node::Directive::Numbering;
         switch (numbering) {
-            case Numbering::Roman: return primitives::Numeral::roman(count, capital);
-            case Numbering::Alphabetic: return primitives::Numeral::alphabetic(count, capital);
-            default: return primitives::Numeral::arabic(count);
+            case Numbering::Roman: return primitives::referencing::Numerals::roman(count, capital);
+            case Numbering::Alphabetic: return primitives::referencing::Numerals::alphabetic(count, capital);
+            default: return primitives::referencing::Numerals::arabic(count);
         }
     }
 

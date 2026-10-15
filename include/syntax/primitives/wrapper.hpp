@@ -1,19 +1,19 @@
 #pragma once
 
 #include "syntax/mouth.hpp"
-#include "syntax/primitives/blocks.hpp"
-#include "syntax/primitives/compute.hpp"
+#include "syntax/primitives/control/environments.hpp"
+#include "syntax/primitives/calculations/arithmetic.hpp"
 #include "syntax/primitives/context.hpp"
-#include "syntax/primitives/decimals.hpp"
-#include "syntax/primitives/hooks.hpp"
-#include "syntax/primitives/include.hpp"
-#include "syntax/primitives/loops.hpp"
-#include "syntax/primitives/macros.hpp"
-#include "syntax/primitives/records.hpp"
-#include "syntax/primitives/relay.hpp"
-#include "syntax/primitives/strings.hpp"
-#include "syntax/primitives/values.hpp"
-#include "syntax/primitives/variables.hpp"
+#include "syntax/primitives/calculations/decimals.hpp"
+#include "syntax/primitives/definitions/hooks.hpp"
+#include "syntax/primitives/definitions/packages.hpp"
+#include "syntax/primitives/control/loops.hpp"
+#include "syntax/primitives/definitions/macros.hpp"
+#include "syntax/primitives/data/databases.hpp"
+#include "syntax/primitives/control/conditionals.hpp"
+#include "syntax/primitives/data/strings.hpp"
+#include "syntax/primitives/calculations/registers.hpp"
+#include "syntax/primitives/definitions/variables.hpp"
 #include "syntax/traceback.hpp"
 
 #include <vector>
@@ -35,7 +35,7 @@ namespace syntax::primitives {
     /// @par Use
     /// @code
     /// syntax::primitives::Wrapper core(lexicon);
-    /// syntax::primitives::Context context{registers, core.relay, core.variables};
+    /// syntax::primitives::Context context{registers, core.conditionals, core.variables};
     /// core(mouth, context);
     ///
     /// // ... run the document, then collect what the core reported ...
@@ -44,8 +44,8 @@ namespace syntax::primitives {
     /// }
     /// @endcode
     ///
-    /// Context needs a Relay and a Variables reference and Wrapper owns both,
-    /// so build the Wrapper first and hand its #relay and #variables to the
+    /// Context needs a Conditionals and a Variables reference and Wrapper owns both,
+    /// so build the Wrapper first and hand its #conditionals and #variables to the
     /// Context.
     class Wrapper {
     public:
@@ -68,22 +68,22 @@ namespace syntax::primitives {
         /// @complexity O(n) in the number of errors reported.
         [[nodiscard]] std::vector<Traceback> traceback() const;
 
-        // Declared first because Context is built from the relay and the
+        // Declared first because Context is built from the conditionals and the
         // other modules are handed that same Context.
-        Relay relay; ///< Conditionals; Context holds a reference to this.
-        Blocks blocks; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
-        Macros macros; ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
-        Values values; ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
-        Compute compute; ///< `\\evaluate`.
-        Loops loops; ///< `\\repeat`, `\\group`, `\\ungroup`.
-        Include include; ///< `\\include`, `\\input` and the package primitives.
-        Variables variables;
+        control::Conditionals conditionals; ///< Conditionals; Context holds a reference to this.
+        control::Environments environments; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
+        definitions::Macros macros; ///< `\\define`, `\\forget`, `\\alias` and the prefixes.
+        calculations::Registers registers; ///< Registers: `\\set`, `\\increase`, `\\scale`, `\\reduce`, `\\name`.
+        calculations::Arithmetic arithmetic; ///< `\\evaluate`.
+        control::Loops loops; ///< `\\repeat`, `\\group`, `\\ungroup`.
+        definitions::Packages packages; ///< `\\include`, `\\input` and the package primitives.
+        definitions::Variables variables;
         ///< `\\variable`, `\\setvariable`, `\\ifvariable`, `\\setkeys`: what a
                                 ///< Context reads and a caller hands values in through before a run.
-        Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
-        Hooks hooks; ///< `\\addtohook`, `\\usehook`.
-        Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
-        Records records; ///< csvsimple's CSV files and datatool's databases.
+        calculations::Decimals decimals; ///< `\\calculate`, `\\amount`, `\\separators`.
+        definitions::Hooks hooks; ///< `\\addtohook`, `\\usehook`.
+        data::Strings strings; ///< xstring's `\\IfSubStr`, `\\StrBefore` and the rest.
+        data::Databases databases; ///< csvsimple's CSV files and datatool's databases.
     };
 
     static_assert(Primitive<Wrapper>, "Wrapper must itself be installable as a module");

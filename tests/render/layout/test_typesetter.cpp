@@ -1,7 +1,7 @@
 #include "layout/line.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
-#include "render/primitives/expressions.hpp"
+#include "render/primitives/mathematics/formulas.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/expression/parser.hpp"
 #include "syntax/lexicon.hpp"
@@ -174,7 +174,7 @@ static Measure measure(const std::string &formula, const bool displayed, const t
     syntax::Mouth mouth(syntax::Cursor(std::vector<syntax::Token>{}), state, lexicon, arena);
     mouth.ingest(arena.copy(formula + "$"));
 
-    const render::primitives::Expressions expressions(lexicon);
+    const render::primitives::mathematics::Formulas expressions(lexicon);
     syntax::expression::Parser parser(mouth, expressions.grammar, arena,
                                       displayed
                                           ? syntax::expression::Node::Style::Display
@@ -311,7 +311,7 @@ int main() {
         syntax::Lexicon lexicon(arena);
         syntax::semantics::Union state{};
         syntax::Mouth mouth(syntax::Cursor(std::vector<syntax::Token>{}), state, lexicon, arena);
-        const render::primitives::Expressions expressions(lexicon);
+        const render::primitives::mathematics::Formulas expressions(lexicon);
         const auto parse = [&](const std::string &formula, const bool displayed) {
             mouth.ingest(arena.copy(formula + "$"));
             syntax::expression::Parser parser(mouth, expressions.grammar, arena,
