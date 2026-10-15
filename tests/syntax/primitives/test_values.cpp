@@ -143,6 +143,11 @@ int main() {
     // --- Expressions ------------------------------------------------------------
     sets("\\number\\numexpr 3*(4+5)/2\\relax", "14", "\\numexpr rounds a division, as e-TeX's does");
     sets("\\the\\numexpr 7/2\\relax", "4", "half rounds away from zero");
+    sets("\\the\\numexpr 2147483647*2147483647*2147483647*2147483647\\relax", "2147483647",
+         "a product past 64 bits stops at the register's limit, not wrapping round");
+    sets("\\the\\numexpr 0-2147483647*2147483647*2147483647*2147483647\\relax", "-2147483647",
+         "and so does a negative one");
+    sets("\\the\\numexpr 100000*100000/100000\\relax", "100000", "a product past 32 bits is kept until divided");
     sets("\\the\\dimexpr 1pt*3+2pt\\relax", "5.0pt", "\\dimexpr");
     sets("\\the\\dimexpr (1pt+1pt)*2\\relax", "4.0pt", "\\dimexpr with brackets");
 

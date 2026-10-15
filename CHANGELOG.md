@@ -966,6 +966,12 @@ font folders are listed only for a script the engine carries no face for.
 - `\evaluate{1 ^ 2147483647}` multiplied its way through all two billion
   powers. A base of 0, 1 or -1 is answered at once; any other passes a
   register's limit within 31 steps, where the loop already stopped.
+- A `\numexpr` product past 64 bits --
+  `2147483647*2147483647*2147483647*2147483647` -- wrapped round, which C++
+  leaves undefined, before the clamp to a register's range ever saw it.
+  Every value along the way is now held within 2^53, where a double is still
+  exact, so the product stops at the limit; `100000*100000/100000` still
+  keeps its product past 32 bits until it is divided.
 
 ### Tests
 
@@ -1011,7 +1017,8 @@ font folders are listed only for a script the engine carries no face for.
 - Then: `test_patch` -- a number read to its end, stopped at a unit, a
   failure that leaves the value alone, and a range read to its own end and
   not its text's. 86 tests pass in Release.
-- Then: `\evaluate`'s powers of one, minus one and zero.
+- Then: `\evaluate`'s powers of one, minus one and zero; `\numexpr`'s
+  products past 64 bits, either way, and past 32 until divided.
 
 ### Documentation
 

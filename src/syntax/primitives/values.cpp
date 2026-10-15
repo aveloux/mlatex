@@ -234,6 +234,11 @@ namespace syntax::primitives {
             // is a length; what multiplies or divides is always a number.
             const auto sum = [&](this const auto &self, const bool length, const bool bracketed) -> std::int64_t {
                 const auto factor = [&](const bool measured) -> std::int64_t {
+            // Every value along the way is held within 2^53: far past what a
+            // register keeps, short of where 64 bits wrap round, and exact in
+            // a double -- so a product of products stops there instead of
+            // overflowing, and the clamp at the end still has a number to clamp.
+            constexpr auto limit = static_cast<std::int64_t>(1) << 53;
                     blanks();
                     const bool negative = stream.lookahead().is('-');
                     if (negative || stream.lookahead().is('+')) {
@@ -262,7 +267,9 @@ namespace syntax::primitives {
                         stream.advance();
                         const std::int64_t amount = factor(false);
                         if (times) {
-                            value *= amount;
+                            const double product = static_cast<double>(value) * static_cast<double>(amount);
+                            value = static_cast<std::int64_t>(std::clamp(product, -static_cast<double>(limit),
+                                                                         static_cast<double>(limit)));
                         } else if (amount != 0) {
                             // Rounded half away from zero, as e-TeX divides.
                             const std::int64_t half = (value < 0) == (amount < 0) ? amount : -amount;
@@ -280,7 +287,7 @@ namespace syntax::primitives {
                     const bool plus = stream.lookahead().is('+');
                     if (!plus && !stream.lookahead().is('-')) return total;
                     stream.advance();
-                    total += plus ? term() : -term();
+                    total = std::clamp(total + (plus ? term() : -term()), -limit, limit);
                 }
             };
             const std::int64_t value = sum(dimensional, false);
