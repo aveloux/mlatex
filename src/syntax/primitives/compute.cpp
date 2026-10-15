@@ -105,6 +105,12 @@ namespace syntax::primitives {
             return 0;
         }
 
+        // A base of 0, 1 or -1 stays in range however high the exponent, so
+        // it is answered without the loop; any other base passes the ceiling
+        // within 31 steps, where the loop stops.
+        if (base == 0 || base == 1) return exponent == 0 ? 1 : base;
+        if (base == -1) return exponent % 2 == 0 ? 1 : -1;
+
         std::int64_t total = 1;
         for (std::int64_t step = 0; step < exponent; ++step) {
             total *= base;

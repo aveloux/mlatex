@@ -86,6 +86,9 @@ int main() {
     sets("\\evaluate{-7 / 2}", "-3", "division truncates toward zero");
     sets("\\evaluate{17 \\mod 5}", "2", "\\mod");
     sets("\\evaluate{2 ^ 10}", "1024", "powers");
+    sets("\\evaluate{1 ^ 2147483647}", "1", "one to any power, without a step per power");
+    sets("\\evaluate{(0 - 1) ^ 2147483647}", "-1", "minus one to an odd power");
+    sets("\\evaluate{0 ^ 0 + 0 ^ 5}", "1", "zero to the zeroth is one, to any other zero");
     sets("\\evaluate{\"FF + '10}", "263", "hexadecimal and octal operands");
     sets("\\set\\integer3 = 6 \\evaluate{\\integer3 * 7}", "42", "a register as an operand");
     reports("\\evaluate{1 / 0}", "", "division by zero is reported");

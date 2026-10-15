@@ -963,6 +963,9 @@ font folders are listed only for a script the engine carries no face for.
   Emscripten never defines, since a stray edit in `a323f9a`: the module built,
   and handed JavaScript nothing. They are behind `__EMSCRIPTEN__` again, and
   the workflow now calls them from Node, so it cannot happen silently.
+- `\evaluate{1 ^ 2147483647}` multiplied its way through all two billion
+  powers. A base of 0, 1 or -1 is answered at once; any other passes a
+  register's limit within 31 steps, where the loop already stopped.
 
 ### Tests
 
@@ -1008,6 +1011,7 @@ font folders are listed only for a script the engine carries no face for.
 - Then: `test_patch` -- a number read to its end, stopped at a unit, a
   failure that leaves the value alone, and a range read to its own end and
   not its text's. 86 tests pass in Release.
+- Then: `\evaluate`'s powers of one, minus one and zero.
 
 ### Documentation
 
