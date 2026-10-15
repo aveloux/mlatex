@@ -30,21 +30,6 @@ namespace render::graphics {
         return text;
     }
 
-    /// @brief A color by the name xcolor gives it.
-    struct Named {
-        std::string_view name;
-        Color color;
-    };
-
-    static constexpr std::array<Named, 20> table{
-        {
-            {"black", black}, {"white", white}, {"red", red}, {"green", green},
-            {"blue", blue}, {"cyan", cyan}, {"magenta", magenta}, {"yellow", yellow},
-            {"gray", gray}, {"grey", gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
-            {"brown", brown}, {"lime", lime}, {"olive", olive}, {"orange", orange},
-            {"pink", pink}, {"purple", purple}, {"teal", teal}, {"violet", violet},
-        }
-    };
 
     Color Color::hex(std::string_view text) noexcept {
         if (text.starts_with('#')) text.remove_prefix(1);
@@ -98,6 +83,21 @@ namespace render::graphics {
             return {channel[0] / 255.0f, channel[1] / 255.0f, channel[2] / 255.0f, channel[3]};
         }
 
+        // A color by the name xcolor gives it.
+        struct Named {
+            std::string_view name;
+            Color color;
+        };
+
+        static constexpr std::array<Named, 20> table{
+            {
+                {"black", black}, {"white", white}, {"red", graphics::red}, {"green", graphics::green},
+                {"blue", graphics::blue}, {"cyan", cyan}, {"magenta", magenta}, {"yellow", yellow},
+                {"gray", gray}, {"grey", gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
+                {"brown", brown}, {"lime", lime}, {"olive", olive}, {"orange", orange},
+                {"pink", pink}, {"purple", purple}, {"teal", teal}, {"violet", violet},
+            }
+        };
         for (const auto &[name, color]: table) {
             if (text == name) return color;
         }

@@ -4,7 +4,7 @@
 /// Everything the engine does is latex::compose(), in latex.cpp. What is
 /// here is only what the command line owns: where the executable is and its
 /// assets with it, which document to set and where its PDF goes, what it is
-/// made into, and the options. Each option is a row of #options -- its
+/// made into, and the options. Each option is a row of main's `options` -- its
 /// letter, its name, the TeX spelling it also answers to, what it takes and
 /// what `--help` says of it -- so adding one is a row there and what it does
 /// below. Names are written in words with dashes between, `--job-name`,
@@ -54,85 +54,8 @@ extern char **environ;
 #define LATEX_VERSION "0.1.0"
 #endif
 
-/// @brief One option the command line takes, as `--help` lists it.
-struct Option {
-    char letter{'\0'}; ///< Its letter, `-o`; none when '\0'.
-    std::string_view name{}; ///< Its name, `output-directory`.
-    std::string_view alias{}; ///< TeX's spelling it answers to as well, `jobname`; empty for none.
-    std::string_view value{}; ///< What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
-    std::string_view group{}; ///< The heading `--help` lists it under.
-    std::string_view summary{}; ///< What `--help` says of it; a line break starts its next line.
-};
-
 /// Every option, in the order `--help` lists them. A new one is a row here
 /// and a branch where main() reads its name.
-static constexpr std::array options{
-    Option{
-        't', "target", "", "TARGET", "Target",
-        "How the document is made: aot, a PDF now (the\n"
-        "default); jit, just in time, which is taken and\n"
-        "does nothing yet."
-    },
-    Option{
-        'o', "output-directory", "", "DIR", "Output",
-        "Write the PDF into DIR, made if it is not there;\n"
-        "beside the document otherwise."
-    },
-    Option{'j', "job-name", "jobname", "NAME", "Output", "Name the PDF NAME.pdf, not after the document."},
-    Option{'n', "draft-mode", "draftmode", "", "Output", "Read and set the document; write no PDF."},
-    Option{'\0', "halt-on-error", "", "", "Output", "Leave no PDF when the document has an error."},
-    Option{'O', "open", "", "", "Output", "Show the PDF in the system's viewer once written."},
-    Option{
-        'I', "include-directory", "", "DIR", "Input",
-        "Look in DIR, after the document's own folder,\n"
-        "for what it inputs: \\input, \\include,\n"
-        "\\usepackage, \\includegraphics, a bibliography.\n"
-        "Give it again for another folder."
-    },
-    Option{
-        '\0', "assets", "", "DIR", "Input",
-        "Read the fonts and hyphenation patterns from\n"
-        "DIR, not from the assets found above this\n"
-        "program."
-    },
-    Option{
-        '\0', "offline", "", "", "Input",
-        "Reach no network: \\httpget, \\httppost and a\n"
-        "picture from https:// are errors, and nothing is\n"
-        "sent. For a document you did not write."
-    },
-    Option{
-        'w', "watch", "", "", "Input",
-        "Set the document again each time it is saved,\n"
-        "until interrupted."
-    },
-    Option{
-        'i', "interaction", "", "MODE", "Messages",
-        "batch-mode prints nothing but errors;\n"
-        "non-stop-mode, scroll-mode and error-stop-mode\n"
-        "print what was done."
-    },
-    Option{'q', "quiet", "", "", "Messages", "The same as --interaction=batch-mode."},
-    Option{'\0', "file-line-error", "", "", "Messages", "Print each error as file:line:column: message."},
-    Option{'T', "time", "", "", "Messages", "Print how long each part of the run took."},
-    Option{
-        '\0', "time-statistics", "", "", "Messages",
-        "Print every step the engine took, what it made\n"
-        "and how long each step took."
-    },
-    Option{'h', "help", "", "", "Messages", "Print this help and exit."},
-    Option{'v', "version", "", "", "Messages", "Print the version and exit."},
-    Option{
-        'd', "debug", "", "[PARTS]", "Diagnostics",
-        "Log the engine's steps: every part, or those\n"
-        "named -- lexer, mouth, parser, layout, memory,\n"
-        "semantics."
-    },
-    Option{'\0', "trace", "", "", "Diagnostics", "Log every step, in full."},
-    Option{'\0', "log-level", "", "LEVEL", "Diagnostics", "traceback, debug, info, warn, error or silent."},
-    Option{'\0', "log-file", "", "FILE", "Diagnostics", "Write the log to FILE."},
-    Option{'\0', "no-color", "", "", "Diagnostics", "Log without colour."},
-};
 
 /// The interaction modes, each in words and as TeX runs it together.
 static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> modes{
@@ -153,6 +76,84 @@ int main(int count, char *arguments[]) {
     using Clock = std::chrono::steady_clock;
     const Clock::time_point begun = Clock::now();
     Logger::compose(count, arguments);
+
+    // One option the command line takes, as `--help` lists it.
+    struct Option {
+        char letter{'\0'}; // Its letter, `-o`; none when '\0'.
+        std::string_view name{}; // Its name, `output-directory`.
+        std::string_view alias{}; // TeX's spelling it answers to as well, `jobname`; empty for none.
+        std::string_view value{}; // What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
+        std::string_view group{}; // The heading `--help` lists it under.
+        std::string_view summary{}; // What `--help` says of it; a line break starts its next line.
+    };
+
+    static constexpr std::array options{
+        Option{
+            't', "target", "", "TARGET", "Target",
+            "How the document is made: aot, a PDF now (the\n"
+            "default); jit, just in time, which is taken and\n"
+            "does nothing yet."
+        },
+        Option{
+            'o', "output-directory", "", "DIR", "Output",
+            "Write the PDF into DIR, made if it is not there;\n"
+            "beside the document otherwise."
+        },
+        Option{'j', "job-name", "jobname", "NAME", "Output", "Name the PDF NAME.pdf, not after the document."},
+        Option{'n', "draft-mode", "draftmode", "", "Output", "Read and set the document; write no PDF."},
+        Option{'\0', "halt-on-error", "", "", "Output", "Leave no PDF when the document has an error."},
+        Option{'O', "open", "", "", "Output", "Show the PDF in the system's viewer once written."},
+        Option{
+            'I', "include-directory", "", "DIR", "Input",
+            "Look in DIR, after the document's own folder,\n"
+            "for what it inputs: \\input, \\include,\n"
+            "\\usepackage, \\includegraphics, a bibliography.\n"
+            "Give it again for another folder."
+        },
+        Option{
+            '\0', "assets", "", "DIR", "Input",
+            "Read the fonts and hyphenation patterns from\n"
+            "DIR, not from the assets found above this\n"
+            "program."
+        },
+        Option{
+            '\0', "offline", "", "", "Input",
+            "Reach no network: \\httpget, \\httppost and a\n"
+            "picture from https:// are errors, and nothing is\n"
+            "sent. For a document you did not write."
+        },
+        Option{
+            'w', "watch", "", "", "Input",
+            "Set the document again each time it is saved,\n"
+            "until interrupted."
+        },
+        Option{
+            'i', "interaction", "", "MODE", "Messages",
+            "batch-mode prints nothing but errors;\n"
+            "non-stop-mode, scroll-mode and error-stop-mode\n"
+            "print what was done."
+        },
+        Option{'q', "quiet", "", "", "Messages", "The same as --interaction=batch-mode."},
+        Option{'\0', "file-line-error", "", "", "Messages", "Print each error as file:line:column: message."},
+        Option{'T', "time", "", "", "Messages", "Print how long each part of the run took."},
+        Option{
+            '\0', "time-statistics", "", "", "Messages",
+            "Print every step the engine took, what it made\n"
+            "and how long each step took."
+        },
+        Option{'h', "help", "", "", "Messages", "Print this help and exit."},
+        Option{'v', "version", "", "", "Messages", "Print the version and exit."},
+        Option{
+            'd', "debug", "", "[PARTS]", "Diagnostics",
+            "Log the engine's steps: every part, or those\n"
+            "named -- lexer, mouth, parser, layout, memory,\n"
+            "semantics."
+        },
+        Option{'\0', "trace", "", "", "Diagnostics", "Log every step, in full."},
+        Option{'\0', "log-level", "", "LEVEL", "Diagnostics", "traceback, debug, info, warn, error or silent."},
+        Option{'\0', "log-file", "", "FILE", "Diagnostics", "Write the log to FILE."},
+        Option{'\0', "no-color", "", "", "Diagnostics", "Log without colour."},
+    };
 
     // The logger's file, closed on every way out.
     const struct Ending {

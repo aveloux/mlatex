@@ -29,25 +29,6 @@
 #endif
 
 namespace protocols {
-#if defined(_WIN32)
-    /// @brief Closes a WinHTTP handle when it goes out of scope.
-    struct Handle {
-        explicit Handle(const HINTERNET handle) noexcept : value(handle) {
-        }
-
-        Handle(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
-
-        Handle &operator=(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
-
-        ~Handle() { if (value) WinHttpCloseHandle(value); }
-
-        operator HINTERNET() const noexcept { return value; }
-        [[nodiscard]] bool ok() const noexcept { return value != nullptr; }
-
-        HINTERNET value;
-    };
-#endif
-
     /// @brief Would this text let a caller splice in a second header or
     ///        a second request?
     /// @param text Text about to become one field of a request line.
@@ -89,6 +70,23 @@ namespace protocols {
         }
 
         const bool secure = parts.nScheme == INTERNET_SCHEME_HTTPS;
+
+        // Closes a WinHTTP handle when it goes out of scope.
+        struct Handle {
+            explicit Handle(const HINTERNET handle) noexcept : value(handle) {
+            }
+
+            Handle(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
+
+            Handle &operator=(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
+
+            ~Handle() { if (value) WinHttpCloseHandle(value); }
+
+            operator HINTERNET() const noexcept { return value; }
+            [[nodiscard]] bool ok() const noexcept { return value != nullptr; }
+
+            HINTERNET value;
+        };
 
         const Handle session{
             WinHttpOpen(

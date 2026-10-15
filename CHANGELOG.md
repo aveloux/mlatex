@@ -1164,6 +1164,14 @@ font folders are listed only for a script the engine carries no face for.
   one line breaks before the same field in every row of its table.
   `\definecolor`'s numbers are `first` to `fourth` -- red, green and blue
   in one model, cyan, magenta, yellow and black in another.
+- **A struct one function uses is that function's own.** The accented
+  letters, xcolor's named colours, libjpeg's error path, the compiled
+  hyphenation trie, the WinHTTP handle and the command line's options were
+  types of their files, which clang-tidy's `misc-use-internal-linkage`
+  would put in an anonymous namespace; each is declared in the one function
+  that uses it instead, where a type has no linkage to give. The trie is a
+  plain struct sized by the constants measured just before it, where it
+  was a template, and libjpeg's callback is a lambda.
 
 ### Removed
 

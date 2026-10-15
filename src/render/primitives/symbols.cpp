@@ -17,79 +17,6 @@
 #include <utility>
 
 namespace render::primitives {
-    /// @brief One accented letter Unicode spells as a character of its own.
-    struct Composition {
-        char accent; ///< The accent command's character: `'` for `\\'`.
-        char base; ///< The letter under it.
-        std::string_view result; ///< The one character both make, in UTF-8.
-    };
-
-    /// Every accented Latin letter a European language writes, precomposed:
-    /// a face draws `é` as one glyph, spaced and kerned as one, where a
-    /// letter and a combining mark would be two it has to be told to stack.
-    static constexpr std::array<Composition, 118> compositions{
-        {
-            {.accent = '\'', .base = 'a', .result = "á"}, {.accent = '\'', .base = 'e', .result = "é"},
-            {.accent = '\'', .base = 'i', .result = "í"}, {.accent = '\'', .base = 'o', .result = "ó"},
-            {.accent = '\'', .base = 'u', .result = "ú"}, {.accent = '\'', .base = 'y', .result = "ý"},
-            {.accent = '\'', .base = 'A', .result = "Á"}, {.accent = '\'', .base = 'E', .result = "É"},
-            {.accent = '\'', .base = 'I', .result = "Í"}, {.accent = '\'', .base = 'O', .result = "Ó"},
-            {.accent = '\'', .base = 'U', .result = "Ú"}, {.accent = '\'', .base = 'Y', .result = "Ý"},
-            {.accent = '\'', .base = 'c', .result = "ć"}, {.accent = '\'', .base = 'n', .result = "ń"},
-            {.accent = '\'', .base = 's', .result = "ś"}, {.accent = '\'', .base = 'z', .result = "ź"},
-            {.accent = '\'', .base = 'C', .result = "Ć"}, {.accent = '\'', .base = 'N', .result = "Ń"},
-            {.accent = '\'', .base = 'S', .result = "Ś"}, {.accent = '\'', .base = 'Z', .result = "Ź"},
-            {.accent = '`', .base = 'a', .result = "à"}, {.accent = '`', .base = 'e', .result = "è"},
-            {.accent = '`', .base = 'i', .result = "ì"}, {.accent = '`', .base = 'o', .result = "ò"},
-            {.accent = '`', .base = 'u', .result = "ù"}, {.accent = '`', .base = 'A', .result = "À"},
-            {.accent = '`', .base = 'E', .result = "È"}, {.accent = '`', .base = 'I', .result = "Ì"},
-            {.accent = '`', .base = 'O', .result = "Ò"}, {.accent = '`', .base = 'U', .result = "Ù"},
-            {.accent = '^', .base = 'a', .result = "â"}, {.accent = '^', .base = 'e', .result = "ê"},
-            {.accent = '^', .base = 'i', .result = "î"}, {.accent = '^', .base = 'o', .result = "ô"},
-            {.accent = '^', .base = 'u', .result = "û"}, {.accent = '^', .base = 'A', .result = "Â"},
-            {.accent = '^', .base = 'E', .result = "Ê"}, {.accent = '^', .base = 'I', .result = "Î"},
-            {.accent = '^', .base = 'O', .result = "Ô"}, {.accent = '^', .base = 'U', .result = "Û"},
-            {.accent = '"', .base = 'a', .result = "ä"}, {.accent = '"', .base = 'e', .result = "ë"},
-            {.accent = '"', .base = 'i', .result = "ï"}, {.accent = '"', .base = 'o', .result = "ö"},
-            {.accent = '"', .base = 'u', .result = "ü"}, {.accent = '"', .base = 'y', .result = "ÿ"},
-            {.accent = '"', .base = 'A', .result = "Ä"}, {.accent = '"', .base = 'E', .result = "Ë"},
-            {.accent = '"', .base = 'I', .result = "Ï"}, {.accent = '"', .base = 'O', .result = "Ö"},
-            {.accent = '"', .base = 'U', .result = "Ü"}, {.accent = '"', .base = 'Y', .result = "Ÿ"},
-            {.accent = '~', .base = 'a', .result = "ã"}, {.accent = '~', .base = 'n', .result = "ñ"},
-            {.accent = '~', .base = 'o', .result = "õ"}, {.accent = '~', .base = 'A', .result = "Ã"},
-            {.accent = '~', .base = 'N', .result = "Ñ"}, {.accent = '~', .base = 'O', .result = "Õ"},
-            {.accent = 'c', .base = 'c', .result = "ç"}, {.accent = 'c', .base = 'C', .result = "Ç"},
-            {.accent = 'c', .base = 's', .result = "ş"}, {.accent = 'c', .base = 'S', .result = "Ş"},
-            {.accent = 'c', .base = 't', .result = "ţ"}, {.accent = 'c', .base = 'T', .result = "Ţ"},
-            {.accent = 'v', .base = 'c', .result = "č"}, {.accent = 'v', .base = 'C', .result = "Č"},
-            {.accent = 'v', .base = 's', .result = "š"}, {.accent = 'v', .base = 'S', .result = "Š"},
-            {.accent = 'v', .base = 'z', .result = "ž"}, {.accent = 'v', .base = 'Z', .result = "Ž"},
-            {.accent = 'v', .base = 'r', .result = "ř"}, {.accent = 'v', .base = 'R', .result = "Ř"},
-            {.accent = 'v', .base = 'e', .result = "ě"}, {.accent = 'v', .base = 'E', .result = "Ě"},
-            {.accent = 'v', .base = 'n', .result = "ň"}, {.accent = 'v', .base = 'N', .result = "Ň"},
-            {.accent = 'v', .base = 'd', .result = "ď"}, {.accent = 'v', .base = 'D', .result = "Ď"},
-            {.accent = 'v', .base = 't', .result = "ť"}, {.accent = 'v', .base = 'T', .result = "Ť"},
-            {.accent = '=', .base = 'a', .result = "ā"}, {.accent = '=', .base = 'e', .result = "ē"},
-            {.accent = '=', .base = 'i', .result = "ī"}, {.accent = '=', .base = 'o', .result = "ō"},
-            {.accent = '=', .base = 'u', .result = "ū"}, {.accent = '=', .base = 'A', .result = "Ā"},
-            {.accent = '=', .base = 'E', .result = "Ē"}, {.accent = '=', .base = 'I', .result = "Ī"},
-            {.accent = '=', .base = 'O', .result = "Ō"}, {.accent = '=', .base = 'U', .result = "Ū"},
-            {.accent = '.', .base = 'z', .result = "ż"}, {.accent = '.', .base = 'Z', .result = "Ż"},
-            {.accent = '.', .base = 'e', .result = "ė"}, {.accent = '.', .base = 'E', .result = "Ė"},
-            {.accent = '.', .base = 'I', .result = "İ"}, {.accent = '.', .base = 'c', .result = "ċ"},
-            {.accent = '.', .base = 'g', .result = "ġ"}, {.accent = 'u', .base = 'g', .result = "ğ"},
-            {.accent = 'u', .base = 'G', .result = "Ğ"}, {.accent = 'u', .base = 'a', .result = "ă"},
-            {.accent = 'u', .base = 'A', .result = "Ă"}, {.accent = 'u', .base = 'u', .result = "ŭ"},
-            {.accent = 'H', .base = 'o', .result = "ő"}, {.accent = 'H', .base = 'O', .result = "Ő"},
-            {.accent = 'H', .base = 'u', .result = "ű"}, {.accent = 'H', .base = 'U', .result = "Ű"},
-            {.accent = 'r', .base = 'a', .result = "å"}, {.accent = 'r', .base = 'A', .result = "Å"},
-            {.accent = 'r', .base = 'u', .result = "ů"}, {.accent = 'r', .base = 'U', .result = "Ů"},
-            {.accent = 'k', .base = 'a', .result = "ą"}, {.accent = 'k', .base = 'A', .result = "Ą"},
-            {.accent = 'k', .base = 'e', .result = "ę"}, {.accent = 'k', .base = 'E', .result = "Ę"},
-            {.accent = 'd', .base = 'a', .result = "ạ"}, {.accent = 'd', .base = 'e', .result = "ẹ"},
-            {.accent = 'd', .base = 'o', .result = "ọ"}, {.accent = 'd', .base = 's', .result = "ṣ"},
-        }
-    };
 
     /// The accent commands' own characters, `\\'` through `\\t`, in the order
     /// their rows of #composed are kept.
@@ -98,6 +25,80 @@ namespace render::primitives {
     /// Every precomposed letter, found by its accent's row and its base
     /// letter's byte in one load, rather than by a search of the list above.
     static constexpr auto composed = [] {
+        // One accented letter Unicode spells as a character of its own.
+        struct Composition {
+            char accent; // The accent command's character: `'` for `\\'`.
+            char base; // The letter under it.
+            std::string_view result; // The one character both make, in UTF-8.
+        };
+
+        // Every accented Latin letter a European language writes, precomposed:
+        // a face draws `é` as one glyph, spaced and kerned as one, where a
+        // letter and a combining mark would be two it has to be told to stack.
+        constexpr std::array<Composition, 118> compositions{
+            {
+                {.accent = '\'', .base = 'a', .result = "á"}, {.accent = '\'', .base = 'e', .result = "é"},
+                {.accent = '\'', .base = 'i', .result = "í"}, {.accent = '\'', .base = 'o', .result = "ó"},
+                {.accent = '\'', .base = 'u', .result = "ú"}, {.accent = '\'', .base = 'y', .result = "ý"},
+                {.accent = '\'', .base = 'A', .result = "Á"}, {.accent = '\'', .base = 'E', .result = "É"},
+                {.accent = '\'', .base = 'I', .result = "Í"}, {.accent = '\'', .base = 'O', .result = "Ó"},
+                {.accent = '\'', .base = 'U', .result = "Ú"}, {.accent = '\'', .base = 'Y', .result = "Ý"},
+                {.accent = '\'', .base = 'c', .result = "ć"}, {.accent = '\'', .base = 'n', .result = "ń"},
+                {.accent = '\'', .base = 's', .result = "ś"}, {.accent = '\'', .base = 'z', .result = "ź"},
+                {.accent = '\'', .base = 'C', .result = "Ć"}, {.accent = '\'', .base = 'N', .result = "Ń"},
+                {.accent = '\'', .base = 'S', .result = "Ś"}, {.accent = '\'', .base = 'Z', .result = "Ź"},
+                {.accent = '`', .base = 'a', .result = "à"}, {.accent = '`', .base = 'e', .result = "è"},
+                {.accent = '`', .base = 'i', .result = "ì"}, {.accent = '`', .base = 'o', .result = "ò"},
+                {.accent = '`', .base = 'u', .result = "ù"}, {.accent = '`', .base = 'A', .result = "À"},
+                {.accent = '`', .base = 'E', .result = "È"}, {.accent = '`', .base = 'I', .result = "Ì"},
+                {.accent = '`', .base = 'O', .result = "Ò"}, {.accent = '`', .base = 'U', .result = "Ù"},
+                {.accent = '^', .base = 'a', .result = "â"}, {.accent = '^', .base = 'e', .result = "ê"},
+                {.accent = '^', .base = 'i', .result = "î"}, {.accent = '^', .base = 'o', .result = "ô"},
+                {.accent = '^', .base = 'u', .result = "û"}, {.accent = '^', .base = 'A', .result = "Â"},
+                {.accent = '^', .base = 'E', .result = "Ê"}, {.accent = '^', .base = 'I', .result = "Î"},
+                {.accent = '^', .base = 'O', .result = "Ô"}, {.accent = '^', .base = 'U', .result = "Û"},
+                {.accent = '"', .base = 'a', .result = "ä"}, {.accent = '"', .base = 'e', .result = "ë"},
+                {.accent = '"', .base = 'i', .result = "ï"}, {.accent = '"', .base = 'o', .result = "ö"},
+                {.accent = '"', .base = 'u', .result = "ü"}, {.accent = '"', .base = 'y', .result = "ÿ"},
+                {.accent = '"', .base = 'A', .result = "Ä"}, {.accent = '"', .base = 'E', .result = "Ë"},
+                {.accent = '"', .base = 'I', .result = "Ï"}, {.accent = '"', .base = 'O', .result = "Ö"},
+                {.accent = '"', .base = 'U', .result = "Ü"}, {.accent = '"', .base = 'Y', .result = "Ÿ"},
+                {.accent = '~', .base = 'a', .result = "ã"}, {.accent = '~', .base = 'n', .result = "ñ"},
+                {.accent = '~', .base = 'o', .result = "õ"}, {.accent = '~', .base = 'A', .result = "Ã"},
+                {.accent = '~', .base = 'N', .result = "Ñ"}, {.accent = '~', .base = 'O', .result = "Õ"},
+                {.accent = 'c', .base = 'c', .result = "ç"}, {.accent = 'c', .base = 'C', .result = "Ç"},
+                {.accent = 'c', .base = 's', .result = "ş"}, {.accent = 'c', .base = 'S', .result = "Ş"},
+                {.accent = 'c', .base = 't', .result = "ţ"}, {.accent = 'c', .base = 'T', .result = "Ţ"},
+                {.accent = 'v', .base = 'c', .result = "č"}, {.accent = 'v', .base = 'C', .result = "Č"},
+                {.accent = 'v', .base = 's', .result = "š"}, {.accent = 'v', .base = 'S', .result = "Š"},
+                {.accent = 'v', .base = 'z', .result = "ž"}, {.accent = 'v', .base = 'Z', .result = "Ž"},
+                {.accent = 'v', .base = 'r', .result = "ř"}, {.accent = 'v', .base = 'R', .result = "Ř"},
+                {.accent = 'v', .base = 'e', .result = "ě"}, {.accent = 'v', .base = 'E', .result = "Ě"},
+                {.accent = 'v', .base = 'n', .result = "ň"}, {.accent = 'v', .base = 'N', .result = "Ň"},
+                {.accent = 'v', .base = 'd', .result = "ď"}, {.accent = 'v', .base = 'D', .result = "Ď"},
+                {.accent = 'v', .base = 't', .result = "ť"}, {.accent = 'v', .base = 'T', .result = "Ť"},
+                {.accent = '=', .base = 'a', .result = "ā"}, {.accent = '=', .base = 'e', .result = "ē"},
+                {.accent = '=', .base = 'i', .result = "ī"}, {.accent = '=', .base = 'o', .result = "ō"},
+                {.accent = '=', .base = 'u', .result = "ū"}, {.accent = '=', .base = 'A', .result = "Ā"},
+                {.accent = '=', .base = 'E', .result = "Ē"}, {.accent = '=', .base = 'I', .result = "Ī"},
+                {.accent = '=', .base = 'O', .result = "Ō"}, {.accent = '=', .base = 'U', .result = "Ū"},
+                {.accent = '.', .base = 'z', .result = "ż"}, {.accent = '.', .base = 'Z', .result = "Ż"},
+                {.accent = '.', .base = 'e', .result = "ė"}, {.accent = '.', .base = 'E', .result = "Ė"},
+                {.accent = '.', .base = 'I', .result = "İ"}, {.accent = '.', .base = 'c', .result = "ċ"},
+                {.accent = '.', .base = 'g', .result = "ġ"}, {.accent = 'u', .base = 'g', .result = "ğ"},
+                {.accent = 'u', .base = 'G', .result = "Ğ"}, {.accent = 'u', .base = 'a', .result = "ă"},
+                {.accent = 'u', .base = 'A', .result = "Ă"}, {.accent = 'u', .base = 'u', .result = "ŭ"},
+                {.accent = 'H', .base = 'o', .result = "ő"}, {.accent = 'H', .base = 'O', .result = "Ő"},
+                {.accent = 'H', .base = 'u', .result = "ű"}, {.accent = 'H', .base = 'U', .result = "Ű"},
+                {.accent = 'r', .base = 'a', .result = "å"}, {.accent = 'r', .base = 'A', .result = "Å"},
+                {.accent = 'r', .base = 'u', .result = "ů"}, {.accent = 'r', .base = 'U', .result = "Ů"},
+                {.accent = 'k', .base = 'a', .result = "ą"}, {.accent = 'k', .base = 'A', .result = "Ą"},
+                {.accent = 'k', .base = 'e', .result = "ę"}, {.accent = 'k', .base = 'E', .result = "Ę"},
+                {.accent = 'd', .base = 'a', .result = "ạ"}, {.accent = 'd', .base = 'e', .result = "ẹ"},
+                {.accent = 'd', .base = 'o', .result = "ọ"}, {.accent = 'd', .base = 's', .result = "ṣ"},
+            }
+        };
+
         std::array<std::array<std::string_view, 128>, marks.size()> table{};
         for (const auto &[accent, base, result]: compositions) {
             table[marks.find(accent)][static_cast<unsigned char>(base)] = result;

@@ -22,17 +22,6 @@ namespace render::typography {
         0
     };
 
-    /// @brief A language's trie as the compiler leaves it: the packed trie
-    ///        parse() made, copied into arrays of exactly its size.
-    template<std::size_t Nodes, std::size_t Edges, std::size_t Levels>
-    struct Compiled {
-        std::array<Hyphenator::Node, Nodes> nodes{}; ///< Every node, packed; the first is the root.
-        std::array<Hyphenator::Edge, Edges> edges{}; ///< Every node's children, side by side.
-        std::array<std::uint8_t, Levels> levels{}; ///< Every pattern's digits.
-        std::array<std::uint32_t, Hyphenator::alphabet> initials{}; ///< The root's child for each first letter.
-        std::size_t patterns{0}; ///< How many patterns it holds.
-    };
-
     /// The English trie's size, found by building it once; the trie itself
     /// is built again into arrays of that size, since what the compiler
     /// allocates while it works cannot outlive the work.
@@ -45,7 +34,16 @@ namespace render::typography {
     static constexpr auto american = [] {
         Hyphenator::Trie trie;
         trie.parse({english, sizeof english - 1});
-        Compiled<measured[0], measured[1], measured[2]> built{};
+        // A language's trie as the compiler leaves it: the packed trie
+        // parse() made, copied into arrays of exactly its size.
+        struct Compiled {
+            std::array<Hyphenator::Node, measured[0]> nodes{}; // Every node, packed; the first is the root.
+            std::array<Hyphenator::Edge, measured[1]> edges{}; // Every node's children, side by side.
+            std::array<std::uint8_t, measured[2]> levels{}; // Every pattern's digits.
+            std::array<std::uint32_t, Hyphenator::alphabet> initials{}; // The root's child for each first letter.
+            std::size_t patterns{0}; // How many patterns it holds.
+        };
+        Compiled built{};
         std::ranges::copy(trie.nodes, built.nodes.begin());
         std::ranges::copy(trie.edges, built.edges.begin());
         std::ranges::copy(trie.levels, built.levels.begin());

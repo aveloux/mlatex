@@ -84,18 +84,17 @@ namespace render::graphics {
 #pragma warning(disable: 4324 4611)
 #endif
 
-    /// @brief libjpeg's own error path: a longjmp back out of the
-    ///        callback it insists on calling rather than returning from.
-    struct Failure {
-        jpeg_error_mgr handler{};
-        jmp_buf point{};
-    };
-
-    static void abandon(j_common_ptr info) {
-        longjmp(reinterpret_cast<Failure *>(info->err)->point, 1);
-    }
-
     [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes) {
+        // libjpeg's own error path: a longjmp back out of the callback it
+        // insists on calling rather than returning from.
+        struct Failure {
+            jpeg_error_mgr handler{};
+            jmp_buf point{};
+        };
+        const auto abandon = [](const j_common_ptr info) {
+            longjmp(reinterpret_cast<Failure *>(info->err)->point, 1);
+        };
+
         jpeg_decompress_struct info{};
         Failure failure;
         info.err = jpeg_std_error(&failure.handler);
