@@ -190,8 +190,8 @@ namespace render::layout {
         /// @brief One straight stroke, from one point to another.
         ///
         /// Both ends are offsets from the reference point a canvas's own box
-        /// hands its children, the same way a Glyph's #Glyph::x and #Glyph::y
-        /// are -- which is what lets a canvas draw every stroke it holds at
+        /// hands its children, the same way a Glyph's #Glyph::offset and
+        /// #Glyph::shift are -- which is what lets a canvas draw every stroke it holds at
         /// the one position its box was placed at, none of them advancing a
         /// pen the way an ordinary line or column would.
         struct Path {
