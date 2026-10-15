@@ -1177,6 +1177,10 @@ font folders are listed only for a script the engine carries no face for.
   parser's `delimiter`, which only reads it; the parser no longer takes or
   holds a `Unicodes` it never used, and the brackets it knows are
   designated initialisers.
+- The table of contents reads each entry as a structured binding, and the
+  boxes its number is set in are its `numeral`, apart from the entry's
+  `number`; the counters' installer takes its parser `const`, a footnote's
+  and an equation label's context too.
 
 ### Removed
 

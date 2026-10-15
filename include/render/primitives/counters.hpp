@@ -48,7 +48,7 @@ namespace render::primitives {
         /// @brief Installs the counter primitives.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; unused beyond what every module takes.
-        void operator()(syntax::Parser &parser, Context &context) const;
+        void operator()(const syntax::Parser &parser, Context &context) const;
 
         /// @brief Creates a counter, or moves one that exists under a new parent.
         ///

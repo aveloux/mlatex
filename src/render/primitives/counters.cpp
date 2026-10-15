@@ -136,7 +136,7 @@ namespace render::primitives {
         return syntax::Argument::expanded(mouth);
     }
 
-    void Counters::operator()(syntax::Parser &parser, Context &context) const {
+    void Counters::operator()(const syntax::Parser &parser, Context &context) const {
         parser.mouth.bind("\\newcounter", [this](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             const std::string name = syntax::Argument::text(mouth);

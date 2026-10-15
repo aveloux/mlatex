@@ -870,23 +870,23 @@ namespace render::primitives {
             for (const auto &[which, place]: places) {
                 if (which >= lists.size()) continue;
                 std::vector<syntax::Node *> parts;
-                const memory::Location origin{};
-                for (const Context::Entry &entry: context.entries) {
-                    if (entry.list != lists[which]) continue;
+                for (const auto &[list, level, number, title, anchor]: context.entries) {
+                    constexpr memory::Location origin{};
+                    if (list != lists[which]) continue;
                     const bool contents = which == 0;
-                    if (contents && std::cmp_greater(entry.level, deepest)) continue;
+                    if (contents && std::cmp_greater(level, deepest)) continue;
                     const std::size_t depth = contents
-                                                  ? entry.level - (
-                                                        chaptered ? 0 : std::min<std::size_t>(entry.level, 1))
+                                                  ? level - (
+                                                        chaptered ? 0 : std::min<std::size_t>(level, 1))
                                                   : 1;
                     const bool top = contents && depth == 0;
                     const typography::Font *face = top && !bare ? bold : regular;
 
                     std::vector<layout::Node *> line{kern(shapes[depth].first * size)};
-                    std::vector<layout::Node *> number;
-                    for (layout::Node *piece: shaped(face, entry.number)) number.push_back(piece);
-                    number.push_back(fill(nullptr));
-                    if (!entry.number.empty()) line.push_back(boxed(number, shapes[depth].second * size));
+                    std::vector<layout::Node *> numeral;
+                    for (layout::Node *piece: shaped(face, number)) numeral.push_back(piece);
+                    numeral.push_back(fill(nullptr));
+                    if (!number.empty()) line.push_back(boxed(numeral, shapes[depth].second * size));
 
                     // The title's words again, in the entry's face; anything
                     // else it held -- a formula -- as it was.
@@ -903,12 +903,12 @@ namespace render::primitives {
                             compose(line, &copy, context);
                         }
                     };
-                    retitle(entry.title);
+                    retitle(title);
 
                     line.push_back(fill(top || bare ? nullptr : dots));
                     if (!bare) {
-                        const std::string page = context.folios && entry.anchor < context.folios->size()
-                                                     ? (*context.folios)[entry.anchor]
+                        const std::string page = context.folios && anchor < context.folios->size()
+                                                     ? (*context.folios)[anchor]
                                                      : std::string{};
                         std::vector<layout::Node *> folio{fill(nullptr)};
                         for (layout::Node *piece: shaped(face, page)) folio.push_back(piece);
@@ -917,7 +917,7 @@ namespace render::primitives {
 
                     // With hyperref, the line goes to its heading, in linkcolor
                     // with `colorlinks`.
-                    if (const References::Hyperlink link = References::hyperlink(context, {}, entry.anchor, "link");
+                    if (const References::Hyperlink link = References::hyperlink(context, {}, anchor, "link");
                         link.open) {
                         if (link.tint) {
                             for (layout::Node *piece: line) layout::Typesetter::paint(piece, *link.tint);
@@ -975,8 +975,8 @@ namespace render::primitives {
                 };
                 std::vector<syntax::Node *> parts;
                 std::vector<std::string> printed;
-                const memory::Location origin{};
                 for (std::size_t at = 0; at < sorted.size();) {
+                    constexpr memory::Location origin{};
                     std::size_t end = at + 1;
                     while (end < sorted.size() && path(sorted[end]) == path(sorted[at])) ++end;
                     const std::vector<std::string> keys = path(sorted[at]);

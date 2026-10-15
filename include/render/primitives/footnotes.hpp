@@ -64,7 +64,7 @@ namespace render::primitives {
         /// @param context Engine services.
         /// @param label   The mark the note opens with.
         /// @return The note, as a column, or nullptr with no text to read.
-        [[nodiscard]] layout::Node *note(syntax::Parser &parser, Context &context, const std::string &label) const;
+        [[nodiscard]] layout::Node *note(syntax::Parser &parser, const Context &context, const std::string &label) const;
 
         /// @brief A call's mark and the note it carries, as one node.
         /// @param arena  Allocator for the nodes.

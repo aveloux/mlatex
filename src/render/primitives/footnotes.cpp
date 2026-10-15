@@ -48,7 +48,7 @@ namespace render::primitives {
         return box;
     }
 
-    layout::Node *Footnotes::note(syntax::Parser &parser, Context &context, const std::string &label) const {
+    layout::Node *Footnotes::note(syntax::Parser &parser, const Context &context, const std::string &label) const {
         syntax::Mouth &mouth = parser.mouth;
         memory::Arena &arena = parser.arena;
         const memory::Location origin = mouth.lookahead().location;

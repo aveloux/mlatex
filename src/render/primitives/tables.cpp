@@ -76,8 +76,7 @@ namespace render::primitives {
         };
 
         while (at < text.size()) {
-            const char letter = text[at++];
-            switch (letter) {
+            switch (const char letter = text[at++]) {
                 case 'l':
                 case 'c':
                 case 'r':
@@ -1018,8 +1017,7 @@ namespace render::primitives {
             // Pass two: each cell's box, a paragraph for a column of fixed width.
             for (std::vector<Piece> &line: pieces) {
                 for (Piece &piece: line) {
-                    const bool wrapped = !piece.format->width.empty() || piece.format->stretch;
-                    if (wrapped) {
+                    if (!piece.format->width.empty() || piece.format->stretch) {
                         const float measure = piece.span == 1 ? widths[piece.first] : room(piece.first, piece.span);
 
                         // Set as a `\\centering` or `\\raggedright` in the cell

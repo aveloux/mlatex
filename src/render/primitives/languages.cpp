@@ -271,7 +271,7 @@ namespace render::primitives {
 
         // Its words alone: a phrase in it inside the text of another, set as
         // it sets them -- its breaks, its digits, French's spaces.
-        parser.bind("\\@hyphenation", [order, named, spoken](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\@hyphenation", [order, named, spoken](const syntax::Parser &parser) -> syntax::Node * {
             const Language *language = named(parser.mouth);
             if (!language) return nullptr;
             return order(parser, spoken(*language));
@@ -279,7 +279,7 @@ namespace render::primitives {
 
         // Which way the paragraphs from here on read: `RTL`, right to left,
         // or anything else, left to right.
-        parser.bind("\\@direction", [order, &context](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\@direction", [order, &context](const syntax::Parser &parser) -> syntax::Node * {
             const std::string way = syntax::Argument::expanded(parser.mouth);
             context.reversed = way == "RTL";
             return order(parser, {.command = Command::Direction, .reversed = context.reversed});
