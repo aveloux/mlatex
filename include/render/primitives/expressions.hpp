@@ -103,7 +103,7 @@ namespace render::primitives {
         /// @param arena   Allocator for the box.
         /// @param text    What to print: `(3)`, or a tag.
         /// @return The box, or nullptr for no text or no face.
-        [[nodiscard]] static layout::Node *label(Context &context, memory::Arena &arena, std::string_view text);
+        [[nodiscard]] static layout::Node *label(const Context &context, memory::Arena &arena, std::string_view text);
 
         /// @brief One displayed line: a formula centred in the column, and its
         ///        number, if it has one, flush with the right edge.

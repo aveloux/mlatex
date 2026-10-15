@@ -260,7 +260,7 @@ namespace render::primitives {
         }
     }
 
-    layout::Node *Expressions::label(Context &context, memory::Arena &arena, const std::string_view text) {
+    layout::Node *Expressions::label(const Context &context, memory::Arena &arena, const std::string_view text) {
         if (text.empty()) return nullptr;
 
         // Upright whatever the text around it is: an equation's number in a
@@ -420,7 +420,7 @@ namespace render::primitives {
         // token it had read ahead -- before that token is looked at.
         {
             syntax::expression::Parser inner(
-                mouth, context.unicodes, grammar, arena,
+                mouth, grammar, arena,
                 display
                     ? syntax::expression::Node::Style::Display
                     : syntax::expression::Node::Style::Inline);

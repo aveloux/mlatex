@@ -2,7 +2,6 @@
 #include "render/primitives/expressions.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/expression/parser.hpp"
-#include "syntax/expression/unicodes.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/semantics/union.hpp"
@@ -74,12 +73,11 @@ static Tree parse(const std::string_view formula, const bool displayed = false) 
     memory::Arena arena(1u << 20);
     syntax::Lexicon lexicon(arena);
     syntax::semantics::Union state{};
-    const expression::Unicodes unicodes;
     syntax::Mouth mouth(syntax::Cursor{}, state, lexicon, arena);
     mouth.ingest(arena.copy(std::string(formula) + "$"));
 
     const render::primitives::Expressions expressions(lexicon);
-    expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
+    expression::Parser parser(mouth, expressions.grammar, arena,
                               displayed ? expression::Node::Style::Display : expression::Node::Style::Inline);
     Tree tree;
     print(parser.parse('$'), tree.text);

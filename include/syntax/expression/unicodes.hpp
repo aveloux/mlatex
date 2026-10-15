@@ -44,6 +44,6 @@ namespace syntax::expression {
         /// @param name As `alpha` or `le`.
         /// @return The symbol, or nothing when the name is not one.
         /// @complexity O(n) in the name's length, one probe.
-        [[nodiscard]] std::optional<Symbol> get(std::string_view name) const noexcept;
+        [[nodiscard]] static std::optional<Symbol> get(std::string_view name) noexcept;
     };
 }

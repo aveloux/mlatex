@@ -4,7 +4,6 @@
 #include "render/primitives/expressions.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/expression/parser.hpp"
-#include "syntax/expression/unicodes.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/semantics/union.hpp"
@@ -172,12 +171,11 @@ static Measure measure(const std::string &formula, const bool displayed, const t
                        const layout::Typesetter &typesetter, memory::Arena &arena) {
     syntax::Lexicon lexicon(arena);
     syntax::semantics::Union state{};
-    const syntax::expression::Unicodes unicodes;
     syntax::Mouth mouth(syntax::Cursor(std::vector<syntax::Token>{}), state, lexicon, arena);
     mouth.ingest(arena.copy(formula + "$"));
 
     const render::primitives::Expressions expressions(lexicon);
-    syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
+    syntax::expression::Parser parser(mouth, expressions.grammar, arena,
                                       displayed
                                           ? syntax::expression::Node::Style::Display
                                           : syntax::expression::Node::Style::Inline);
@@ -312,12 +310,11 @@ int main() {
     {
         syntax::Lexicon lexicon(arena);
         syntax::semantics::Union state{};
-        const syntax::expression::Unicodes unicodes;
         syntax::Mouth mouth(syntax::Cursor(std::vector<syntax::Token>{}), state, lexicon, arena);
         const render::primitives::Expressions expressions(lexicon);
         const auto parse = [&](const std::string &formula, const bool displayed) {
             mouth.ingest(arena.copy(formula + "$"));
-            syntax::expression::Parser parser(mouth, unicodes, expressions.grammar, arena,
+            syntax::expression::Parser parser(mouth, expressions.grammar, arena,
                                               displayed
                                                   ? syntax::expression::Node::Style::Display
                                                   : syntax::expression::Node::Style::Inline);

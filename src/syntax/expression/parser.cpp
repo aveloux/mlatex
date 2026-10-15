@@ -27,21 +27,21 @@ namespace syntax::expression {
     Grammar::Grammar(Lexicon &lexicon) {
         fences = {lexicon.intern("\\left"), lexicon.intern("\\right")};
         brackets = {
-            Bracket{lexicon.intern("\\pmatrix"), '(', ')'},
-            Bracket{lexicon.intern("\\bmatrix"), '[', ']'},
-            Bracket{lexicon.intern("\\Bmatrix"), '{', '}'},
-            Bracket{lexicon.intern("\\vmatrix"), '|', '|'},
-            Bracket{lexicon.intern("\\Vmatrix"), 0x2016, 0x2016},
-            Bracket{lexicon.intern("\\matrix"), 0, 0},
-            Bracket{lexicon.intern("\\smallmatrix"), 0, 0},
+            Bracket{.name = lexicon.intern("\\pmatrix"), .open = '(', .close = ')'},
+            Bracket{.name = lexicon.intern("\\bmatrix"), .open = '[', .close = ']'},
+            Bracket{.name = lexicon.intern("\\Bmatrix"), .open = '{', .close = '}'},
+            Bracket{.name = lexicon.intern("\\vmatrix"), .open = '|', .close = '|'},
+            Bracket{.name = lexicon.intern("\\Vmatrix"), .open = 0x2016, .close = 0x2016},
+            Bracket{.name = lexicon.intern("\\matrix"), .open = 0, .close = 0},
+            Bracket{.name = lexicon.intern("\\smallmatrix"), .open = 0, .close = 0},
             // A piecewise definition has one side to fence, not two, and
             // both its columns start at the left: the value, then the case.
-            Bracket{lexicon.intern("\\cases"), '{', 0, "ll"},
-            Bracket{lexicon.intern("\\dcases"), '{', 0, "ll", Node::Grid::Displayed},
-            Bracket{lexicon.intern("\\rcases"), 0, '}', "ll"},
-            Bracket{lexicon.intern("\\aligned"), 0, 0, "rl", Node::Grid::Paired},
-            Bracket{lexicon.intern("\\gathered"), 0, 0, "c", Node::Grid::Displayed},
-            Bracket{lexicon.intern("\\substack"), 0, 0, "c"},
+            Bracket{.name = lexicon.intern("\\cases"), .open = '{', .close = 0, .preamble = "ll"},
+            Bracket{.name = lexicon.intern("\\dcases"), .open = '{', .close = 0, .preamble = "ll", .grid = Node::Grid::Displayed},
+            Bracket{.name = lexicon.intern("\\rcases"), .open = 0, .close = '}', .preamble = "ll"},
+            Bracket{.name = lexicon.intern("\\aligned"), .open = 0, .close = 0, .preamble = "rl", .grid = Node::Grid::Paired},
+            Bracket{.name = lexicon.intern("\\gathered"), .open = 0, .close = 0, .preamble = "c", .grid = Node::Grid::Displayed},
+            Bracket{.name = lexicon.intern("\\substack"), .open = 0, .close = 0, .preamble = "c"},
         };
         // Found through the command's own slot in the rule table, so telling
         // a grid from any other atom costs one load rather than a scan.
@@ -57,9 +57,8 @@ namespace syntax::expression {
         row = lexicon.intern("\\\\");
     }
 
-    Parser::Parser(Mouth &mouth, const Unicodes &unicodes, const Grammar &grammar, memory::Arena &arena,
-                   const Node::Style style)
-        : mouth(mouth), unicodes(unicodes), grammar(grammar), arena(arena), style(style) {
+    Parser::Parser(Mouth &mouth, const Grammar &grammar, memory::Arena &arena, const Node::Style style)
+        : mouth(mouth), grammar(grammar), arena(arena), style(style) {
     }
 
     void Grammar::silence(const Symbol symbol) {
@@ -68,17 +67,17 @@ namespace syntax::expression {
         rules[index].silent = true;
     }
 
-    std::uint32_t Parser::delimiter(const Token &token) const {
+    std::uint32_t Parser::delimiter(const Token &token) {
         if (token.text == "." || token.empty()) return 0;
         if (token.text == "\\{") return '{';
         if (token.text == "\\}") return '}';
         if (token.text == "\\|") return 0x2016;
         if (token.text.size() == 1) {
-            return static_cast<std::uint32_t>(static_cast<unsigned char>(token.text[0]));
+            return static_cast<unsigned char>(token.text[0]);
         }
         std::string_view name = token.text;
         if (name.starts_with('\\')) name.remove_prefix(1);
-        const auto symbol = unicodes.get(name);
+        const auto symbol = Unicodes::get(name);
         return symbol ? symbol->codepoint : 0;
     }
 
@@ -139,7 +138,7 @@ namespace syntax::expression {
         std::string_view name = token.text;
         if (name.starts_with('\\')) name.remove_prefix(1);
 
-        if (const auto symbol = unicodes.get(name)) {
+        if (const auto symbol = Unicodes::get(name)) {
             node->codepoint = symbol->codepoint;
             node->category = symbol->category;
         } else if (name.size() == 1) {
@@ -579,10 +578,9 @@ namespace syntax::expression {
                             words += ' ';
                         } else if (written.size() == 1) {
                             words += written;
-                        } else if (const auto symbol = unicodes.get(written)) {
+                        } else if (const auto symbol = Unicodes::get(written)) {
                             // The symbol's character, in the UTF-8 the words are.
-                            const std::uint32_t point = symbol->codepoint;
-                            if (point < 0x80) {
+                            if (const std::uint32_t point = symbol->codepoint; point < 0x80) {
                                 words += static_cast<char>(point);
                             } else if (point < 0x800) {
                                 words += static_cast<char>(0xC0 | (point >> 6));
@@ -670,7 +668,7 @@ namespace syntax::expression {
             node->value = token.text.substr(1);
             node->codepoint = static_cast<unsigned char>(token.text[1]);
             node->category = Unicodes::Category::Ordinary;
-        } else if (const auto symbol = unicodes.get(name)) {
+        } else if (const auto symbol = Unicodes::get(name)) {
             node = compose(Node::Type::Variable);
             node->value = token.text;
             node->codepoint = symbol->codepoint;

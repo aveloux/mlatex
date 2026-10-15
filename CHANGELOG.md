@@ -1172,6 +1172,11 @@ font folders are listed only for a script the engine carries no face for.
   that uses it instead, where a type has no linkage to give. The trie is a
   plain struct sized by the constants measured just before it, where it
   was a template, and libjpeg's callback is a lambda.
+- **The maths symbol table is read without an instance.**
+  `syntax::expression::Unicodes::get` is static, and so is the formula
+  parser's `delimiter`, which only reads it; the parser no longer takes or
+  holds a `Unicodes` it never used, and the brackets it knows are
+  designated initialisers.
 
 ### Removed
 

@@ -126,13 +126,11 @@ namespace syntax::expression {
         using Hook = std::function<void(Edge)>;
 
         /// @brief Binds a math parser to an expander.
-        /// @param mouth    Where tokens come from.
-        /// @param unicodes Symbol table for math names.
-        /// @param grammar  The rules the formula is read by.
-        /// @param arena    Allocator for the node tree.
-        /// @param style    Inline or display.
-        Parser(Mouth &mouth, const Unicodes &unicodes, const Grammar &grammar, memory::Arena &arena,
-               Node::Style style = Node::Style::Inline);
+        /// @param mouth   Where tokens come from.
+        /// @param grammar The rules the formula is read by.
+        /// @param arena   Allocator for the node tree.
+        /// @param style   Inline or display.
+        Parser(Mouth &mouth, const Grammar &grammar, memory::Arena &arena, Node::Style style = Node::Style::Inline);
 
         ~Parser();
 
@@ -213,7 +211,7 @@ namespace syntax::expression {
         ///
         /// @param token The token after `\\left`, `\\right` or `\\big`.
         /// @return Its code point, or 0 for none.
-        [[nodiscard]] std::uint32_t delimiter(const Token &token) const;
+        [[nodiscard]] static std::uint32_t delimiter(const Token &token);
 
         /// @brief Reads a grid: a brace group of cells, `&` between columns
         ///        and `\\\\` between rows.
@@ -227,7 +225,6 @@ namespace syntax::expression {
         Node *matrix(const Grammar::Bracket &bracket);
 
         Mouth &mouth;
-        const Unicodes &unicodes;
         const Grammar &grammar;
         memory::Arena &arena;
         Node::Style style = Node::Style::Inline;
