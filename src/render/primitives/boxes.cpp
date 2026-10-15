@@ -201,7 +201,9 @@ namespace render::primitives {
             // the spec is read as a name or a mixture either way.
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             const graphics::Color color = Colors::resolve(syntax::Argument::text(mouth), context.variables);
-            return layout::Node::Color{color.red, color.green, color.blue, color.alpha};
+            return layout::Node::Color{
+                .red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha
+            };
         };
 
         // A column of paragraphs, set from what was parsed the way a
@@ -589,7 +591,9 @@ namespace render::primitives {
                 }
             }
             const float width = std::max(outer - 2.0f * (room + stroke), 20.0f);
-            frames.push_back({std::string(kind), std::move(options), width, stroke, room});
+            frames.push_back({
+                .kind = std::string(kind), .options = std::move(options), .width = width, .rule = stroke, .room = room
+            });
             // Inside, a line is the frame's inside.
             context.registers.set(Registers::Type::Dimension, Registers::reserved + 1,
                                   static_cast<std::int32_t>(width * 65536.0f), false);
@@ -842,7 +846,7 @@ namespace render::primitives {
                     }
                     const float width = measure(syntax::Argument::text(mouth), mouth, context);
                     const char fallback = name == "column" && !spreads.empty() ? spreads.back().position : 'c';
-                    openings.push_back({position.empty() ? fallback : position[0], width});
+                    openings.push_back({.position = position.empty() ? fallback : position[0], .width = width});
                     // Inside, \linewidth is the box's own, and paragraphs open
                     // flush, as LaTeX's minipage sets them.
                     context.registers.set(Registers::Type::Dimension, Registers::reserved + 1,
@@ -876,7 +880,7 @@ namespace render::primitives {
                     settings += token.text;
                 }
                 const bool top = settings.contains('t') || settings.contains('T');
-                spreads.push_back({top ? 't' : settings.contains('b') ? 'b' : 'c', false});
+                spreads.push_back({.position = top ? 't' : settings.contains('b') ? 'b' : 'c', .open = false});
                 mouth.ingest(R"(\par\noindent\hfill\ignorespaces )");
             },
             [this](syntax::Mouth &mouth) {
@@ -925,7 +929,7 @@ namespace render::primitives {
                 });
             }
             mouth.push(syntax::semantics::Scope::Type::Box);
-            openings.push_back({position.empty() ? spread.position : position[0], width});
+            openings.push_back({.position = position.empty() ? spread.position : position[0], .width = width});
             context.registers.set(Registers::Type::Dimension, Registers::reserved + 1,
                                   static_cast<std::int32_t>(width * 65536.0f), false);
             marks.push_back({
@@ -1235,7 +1239,8 @@ namespace render::primitives {
                 if (const typography::Font *font = context.selection.text(); font && !text.empty()) {
                     const typography::Font *fonts[] = {font};
                     const layout::Node::Box &shape = layout::Line::horizontal(
-                        context.arena, context.shaper.shape(memory::Slice{fonts, 1uz}, context.arena.copy(text), {}),
+                        context.arena,
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, context.arena.copy(text), {}),
                         0.0f)->box();
                     value = extent == 0
                                 ? shape.width

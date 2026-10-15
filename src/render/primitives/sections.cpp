@@ -167,7 +167,9 @@ namespace render::primitives {
                     shown = arena.allocate<syntax::Node *>(1);
                     shown[0] = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(brief), origin);
                 }
-                context.entries.push_back({"toc", listed, number, shown, index});
+                context.entries.push_back({
+                    .list = "toc", .level = listed, .number = number, .title = shown, .anchor = index
+                });
                 // hyperref's bookmark for it, in the file's outline.
                 if (context.variables.get("links")) {
                     const std::string &called = brief.empty() ? context.title : brief;
@@ -183,7 +185,7 @@ namespace render::primitives {
             if (!number.empty() && above.empty()) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(number), {});
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(number), {});
                 nodes.insert(nodes.end(), shaped.begin(), shaped.end());
                 if (tint) {
                     for (layout::Node *piece: shaped) layout::Typesetter::paint(piece, *tint);
@@ -237,7 +239,7 @@ namespace render::primitives {
             if (!above.empty() && lead) {
                 const typography::Font *fonts[] = {lead};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(above), {});
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(above), {});
                 parts.push_back(directive(arena, layout::Line::horizontal(arena, shaped, 0.0f), origin, true));
                 auto *gap = arena.compose<layout::Node>(layout::Node::Type::Glue);
                 gap->glue({.width = 20.0f});
@@ -703,7 +705,7 @@ namespace render::primitives {
                                                       ? 3
                                                       : 1;
             const std::size_t index = context.anchors++;
-            context.entries.push_back({list, level, {}, title, index});
+            context.entries.push_back({.list = list, .level = level, .number = {}, .title = title, .anchor = index});
             if (list == "toc" && context.variables.get("links")) {
                 std::string words;
                 [&words](this const auto &self, const memory::Slice<syntax::Node *> children) -> void {
@@ -712,7 +714,9 @@ namespace render::primitives {
                         else if (child && child->type == syntax::Node::Type::Group) self(child->nodes);
                     }
                 }(title);
-                context.document.metadata.bookmarks.push_back({level, std::move(words), index});
+                context.document.metadata.bookmarks.push_back({
+                    .level = level, .title = std::move(words), .anchor = index
+                });
             }
             auto *anchor = arena.compose<layout::Node>(layout::Node::Type::Directive);
             anchor->directive({.command = layout::Node::Directive::Command::Anchor, .index = index});
@@ -822,7 +826,7 @@ namespace render::primitives {
 
             const auto shaped = [&](const typography::Font *face, const std::string_view written) {
                 const typography::Font *fonts[] = {face};
-                return context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(written), {});
+                return context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(written), {});
             };
             const auto kern = [&](const float amount) {
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Kern);

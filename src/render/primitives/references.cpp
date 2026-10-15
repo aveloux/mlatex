@@ -203,12 +203,12 @@ namespace render::primitives {
         };
         static constexpr std::array<Spelling, 6> forms{
             {
-                {"\\ref", Form::Number, false},
-                {"\\eqref", Form::Number, true},
-                {"\\cref", Form::Named, false},
-                {"\\Cref", Form::Capital, false},
-                {"\\pageref", Form::Page, false},
-                {"\\nameref", Form::Title, false},
+                {.name = "\\ref", .form = Form::Number, .enclosed = false},
+                {.name = "\\eqref", .form = Form::Number, .enclosed = true},
+                {.name = "\\cref", .form = Form::Named, .enclosed = false},
+                {.name = "\\Cref", .form = Form::Capital, .enclosed = false},
+                {.name = "\\pageref", .form = Form::Page, .enclosed = false},
+                {.name = "\\nameref", .form = Form::Title, .enclosed = false},
             }
         };
 

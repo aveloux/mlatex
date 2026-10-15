@@ -84,9 +84,9 @@ namespace render::primitives {
 
         static constexpr std::array<Measured, 3> measured{
             {
-                {"\\hskip", true, false},
-                {"\\vskip", true, true},
-                {"\\kern", false, false},
+                {.name = "\\hskip", .elastic = true, .block = false},
+                {.name = "\\vskip", .elastic = true, .block = true},
+                {.name = "\\kern", .elastic = false, .block = false},
             }
         };
 
@@ -159,29 +159,51 @@ namespace render::primitives {
         // them the same widths.
         static constexpr std::array<Named, 22> named{
             {
-                {"\\quad", 1.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\qquad", 2.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\enspace", 0.5f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\enskip", 0.5f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\thinspace", 3.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\negthinspace", -3.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\,", 3.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\:", 4.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\>", 4.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\;", 5.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\!", -3.0f / 18.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
-                {"\\/", 0.0f, 0.0f, 0.0f, layout::Node::Order::Normal, false},
+                {.name = "\\quad", .width = 1.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\qquad", .width = 2.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\enspace", .width = 0.5f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\enskip", .width = 0.5f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\thinspace", .width = 3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\negthinspace", .width = -3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\,", .width = 3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\:", .width = 4.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\>", .width = 4.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\;", .width = 5.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\!", .width = -3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
+                {.name = "\\/", .width = 0.0f, .stretch = 0.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal, .block = false},
                 // the faces' own kerning corrects italics
-                {"\\hfil", 0.0f, 1.0f, 0.0f, layout::Node::Order::Fil, false},
-                {"\\hfill", 0.0f, 1.0f, 0.0f, layout::Node::Order::Fill, false},
-                {"\\vfil", 0.0f, 1.0f, 0.0f, layout::Node::Order::Fil, true},
-                {"\\vfill", 0.0f, 1.0f, 0.0f, layout::Node::Order::Fill, true},
-                {"\\hss", 0.0f, 1.0f, 1.0f, layout::Node::Order::Fil, false},
-                {"\\vss", 0.0f, 1.0f, 1.0f, layout::Node::Order::Fil, true},
-                {"\\hfilneg", 0.0f, -1.0f, 0.0f, layout::Node::Order::Fil, false},
-                {"\\smallskip", 0.3f, 0.1f, 0.1f, layout::Node::Order::Normal, true},
-                {"\\medskip", 0.6f, 0.2f, 0.2f, layout::Node::Order::Normal, true},
-                {"\\bigskip", 1.2f, 0.4f, 0.4f, layout::Node::Order::Normal, true},
+                {.name = "\\hfil", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil, .block = false},
+                {.name = "\\hfill", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Fill, .block = false},
+                {.name = "\\vfil", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil, .block = true},
+                {.name = "\\vfill", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Fill, .block = true},
+                {.name = "\\hss", .width = 0.0f, .stretch = 1.0f, .shrink = 1.0f,
+                 .order = layout::Node::Order::Fil, .block = false},
+                {.name = "\\vss", .width = 0.0f, .stretch = 1.0f, .shrink = 1.0f,
+                 .order = layout::Node::Order::Fil, .block = true},
+                {.name = "\\hfilneg", .width = 0.0f, .stretch = -1.0f, .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil, .block = false},
+                {.name = "\\smallskip", .width = 0.3f, .stretch = 0.1f, .shrink = 0.1f,
+                 .order = layout::Node::Order::Normal, .block = true},
+                {.name = "\\medskip", .width = 0.6f, .stretch = 0.2f, .shrink = 0.2f,
+                 .order = layout::Node::Order::Normal, .block = true},
+                {.name = "\\bigskip", .width = 1.2f, .stretch = 0.4f, .shrink = 0.4f,
+                 .order = layout::Node::Order::Normal, .block = true},
             }
         };
 
@@ -229,7 +251,7 @@ namespace render::primitives {
             if (font) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, " ", {});
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, " ", {});
                 if (shaped.count == 1 && shaped[0]->type == layout::Node::Type::Glue) {
                     width = shaped[0]->glue().width;
                 }
@@ -254,7 +276,7 @@ namespace render::primitives {
                             if (const typography::Font *font = context.selection.text(); dotted && font) {
                                 const typography::Font *fonts[] = {font};
                                 const memory::Slice<layout::Node *> dot = context.shaper.shape(
-                                    memory::Slice{fonts, 1uz}, ".", {});
+                                    memory::Slice{.data = fonts, .count = 1uz}, ".", {});
                                 const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(dot.count + 2);
                                 for (const std::size_t end: {0uz, dot.count + 1}) {
                                     row[end] = arena.compose<layout::Node>(layout::Node::Type::Glue);
@@ -286,7 +308,7 @@ namespace render::primitives {
             if (const typography::Font *font = context.selection.text()) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, " ", {});
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, " ", {});
                 if (shaped.count == 1 && shaped[0]->type == layout::Node::Type::Glue) {
                     return directive(arena, shaped[0], origin);
                 }

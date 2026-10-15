@@ -133,10 +133,10 @@ namespace render::primitives {
         const typography::Font *labelled[] = {heavy ? heavy : face};
         const std::string label = name.empty() ? number : number.empty() ? name : std::format("{} {}", name, number);
         const memory::Slice<layout::Node *> shaped =
-                context.shaper.shape(memory::Slice{labelled, 1uz}, arena.copy(label), {});
+                context.shaper.shape(memory::Slice{.data = labelled, .count = 1uz}, arena.copy(label), {});
         layout::Node *head = layout::Line::horizontal(arena, shaped, 0.0f);
         const memory::Slice<layout::Node *> spaced =
-                context.shaper.shape(memory::Slice{labelled, 1uz}, arena.copy(separator), {});
+                context.shaper.shape(memory::Slice{.data = labelled, .count = 1uz}, arena.copy(separator), {});
         layout::Node *gap = layout::Line::horizontal(arena, spaced, 0.0f);
 
         float width = head->box().width + gap->box().width;
@@ -173,7 +173,9 @@ namespace render::primitives {
                 shown = arena.allocate<syntax::Node *>(1);
                 shown[0] = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(brief), origin);
             }
-            context.entries.push_back({kind == "figure" ? "lof" : "lot", 1, number, shown, index});
+            context.entries.push_back({
+                .list = kind == "figure" ? "lof" : "lot", .level = 1, .number = number, .title = shown, .anchor = index
+            });
             parts.push_back(order({.command = Command::Anchor, .index = index}));
         }
         parts.push_back(order({.command = Command::Save}));

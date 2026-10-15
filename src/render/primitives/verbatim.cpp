@@ -85,7 +85,7 @@ namespace render::primitives {
             if (const typography::Font *mono = Styles::resolve(context, Styles::Cut::Mono, size);
                 mono && !spread.empty()) {
                 const typography::Font *fonts[] = {mono};
-                shaped = context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(spread), {});
+                shaped = context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(spread), {});
                 for (layout::Node *&node: shaped) {
                     if (!node || node->type != layout::Node::Type::Glue) continue;
                     auto *kern = arena.compose<layout::Node>(layout::Node::Type::Kern);

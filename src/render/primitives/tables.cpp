@@ -341,7 +341,7 @@ namespace render::primitives {
                     }
                 }
 
-                rows[outer] = layout::Line::horizontal(arena, memory::Slice{flat.data, filled}, 0.0f);
+                rows[outer] = layout::Line::horizontal(arena, memory::Slice{.data = flat.data, .count = filled}, 0.0f);
             }
 
             Logger::log(Logger::Type::Layout, Logger::Level::Debug,
@@ -362,11 +362,20 @@ namespace render::primitives {
         // write out, their own keys aside.
         static constexpr std::array<Kind, 14> kinds{
             {
-                {"tabular", false, false}, {"tabular*", true, false}, {"tabularx", true, false},
-                {"longtable", false, true}, {"supertabular", false, true}, {"tabulary", true, false},
-                {"xtabular", false, true}, {"longtable*", false, true}, {"NiceTabular", false, false},
-                {"NiceTabular*", true, false}, {"NiceTabularX", true, false}, {"tblr", false, false},
-                {"longtblr", false, true}, {"xltabular", true, true},
+                {.name = "tabular", .sized = false, .breakable = false},
+                {.name = "tabular*", .sized = true, .breakable = false},
+                {.name = "tabularx", .sized = true, .breakable = false},
+                {.name = "longtable", .sized = false, .breakable = true},
+                {.name = "supertabular", .sized = false, .breakable = true},
+                {.name = "tabulary", .sized = true, .breakable = false},
+                {.name = "xtabular", .sized = false, .breakable = true},
+                {.name = "longtable*", .sized = false, .breakable = true},
+                {.name = "NiceTabular", .sized = false, .breakable = false},
+                {.name = "NiceTabular*", .sized = true, .breakable = false},
+                {.name = "NiceTabularX", .sized = true, .breakable = false},
+                {.name = "tblr", .sized = false, .breakable = false},
+                {.name = "longtblr", .sized = false, .breakable = true},
+                {.name = "xltabular", .sized = true, .breakable = true},
             }
         };
         for (const auto &[name, sized, breakable]: kinds) {
@@ -633,7 +642,7 @@ namespace render::primitives {
                 while (mouth.lookahead().is('[')) {
                     static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                 }
-                return {color.red, color.green, color.blue, color.alpha};
+                return {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha};
             };
 
             // A cell with nothing in it but the blanks around the source's `&`.
@@ -1258,7 +1267,7 @@ namespace render::primitives {
                     if (opening.position != 'l') line[filled++] = fill();
                     line[filled++] = each;
                     if (opening.position != 'r') line[filled++] = fill();
-                    return layout::Line::horizontal(arena, memory::Slice{line.data, filled}, measure);
+                    return layout::Line::horizontal(arena, memory::Slice{.data = line.data, .count = filled}, measure);
                 };
                 const auto repeated = [&](const Part chosen) -> layout::Node * {
                     const std::vector<layout::Node *> &chunk = stacks[static_cast<std::size_t>(chosen)];

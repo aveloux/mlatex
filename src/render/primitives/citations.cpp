@@ -126,7 +126,8 @@ namespace render::primitives {
                 if (const typography::Font *font = context.selection.text()) {
                     const typography::Font *fonts[] = {font};
                     const memory::Slice<layout::Node *> shaped =
-                            context.shaper.shape(memory::Slice{fonts, 1uz}, context.arena.copy(sample), {});
+                            context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz},
+                                                 context.arena.copy(sample), {});
                     widest = layout::Line::horizontal(context.arena, shaped, 0.0f)->box().width;
                 }
                 // Under the class's heading -- `\section*{\refname}` in an
@@ -218,7 +219,8 @@ namespace render::primitives {
             if (font && !hung) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped =
-                        context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(std::format("[{}]", mark.text)), {});
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz},
+                                             arena.copy(std::format("[{}]", mark.text)), {});
                 label = layout::Line::horizontal(arena, shaped, 0.0f);
             }
             const float width = label ? label->box().width : 0.0f;
@@ -265,7 +267,8 @@ namespace render::primitives {
             item[placed++] = directive(arena, layout::Line::horizontal(arena, contents, 0.0f), origin);
 
             return arena.compose<syntax::Node>(
-                syntax::Node::Type::Group, std::string_view{}, origin, memory::Slice{item.data, placed});
+                syntax::Node::Type::Group, std::string_view{}, origin,
+                memory::Slice{.data = item.data, .count = placed});
         });
 
         // The citations, in every spelling the three packages give them. Each

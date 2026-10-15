@@ -35,12 +35,12 @@ namespace render::primitives {
 
         static constexpr std::array<Switch, 6> switches{
             {
-                {"\\indent", Command::Indent, Justification::Full},
-                {"\\noindent", Command::Flush, Justification::Full},
-                {"\\justifying", Command::Align, Justification::Full},
-                {"\\raggedright", Command::Align, Justification::Left},
-                {"\\raggedleft", Command::Align, Justification::Right},
-                {"\\centering", Command::Align, Justification::Center},
+                {.name = "\\indent", .command = Command::Indent, .justification = Justification::Full},
+                {.name = "\\noindent", .command = Command::Flush, .justification = Justification::Full},
+                {.name = "\\justifying", .command = Command::Align, .justification = Justification::Full},
+                {.name = "\\raggedright", .command = Command::Align, .justification = Justification::Left},
+                {.name = "\\raggedleft", .command = Command::Align, .justification = Justification::Right},
+                {.name = "\\centering", .command = Command::Align, .justification = Justification::Center},
             }
         };
 

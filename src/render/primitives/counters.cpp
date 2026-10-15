@@ -55,8 +55,8 @@ namespace render::primitives {
         const auto word = [&](const std::string &text) {
             const syntax::Symbol bound = lexicon.intern(text);
             body.push_back(syntax::Token{
-                bound, syntax::Catcodes::Category::Escape, memory::Location{},
-                lexicon.resolve(bound)
+                .symbol = bound, .category = syntax::Catcodes::Category::Escape, .location = memory::Location{},
+                .text = lexicon.resolve(bound)
             });
         };
         const auto character = [&](const char written, const syntax::Catcodes::Category category) {

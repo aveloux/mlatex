@@ -1154,6 +1154,16 @@ font folders are listed only for a script the engine carries no face for.
   `\bibitem`, `\bibliography`, `\printbibliography` and their like -- takes
   `const syntax::Parser &` or `const syntax::Mouth &`, as CLion asks; each
   was tried by compiling, and kept only where nothing it does needs more.
+- **Every struct built in the primitives names its fields.** The tables --
+  the 118 accented letters, the 102 rules of a formula's operators, the
+  document classes, the named spaces, the displays, the font switches --
+  and every point, colour, slice and entry made on the way are designated
+  initialisers, `{.accent = '\'', .base = 'a', .result = "á"}`, so a field
+  moved in its struct can never be filled with its neighbour's value. A
+  table's rows are packed as many to a line as fit, and a row too wide for
+  one line breaks before the same field in every row of its table.
+  `\definecolor`'s numbers are `first` to `fourth` -- red, green and blue
+  in one model, cyan, magenta, yellow and black in another.
 
 ### Removed
 

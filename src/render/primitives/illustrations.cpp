@@ -385,8 +385,10 @@ namespace render::primitives {
             if (stroking && doubled && length > 0.0f) {
                 const float nx = -(to.up - from.up) / length * spacing;
                 const float ny = (to.across - from.across) / length * spacing;
-                canvas.line({from.across + nx, from.up + ny}, {to.across + nx, to.up + ny}, ink, width, broken);
-                canvas.line({from.across - nx, from.up - ny}, {to.across - nx, to.up - ny}, ink, width, broken);
+                canvas.line({.across = from.across + nx, .up = from.up + ny},
+                            {.across = to.across + nx, .up = to.up + ny}, ink, width, broken);
+                canvas.line({.across = from.across - nx, .up = from.up - ny},
+                            {.across = to.across - nx, .up = to.up - ny}, ink, width, broken);
             } else if (stroking) {
                 canvas.line(from, to, ink, width, broken);
             }
@@ -416,8 +418,10 @@ namespace render::primitives {
                 if (left <= piece || index + 1 == trail.size()) {
                     const float t = piece > 0.0f ? std::min(left / piece, 1.0f) : 0.0f;
                     return std::array{
-                        graphics::Point2{from.across + (to.across - from.across) * t, from.up + (to.up - from.up) * t},
-                        graphics::Point2{to.across - from.across, to.up - from.up}
+                        graphics::Point2{
+                            .across = from.across + (to.across - from.across) * t, .up = from.up + (to.up - from.up) * t
+                        },
+                        graphics::Point2{.across = to.across - from.across, .up = to.up - from.up}
                     };
                 }
                 left -= piece;
@@ -453,7 +457,7 @@ namespace render::primitives {
                 reach = std::min(dx != 0.0f ? mark.across / std::abs(dx) : std::numeric_limits<float>::max(),
                                  dy != 0.0f ? mark.up / std::abs(dy) : std::numeric_limits<float>::max());
             }
-            return graphics::Point2{mark.centre.across + dx * reach, mark.centre.up + dy * reach};
+            return graphics::Point2{.across = mark.centre.across + dx * reach, .up = mark.centre.up + dy * reach};
         };
         // One of a node's anchors: its centre, a side or a corner by the
         // compass, or the point of its outline at an angle, `(a.30)`.
@@ -475,9 +479,11 @@ namespace render::primitives {
                 dx = std::cos(angle * std::numbers::pi_v<float> / 180.0f);
                 dy = std::sin(angle * std::numbers::pi_v<float> / 180.0f);
             } else if (!mark.round) {
-                return graphics::Point2{mark.centre.across + dx * mark.across, mark.centre.up + dy * mark.up};
+                return graphics::Point2{
+                    .across = mark.centre.across + dx * mark.across, .up = mark.centre.up + dy * mark.up
+                };
             }
-            return meet(mark, {mark.centre.across + dx, mark.centre.up + dy});
+            return meet(mark, {.across = mark.centre.across + dx, .up = mark.centre.up + dy});
         };
 
         // Where a run of text closes what opens at its start -- a
@@ -580,8 +586,8 @@ namespace render::primitives {
                         const float dx = toward->across - term->across;
                         const float dy = toward->up - term->up;
                         const graphics::Point2 way{
-                            dx * std::cos(angle) - dy * std::sin(angle),
-                            dx * std::sin(angle) + dy * std::cos(angle)
+                            .across = dx * std::cos(angle) - dy * std::sin(angle),
+                            .up = dx * std::sin(angle) + dy * std::cos(angle)
                         };
                         bool measured = false;
                         const auto share = Plots::calculate(part, 0.0, 0.0, &measured);
@@ -631,12 +637,14 @@ namespace render::primitives {
                 const auto radius = distance(inside.substr(colon + 1), centimetre);
                 if (!angle || !radius) return std::nullopt;
                 const float turn = *angle * std::numbers::pi_v<float> / 180.0f;
-                return graphics::Point2{*radius * std::cos(turn) * scale, *radius * std::sin(turn) * scale};
+                return graphics::Point2{
+                    .across = *radius * std::cos(turn) * scale, .up = *radius * std::sin(turn) * scale
+                };
             }
             const auto x = distance(inside.substr(0, comma), centimetre);
             const auto y = distance(inside.substr(comma + 1), centimetre);
             if (!x || !y) return std::nullopt;
-            return graphics::Point2{*x * scale, *y * scale};
+            return graphics::Point2{.across = *x * scale, .up = *y * scale};
         };
 
         // One coordinate in its parentheses, `at` on the opening one, and
@@ -943,7 +951,8 @@ namespace render::primitives {
             }
 
             graphics::Point2 centre{
-                point.across - static_cast<float>(across) * half, point.up - static_cast<float>(up) * rise
+                .across = point.across - static_cast<float>(across) * half,
+                .up = point.up - static_cast<float>(up) * rise
             };
             if (!toward.empty()) {
                 if (const auto found = landmarks.find(std::string(beside)); found != landmarks.end()) {
@@ -997,8 +1006,10 @@ namespace render::primitives {
                     }
                 } else {
                     outline = {
-                        {centre.across - reach, centre.up - height}, {centre.across + reach, centre.up - height},
-                        {centre.across + reach, centre.up + height}, {centre.across - reach, centre.up + height}
+                        {.across = centre.across - reach, .up = centre.up - height},
+                        {.across = centre.across + reach, .up = centre.up - height},
+                        {.across = centre.across + reach, .up = centre.up + height},
+                        {.across = centre.across - reach, .up = centre.up + height}
                     };
                 }
                 return outline;
@@ -1058,7 +1069,7 @@ namespace render::primitives {
                     return;
                 }
                 graphics::Point2 point = *read;
-                if (relative) point = {base.across + point.across, base.up + point.up};
+                if (relative) point = {.across = base.across + point.across, .up = base.up + point.up};
                 const Landmark *reached = relative ? nullptr : touched;
                 // A line between two nodes runs from one's outline to the
                 // other's, as TikZ draws it, not from centre to centre.
@@ -1069,8 +1080,8 @@ namespace render::primitives {
                     if (length > 0.0f) {
                         const float nx = -(to.up - from.up) / length * shift;
                         const float ny = (to.across - from.across) / length * shift;
-                        from = {from.across + nx, from.up + ny};
-                        to = {to.across + nx, to.up + ny};
+                        from = {.across = from.across + nx, .up = from.up + ny};
+                        to = {.across = to.across + nx, .up = to.up + ny};
                     }
                 }
                 if (waiting != Step::None) trail.clear();
@@ -1089,12 +1100,12 @@ namespace render::primitives {
                             const float out = leaving ? *leaving : heading + bend.value_or(0.0f);
                             const float in = arriving ? *arriving : heading + 180.0f - bend.value_or(0.0f);
                             if (resting) from = meet(*resting, {
-                                                         source.across + std::cos(out * degree),
-                                                         source.up + std::sin(out * degree)
+                                                         .across = source.across + std::cos(out * degree),
+                                                         .up = source.up + std::sin(out * degree)
                                                      });
                             if (reached) to = meet(*reached, {
-                                                       sink.across + std::cos(in * degree),
-                                                       sink.up + std::sin(in * degree)
+                                                       .across = sink.across + std::cos(in * degree),
+                                                       .up = sink.up + std::sin(in * degree)
                                                    });
                             const float pull = 0.3915f * looseness *
                                                std::hypot(to.across - from.across, to.up - from.up);
@@ -1113,19 +1124,19 @@ namespace render::primitives {
                         }
                         break;
                     case Step::Rectangle:
-                        segment(current, {point.across, current.up});
-                        segment({point.across, current.up}, point);
-                        segment(point, {current.across, point.up});
-                        segment({current.across, point.up}, current);
+                        segment(current, {.across = point.across, .up = current.up});
+                        segment({.across = point.across, .up = current.up}, point);
+                        segment(point, {.across = current.across, .up = point.up});
+                        segment({.across = current.across, .up = point.up}, current);
                         break;
                     case Step::Vertical: {
-                        const graphics::Point2 corner{current.across, point.up};
+                        const graphics::Point2 corner{.across = current.across, .up = point.up};
                         segment(resting ? meet(*resting, corner) : current, corner);
                         segment(corner, reached ? meet(*reached, corner) : point);
                         break;
                     }
                     case Step::Horizontal: {
-                        const graphics::Point2 corner{point.across, current.up};
+                        const graphics::Point2 corner{.across = point.across, .up = current.up};
                         segment(resting ? meet(*resting, corner) : current, corner);
                         segment(corner, reached ? meet(*reached, corner) : point);
                         break;
@@ -1217,17 +1228,20 @@ namespace render::primitives {
                     return;
                 }
                 const graphics::Point2 end = measured
-                                                 ? graphics::Point2{base.across + read->across, base.up + read->up}
+                                                 ? graphics::Point2{
+                                                     .across = base.across + read->across, .up = base.up + read->up
+                                                 }
                                                  : *read;
                 const graphics::Point2 pull = one->second
                                                   ? graphics::Point2{
-                                                      current.across + one->first.across,
-                                                      current.up + one->first.up
+                                                      .across = current.across + one->first.across,
+                                                      .up = current.up + one->first.up
                                                   }
                                                   : one->first;
                 const graphics::Point2 push = two->second
                                                   ? graphics::Point2{
-                                                      end.across + two->first.across, end.up + two->first.up
+                                                      .across = end.across + two->first.across,
+                                                      .up = end.up + two->first.up
                                                   }
                                                   : two->first;
                 trail.clear();
@@ -1330,8 +1344,8 @@ namespace render::primitives {
                         const auto y = Plots::calculate(upward, t);
                         if (!x || !y) continue;
                         points.push_back({
-                            static_cast<float>(*x) * centimetre * scale,
-                            static_cast<float>(*y) * centimetre * scale
+                            .across = static_cast<float>(*x) * centimetre * scale,
+                            .up = static_cast<float>(*y) * centimetre * scale
                         });
                     }
                 }
@@ -1384,8 +1398,8 @@ namespace render::primitives {
                 const float reach = *radius * scale;
                 const float turn = std::numbers::pi_v<float> / 180.0f;
                 const graphics::Point2 centre{
-                    current.across - reach * std::cos(*from * turn),
-                    current.up - reach * std::sin(*from * turn)
+                    .across = current.across - reach * std::cos(*from * turn),
+                    .up = current.up - reach * std::sin(*from * turn)
                 };
                 trail.clear();
                 round(centre, reach, *from, *to);
@@ -1634,7 +1648,7 @@ namespace render::primitives {
             const float angle = std::atan2(dy, dx);
             for (const float side: {-0.45f, 0.45f}) {
                 const graphics::Point2 barb{
-                    to.across - reach * std::cos(angle + side), to.up - reach * std::sin(angle + side)
+                    .across = to.across - reach * std::cos(angle + side), .up = to.up - reach * std::sin(angle + side)
                 };
                 canvas.line(to, barb, ink, width, false);
             }
@@ -1645,7 +1659,7 @@ namespace render::primitives {
         const auto cap = [&](const Tip kind, const graphics::Point2 from, const graphics::Point2 to) {
             const float length = std::hypot(to.across - from.across, to.up - from.up);
             if (kind == Tip::None || length <= 0.0f || !stroking) return;
-            const graphics::Point2 out{(to.across - from.across) / length, (to.up - from.up) / length};
+            const graphics::Point2 out{.across = (to.across - from.across) / length, .up = (to.up - from.up) / length};
             const float reach = 3.0f + 2.5f * width;
             switch (kind) {
                 case Tip::Arrow:
@@ -1653,14 +1667,14 @@ namespace render::primitives {
                     break;
                 case Tip::Twice:
                     tip(from, to);
-                    tip(from, {to.across - out.across * reach * 0.8f, to.up - out.up * reach * 0.8f});
+                    tip(from, {.across = to.across - out.across * reach * 0.8f, .up = to.up - out.up * reach * 0.8f});
                     break;
                 case Tip::Tail:
-                    tip({2.0f * to.across - from.across, 2.0f * to.up - from.up}, to);
+                    tip({.across = 2.0f * to.across - from.across, .up = 2.0f * to.up - from.up}, to);
                     break;
                 case Tip::Bar:
-                    canvas.line({to.across - out.up * reach, to.up + out.across * reach},
-                                {to.across + out.up * reach, to.up - out.across * reach},
+                    canvas.line({.across = to.across - out.up * reach, .up = to.up + out.across * reach},
+                                {.across = to.across + out.up * reach, .up = to.up - out.across * reach},
                                 ink, width, false);
                     break;
                 case Tip::Hook:
@@ -1669,14 +1683,17 @@ namespace render::primitives {
                     // side: the line's left for a hook, its right for a crook.
                     const float radius = reach * 0.6f;
                     const float turn = kind == Tip::Hook ? 1.0f : -1.0f;
-                    const graphics::Point2 normal{out.up * turn, -out.across * turn};
-                    const graphics::Point2 centre{to.across + normal.across * radius, to.up + normal.up * radius};
+                    const graphics::Point2 normal{.across = out.up * turn, .up = -out.across * turn};
+                    const graphics::Point2 centre{
+                        .across = to.across + normal.across * radius, .up = to.up + normal.up * radius
+                    };
                     graphics::Point2 previous = to;
                     for (int index = 1; index <= 12; ++index) {
                         const float t = static_cast<float>(index) * std::numbers::pi_v<float> / 12.0f;
                         const graphics::Point2 point{
-                            centre.across + radius * (-normal.across * std::cos(t) + out.across * std::sin(t)),
-                            centre.up + radius * (-normal.up * std::cos(t) + out.up * std::sin(t))
+                            .across = centre.across +
+                                      radius * (-normal.across * std::cos(t) + out.across * std::sin(t)),
+                            .up = centre.up + radius * (-normal.up * std::cos(t) + out.up * std::sin(t))
                         };
                         canvas.line(previous, point, ink, width, false);
                         previous = point;
@@ -1848,7 +1865,7 @@ namespace render::primitives {
 
                 canvases.emplace_back(placement[2], placement[3]);
                 rooms.push_back(graphics::Canvas::Room::Declared);
-                anchors.push_back({placement[0], placement[1]});
+                anchors.push_back({.across = placement[0], .down = placement[1]});
                 scales.push_back(1.0f);
                 baselines.emplace_back();
                 distances.push_back(72.27f / 2.54f);
@@ -1912,11 +1929,12 @@ namespace render::primitives {
                     rooms.push_back(graphics::Canvas::Room::Declared);
                     anchors.push_back({});
                     landmarks["current page"] = {
-                        {page.width / 2.0f, page.height / 2.0f}, page.width / 2.0f, page.height / 2.0f
+                        .centre = {.across = page.width / 2.0f, .up = page.height / 2.0f},
+                        .across = page.width / 2.0f, .up = page.height / 2.0f
                     };
                     landmarks["current page text area"] = {
-                        {page.left + wide / 2.0f, page.bottom + tall / 2.0f}, wide / 2.0f,
-                        tall / 2.0f
+                        .centre = {.across = page.left + wide / 2.0f, .up = page.bottom + tall / 2.0f},
+                        .across = wide / 2.0f, .up = tall / 2.0f
                     };
                 } else {
                     canvases.emplace_back(0.0f, 0.0f);
@@ -2343,7 +2361,7 @@ namespace render::primitives {
             measure(mouth, context.registers, coordinates);
 
             canvases.back().line(
-                {coordinates[0], coordinates[1]}, {coordinates[2], coordinates[3]},
+                {.across = coordinates[0], .up = coordinates[1]}, {.across = coordinates[2], .up = coordinates[3]},
                 color, weight, dashed);
         });
 
@@ -2358,8 +2376,8 @@ namespace render::primitives {
             measure(mouth, context.registers, coordinates);
 
             canvases.back().line(
-                {coordinates[0], coordinates[1], coordinates[2]},
-                {coordinates[3], coordinates[4], coordinates[5]},
+                {.across = coordinates[0], .along = coordinates[1], .up = coordinates[2]},
+                {.across = coordinates[3], .along = coordinates[4], .up = coordinates[5]},
                 view, color, weight, dashed);
         });
 

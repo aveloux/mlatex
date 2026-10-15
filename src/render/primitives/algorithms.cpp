@@ -51,7 +51,8 @@ namespace render::primitives {
             if (const typography::Font *font = Styles::resolve(context, Styles::Cut::Normal, small)) {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> shaped = context.shaper.shape(
-                    memory::Slice{fonts, 1uz}, arena.copy(std::format("{}:", Numeral::arabic(block.lines))), {});
+                    memory::Slice{.data = fonts, .count = 1uz},
+                    arena.copy(std::format("{}:", Numeral::arabic(block.lines))), {});
                 label = layout::Line::horizontal(arena, shaped, 0.0f);
             }
         }
@@ -80,7 +81,8 @@ namespace render::primitives {
         parts[0] = arena.compose<syntax::Node>(syntax::Node::Type::Paragraph, std::string_view{}, origin);
         parts[1] = directive(arena, shift, origin);
         parts[2] = directive(arena, flush, origin);
-        parts[3] = directive(arena, layout::Line::horizontal(arena, memory::Slice{hang.data, filled}, 0.0f), origin);
+        const memory::Slice<layout::Node *> hung{.data = hang.data, .count = filled};
+        parts[3] = directive(arena, layout::Line::horizontal(arena, hung, 0.0f), origin);
         return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
     }
 

@@ -68,8 +68,10 @@ namespace render::primitives {
                                               ? named(parts[index + 1])
                                               : graphics::white;
             color = {
-                color.red * part + other.red * (1.0f - part), color.green * part + other.green * (1.0f - part),
-                color.blue * part + other.blue * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)
+                .red = color.red * part + other.red * (1.0f - part),
+                .green = color.green * part + other.green * (1.0f - part),
+                .blue = color.blue * part + other.blue * (1.0f - part),
+                .alpha = color.alpha * part + other.alpha * (1.0f - part)
             };
         }
         return color;
@@ -104,13 +106,26 @@ namespace render::primitives {
                                [top](const float number) { return number >= 0.0f && number <= top; });
         };
 
-        const auto [c, m, y, k] = numbers;
-        if (model == "RGB" && fits(3, 255.0f)) return write({c / 255.0f, m / 255.0f, y / 255.0f, 1.0f});
-        if (model == "rgb" && fits(3, 1.0f)) return write({c, m, y, 1.0f});
-        if (model == "gray" && fits(1, 1.0f)) return write({c, c, c, 1.0f});
-        if (model == "cmy" && fits(3, 1.0f)) return write({1.0f - c, 1.0f - m, 1.0f - y, 1.0f});
+        // The model's own numbers in order: red, green and blue, a gray's
+        // one, or cyan, magenta, yellow and black.
+        const auto [first, second, third, fourth] = numbers;
+        if (model == "RGB" && fits(3, 255.0f)) {
+            return write({.red = first / 255.0f, .green = second / 255.0f, .blue = third / 255.0f, .alpha = 1.0f});
+        }
+        if (model == "rgb" && fits(3, 1.0f)) {
+            return write({.red = first, .green = second, .blue = third, .alpha = 1.0f});
+        }
+        if (model == "gray" && fits(1, 1.0f)) {
+            return write({.red = first, .green = first, .blue = first, .alpha = 1.0f});
+        }
+        if (model == "cmy" && fits(3, 1.0f)) {
+            return write({.red = 1.0f - first, .green = 1.0f - second, .blue = 1.0f - third, .alpha = 1.0f});
+        }
         if (model == "cmyk" && fits(4, 1.0f)) {
-            return write({(1.0f - c) * (1.0f - k), (1.0f - m) * (1.0f - k), (1.0f - y) * (1.0f - k), 1.0f});
+            return write({
+                .red = (1.0f - first) * (1.0f - fourth), .green = (1.0f - second) * (1.0f - fourth),
+                .blue = (1.0f - third) * (1.0f - fourth), .alpha = 1.0f
+            });
         }
         return std::nullopt;
     }
@@ -175,7 +190,7 @@ namespace render::primitives {
                                               ? graphics::Color::parse(*converted)
                                               : resolve(written, context.variables);
             auto *kept = context.arena.compose<layout::Node::Color>();
-            *kept = {color.red, color.green, color.blue, color.alpha};
+            *kept = {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha};
             return kept;
         };
 

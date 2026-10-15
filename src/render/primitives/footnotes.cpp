@@ -40,7 +40,7 @@ namespace render::primitives {
 
         const typography::Font *fonts[] = {font};
         const memory::Slice<layout::Node *> shaped =
-                context.shaper.shape(memory::Slice{fonts, 1uz}, arena.copy(text), {});
+                context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(text), {});
         layout::Node *box = layout::Line::horizontal(arena, shaped, 0.0f);
         layout::Node::Box lifted = box->box();
         lifted.shift = -size * raise;
@@ -108,7 +108,7 @@ namespace render::primitives {
             parts[filled++] = directive(arena, carried, origin);
         }
         return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin,
-                                           memory::Slice{parts.data, filled});
+                                           memory::Slice{.data = parts.data, .count = filled});
     }
 
     void Footnotes::operator()(syntax::Parser &parser, Context &context) const {

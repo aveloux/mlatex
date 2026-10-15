@@ -1153,11 +1153,15 @@ namespace render::primitives {
                         }
                         if (!plot.between.empty()) {
                             // Filled already, under the lines; in the legend, a patch.
-                            if (!forgotten) samples.push_back({color, "", false, true});
+                            if (!forgotten) samples.push_back({.color = color, .mark = "", .line = false, .bar = true});
                             continue;
                         }
                         const bool histogram = barred;
-                        if (!forgotten) samples.push_back({color, mark, line && !histogram, histogram});
+                        if (!forgotten) {
+                            samples.push_back({
+                                .color = color, .mark = mark, .line = line && !histogram, .bar = histogram
+                            });
+                        }
 
                         if (histogram) {
                             const double shift =

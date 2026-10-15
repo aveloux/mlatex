@@ -289,13 +289,23 @@ namespace render::primitives {
             };
             static constexpr std::array<Class, 36> classes{
                 {
-                    {"article", 1}, {"report", 1}, {"book", 1}, {"letter", 1}, {"memoir", 1}, {"minimal", 1},
-                    {"proc", 2}, {"slides", 1}, {"extarticle", 1}, {"extreport", 1}, {"extbook", 1},
-                    {"amsart", 1}, {"amsbook", 1}, {"amsproc", 1}, {"scrartcl", 1}, {"scrreprt", 1}, {"scrbook", 1},
-                    {"scrlttr2", 1}, {"IEEEtran", 2}, {"IEEEconf", 2}, {"acmart", 1}, {"sig-alternate", 2},
-                    {"llncs", 1}, {"elsarticle", 1}, {"revtex4", 1}, {"revtex4-1", 1}, {"revtex4-2", 1},
-                    {"svjour3", 1}, {"svmult", 1}, {"sn-jnl", 1}, {"aa", 2}, {"mnras", 2}, {"aastex631", 1},
-                    {"aastex7", 1}, {"standalone", 1}, {"tufte-handout", 1},
+                    {.name = "article", .columns = 1}, {.name = "report", .columns = 1}, {.name = "book", .columns = 1},
+                    {.name = "letter", .columns = 1}, {.name = "memoir", .columns = 1},
+                    {.name = "minimal", .columns = 1}, {.name = "proc", .columns = 2}, {.name = "slides", .columns = 1},
+                    {.name = "extarticle", .columns = 1}, {.name = "extreport", .columns = 1},
+                    {.name = "extbook", .columns = 1}, {.name = "amsart", .columns = 1},
+                    {.name = "amsbook", .columns = 1}, {.name = "amsproc", .columns = 1},
+                    {.name = "scrartcl", .columns = 1}, {.name = "scrreprt", .columns = 1},
+                    {.name = "scrbook", .columns = 1}, {.name = "scrlttr2", .columns = 1},
+                    {.name = "IEEEtran", .columns = 2}, {.name = "IEEEconf", .columns = 2},
+                    {.name = "acmart", .columns = 1}, {.name = "sig-alternate", .columns = 2},
+                    {.name = "llncs", .columns = 1}, {.name = "elsarticle", .columns = 1},
+                    {.name = "revtex4", .columns = 1}, {.name = "revtex4-1", .columns = 1},
+                    {.name = "revtex4-2", .columns = 1}, {.name = "svjour3", .columns = 1},
+                    {.name = "svmult", .columns = 1}, {.name = "sn-jnl", .columns = 1}, {.name = "aa", .columns = 2},
+                    {.name = "mnras", .columns = 2}, {.name = "aastex631", .columns = 1},
+                    {.name = "aastex7", .columns = 1}, {.name = "standalone", .columns = 1},
+                    {.name = "tufte-handout", .columns = 1},
                 }
             };
             const auto known = std::ranges::find(classes, std::string_view(name), &Class::name);
@@ -857,7 +867,9 @@ namespace render::primitives {
             float width = 0.0f;
             if (font) {
                 const typography::Font *fonts[] = {font};
-                for (const layout::Node *piece: context.shaper.shape(memory::Slice{fonts, 1uz}, "00", {})) {
+                const memory::Slice<layout::Node *> digits =
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, "00", {});
+                for (const layout::Node *piece: digits) {
                     width += layout::Line::advance(piece);
                 }
             }
