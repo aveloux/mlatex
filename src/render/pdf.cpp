@@ -786,7 +786,7 @@ namespace render {
                     file.bytes += "] /Border [0 0 ";
                     file.bytes += link.border.alpha > 0.0f ? "1" : "0";
                     file.bytes += "] /C [";
-                    for (const float value: {link.border.r, link.border.g, link.border.b}) {
+                    for (const float value: {link.border.red, link.border.green, link.border.blue}) {
                         fraction(file.bytes, value);
                         file.bytes += ' ';
                     }

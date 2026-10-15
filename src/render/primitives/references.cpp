@@ -68,10 +68,10 @@ namespace render::primitives {
 
         using Color = layout::Node::Color;
         const Color frame = kind == "url"
-                                ? Color{0.0f, 1.0f, 1.0f}
+                                ? Color{.red = 0.0f, .green = 1.0f, .blue = 1.0f}
                                 : kind == "cite"
-                                      ? Color{0.0f, 1.0f, 0.0f}
-                                      : Color{1.0f, 0.0f, 0.0f};
+                                      ? Color{.red = 0.0f, .green = 1.0f, .blue = 0.0f}
+                                      : Color{.red = 1.0f, .green = 0.0f, .blue = 0.0f};
         Hyperlink made;
         made.open = context.arena.compose<layout::Node>(layout::Node::Type::Directive);
         made.open->directive({
@@ -84,9 +84,9 @@ namespace render::primitives {
             const std::string *named = option(std::string(kind) + "color");
             if (!named) named = option("allcolors");
             const std::string_view fallback = kind == "url" ? "magenta" : kind == "cite" ? "green" : "red";
-            const graphics::Color color = Colors::resolve(named ? std::string_view(*named) : fallback,
-                                                          context.variables);
-            made.tint = context.arena.compose<Color>(Color{color.r, color.g, color.b, color.alpha});
+            const auto [red, green, blue, alpha] = Colors::resolve(named ? std::string_view(*named) : fallback,
+                                                                   context.variables);
+            made.tint = context.arena.compose<Color>(Color{.red = red, .green = green, .blue = blue, .alpha = alpha});
         }
         return made;
     }

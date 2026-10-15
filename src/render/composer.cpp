@@ -414,7 +414,7 @@ namespace render {
                 // was told to, from the page's own corner.
                 if (item->box().anchored) {
                     const layout::Node::Point &corner = item->box().anchor;
-                    inside(item, corner.x, corner.y);
+                    inside(item, corner.across, corner.down);
                 } else if (const layout::Node::Transform *map = item->box().transform) {
                     // Drawn through its map, in a graphics state of its own
                     // the page leaves again after: what the contents set --
@@ -425,11 +425,12 @@ namespace render {
                     const layout::Node::Color stroke = stroking;
                     const float faded = opacity;
                     content += "q ";
-                    for (const float value: {map->a, map->b, map->c, map->d}) {
+                    const auto &[horizontal, vertical, offset] = *map;
+                    for (const float value: {horizontal.across, horizontal.down, vertical.across, vertical.down}) {
                         number(content, value == 0.0f ? 0.0f : value); // no "-0" for a cosine of a right angle
                         content += ' ';
                     }
-                    const float across = position + item->box().offset + map->x;
+                    const float across = position + item->box().offset + offset;
                     const float down = baseline + item->box().shift;
                     number(content, across);
                     content += ' ';
@@ -443,10 +444,10 @@ namespace render {
                     inside(item, 0.0f, 0.0f);
                     extent = before;
                     const layout::Node::Box &shape = item->box();
-                    for (const float x: {0.0f, shape.width}) {
-                        for (const float y: {-shape.height, shape.depth}) {
-                            const float right = map->a * x + map->c * y + across;
-                            const float under = map->b * x + map->d * y + down;
+                    for (const float side: {0.0f, shape.width}) {
+                        for (const float edge: {-shape.height, shape.depth}) {
+                            const float right = horizontal.across * side + vertical.across * edge + across;
+                            const float under = horizontal.down * side + vertical.down * edge + down;
                             reach(right, under, right, under);
                         }
                     }
@@ -481,8 +482,8 @@ namespace render {
                     if (slot == faces.size()) faces.push_back(Entry{.font = mark.font});
                 }
 
-                const float left = position + mark.x;
-                const float height = baseline + mark.y;
+                const float left = position + mark.offset;
+                const float height = baseline + mark.shift;
 
                 // A run holds one face at one size on one baseline in one color.
                 // Anything else needs a run of its own, because those four are what a
@@ -605,8 +606,8 @@ namespace render {
                 if (!segment.area.empty()) {
                     fill(segment.color);
                     for (std::size_t corner = 0; corner < segment.area.size(); ++corner) {
-                        const float x = position + segment.area[corner].x;
-                        const float y = baseline + segment.area[corner].y;
+                        const float x = position + segment.area[corner].across;
+                        const float y = baseline + segment.area[corner].down;
                         number(content, x);
                         content += ' ';
                         number(content, y);
@@ -622,11 +623,11 @@ namespace render {
                 translucent(segment.color.alpha);
                 if (segment.color != stroking) {
                     stroking = segment.color;
-                    number(content, segment.color.r);
+                    number(content, segment.color.red);
                     content += ' ';
-                    number(content, segment.color.g);
+                    number(content, segment.color.green);
                     content += ' ';
-                    number(content, segment.color.b);
+                    number(content, segment.color.blue);
                     content += " RG\n";
                 }
 
@@ -634,21 +635,21 @@ namespace render {
                 content += " w\n";
                 content += segment.dashed ? "[3 3] 0 d\n" : "[] 0 d\n";
 
-                number(content, position + segment.start.x);
+                number(content, position + segment.start.across);
                 content += ' ';
-                number(content, baseline + segment.start.y);
+                number(content, baseline + segment.start.down);
                 content += " m\n";
-                number(content, position + segment.end.x);
+                number(content, position + segment.end.across);
                 content += ' ';
-                number(content, baseline + segment.end.y);
+                number(content, baseline + segment.end.down);
                 content += " l S\n";
 
                 // Half the stroke's width either side of the line it follows.
                 const float half = segment.width * 0.5f;
-                reach(position + std::min(segment.start.x, segment.end.x) - half,
-                      baseline + std::min(segment.start.y, segment.end.y) - half,
-                      position + std::max(segment.start.x, segment.end.x) + half,
-                      baseline + std::max(segment.start.y, segment.end.y) + half);
+                reach(position + std::min(segment.start.across, segment.end.across) - half,
+                      baseline + std::min(segment.start.down, segment.end.down) - half,
+                      position + std::max(segment.start.across, segment.end.across) + half,
+                      baseline + std::max(segment.start.down, segment.end.down) + half);
                 break;
             }
             case layout::Node::Type::Bitmap: {
@@ -881,11 +882,11 @@ namespace render {
         if (value == filling) return;
         filling = value;
 
-        number(content, value.r);
+        number(content, value.red);
         content += ' ';
-        number(content, value.g);
+        number(content, value.green);
         content += ' ';
-        number(content, value.b);
+        number(content, value.blue);
         content += " rg\n";
     }
 

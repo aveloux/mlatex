@@ -9,10 +9,10 @@ namespace render::graphics {
     /// The three channels and the opacity are kept from 0 to 1, which is the
     /// form a page description wants and #parse converts into on the way in.
     struct Color {
-        float r{0.0f};
-        float g{0.0f};
-        float b{0.0f};
-        float alpha{1.0f};
+        float red{0.0f}; ///< The red channel, 0 to 1.
+        float green{0.0f}; ///< The green channel, 0 to 1.
+        float blue{0.0f}; ///< The blue channel, 0 to 1.
+        float alpha{1.0f}; ///< The opacity, 0 to 1.
 
         /// @brief Parses a color written any of the ways this engine reads.
         ///

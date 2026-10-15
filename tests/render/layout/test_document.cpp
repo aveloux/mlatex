@@ -265,7 +265,7 @@ int main() {
                "the tatweel's own stroke, on the baseline and a hair's breadth thick");
         assert((peace[hold + 2]->type == layout::Node::Type::Glyph && peace[hold + 2]->glyph().point == 0x0633) &&
                "drawn out of the seen, to its right");
-        const layout::Node::Color red{.r = 1.0f};
+        const layout::Node::Color red{.red = 1.0f};
         const memory::Slice<layout::Node *> colored = document.set("سلام", font, true, &red);
         assert((colored[hold + 1]->glue().leader->rule().color == red &&
                 kashida->glue().leader->rule().color != red) &&

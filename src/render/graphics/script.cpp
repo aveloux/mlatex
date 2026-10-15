@@ -261,10 +261,15 @@ namespace render::graphics {
             double size{10.0};
             std::string path{};
             bool placed{false};
-            double x{0.0};
-            double y{0.0};
-            double startx{0.0};
-            double starty{0.0};
+
+            // A point in the page's points.
+            struct Position {
+                double across{0.0}; // to the right
+                double up{0.0}; // up the page
+            };
+
+            Position current{}; // the current point
+            Position start{}; // where the current subpath began, for closepath
         };
         State state;
         std::vector<State> saved;
@@ -329,8 +334,8 @@ namespace render::graphics {
             put(state.path, py);
             state.path += "m\n";
             state.placed = true;
-            state.x = state.startx = px;
-            state.y = state.starty = py;
+            state.current.across = state.start.across = px;
+            state.current.up = state.start.up = py;
         };
         const auto line = [&](const double x, const double y) {
             const auto [px, py] = device(x, y);
@@ -341,8 +346,8 @@ namespace render::graphics {
             put(state.path, px);
             put(state.path, py);
             state.path += "l\n";
-            state.x = px;
-            state.y = py;
+            state.current.across = px;
+            state.current.up = py;
         };
         const auto curve = [&](const std::array<double, 6> &points) {
             for (std::size_t index = 0; index < 6; index += 2) {
@@ -350,8 +355,8 @@ namespace render::graphics {
                 put(state.path, px);
                 put(state.path, py);
                 if (index == 4) {
-                    state.x = px;
-                    state.y = py;
+                    state.current.across = px;
+                    state.current.up = py;
                 }
             }
             state.path += "c\n";
@@ -360,7 +365,8 @@ namespace render::graphics {
         const auto current = [&] {
             const std::array<double, 6> back = invert(state.matrix);
             return std::pair{
-                back[0] * state.x + back[2] * state.y + back[4], back[1] * state.x + back[3] * state.y + back[5]
+                back[0] * state.current.across + back[2] * state.current.up + back[4],
+                back[1] * state.current.across + back[3] * state.current.up + back[5]
             };
         };
         // An arc round a centre, against the clock or with it, in curves of
@@ -459,7 +465,8 @@ namespace render::graphics {
             out += "rg\nBT /F" + std::to_string(found - fonts.begin()) + " 1 Tf ";
             const std::array<double, 6> &m = state.matrix;
             for (const double value: {
-                     m[0] * state.size, m[1] * state.size, m[2] * state.size, m[3] * state.size, state.x, state.y
+                     m[0] * state.size, m[1] * state.size, m[2] * state.size, m[3] * state.size,
+                     state.current.across, state.current.up
                  }) {
                 put(out, value);
             }
@@ -477,8 +484,8 @@ namespace render::graphics {
             }
             out += ") Tj ET\n";
             const auto [dx, dy] = distance(breadth(state.face, letters) / 1000.0 * state.size, 0.0);
-            state.x += dx;
-            state.y += dy;
+            state.current.across += dx;
+            state.current.up += dy;
         };
 
         // --- The program ---------------------------------------------------------------------
@@ -1172,8 +1179,8 @@ namespace render::graphics {
             } else if (name == "closepath") {
                 if (state.placed) {
                     state.path += "h\n";
-                    state.x = state.startx;
-                    state.y = state.starty;
+                    state.current.across = state.start.across;
+                    state.current.up = state.start.up;
                 }
             } else if (name == "arc" || name == "arcn") {
                 const double to = number();

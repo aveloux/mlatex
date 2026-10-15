@@ -24,6 +24,7 @@
 #include <cmath>
 #include <array>
 #include <format>
+#include <numbers>
 #include <optional>
 #include <span>
 #include <string>
@@ -200,7 +201,7 @@ namespace render::primitives {
             // the spec is read as a name or a mixture either way.
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             const graphics::Color color = Colors::resolve(syntax::Argument::text(mouth), context.variables);
-            return layout::Node::Color{color.r, color.g, color.b, color.alpha};
+            return layout::Node::Color{color.red, color.green, color.blue, color.alpha};
         };
 
         // A column of paragraphs, set from what was parsed the way a
@@ -703,8 +704,8 @@ namespace render::primitives {
             const auto option = [&settings, setting](const std::string_view key) { return setting(settings, key); };
             const auto colored = [&context](const std::string &written, const layout::Node::Color fallback) {
                 if (written.empty()) return fallback;
-                const graphics::Color color = Colors::resolve(written, context.variables);
-                return layout::Node::Color{color.r, color.g, color.b, color.alpha};
+                const auto [red, green, blue, alpha] = Colors::resolve(written, context.variables);
+                return layout::Node::Color{.red = red, .green = green, .blue = blue, .alpha = alpha};
             };
 
             const bool box = kind == "tcolorbox";
@@ -1097,20 +1098,20 @@ namespace render::primitives {
         // size or mirrored, in a box as large as what that makes. The map
         // turns about the row's reference point, and the box's left edge is
         // the leftmost ink of the result, on the same baseline.
-        const auto transformed = [](memory::Arena &arena, layout::Node *inner, const float a, const float b,
-                                    const float c, const float d) {
+        const auto transformed = [](memory::Arena &arena, layout::Node *inner, const layout::Node::Point horizontal,
+                                    const layout::Node::Point vertical) {
             const layout::Node::Box &shape = inner->box();
             float left = 0.0f;
             float right = 0.0f;
             float top = 0.0f;
             float bottom = 0.0f;
             bool first = true;
-            for (const auto &[x, y]: {
+            for (const auto &[side, edge]: {
                      std::pair{0.0f, -shape.height}, std::pair{shape.width, -shape.height},
                      std::pair{0.0f, shape.depth}, std::pair{shape.width, shape.depth}
                  }) {
-                const float across = a * x + c * y;
-                const float down = b * x + d * y;
+                const float across = horizontal.across * side + vertical.across * edge;
+                const float down = horizontal.down * side + vertical.down * edge;
                 left = first ? across : std::min(left, across);
                 right = first ? across : std::max(right, across);
                 top = first ? down : std::min(top, down);
@@ -1118,7 +1119,7 @@ namespace render::primitives {
                 first = false;
             }
             auto *map = arena.compose<layout::Node::Transform>();
-            *map = {.a = a, .b = b, .c = c, .d = d, .x = -left};
+            *map = {.horizontal = horizontal, .vertical = vertical, .offset = -left};
 
             auto *box = arena.compose<layout::Node>(layout::Node::Type::Box);
             layout::Node::Box outer = shape;
@@ -1146,10 +1147,10 @@ namespace render::primitives {
             float degrees = 0.0f;
             const std::string written = syntax::Argument::expanded(mouth);
             patch::decimal(written.data(), written.data() + written.size(), degrees);
-            const float angle = degrees * 3.14159265358979f / 180.0f;
+            const float angle = degrees * std::numbers::pi_v<float> / 180.0f;
             layout::Node *inner = row(arena, contents(parser, "\\rotatebox"));
-            return directive(arena, transformed(arena, inner, std::cos(angle), -std::sin(angle), std::sin(angle),
-                                                std::cos(angle)), origin);
+            return directive(arena, transformed(arena, inner, {.across = std::cos(angle), .down = -std::sin(angle)},
+                                                {.across = std::sin(angle), .down = std::cos(angle)}), origin);
         });
         parser.bind("\\scalebox", [contents, row, transformed](syntax::Parser &parser) -> syntax::Node * {
             syntax::Mouth &mouth = parser.mouth;
@@ -1165,13 +1166,13 @@ namespace render::primitives {
             }
             if (!vertical.empty()) patch::decimal(vertical.data(), vertical.data() + vertical.size(), down);
             layout::Node *inner = row(arena, contents(parser, "\\scalebox"));
-            return directive(arena, transformed(arena, inner, across, 0.0f, 0.0f, down), origin);
+            return directive(arena, transformed(arena, inner, {.across = across}, {.down = down}), origin);
         });
         parser.bind("\\reflectbox", [contents, row, transformed](syntax::Parser &parser) -> syntax::Node * {
             memory::Arena &arena = parser.arena;
             const memory::Location origin = parser.mouth.lookahead().location;
             layout::Node *inner = row(arena, contents(parser, "\\reflectbox"));
-            return directive(arena, transformed(arena, inner, -1.0f, 0.0f, 0.0f, 1.0f), origin);
+            return directive(arena, transformed(arena, inner, {.across = -1.0f}, {.down = 1.0f}), origin);
         });
         // \resizebox{width}{height}: stretched to both, or to one with the
         // other kept in proportion when it is written `!`; the starred form
@@ -1193,7 +1194,7 @@ namespace render::primitives {
             float across = wanted[0] && shape.width > 0.0f ? *wanted[0] / shape.width : 1.0f;
             float down = wanted[1] && tall > 0.0f ? *wanted[1] / tall : across;
             if (!wanted[0]) across = down;
-            return directive(arena, transformed(arena, inner, across, 0.0f, 0.0f, down), origin);
+            return directive(arena, transformed(arena, inner, {.across = across}, {.down = down}), origin);
         });
 
         // \settowidth, \settoheight and \settodepth: a length set to what a

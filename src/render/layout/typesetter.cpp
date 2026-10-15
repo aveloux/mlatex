@@ -342,7 +342,7 @@ namespace render::layout {
         switch (node->type) {
             case Node::Type::Glyph: {
                 const Node::Glyph &mark = node->glyph();
-                return mark.x + (mark.font ? mark.font->bounds(mark.code).x : 0.0f);
+                return mark.offset + (mark.font ? mark.font->bounds(mark.code).bearing : 0.0f);
             }
             case Node::Type::Box: {
                 const Node::Box &box = node->box();
@@ -415,7 +415,7 @@ namespace render::layout {
         // The ink's own middle, above the baseline, and how far the glyph has
         // to move for that middle to land on the axis. Down the page is
         // positive, so a glyph whose middle is below the axis moves up.
-        const float middle = ink.y - ink.height * 0.5f;
+        const float middle = ink.top - ink.height * 0.5f;
         const float span = std::max(ink.height, advance);
 
         auto *drawn = arena.compose<Node>(Node::Type::Glyph);
@@ -423,7 +423,7 @@ namespace render::layout {
             .width = font.advance(glyph),
             .height = scope.axis + span * 0.5f,
             .depth = std::max(span * 0.5f - scope.axis, 0.0f),
-            .y = middle - scope.axis,
+            .shift = middle - scope.axis,
             .code = glyph,
             .point = codepoint,
             .font = &font
@@ -462,7 +462,7 @@ namespace render::layout {
                 .width = font.advance(glyph),
                 .height = lift + ink.height,
                 .depth = 0.0f,
-                .y = ink.y - ink.height - lift,
+                .shift = ink.top - ink.height - lift,
                 .code = glyph,
                 // Only the first says what the whole is, so the mark reads
                 // back as one character however many pieces drew it.
@@ -728,8 +728,8 @@ namespace render::layout {
                         auto *drawn = arena.compose<Node>(Node::Type::Glyph);
                         drawn->glyph({
                             .width = font.advance(glyph),
-                            .height = std::max(ink.y, 0.0f),
-                            .depth = std::max(ink.height - ink.y, 0.0f),
+                            .height = std::max(ink.top, 0.0f),
+                            .depth = std::max(ink.height - ink.top, 0.0f),
                             .code = glyph,
                             .point = codepoint,
                             .font = &font
@@ -1404,7 +1404,7 @@ namespace render::layout {
                     parts[filled++] = sign;
 
                     const typography::Font::Box ink = scope.font->bounds(shape.list[0]->glyph().code);
-                    side = shape.width - (ink.x + ink.width);
+                    side = shape.width - (ink.bearing + ink.width);
                 }
 
                 if (body) {
@@ -1596,8 +1596,8 @@ namespace render::layout {
                             const float t = static_cast<float>(step) / 8.0f;
                             const float u = 1.0f - t;
                             line.push_back({
-                                u * u * from.x + 2.0f * u * t * control.x + t * t * to.x,
-                                u * u * from.y + 2.0f * u * t * control.y + t * t * to.y
+                                u * u * from.across + 2.0f * u * t * control.across + t * t * to.across,
+                                u * u * from.down + 2.0f * u * t * control.down + t * t * to.down
                             });
                         }
                     };
@@ -1628,13 +1628,13 @@ namespace render::layout {
                         area = arena.allocate<Node::Point>(line.size() * 2);
                         for (std::size_t index = 0; index < line.size(); ++index) {
                             area[index] = line[index];
-                            area[area.size() - 1 - index] = {line[index].x, line[index].y + stroke};
+                            area[area.size() - 1 - index] = {line[index].across, line[index].down + stroke};
                         }
                     }
                     // Under the body the shape is turned over, its tip down.
                     const float extent = shape == "bracket" ? height : height + stroke;
                     if (!over) {
-                        for (Node::Point &corner: area) corner.y = extent - corner.y;
+                        for (Node::Point &corner: area) corner.down = extent - corner.down;
                     }
 
                     auto *outline = arena.compose<Node>();
@@ -1714,7 +1714,7 @@ namespace render::layout {
                 // characters, which advance nothing and draw to the left of
                 // where they stand, onto the letter before them.
                 const typography::Font::Box ink = font.bounds(glyph);
-                const float centre = ink.x + ink.width * 0.5f;
+                const float centre = ink.bearing + ink.width * 0.5f;
                 auto *lead = arena.compose<Node>(Node::Type::Kern);
                 lead->kern({.width = -body->box().width * 0.5f - centre});
 

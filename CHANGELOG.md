@@ -1082,6 +1082,18 @@ font folders are listed only for a script the engine carries no face for.
   client `\httpget`, `\httppost` and `\includegraphics` share, and the C
   library beside it. A module named for a layer of the internet read as
   though the engine had one of its own; `protocols` is what it actually is.
+- **No field is a single letter.** A colour's channels are `red`, `green` and
+  `blue` (were `r`, `g`, `b`), in the graphics colour and the layout's alike;
+  a canvas point is `across` and `up`, a point in space `across`, `along` and
+  `up`, and a place on the page `across` and `down` (were `x`, `y`, `z`). A
+  glyph's displacement from the pen is its `offset` and `shift`, as a box's
+  is, a glyph's ink starts at its `bearing` and `top`, and a tree node stands
+  at its `center`. A transform is where a unit step right and a unit step
+  down land, `horizontal` and `vertical`, and its `offset` (were `a`, `b`,
+  `c`, `d`, `x`), as a projection is where its three axes land (`across`,
+  `along`, `up`); the PostScript reader keeps its `current` point and the
+  `start` of the subpath as positions of their own. A curve's points are
+  weighed once per step, `first` to `fourth`, rather than in one long sum.
 
 ### Removed
 

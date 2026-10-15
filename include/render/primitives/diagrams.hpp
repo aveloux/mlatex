@@ -115,7 +115,7 @@ namespace render::primitives {
             std::string label{}; ///< Its text.
             std::vector<Branch> children{}; ///< Left to right.
             float width{0.0f}; ///< How wide its subtree stands, in points.
-            float x{0.0f}; ///< Its centre across, in points.
+            float center{0.0f}; ///< Its centre across, in points.
         };
 
         /// @brief Reads one bracketed node of a tree and everything under it:

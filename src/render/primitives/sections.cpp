@@ -107,8 +107,10 @@ namespace render::primitives {
             // and its number once shaped.
             const layout::Node::Color *tint = context.selection.color();
             if (look && !look->color.empty()) {
-                const graphics::Color color = Colors::resolve(look->color, context.variables);
-                tint = arena.compose<layout::Node::Color>(layout::Node::Color{color.r, color.g, color.b, color.alpha});
+                const auto [red, green, blue, alpha] = Colors::resolve(look->color, context.variables);
+                tint = arena.compose<layout::Node::Color>(layout::Node::Color{
+                    .red = red, .green = green, .blue = blue, .alpha = alpha
+                });
             }
             const typography::Font *restore = context.selection.text();
             const layout::Node::Color *painted = context.selection.color();

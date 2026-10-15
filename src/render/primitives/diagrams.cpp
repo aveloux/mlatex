@@ -223,11 +223,11 @@ namespace render::primitives {
             names.push_back(plant(child, place, depth + 1, count, out));
             place += child.width + 10.0f;
         }
-        tree.x = tree.children.empty()
+        tree.center = tree.children.empty()
                      ? left + tree.width * 0.5f
-                     : (tree.children.front().x + tree.children.back().x) * 0.5f;
+                     : (tree.children.front().center + tree.children.back().center) * 0.5f;
         const std::string name = std::format("@t{}", ++count);
-        out += std::format("\\node ({}) at ({:.2f}pt,{:.2f}pt) {{{}}};", name, tree.x,
+        out += std::format("\\node ({}) at ({:.2f}pt,{:.2f}pt) {{{}}};", name, tree.center,
                            -22.0f * static_cast<float>(depth),
                            tree.label);
         for (const std::string &child: names) out += std::format("\\draw ({}) -- ({});", name, child);

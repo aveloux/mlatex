@@ -38,8 +38,8 @@ namespace render::typography {
 
         /// @brief One glyph's ink extent, in points, relative to its origin.
         struct Box {
-            float x{0.0f}; ///< Left bearing.
-            float y{0.0f}; ///< Top of the ink, above the baseline.
+            float bearing{0.0f}; ///< Left bearing.
+            float top{0.0f}; ///< Top of the ink, above the baseline.
             float width{0.0f}; ///< Ink width.
             float height{0.0f}; ///< Ink height.
         };

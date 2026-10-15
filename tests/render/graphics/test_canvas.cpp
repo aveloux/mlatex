@@ -37,7 +37,7 @@ int main() {
 
         bool styled = false;
         for (const layout::Node *child: box->box().list) {
-            styled = styled || (child->path().dashed && child->path().width == 2.0f && child->path().color.r == 1.0f);
+            styled = styled || (child->path().dashed && child->path().width == 2.0f && child->path().color.red == 1.0f);
         }
         assert((styled) && "each stroke keeps its color, width and dashes");
     }

@@ -34,7 +34,8 @@ namespace render::primitives {
     }
 
     std::string Colors::write(const graphics::Color &color) {
-        return std::format("rgba({},{},{},{})", color.r * 255.0f, color.g * 255.0f, color.b * 255.0f, color.alpha);
+        return std::format("rgba({},{},{},{})", color.red * 255.0f, color.green * 255.0f, color.blue * 255.0f,
+                           color.alpha);
     }
 
     graphics::Color Colors::resolve(const std::string_view text, const syntax::primitives::Variables &variables) {
@@ -67,8 +68,8 @@ namespace render::primitives {
                                               ? named(parts[index + 1])
                                               : graphics::Color{1.0f, 1.0f, 1.0f, 1.0f};
             color = {
-                color.r * part + other.r * (1.0f - part), color.g * part + other.g * (1.0f - part),
-                color.b * part + other.b * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)
+                color.red * part + other.red * (1.0f - part), color.green * part + other.green * (1.0f - part),
+                color.blue * part + other.blue * (1.0f - part), color.alpha * part + other.alpha * (1.0f - part)
             };
         }
         return color;
@@ -174,7 +175,7 @@ namespace render::primitives {
                                               ? graphics::Color::parse(*converted)
                                               : resolve(written, context.variables);
             auto *kept = context.arena.compose<layout::Node::Color>();
-            *kept = {color.r, color.g, color.b, color.alpha};
+            *kept = {color.red, color.green, color.blue, color.alpha};
             return kept;
         };
 

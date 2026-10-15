@@ -60,12 +60,12 @@ struct Drawing {
 /// @brief The glyph's ink, where the page draws it.
 static Ink ink(const layout::Node::Glyph &mark, const float x, const float baseline) {
     const typography::Font::Box box = mark.font->bounds(mark.code);
-    const float origin = baseline + mark.y;
+    const float origin = baseline + mark.shift;
     return Ink{
-        .left = x + mark.x + box.x,
-        .right = x + mark.x + box.x + box.width,
-        .top = origin - box.y,
-        .bottom = origin - box.y + box.height,
+        .left = x + mark.offset + box.bearing,
+        .right = x + mark.offset + box.bearing + box.width,
+        .top = origin - box.top,
+        .bottom = origin - box.top + box.height,
     };
 }
 

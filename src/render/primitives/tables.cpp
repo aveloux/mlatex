@@ -630,7 +630,7 @@ namespace render::primitives {
                 while (mouth.lookahead().is('[')) {
                     static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
                 }
-                return {color.r, color.g, color.b, color.alpha};
+                return {color.red, color.green, color.blue, color.alpha};
             };
 
             // A cell with nothing in it but the blanks around the source's `&`.

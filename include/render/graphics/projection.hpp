@@ -39,16 +39,8 @@ namespace render::graphics {
         [[nodiscard]] Point2 project(const Point3 &point) const noexcept;
 
     private:
-        /// @brief A view stated by where each axis's unit step lands.
-        /// @param across Where a unit step on x lands.
-        /// @param along  Where a unit step on y lands.
-        /// @param up     Where a unit step on z lands.
-        Projection(const Point2 across, const Point2 along, const Point2 up) noexcept
-            : x(across), y(along), z(up) {
-        }
-
-        Point2 x{1.0f, 0.0f}; ///< Where a unit step on x lands.
-        Point2 y{0.0f, 1.0f}; ///< Where a unit step on y lands.
-        Point2 z{0.0f, 0.0f}; ///< Where a unit step on z lands.
+        Point2 across{.across = 1.0f, .up = 0.0f}; ///< Where a unit step on x lands.
+        Point2 along{.across = 0.0f, .up = 1.0f}; ///< Where a unit step on y lands.
+        Point2 up{.across = 0.0f, .up = 0.0f}; ///< Where a unit step on z lands.
     };
 }

@@ -58,9 +58,10 @@ namespace render::layout {
             Shrinking // Glue compressed below baseline width
         };
 
+        /// @brief A place on the page, measured from its top left corner.
         struct Point {
-            float x{0.0f};
-            float y{0.0f};
+            float across{0.0f}; ///< To the right.
+            float down{0.0f}; ///< Down the page.
         };
 
         struct Size {
@@ -74,10 +75,10 @@ namespace render::layout {
         ///        rule or a glyph draws in when nothing asked for another; a
         ///        node's own color is never optional, just usually the default.
         struct Color {
-            float r{0.0f};
-            float g{0.0f};
-            float b{0.0f};
-            float alpha{1.0f};
+            float red{0.0f}; ///< The red channel, 0 to 1.
+            float green{0.0f}; ///< The green channel, 0 to 1.
+            float blue{0.0f}; ///< The blue channel, 0 to 1.
+            float alpha{1.0f}; ///< The opacity, 0 to 1.
 
             [[nodiscard]] friend bool operator==(const Color &, const Color &) noexcept = default;
         };
@@ -85,17 +86,17 @@ namespace render::layout {
         /// @brief A linear map a box's contents are drawn through: graphicx's
         ///        \\rotatebox, \\scalebox, \\resizebox and \\reflectbox.
         ///
-        /// Down the page is positive, as everywhere in the layout, so a turn
-        /// anticlockwise on the page by an angle t is `a = cos t`,
-        /// `b = -sin t`, `c = sin t`, `d = cos t`. The contents are drawn with
-        /// their reference point moved #x to the right of the box's, which is
-        /// what brings the left edge of what the map makes to the box's own.
+        /// The map is stated by where a unit step each way lands, as a
+        /// Projection is. Down the page is positive, as everywhere in the
+        /// layout, so a turn anticlockwise on the page by an angle t sends
+        /// #horizontal to `(cos t, -sin t)` and #vertical to `(sin t, cos t)`.
+        /// The contents are drawn with their reference point moved #offset
+        /// to the right of the box's, which is what brings the left edge of
+        /// what the map makes to the box's own.
         struct Transform {
-            float a{1.0f}; ///< Across, from across.
-            float b{0.0f}; ///< Down, from across.
-            float c{0.0f}; ///< Across, from down.
-            float d{1.0f}; ///< Down, from down.
-            float x{0.0f}; ///< How far right of the box's reference point the contents' own sits.
+            Point horizontal{.across = 1.0f, .down = 0.0f}; ///< Where a unit step right lands.
+            Point vertical{.across = 0.0f, .down = 1.0f}; ///< Where a unit step down lands.
+            float offset{0.0f}; ///< How far right of the box's reference point the contents' own sits.
         };
 
         /// @brief A container: a run of nodes, measured as one.
@@ -172,8 +173,8 @@ namespace render::layout {
             float width{0.0f}; ///< Advance width.
             float height{0.0f}; ///< Extent above the baseline.
             float depth{0.0f}; ///< Extent below it.
-            float x{0.0f}; ///< Offset from the pen, across.
-            float y{0.0f}; ///< Offset from the pen, down.
+            float offset{0.0f}; ///< Displacement from the pen, to the right.
+            float shift{0.0f}; ///< Displacement from the pen, down the page.
             std::uint32_t code{0}; ///< Glyph index within #font.
             std::uint32_t point{0}; ///< The character it stands for.
             const typography::Font *font{nullptr}; ///< Which font draws it.

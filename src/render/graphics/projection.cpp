@@ -20,13 +20,13 @@ namespace render::graphics {
         const float azimuth
     ) noexcept {
         constexpr float turn = std::numbers::pi_v<float> / 180.0f;
-        const float a = azimuth * turn;
-        const float e = elevation * turn;
+        const float turned = azimuth * turn;
+        const float tilted = elevation * turn;
 
-        const float x = point.x * std::cos(a) - point.y * std::sin(a);
-        const float y = point.x * std::sin(a) + point.y * std::cos(a);
+        const float across = point.across * std::cos(turned) - point.along * std::sin(turned);
+        const float along = point.across * std::sin(turned) + point.along * std::cos(turned);
 
-        return {x, y * std::cos(e) - point.z * std::sin(e)};
+        return {.across = across, .up = along * std::cos(tilted) - point.up * std::sin(tilted)};
     }
 
     Projection Projection::planar() noexcept {
@@ -42,16 +42,17 @@ namespace render::graphics {
     }
 
     Projection Projection::orthographic(const float elevation, const float azimuth) noexcept {
-        return Projection(
-            rotate({1.0f, 0.0f, 0.0f}, elevation, azimuth),
-            rotate({0.0f, 1.0f, 0.0f}, elevation, azimuth),
-            rotate({0.0f, 0.0f, 1.0f}, elevation, azimuth));
+        Projection view;
+        view.across = rotate({.across = 1.0f}, elevation, azimuth);
+        view.along = rotate({.along = 1.0f}, elevation, azimuth);
+        view.up = rotate({.up = 1.0f}, elevation, azimuth);
+        return view;
     }
 
     Point2 Projection::project(const Point3 &point) const noexcept {
         return {
-            point.x * x.x + point.y * y.x + point.z * z.x,
-            point.x * x.y + point.y * y.y + point.z * z.y,
+            .across = point.across * across.across + point.along * along.across + point.up * up.across,
+            .up = point.across * across.up + point.along * along.up + point.up * up.up,
         };
     }
 }

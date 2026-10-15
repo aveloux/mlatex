@@ -26,8 +26,12 @@ namespace render::graphics {
         const float tall = shape.height + shape.depth;
 
         // The corner that lands on the point, and the gap kept from it.
-        const float left = across < 0 ? at.x + gap : across > 0 ? at.x - gap - width : at.x - width * 0.5f;
-        const float bottom = up < 0 ? at.y + gap : up > 0 ? at.y - gap - tall : at.y - tall * 0.5f;
+        const float left = across < 0
+                               ? at.across + gap
+                               : across > 0
+                                     ? at.across - gap - width
+                                     : at.across - width * 0.5f;
+        const float bottom = up < 0 ? at.up + gap : up > 0 ? at.up - gap - tall : at.up - tall * 0.5f;
         labels.push_back(Label{.corner = {left, bottom}, .box = box});
     }
 
@@ -40,9 +44,9 @@ namespace render::graphics {
         // The area the box takes, in the canvas's own coordinates, y up: the
         // declared one, or none at all when the drawing is to be its own size.
         float left = 0.0f;
-        float right = room == Room::Drawn ? 0.0f : size.x;
+        float right = room == Room::Drawn ? 0.0f : size.across;
         float bottom = 0.0f;
-        float top = room == Room::Drawn ? 0.0f : size.y;
+        float top = room == Room::Drawn ? 0.0f : size.up;
 
         // Everything drawn, taken in unless the canvas is pinned where it was
         // declared: a projected drawing lands wherever its projection puts it,
@@ -52,15 +56,15 @@ namespace render::graphics {
             bool first = room == Room::Drawn;
             const auto take = [&](const Point2 point) {
                 if (first) {
-                    left = right = point.x;
-                    bottom = top = point.y;
+                    left = right = point.across;
+                    bottom = top = point.up;
                     first = false;
                     return;
                 }
-                left = std::min(left, point.x);
-                right = std::max(right, point.x);
-                bottom = std::min(bottom, point.y);
-                top = std::max(top, point.y);
+                left = std::min(left, point.across);
+                right = std::max(right, point.across);
+                bottom = std::min(bottom, point.up);
+                top = std::max(top, point.up);
             };
             for (const Segment &segment: segments) {
                 take(segment.from);
@@ -72,7 +76,7 @@ namespace render::graphics {
             for (const Label &label: labels) {
                 const layout::Node::Box &shape = label.box->box();
                 take(label.corner);
-                take({label.corner.x + shape.width, label.corner.y + shape.height + shape.depth});
+                take({label.corner.across + shape.width, label.corner.up + shape.height + shape.depth});
             }
         }
 
@@ -83,11 +87,11 @@ namespace render::graphics {
         for (const Region &region: regions) {
             const memory::Slice<layout::Node::Point> area = arena.allocate<layout::Node::Point>(region.corners.size());
             for (std::size_t index = 0; index < region.corners.size(); ++index) {
-                area[index] = {region.corners[index].x - left, top - region.corners[index].y};
+                area[index] = {region.corners[index].across - left, top - region.corners[index].up};
             }
             auto *shape = arena.compose<layout::Node>();
             shape->path({
-                .color = {region.color.r, region.color.g, region.color.b, region.color.alpha},
+                .color = {region.color.red, region.color.green, region.color.blue, region.color.alpha},
                 .area = area,
             });
             strokes[filled++] = shape;
@@ -101,11 +105,11 @@ namespace render::graphics {
             // does, so a point's offset from that edge is the distance down
             // from the area's top, and across from its left.
             stroke->path({
-                .start = {segment.from.x - left, top - segment.from.y},
-                .end = {segment.to.x - left, top - segment.to.y},
+                .start = {segment.from.across - left, top - segment.from.up},
+                .end = {segment.to.across - left, top - segment.to.up},
                 .width = segment.width,
                 .dashed = segment.dashed,
-                .color = {segment.color.r, segment.color.g, segment.color.b, segment.color.alpha},
+                .color = {segment.color.red, segment.color.green, segment.color.blue, segment.color.alpha},
             });
             strokes[filled + index] = stroke;
         }
@@ -116,8 +120,8 @@ namespace render::graphics {
         for (std::size_t index = 0; index < labels.size(); ++index) {
             const Label &label = labels[index];
             layout::Node::Box shape = label.box->box();
-            shape.offset = label.corner.x - left;
-            shape.shift = top - (label.corner.y + shape.depth);
+            shape.offset = label.corner.across - left;
+            shape.shift = top - (label.corner.up + shape.depth);
             label.box->box(shape);
             strokes[filled + segments.size() + index] = label.box;
         }

@@ -109,8 +109,8 @@ namespace render::typography {
         const hb_glyph_extents_t extents = parent->extents(glyph);
         const float scale = points / parent->units();
         return Box{
-            .x = static_cast<float>(extents.x_bearing) * scale,
-            .y = static_cast<float>(extents.y_bearing) * scale,
+            .bearing = static_cast<float>(extents.x_bearing) * scale,
+            .top = static_cast<float>(extents.y_bearing) * scale,
             .width = static_cast<float>(extents.width) * scale,
             // HarfBuzz reports height downwards from the bearing, so it is
             // negative for ink that sits above the baseline. Callers want a

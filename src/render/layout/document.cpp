@@ -420,7 +420,7 @@ namespace render::layout {
                 if (tatweel != 0) {
                     const typography::Font::Box ink = face->bounds(tatweel);
                     auto *stroke = arena.compose<Node>(Node::Type::Rule);
-                    stroke->rule({.height = ink.y, .depth = ink.height - ink.y});
+                    stroke->rule({.height = ink.top, .depth = ink.height - ink.top});
                     auto *hold = arena.compose<Node>(Node::Type::Penalty);
                     hold->penalty({.value = 10000});
                     auto *kashida = arena.compose<Node>(Node::Type::Glue);
