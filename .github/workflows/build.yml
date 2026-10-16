@@ -1,8 +1,9 @@
 # Builds, tests and packages the engine on every platform and architecture
 # a release ships for, one runner each: CMake packages the architecture it
 # builds, so another architecture is another build -- and the WebAssembly
-# module, which runs wherever a browser or Node does, once. A pushed tag `v*`
-# also attaches every package to a GitHub release.
+# module, which runs wherever a browser or Node does, once. A release is
+# publish.yml's: it runs this workflow for a pushed tag `v*` and publishes
+# what it packages.
 #
 # Every runner gets a C++26 compiler with #embed: Visual Studio's clang-cl on
 # Windows, Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS.
@@ -14,10 +15,10 @@ name: Build
 on:
   push:
     branches: [ main ]
-    tags: [ "v*" ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -30,12 +31,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Windows x64, runner: windows-2025-vs2026, triplet: x64-windows, architecture: x64 }
-          - { name: Windows ARM64, runner: windows-11-vs2026-arm, triplet: arm64-windows, architecture: arm64 }
-          - { name: Linux x64, runner: ubuntu-24.04, triplet: x64-linux, architecture: x64 }
-          - { name: Linux ARM64, runner: ubuntu-24.04-arm, triplet: arm64-linux, architecture: arm64 }
-          - { name: macOS ARM64, runner: macos-15, triplet: arm64-osx, architecture: arm64 }
-          - { name: macOS x64, runner: macos-15-intel, triplet: x64-osx, architecture: x64 }
+          # `wheel` is the Python wheel's platform tag: Ubuntu 24.04's glibc
+          # is 2.39, and macOS is built for 14.0.
+          - { name: Windows x64, runner: windows-2025-vs2026, triplet: x64-windows, architecture: x64, wheel: win_amd64 }
+          - { name: Windows ARM64, runner: windows-11-vs2026-arm, triplet: arm64-windows, architecture: arm64, wheel: win_arm64 }
+          - { name: Linux x64, runner: ubuntu-24.04, triplet: x64-linux, architecture: x64, wheel: manylinux_2_39_x86_64 }
+          - { name: Linux ARM64, runner: ubuntu-24.04-arm, triplet: arm64-linux, architecture: arm64, wheel: manylinux_2_39_aarch64 }
+          - { name: macOS ARM64, runner: macos-15, triplet: arm64-osx, architecture: arm64, wheel: macosx_14_0_arm64 }
+          - { name: macOS x64, runner: macos-15-intel, triplet: x64-osx, architecture: x64, wheel: macosx_14_0_x86_64 }
     env:
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg
       VCPKG_DOWNLOADS: ${{ github.workspace }}/.vcpkg-downloads
@@ -240,6 +243,33 @@ jobs:
       - name: Package
         run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # The C library as the Python package mlatex: the installed copy's
+      # latex_ffi -- with vcpkg's DLLs beside it on Windows -- and its assets,
+      # in the package's folder, where the library finds them. ctypes loads
+      # it, so one wheel serves every Python on the system. Its version is the
+      # tag's on a release, and the project's otherwise.
+      - name: Make the Python wheel
+        shell: bash
+        run: |
+          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; fi
+          cmake --install "$TREE" --prefix stage
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp stage/bin/*.dll bindings/python/mlatex
+          else
+            cp stage/lib/liblatex_ffi.* bindings/python/mlatex
+          fi
+          cp -R stage/assets bindings/python/mlatex
+          cp LICENSE bindings/python
+          python -m pip install build wheel
+          MLATEX_VERSION="$version" python -m build --wheel --outdir wheel bindings/python
+          python -m wheel tags --platform-tag ${{ matrix.wheel }} --remove wheel/*.whl
+          mv wheel/*.whl bin/
+
       - name: Keep the packages
         uses: actions/upload-artifact@v7
         with:
@@ -252,6 +282,7 @@ jobs:
             bin/*.deb
             bin/*.rpm
             bin/*.tar.gz
+            bin/*.whl
             bin/*.pdf
           if-no-files-found: error
 
@@ -345,27 +376,38 @@ jobs:
           mkdir -p bin
           (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
 
+      # The same three files as the npm package mlatex, with its Node entry
+      # and types, versioned like the wheels. It is installed somewhere else
+      # and run from there, since in Node the module finds latex.data from
+      # where the program runs unless the package's entry says otherwise.
+      - name: Pack the npm package
+        shell: bash
+        run: |
+          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; fi
+          cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE bindings/javascript
+          (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
+            npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
+          cd "$RUNNER_TEMP"
+          npm init -y > /dev/null
+          npm install "$GITHUB_WORKSPACE"/bin/mlatex-*.tgz
+          node -e '
+            require("mlatex")().then((engine) => {
+              const session = new engine.Session();
+              if (!session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]")) {
+                console.error("the package failed:\n" + session.error());
+                process.exit(1);
+              }
+              console.log("the package: " + session.pdf().length + " bytes");
+              session.delete();
+            });
+          '
+
       - name: Keep the package
         uses: actions/upload-artifact@v7
         with:
           name: mlatex-wasm
-          path: bin/*.zip
+          path: |
+            bin/*.zip
+            bin/*.tgz
           if-no-files-found: error
-
-  release:
-    name: Release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [ build, wasm ]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          path: bin
-          merge-multiple: true
-
-      - uses: softprops/action-gh-release@v3
-        with:
-          files: bin/*
-          generate_release_notes: true
