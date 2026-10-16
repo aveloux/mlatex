@@ -1,0 +1,86 @@
+# Ships what Build made once it has passed on a pushed tag `v*`: every
+# package to a GitHub release, and the WebAssembly module to npm, its
+# package.json written beside it with the tag's version.
+name: Release
+
+on:
+  workflow_run:
+    workflows: [ Build ]
+    types: [ completed ]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  github:
+    name: GitHub
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: bin
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: bin/*
+          generate_release_notes: true
+
+  npm:
+    name: npm
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: mlatex-wasm
+          path: bin
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          mkdir package && cd package
+          unzip -o ../bin/*.zip
+          cat > package.json <<EOF
+          {
+            "name": "mlatex",
+            "version": "${TAG#v}",
+            "description": "A rewritten typesetting system known as LaTeX, compiled to WebAssembly for the browser, workers and Node.",
+            "license": "AGPL-3.0-only",
+            "repository": { "type": "git", "url": "git+https://github.com/aveloux/mlatex.git" },
+            "homepage": "https://github.com/aveloux/mlatex#readme",
+            "bugs": "https://github.com/aveloux/mlatex/issues",
+            "keywords": ["latex", "tex", "typesetting", "pdf", "wasm", "webassembly"],
+            "main": "latex.js",
+            "files": ["latex.js", "latex.wasm", "latex.data"]
+          }
+          EOF
+          cat package.json
+          npm publish --access public --provenance
