@@ -1,0 +1,29 @@
+{
+  "name": "mlatex",
+  "version": "0.1.0",
+  "description": "Typesets LaTeX into PDF in web pages, workers and Node: mLaTeX compiled to WebAssembly.",
+  "keywords": ["latex", "pdf", "typesetting", "webassembly"],
+  "homepage": "https://github.com/aveloux/mlatex",
+  "bugs": "https://github.com/aveloux/mlatex/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aveloux/mlatex.git",
+    "directory": "bindings/javascript"
+  },
+  "license": "AGPL-3.0-only",
+  "author": "Andres Hernandez",
+  "main": "node.js",
+  "types": "latex.d.ts",
+  "exports": {
+    ".": {
+      "types": "./latex.d.ts",
+      "node": "./node.js",
+      "default": "./latex.js"
+    },
+    "./latex.js": "./latex.js",
+    "./latex.wasm": "./latex.wasm",
+    "./latex.data": "./latex.data",
+    "./package.json": "./package.json"
+  },
+  "files": ["node.js", "latex.js", "latex.wasm", "latex.data", "latex.d.ts"]
+}

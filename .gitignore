@@ -11,3 +11,14 @@ cmake-build-*/
 *.dmg
 *.deb
 *.rpm
+
+# What a release copies into the npm and Python packages before packing them:
+# the built engine, its fonts and the license.
+/bindings/javascript/latex.*
+!/bindings/javascript/latex.d.ts
+/bindings/javascript/LICENSE
+/bindings/python/LICENSE
+/bindings/python/mlatex/*.dll
+/bindings/python/mlatex/*.so
+/bindings/python/mlatex/*.dylib
+/bindings/python/mlatex/assets/

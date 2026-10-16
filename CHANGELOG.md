@@ -864,6 +864,18 @@ page's text goes.
   file's, what a primitive composes, is still a line and a column alone, and
   those are the only lines `--file-line-error` still adds a name to. The
   Session's methods, and the C and WebAssembly ones, are the same.
+- **The WebAssembly module is the npm package `mlatex`.** `bindings/javascript`
+  holds the package: the three files the build leaves, types for the factory
+  and the session in `latex.d.ts`, and `node.js`, Node's entry, which finds
+  `latex.wasm` and `latex.data` beside itself. A page, a worker or a bundler
+  takes `latex.js` itself. The workflow packs it, installs it in a folder of
+  its own and sets a snippet from there.
+- **The C library is the Python package `mlatex`.** `bindings/python` holds
+  it: a wheel per system and architecture carrying `latex_ffi`, vcpkg's DLLs
+  beside it on Windows, and the fonts and hyphenation patterns, laid out the
+  way the library finds them, with `mlatex.library` its path for
+  `ctypes.CDLL`. ctypes loads it, so one wheel serves every Python 3.9 or
+  later on its system.
 
 ### Speed
 
@@ -1003,6 +1015,10 @@ font folders are listed only for a script the engine carries no face for.
   looks for a delay-loaded library beside the program rather than beside the
   library that asked for it. The library's delay-load hook now loads the
   JPEG and WebP libraries from its own folder first.
+- In Node, the WebAssembly module looked for `latex.data` where the program
+  ran rather than beside `latex.js`, so it loaded only from its own folder:
+  Emscripten's file packager asks `locateFile` with no folder at all. The
+  npm package's Node entry answers with its own.
 
 ### Tests
 

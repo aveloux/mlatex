@@ -1,0 +1,37 @@
+# The wheel carries what an installed mLaTeX's library is, laid out the way
+# it finds its fonts: latex_ffi beside an assets folder, both copied in by the
+# release. One wheel per system and architecture, for every Python, since
+# ctypes loads the library and nothing is compiled against Python itself.
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mlatex"
+dynamic = ["version"]
+description = "Typesets LaTeX into PDF from Python: mLaTeX's C library and its fonts, for ctypes."
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "Andres Hernandez" }]
+keywords = ["latex", "pdf", "typesetting"]
+classifiers = [
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
+
+[project.urls]
+Homepage = "https://github.com/aveloux/mlatex"
+Issues = "https://github.com/aveloux/mlatex/issues"
+
+[tool.hatch.version]
+source = "env"
+variable = "MLATEX_VERSION"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mlatex"]
+artifacts = ["mlatex/*.dll", "mlatex/*.so", "mlatex/*.dylib", "mlatex/assets/**"]
