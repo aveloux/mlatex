@@ -1,7 +1,9 @@
-# Ships what Build made once it has passed on a pushed tag `v*`: every
-# package to a GitHub release, then the npm package and the Python wheels,
-# both named mlatex. Build packed and tested them in its own run, versioned as
-# the tag is, so what is published is what passed.
+# Ships what Build made once it has passed on main with a VERSION not yet
+# released: the tag and a GitHub release with every package, then the npm
+# package and the Python wheels, both named mlatex. Build packed and tested
+# them in its own run, versioned as VERSION says, so what is published is
+# what passed, and a new version is VERSION changed on main. A tag pushed by
+# hand releases the same way when it is VERSION's own.
 name: Release
 
 on:
@@ -9,17 +11,67 @@ on:
     workflows: [ Build ]
     types: [ completed ]
 
+# One release at a time: a second run for the same version finds it released.
+concurrency:
+  group: release
+
 permissions:
   contents: read
   actions: read
 
 jobs:
-  github:
-    name: GitHub
+  # The version is VERSION's at the commit Build ran on -- or the tag's, for
+  # a tag pushed before the file existed; main before it releases nothing. A
+  # version already released, a tag that is not VERSION's own, or a tag
+  # already on another commit is left alone.
+  version:
+    name: Version
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
+      (github.event.workflow_run.head_branch == 'main' ||
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.decide.outputs.version }}
+      release: ${{ steps.decide.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -f VERSION ]; then version=$(tr -d '[:space:]' < VERSION); else version="${BRANCH#v}"; fi
+          tag="v$version"
+          release=true
+          if [ ! -f VERSION ] && [ "$BRANCH" = main ]; then
+            echo "::notice::This commit has no VERSION, so nothing is released."
+            release=false
+          elif [ "$BRANCH" != main ] && [ "$BRANCH" != "$tag" ]; then
+            echo "::notice::The tag $BRANCH is not VERSION's $tag, so nothing is released."
+            release=false
+          elif gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::notice::$tag is released already."
+            release=false
+          elif tagged=$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha 2> /dev/null) &&
+              [ "$tagged" != "$COMMIT" ]; then
+            echo "::warning::$tag already names $tagged, not $COMMIT: raise VERSION to release this commit."
+            release=false
+          fi
+          echo "Version $version, released: $release"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+  github:
+    name: GitHub
+    needs: version
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -32,9 +84,11 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
+      # Makes the tag at the commit Build ran on, unless it is there already.
       - uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.workflow_run.head_branch }}
+          tag_name: v${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.event.workflow_run.head_sha }}
           files: bin/*
           generate_release_notes: true
 
@@ -43,7 +97,7 @@ jobs:
   # the repository's NPM_TOKEN secret; provenance ties the package to this run.
   npm:
     name: npm
-    needs: github
+    needs: [ version, github ]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -75,7 +129,7 @@ jobs:
   # without it.
   pypi:
     name: PyPI
-    needs: github
+    needs: [ version, github ]
     runs-on: ubuntu-24.04
     continue-on-error: true
     environment: pypi

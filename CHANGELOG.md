@@ -828,6 +828,17 @@ page's text goes.
   allowed to fail on its own while PyPI's `mlatex` is another project's, as
   a wheel that fails to build is left out: neither holds back the release
   or npm.
+- **The version is one file.** `VERSION` holds it, and everything takes it
+  from there: CMake's `project()`, so `mlatex --version`, the packages'
+  names and the API reference, re-reading it whenever it changes; the npm
+  package and the Python wheels, which the workflow versions from it; and
+  the release itself, which no longer waits for a tag: once Build passes on
+  main with a `VERSION` that has no release yet, `release.yml` makes the tag
+  at that commit and ships it. A tag pushed by hand still releases when it is
+  `VERSION`'s own; one that is not, or a version already released, is left
+  alone, and a version whose tag is already on another commit asks for
+  `VERSION` to be raised. `src/main.cpp` no longer carries a version of its
+  own to fall back on.
 
 ### For programs
 

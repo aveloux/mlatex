@@ -51,7 +51,7 @@ extern char **environ;
 #endif
 
 #if !defined(LATEX_VERSION)
-#define LATEX_VERSION "0.1.0"
+#error "LATEX_VERSION is the VERSION file's, defined by CMakeLists.txt"
 #endif
 
 /// Every option, in the order `--help` lists them. A new one is a row here

@@ -1,9 +1,10 @@
 # Builds, tests and packages the engine on every platform and architecture
 # a release ships for, one runner each: CMake packages the architecture it
 # builds, so another architecture is another build -- and the WebAssembly
-# module, which runs wherever a browser or Node does, once. A release is
-# release.yml's: once this workflow passes on a pushed tag `v*`, it ships
-# what this run packaged.
+# module, which runs wherever a browser or Node does, once. Every package is
+# versioned as the VERSION file says. A release is release.yml's: once this
+# workflow passes on main with a VERSION not yet released, it ships what
+# this run packaged.
 #
 # Every runner gets a C++26 compiler with #embed: Visual Studio's clang-cl on
 # Windows, Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS.
@@ -250,15 +251,14 @@ jobs:
       # The C library as the Python package mlatex: the installed copy's
       # latex_ffi -- with vcpkg's DLLs beside it on Windows -- and its assets,
       # in the package's folder, where the library finds them. ctypes loads
-      # it, so one wheel serves every Python on the system. Its version is the
-      # tag's on a release, and the project's otherwise. A wheel that fails is
-      # left out rather than holding back the release, as PyPI is.
+      # it, so one wheel serves every Python on the system. Its version is
+      # VERSION's, as everything's is. A wheel that fails is left out rather
+      # than holding back the release, as PyPI is.
       - name: Make the Python wheel
         continue-on-error: true
         shell: bash
         run: |
-          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; fi
+          version=$(tr -d '[:space:]' < VERSION)
           cmake --install "$TREE" --prefix stage
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp stage/bin/*.dll bindings/python/mlatex
@@ -374,7 +374,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          version=$(tr -d '[:space:]' < VERSION)
           mkdir -p bin
           (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
 
@@ -385,8 +385,7 @@ jobs:
       - name: Pack the npm package
         shell: bash
         run: |
-          version=$(sed -n 's/^project(latex VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; fi
+          version=$(tr -d '[:space:]' < VERSION)
           cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE bindings/javascript
           (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
