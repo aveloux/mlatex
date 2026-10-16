@@ -7,6 +7,7 @@
 #include "memory/location.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include <vector>
 
@@ -25,7 +26,9 @@ namespace syntax {
         /// @param codes  Category table, consulted per character and live to
         ///               `\\catcode` changes made while lexing.
         /// @param lexicon  Interning table for the tokens produced.
-        Lexer(std::string_view source, Catcodes &codes, Lexicon &lexicon);
+        /// @param file     The number Mouth::files gives the file @p source
+        ///                 is, for every location handed out; zero for none.
+        Lexer(std::string_view source, Catcodes &codes, Lexicon &lexicon, std::uint32_t file = 0);
 
         Token advance();
 

@@ -457,8 +457,16 @@ namespace syntax {
         return result;
     }
 
-    void Mouth::ingest(const std::string_view source, const std::optional<memory::Location> origin) {
-        Lexer lexer(source, this->state.catcodes, this->lexicon);
+    void Mouth::ingest(const std::string_view source, const std::optional<memory::Location> origin,
+                       const std::string_view name) {
+        // A file read before keeps the number it was given then.
+        std::uint32_t file = 0;
+        if (!name.empty() && !origin) {
+            const auto known = std::ranges::find(this->files, name);
+            file = static_cast<std::uint32_t>(known - this->files.begin());
+            if (known == this->files.end()) this->files.emplace_back(name);
+        }
+        Lexer lexer(source, this->state.catcodes, this->lexicon, file);
 
         std::vector<Token> tokens;
         tokens.reserve(source.size()); // worst case is one token per byte

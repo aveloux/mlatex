@@ -122,7 +122,9 @@ namespace latex {
         void withdraw(std::string_view name);
 
         /// @brief Makes a PDF from a document held in memory.
-        /// @param document The document's text.
+        /// @param document The document's text. Its errors name it as the
+        ///                 file handed in with the same text, when one was,
+        ///                 and as `main.tex` when none was.
         /// @return True when the document compiled with nothing left broken.
         ///         A PDF may still have been made when some part of it was not;
         ///         #pdf is empty when none could be made at all.
@@ -152,7 +154,10 @@ namespace latex {
         std::filesystem::path assets{}; ///< The assets directory the session reads.
         Host host{}; ///< Everything the next document will be handed.
         std::string pdf{}; ///< The last PDF made, or nothing when none could be.
-        std::string error{}; ///< What went wrong the last time, one error per line; empty when nothing did.
+        /// What went wrong the last time, one error per line -- as
+        /// `appendix.tex:3:5: error (macro): Undefined control sequence \\foo`,
+        /// the file it is in first -- or a warning; empty when nothing did.
+        std::string error{};
 
         /// Each page of the last PDF made, as its text: what a reader copying
         /// it would get, a line of the page to a line.
@@ -186,7 +191,9 @@ namespace latex {
     /// @param host        Values, commands and files handed to the document.
     /// @param report      Where what it did and how long each step took is
     ///                    written, or null for nowhere.
-    /// @param errors      Where every error is written, one per line.
+    /// @param errors      Where every error is written, one per line, after
+    ///                    the name of the file it is in: the document's own
+    ///                    without its folder, or what it inputs as written.
     /// @param texts       Receives each page's text, or null for none; empty
     ///                    for a draft, which draws no page.
     /// @return True when the document compiled with nothing left broken.
@@ -210,7 +217,7 @@ namespace latex {
     /// program likes.
     ///
     /// @param assets   The engine's own assets directory.
-    /// @param document The document's text.
+    /// @param document The document's text, named in its errors as Session::typeset() names it.
     /// @param pdf      Receives the PDF; left empty when none could be made.
     /// @param host     Values, commands and files handed to the document.
     /// @param errors   Where every error is written, one per line.

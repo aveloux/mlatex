@@ -3,6 +3,7 @@
 #include "memory/location.hpp"
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -46,10 +47,13 @@ namespace syntax {
         /// @brief Whether it stops the document being clean: every kind but a warning does.
         [[nodiscard]] bool fatal() const noexcept { return type != Type::Warning; }
 
-        /// @brief Renders as `line:column: error (kind): message`, or
-        ///        `line:column: warning: message`.
-        /// @return The rendered text; the position is omitted when unknown.
-        [[nodiscard]] std::string format() const;
+        /// @brief Renders as `file:line:column: error (kind): message`, or
+        ///        `file:line:column: warning: message`.
+        /// @param files The name of each file, by the number a location's
+        ///              file holds: Mouth::files.
+        /// @return The rendered text; the file is omitted when it has no name
+        ///         among @p files, and the position when it is unknown.
+        [[nodiscard]] std::string format(std::span<const std::string> files = {}) const;
 
         Type type; ///< Kind of error.
         memory::Location location; ///< Where it happened.

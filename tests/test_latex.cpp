@@ -161,8 +161,7 @@ int main() {
                "amsmath's environments are there without asking");
         assert((session.snippet("$\\mathbb{R}$") && session.error.empty()) && "and amssymb's letters");
 
-        assert((!session.snippet("$x$\n\\nosuchcommand") &&
-                (session.error.starts_with("2:") || holds(session.error, "\n2:"))) &&
+        assert((!session.snippet("$x$\n\\nosuchcommand") && holds(session.error, "main.tex:2:1: error (macro)")) &&
                "a mistake is reported on the snippet's own line, not the preamble's");
 
         const Result plain = typeset("\\documentclass{article}\\begin{document}Text.\\end{document}");
@@ -239,6 +238,24 @@ int main() {
         const Result partial = article("", "before \\nosuchcommand after");
         assert((partial.pdf.starts_with("%PDF-") && holds(partial.text, "beforeafter")) &&
                "a document with a mistake still makes a PDF of what it could");
+    }
+
+    // --- A mistake names the file it is in ---------------------------------------------
+    {
+        latex::Session session(latex::locate(__FILE__));
+        session.provide("appendix.tex", "Fine.\n\nStill fine, and \\foo here.\n");
+        const std::string document = "\\documentclass{article}\n\\begin{document}\n\\input{appendix}\n\\nosuch\n"
+                "\\end{document}\n";
+        assert((!session.typeset(document) &&
+                holds(session.error, "appendix.tex:3:17: error (macro): Undefined control sequence \\foo")) &&
+               "one in a file the document inputs is reported at its line and column there, under its name");
+        assert((holds(session.error, "main.tex:4:1: error (macro): Undefined control sequence \\nosuch")) &&
+               "one in the document itself, under main.tex when it was handed in as no file");
+
+        session.provide("thesis.tex", document);
+        assert((!session.typeset(document) && holds(session.error, "thesis.tex:4:1: error (macro)") &&
+                holds(session.error, "appendix.tex:3:17:")) &&
+               "and under the name it was provided under when it was");
     }
 
     // --- Every package's own document --------------------------------------------------

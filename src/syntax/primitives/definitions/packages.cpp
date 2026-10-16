@@ -53,11 +53,12 @@ namespace syntax::primitives::definitions {
         // One of the engine's own files stands on no line of the document,
         // and says so: what its macros report is reported where the
         // document's own tokens stand, or without a place, never at a line
-        // of a file the document's writer has never seen.
+        // of a file the document's writer has never seen. Any other is
+        // named by the key it was found under, as its errors are.
         const auto embedded = modules::get(key);
         mouth.ingest(text, embedded && embedded->data() == text.data()
                                ? std::optional{memory::Location{}}
-                               : std::nullopt);
+                               : std::nullopt, key);
 
         Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Reading '{}'", key);
     }

@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -184,7 +185,11 @@ namespace syntax {
         ///               where each stands in @p source: a Location of line 0
         ///               for text that belongs to no line of the document. Left
         ///               out, each token keeps its own.
-        void ingest(std::string_view source, std::optional<memory::Location> origin = std::nullopt);
+        /// @param name   The file @p source is, as a report names it --
+        ///               `appendix.tex` -- kept in #files; left out for text
+        ///               that is no file's. An @p origin says the file too.
+        void ingest(std::string_view source, std::optional<memory::Location> origin = std::nullopt,
+                    std::string_view name = {});
 
         /// @brief Reads what the document has not yet been read of under a
         ///        character's new category, as TeX reads characters it has
@@ -314,6 +319,11 @@ namespace syntax {
         semantics::Union &state; ///< Registers, catcodes and scopes, shared with the caller.
         Lexicon &lexicon; ///< Interning table, shared with the caller.
         memory::Arena &arena; ///< Allocator for what handlers compose.
+
+        /// The name of each file ingested, by the number a location's file
+        /// holds, each once however often it is read. The first, zero, is
+        /// no file's: text a primitive composed, or the engine's own.
+        std::vector<std::string> files{std::string{}};
 
         /// Set when an expansion was abandoned: after a runaway expansion or a
         /// pending-token overflow. An empty token from expand() means end of

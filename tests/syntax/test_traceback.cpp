@@ -1,5 +1,6 @@
 #include "syntax/traceback.hpp"
 
+#include <array>
 #include <cassert>
 #include <string>
 
@@ -18,6 +19,19 @@ int main() {
 
     const syntax::Traceback other(syntax::Traceback::Type::Register, {.line = 1, .column = 1}, "x");
     assert((other.format().find("register") != std::string::npos) && "each kind is named for itself");
+
+    // The file comes first, when the location's has a name.
+    const std::array<std::string, 2> files{"", "appendix.tex"};
+    const syntax::Traceback filed(syntax::Traceback::Type::Macro, {.line = 3, .column = 5, .file = 1},
+                                  "Undefined control sequence \\foo");
+    assert((filed.format(files) == "appendix.tex:3:5: error (macro): Undefined control sequence \\foo") &&
+           "a position names the file it is in");
+    assert((filed.format() == "3:5: error (macro): Undefined control sequence \\foo") &&
+           "and only the line and column without the names");
+    const syntax::Traceback unnamed(syntax::Traceback::Type::Warning, location, "loose");
+    assert((unnamed.format(files) == "14:2: warning: loose") && "text that is no file's names none");
+    const syntax::Traceback nowhere(syntax::Traceback::Type::Warning, {.line = 0, .column = 0, .file = 1}, "vague");
+    assert((nowhere.format(files) == "warning: vague") && "nor does a location with no line");
 
     return 0;
 }

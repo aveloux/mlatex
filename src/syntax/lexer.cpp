@@ -15,8 +15,8 @@
 #include <utility>
 
 namespace syntax {
-    Lexer::Lexer(const std::string_view source, Catcodes &codes, Lexicon &lexicon)
-        : sources(source), table(codes), lexicon(lexicon) {
+    Lexer::Lexer(const std::string_view source, Catcodes &codes, Lexicon &lexicon, const std::uint32_t file)
+        : sources(source), table(codes), lexicon(lexicon), location{.line = 1, .column = 1, .file = file} {
         Logger::log(Logger::Type::Lexer, Logger::Level::Informative,
                     "Lexer bound to {} byte buffer", source.size());
     }
@@ -222,7 +222,11 @@ namespace syntax {
                         if (last < size && text[last] == close) {
                             held = Token{
                                 none, Catcodes::Category::Other,
-                                {location.line, location.column + static_cast<std::uint32_t>(at + 1 - offset)},
+                                {
+                                    .line = location.line,
+                                    .column = location.column + static_cast<std::uint32_t>(at + 1 - offset),
+                                    .file = location.file
+                                },
                                 std::string_view(text + at + 1, last - at - 1)
                             };
                             location.column += static_cast<std::uint32_t>(last + 1 - offset);

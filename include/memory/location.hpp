@@ -11,5 +11,9 @@ namespace memory {
     struct Location {
         std::uint32_t line{0}; ///< Line number, from one.
         std::uint32_t column{0}; ///< Column number, from one.
+
+        /// Which file the line is in, by the number syntax::Mouth::files
+        /// gives its name; zero for text that is no file's.
+        std::uint32_t file{0};
     };
 }

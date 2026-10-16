@@ -849,6 +849,21 @@ page's text goes.
   packs `latex.js`, `latex.wasm` and `latex.data` into
   `mlatex-<version>-wasm.zip`, which a tagged release carries beside the
   other packages.
+- **An error names the file it is in.** Each line of `Session::error`, and
+  of what `latex::compose` and `latex::typeset` write, starts with the file
+  its position is in: `appendix.tex:3:5: error (macro): Undefined control
+  sequence \foo`. A file a document inputs is named by the key it was found
+  under, so `\input{appendix}` reports `appendix.tex` when that is the file
+  provided. The document handed to `typeset()` is named by the file provided
+  with the same text, when one was -- an editor that provides every file of
+  its project and sets one of them reads that file's name back -- and
+  `main.tex` when none was, a snippet included; a document read from disk by
+  its own file name, without its folder. `memory::Location` carries the file
+  as a number, `syntax::Mouth::files` holds the names and
+  `syntax::Traceback::format` takes them; a position in text that is no
+  file's, what a primitive composes, is still a line and a column alone, and
+  those are the only lines `--file-line-error` still adds a name to. The
+  Session's methods, and the C and WebAssembly ones, are the same.
 
 ### Speed
 
@@ -861,6 +876,11 @@ Release build, clang-cl, one run each, median of thirty:
 | two tikz-cd diagrams, an xy-pic and an amscd one, a matrix, an automaton, a circuit and two trees | 1     | 4.7 ms  |
 | an Arabic article with polyglossia, right to left                                                 | 1     | 5.8 ms  |
 | the paper in `build/main.mtex`                                                                    | 8     | 11.9 ms |
+
+A position that says its file makes a token 40 bytes where it was 32,
+which costs the paper in `build/main.mtex` about 2%: 30.65 ms against
+29.90 ms, the median of forty runs each of the same tree with and without
+it, as `--time` reports setting it and writing its PDF.
 
 Rewriting a category change into the tokens ahead costs nothing until a
 document makes one; links, bookmarks and the index are made only for a
@@ -1026,6 +1046,12 @@ font folders are listed only for a script the engine carries no face for.
 - Then: `\evaluate`'s powers of one, minus one and zero; `\numexpr`'s
   products past 64 bits, either way, and past 32 until divided; `\foreach`'s
   ranges in tenths, counted down, and in letters.
+- Then: an error in a provided file a document inputs, reported under that
+  file's name at its own line and column, and one in the document under
+  `main.tex` or the name it was provided under (`test_latex`); a traceback
+  with and without the names (`test_traceback`); a file's number on its
+  tokens, kept when it is read again (`test_mouth`). 86 tests pass in Debug
+  and Release, with no warning in either build.
 
 ### Documentation
 

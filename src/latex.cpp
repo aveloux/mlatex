@@ -308,10 +308,23 @@ namespace latex {
         // locale and a buffer of its own to copy the same bytes through --
         // shared the way a stream shares it, so a document an editor has open
         // still reads.
+        //
+        // Its errors go by a name, as an included file's go by the one it was
+        // found under: a file's own from disk. From memory, the name it was
+        // provided under when it is one of the files handed in -- an editor
+        // hands in every file of a project and sets one of them -- or else
+        // main.tex.
         std::string content;
+        std::string name = "main.tex";
         if (!source) {
             content = text;
+            if (const auto provided = std::ranges::find(host.files, text,
+                                                        &syntax::primitives::Files::value_type::second);
+                provided != host.files.end()) {
+                name = provided->first;
+            }
         } else {
+            name = source->filename().string();
 #if defined(_WIN32)
             const HANDLE file = CreateFileW(source->c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                                             nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
@@ -366,7 +379,7 @@ namespace latex {
         // itself with \include, in whatever order suits their own
         // dependencies, so a new topic file is a line in main.mtex and not a
         // change here.
-        mouth.ingest(content);
+        mouth.ingest(content, std::nullopt, name);
         // Between the two, \jobname: the name of the file being set, without
         // its extension, as LaTeX takes it -- what finds the .bbl BibTeX
         // wrote beside it.
@@ -393,9 +406,9 @@ namespace latex {
         // reporter, called once per source, rather than the same loop
         // written out four times.
         bool broken = false;
-        const auto collect = [&broken, &errors](const std::vector<syntax::Traceback> &faults) {
+        const auto collect = [&broken, &errors, &mouth](const std::vector<syntax::Traceback> &faults) {
             for (const syntax::Traceback &fault: faults) {
-                errors << fault.format() << '\n';
+                errors << fault.format(mouth.files) << '\n';
                 broken = broken || fault.fatal();
             }
         };

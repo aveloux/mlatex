@@ -98,5 +98,20 @@ int main() {
     mouth.ingest("first ");
     assert((drain(mouth) == "first second") && "the stream is a stack");
 
+    // A file's tokens carry its number, and a file read again keeps the one
+    // it was given the first time.
+    {
+        mouth.ingest("x", std::nullopt, "appendix.tex");
+        const syntax::Token first = mouth.read();
+        mouth.ingest("y", std::nullopt, "appendix.tex");
+        const syntax::Token again = mouth.read();
+        mouth.ingest("z");
+        const syntax::Token unnamed = mouth.read();
+        assert((mouth.files.size() == 2 && mouth.files[first.location.file] == "appendix.tex") &&
+               "a file is named by the number its tokens carry");
+        assert((again.location.file == first.location.file) && "once, however often it is read");
+        assert((unnamed.location.file == 0 && mouth.files[0].empty()) && "and text that is no file's has none");
+    }
+
     return 0;
 }
