@@ -998,6 +998,11 @@ font folders are listed only for a script the engine carries no face for.
   pgfplots axis's ticks and its `xtick={0,0.1,...,1}`, and a function's
   samples, each counted with an integer; the tick step's thresholds are the
   square roots of 2, 10 and 50 they were written as approximations of.
+- A program that loaded `latex_ffi.dll` from a folder of its own, as Python's
+  ctypes does from a wheel, ended at its first JPEG or WebP picture: Windows
+  looks for a delay-loaded library beside the program rather than beside the
+  library that asked for it. The library's delay-load hook now loads the
+  JPEG and WebP libraries from its own folder first.
 
 ### Tests
 

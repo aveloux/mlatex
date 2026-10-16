@@ -22,6 +22,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#if defined(_MSC_VER)
+#include <delayimp.h>
+#endif
 #elif defined(__unix__) || defined(__APPLE__)
 #include <dlfcn.h>
 #endif
@@ -220,4 +223,42 @@ namespace protocols {
         return &table;
     }
     }
+
+#if defined(_WIN32) && defined(_MSC_VER)
+    /// @brief Finds a delay-loaded library beside this one first.
+    ///
+    /// The JPEG and WebP libraries are delay-loaded (see CMakeLists.txt), and
+    /// Windows looks for a delay-loaded library beside the program, not
+    /// beside the library that asked for it -- so a program that loads
+    /// latex_ffi from a folder of its own, as Python's ctypes does from a
+    /// wheel, would find neither, and its first JPEG would end it. Nothing
+    /// returned leaves the usual search, which finds winhttp.dll among the
+    /// system's.
+    static FARPROC WINAPI preload(const unsigned notice, PDelayLoadInfo information) {
+        if (notice != dliNotePreLoadLibrary) return nullptr;
+        HMODULE module = nullptr;
+        if (!GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCWSTR>(&preload), &module)) {
+            return nullptr;
+        }
+        std::wstring buffer(MAX_PATH, L'\0');
+        for (;;) {
+            const DWORD written = GetModuleFileNameW(module, buffer.data(), static_cast<DWORD>(buffer.size()));
+            if (written == 0) return nullptr;
+            if (written < buffer.size()) {
+                buffer.resize(written);
+                break;
+            }
+            buffer.resize(buffer.size() * 2);
+        }
+        const std::filesystem::path beside = std::filesystem::path(buffer).parent_path() / information->szDll;
+        return reinterpret_cast<FARPROC>(LoadLibraryExW(beside.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH));
+    }
+#endif
 }
+
+#if defined(_WIN32) && defined(_MSC_VER)
+// NOLINTNEXTLINE(bugprone-reserved-identifier): the name the delay-load helper calls.
+extern "C" const PfnDliHook __pfnDliNotifyHook2 = protocols::preload;
+#endif
