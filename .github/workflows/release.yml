@@ -1,6 +1,7 @@
 # Ships what Build made once it has passed on a pushed tag `v*`: every
-# package to a GitHub release, and the WebAssembly module to npm, its
-# package.json written beside it with the tag's version.
+# package to a GitHub release, then the npm package and the Python wheels,
+# both named mlatex. Build packed and tested them in its own run, versioned as
+# the tag is, so what is published is what passed.
 name: Release
 
 on:
@@ -37,12 +38,12 @@ jobs:
           files: bin/*
           generate_release_notes: true
 
+  # The package bindings/javascript describes -- the WebAssembly module, its
+  # Node entry, its types and its README -- as Build packed it. The token is
+  # the repository's NPM_TOKEN secret; provenance ties the package to this run.
   npm:
     name: npm
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
+    needs: github
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -64,23 +65,34 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          TAG: ${{ github.event.workflow_run.head_branch }}
         run: |
-          mkdir package && cd package
-          unzip -o ../bin/*.zip
-          cat > package.json <<EOF
-          {
-            "name": "mlatex",
-            "version": "${TAG#v}",
-            "description": "A rewritten typesetting system known as LaTeX, compiled to WebAssembly for the browser, workers and Node.",
-            "license": "AGPL-3.0-only",
-            "repository": { "type": "git", "url": "git+https://github.com/aveloux/mlatex.git" },
-            "homepage": "https://github.com/aveloux/mlatex#readme",
-            "bugs": "https://github.com/aveloux/mlatex/issues",
-            "keywords": ["latex", "tex", "typesetting", "pdf", "wasm", "webassembly"],
-            "main": "latex.js",
-            "files": ["latex.js", "latex.wasm", "latex.data"]
-          }
-          EOF
-          cat package.json
-          npm publish --access public --provenance
+          tar -xzOf bin/mlatex-*.tgz package/package.json
+          npm publish bin/mlatex-*.tgz --access public --provenance
+
+  # Through PyPI's trusted publishing, for this workflow and the `pypi`
+  # environment. Allowed to fail on its own: until PyPI's mlatex belongs to
+  # this project, PyPI refuses the upload, and the release and npm stand
+  # without it.
+  pypi:
+    name: PyPI
+    needs: github
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    environment: pypi
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: mlatex-*-*
+          path: bin
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Keep the wheels
+        run: mkdir dist && mv bin/*.whl dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -817,15 +817,17 @@ page's text goes.
   It replaces a workflow that installed Skia, which the engine has not
   used for months, and compiled with a GCC that has no `#embed`.
   Dependabot keeps the workflow's actions current.
-- **Building and publishing are two workflows.** `build.yml` builds, tests
-  and packages on every push and pull request; `publish.yml` runs it for a
-  pushed tag `v*`, in the same run, and publishes what it packaged: every
-  package on a GitHub release, then the WebAssembly module on npm and the
-  Python wheels on PyPI, both as `mlatex` and versioned as the tag is. npm
-  takes the repository's `NPM_TOKEN` secret, with provenance; PyPI takes
-  trusted publishing through the `pypi` environment, and is allowed to fail
-  on its own while PyPI's `mlatex` is another project's, so the release and
-  npm stand without it.
+- **Building and releasing are two workflows.** `build.yml` builds, tests
+  and packages on every push, tag and pull request; once it passes on a
+  pushed tag `v*`, `release.yml` ships what that run packaged: every package
+  on a GitHub release, then the npm package and the Python wheels, both as
+  `mlatex` and versioned as the tag is. npm takes the repository's
+  `NPM_TOKEN` secret, with provenance, and publishes the package Build
+  packed and tested -- its Node entry, its types and its README with it.
+  PyPI takes trusted publishing through the `pypi` environment, and is
+  allowed to fail on its own while PyPI's `mlatex` is another project's, as
+  a wheel that fails to build is left out: neither holds back the release
+  or npm.
 
 ### For programs
 
