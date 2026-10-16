@@ -1,8 +1,9 @@
 # Builds, tests and packages the engine on every platform and architecture
 # a release ships for, one runner each: CMake packages the architecture it
-# builds, so another architecture is another build -- and the WebAssembly
-# module, which runs wherever a browser or Node does, once. Every package is
-# versioned as the VERSION file says. A release is release.yml's: once this
+# builds, so another architecture is another build -- and then, as a stage
+# of its own once they have all passed, the WebAssembly module, which runs
+# wherever a browser or Node does, once. Every package is versioned as the
+# VERSION file says. A release is release.yml's: once this
 # workflow passes on main with a VERSION not yet released, it ships what
 # this run packaged.
 #
@@ -290,10 +291,13 @@ jobs:
 
   # The engine as a WebAssembly module -- latex.js, latex.wasm and latex.data,
   # the last the fonts -- for a web page, a worker or Node: one build, whatever
-  # runs it. Emscripten is pinned to the release the module was built and
-  # checked with; gperf is a tool the build runs, so it is the runner's own.
+  # runs it, and the stage after the platforms', once every one of them has
+  # passed. Emscripten is pinned to the release the module was built and
+  # checked with, and kept between runs as vcpkg's builds are; gperf is a
+  # tool the build runs, so it is the runner's own.
   wasm:
     name: WebAssembly
+    needs: build
     runs-on: ubuntu-24.04
     env:
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg
@@ -312,13 +316,21 @@ jobs:
           key: vcpkg-wasm32-emscripten-${{ hashFiles('.github/workflows/build.yml') }}
           restore-keys: vcpkg-wasm32-emscripten-
 
+      - name: Cache Emscripten
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/emsdk
+          key: emsdk-6.0.10
+
       - name: Install Emscripten and the libraries
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y gperf ninja-build autoconf autoconf-archive automake libtool
-          git clone --depth 1 https://github.com/emscripten-core/emsdk "$RUNNER_TEMP/emsdk"
-          "$RUNNER_TEMP/emsdk/emsdk" install 6.0.10
+          if [ ! -x "$RUNNER_TEMP/emsdk/emsdk" ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk "$RUNNER_TEMP/emsdk"
+            "$RUNNER_TEMP/emsdk/emsdk" install 6.0.10
+          fi
           "$RUNNER_TEMP/emsdk/emsdk" activate 6.0.10
           source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
 

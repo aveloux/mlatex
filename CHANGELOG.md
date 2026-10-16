@@ -839,6 +839,14 @@ page's text goes.
   alone, and a version whose tag is already on another commit asks for
   `VERSION` to be raised. `src/main.cpp` no longer carries a version of its
   own to fall back on.
+- **Build runs in stages, and a release finishes what it started.** The
+  platforms build side by side, and the WebAssembly module after them once
+  they have all passed, with Emscripten kept between runs as vcpkg's builds
+  are. `release.yml` looks at each place it publishes to -- the GitHub
+  release, npm, and now GitHub Packages, where the repository's page lists
+  the package as `@aveloux/mlatex` -- and publishes only what is missing, so
+  running it again for the same Build run, from the Actions tab or with
+  `gh workflow run release.yml -f run=<id>`, retries just what failed.
 
 ### For programs
 
@@ -1041,6 +1049,9 @@ font folders are listed only for a script the engine carries no face for.
   ran rather than beside `latex.js`, so it loaded only from its own folder:
   Emscripten's file packager asks `locateFile` with no folder at all. The
   npm package's Node entry answers with its own.
+- The release's npm step failed: `npm publish bin/mlatex-0.1.2.tgz` took
+  `bin/mlatex-0.1.2.tgz` for a GitHub repository and tried to clone it. The
+  tarball is now named as a path, `./bin/...`.
 
 ### Tests
 
