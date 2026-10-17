@@ -1357,3 +1357,36 @@ own embedded font (it is set in the nearest of PDF's standard faces), and
 a gradient's shading (it is its first colour) are drawn near enough, not
 exactly. Coverage figures above count packages that load and whose common
 commands set text — not that every feature of each is drawn.
+
+Planned next, in this order:
+
+- **WebAssembly that sets every document.** The module aborts on
+  `build/main.mtex`, which the native engine sets in under 0.1 s; the
+  likeliest cause is Emscripten's 64 KB default stack. Then the fonts are
+  loaded when a document first asks for one, rather than all 35 MB of
+  `latex.data` before the first page.
+- **Less memory.** The arena commits each block whole, so a one-line
+  document commits 23 MB and touches 11; reserving the blocks and
+  committing as they fill brings the two together. A session also gives
+  memory back between documents rather than keep its peak, which the
+  WebAssembly module, whose memory only grows, needs most.
+- **Just in time and hot reload.** The `jit` target: an engine kept warm
+  between runs, with what it built cached in memory and on disk, that sets
+  a document again as its files change.
+- **Python as Python.** A `mlatex.Session` over the C library, as
+  JavaScript has, rather than the struct of operations declared by hand,
+  and the package on PyPI once the name `mlatex` is the project's there.
+- **`\printglossary` prints its list,** as `\gls` already writes a term's
+  long form.
+- **More classes, each with its own layout** rather than article's at the
+  right size and columns. Journals: Elsevier's `cas-sc` and `cas-dc`,
+  `mdpi`, IOP's `iopart`, Taylor & Francis's `interact`, Wiley's
+  `WileyNJD-v2`, `copernicus`, SIAM's `siamart`, ACS's `achemso`, Frontiers'
+  classes and `jmlr`. Documents: `apa7`, `exam`, `moderncv`, `awesome-cv`,
+  `altacv`, `tufte-book` and `kaobook`. Posters: `tikzposter`, `baposter` and
+  `a0poster`. Chinese and Japanese: `ctexart`, `ctexbook`, `ctexrep` and
+  `ltjsarticle`. Package documentation: `ltxdoc` and `l3doc`. And their own
+  layouts for the classes known today by their columns alone, such as
+  `mnras`, `aa` and the AAS classes. The conference styles that ride on
+  article -- NeurIPS, ICML, ICLR, ACL, CVPR and AAAI -- come as packages of
+  the engine's own, since a `.sty` is never read.
