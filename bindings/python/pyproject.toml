@@ -25,8 +25,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/aveloux/mlatex"
-Issues = "https://github.com/aveloux/mlatex/issues"
+Homepage = "https://github.com/modernized-latex/mlatex"
+Issues = "https://github.com/modernized-latex/mlatex/issues"
 
 [tool.hatch.version]
 source = "env"

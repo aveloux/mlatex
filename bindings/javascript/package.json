@@ -1,13 +1,13 @@
 {
-  "name": "@aveloux/mlatex",
+  "name": "@modernized-latex/mlatex",
   "version": "0.0.0",
   "description": "A LaTeX typesetting engine rewritten from the ground up, compiled to WebAssembly for web pages, workers and Node.",
   "keywords": ["latex", "tex", "typesetting", "pdf", "wasm", "webassembly"],
-  "homepage": "https://github.com/aveloux/mlatex#readme",
-  "bugs": "https://github.com/aveloux/mlatex/issues",
+  "homepage": "https://github.com/modernized-latex/mlatex#readme",
+  "bugs": "https://github.com/modernized-latex/mlatex/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aveloux/mlatex.git",
+    "url": "git+https://github.com/modernized-latex/mlatex.git",
     "directory": "bindings/javascript"
   },
   "license": "AGPL-3.0-only",
