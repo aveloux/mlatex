@@ -1,9 +1,9 @@
 # Ships what Build made once it has passed on main with a VERSION not yet
 # released: the tag and a GitHub release with every package, then the npm
 # package -- on npm as mlatex, and on GitHub Packages as @aveloux/mlatex --
-# and the Python wheels. Build packed and tested them in its own run,
-# versioned as VERSION says, so what is published is what passed, and a new
-# version is VERSION changed on main. A tag pushed by hand releases the same
+# and the Python wheels; and the docs site is told. Build packed and tested
+# them in its own run, versioned as VERSION says, so what is published is
+# what passed, and a new version is VERSION changed on main. A tag pushed by hand releases the same
 # way when it is VERSION's own.
 #
 # Each place is published to once: a run finds what is there already and
@@ -190,6 +190,28 @@ jobs:
           cd package
           npm pkg set name=@aveloux/mlatex
           npm publish
+
+  # Tells the docs site, aveloux/docs, that a version is out, so its Reference
+  # workflow writes the package reference from the new tag at once rather
+  # than at its daily run. The token is the repository's DOCS_TOKEN secret,
+  # one allowed to write aveloux/docs' contents; without it the site still
+  # finds the tag on its own within a day.
+  docs:
+    name: Docs
+    needs: [ version, github ]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Tell the docs site
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_TOKEN }}
+          TAG: v${{ needs.version.outputs.version }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::There is no DOCS_TOKEN secret, so the docs site finds $TAG at its daily run."
+            exit 0
+          fi
+          gh api repos/aveloux/docs/dispatches -f event_type=mlatex-tag -f "client_payload[tag]=$TAG"
+          echo "Sent $TAG to aveloux/docs."
 
   # Through PyPI's trusted publishing, for this workflow and the `pypi`
   # environment, alongside a new GitHub release. Allowed to fail on its own:

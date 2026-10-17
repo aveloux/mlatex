@@ -847,6 +847,12 @@ page's text goes.
   the package as `@aveloux/mlatex` -- and publishes only what is missing, so
   running it again for the same Build run, from the Actions tab or with
   `gh workflow run release.yml -f run=<id>`, retries just what failed.
+- **A release tells the docs site.** Once the GitHub release is made,
+  `release.yml` sends the new tag to aveloux/docs as its `mlatex-tag` event,
+  so the site's Reference workflow writes the package reference and copies
+  the code of conduct from that tag at once, rather than at its daily run.
+  It takes a `DOCS_TOKEN` secret allowed to write the site's repository, and
+  without one the step says so and the site catches up within a day.
 
 ### For programs
 
