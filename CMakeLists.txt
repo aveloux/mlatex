@@ -72,6 +72,14 @@ file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" version LIMIT_COUNT 1)
 project(latex VERSION ${version} LANGUAGES C CXX)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)
 
+# The npm package's package.json carries the same version, written into it
+# here whenever VERSION changes, so the file a commit holds is never behind.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/bindings/javascript/package.json" package)
+string(REGEX REPLACE "\"version\": \"[^\"]*\"" "\"version\": \"${version}\"" versioned "${package}")
+if (NOT versioned STREQUAL package)
+    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/bindings/javascript/package.json" "${versioned}")
+endif ()
+
 # C++26, for #embed above all: the prelude, its packages and the hyphenation
 # patterns are compiled into the engine as the files they are, by the
 # compiler, with no tool of the project's own to write them out first. That

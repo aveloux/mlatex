@@ -1,6 +1,6 @@
 {
   "name": "mlatex",
-  "version": "0.0.0",
+  "version": "0.1.2",
   "description": "A LaTeX typesetting engine rewritten from the ground up, compiled to WebAssembly for web pages, workers and Node.",
   "keywords": ["latex", "tex", "typesetting", "pdf", "wasm", "webassembly"],
   "homepage": "https://github.com/modern-latex/mlatex#readme",

@@ -839,6 +839,9 @@ page's text goes.
   alone, and a version whose tag is already on another commit asks for
   `VERSION` to be raised. `src/main.cpp` no longer carries a version of its
   own to fall back on.
+- **The npm package's version is VERSION's too.** CMake writes it into
+  `bindings/javascript/package.json` whenever `VERSION` changes, so the file
+  a commit holds says what the release will publish, rather than `0.0.0`.
 - **Build runs in stages, and a release finishes what it started.** The
   platforms build side by side, and the WebAssembly module after them once
   they have all passed, with Emscripten kept between runs as vcpkg's builds
