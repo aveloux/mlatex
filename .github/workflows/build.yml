@@ -390,7 +390,7 @@ jobs:
           mkdir -p bin
           (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
 
-      # The same three files as the npm package mlatex, with its Node entry
+      # The same three files as the npm package @aveloux/mlatex, with its Node entry
       # and types, versioned like the wheels. It is installed somewhere else
       # and run from there, since in Node the module finds latex.data from
       # where the program runs unless the package's entry says otherwise.
@@ -403,9 +403,9 @@ jobs:
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
           cd "$RUNNER_TEMP"
           npm init -y > /dev/null
-          npm install "$GITHUB_WORKSPACE"/bin/mlatex-*.tgz
+          npm install "$GITHUB_WORKSPACE"/bin/*.tgz
           node -e '
-            require("mlatex")().then((engine) => {
+            require("@aveloux/mlatex")().then((engine) => {
               const session = new engine.Session();
               if (!session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]")) {
                 console.error("the package failed:\n" + session.error());

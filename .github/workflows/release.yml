@@ -1,10 +1,10 @@
 # Ships what Build made once it has passed on main with a VERSION not yet
 # released: the tag and a GitHub release with every package, then the npm
-# package -- on npm as mlatex, and on GitHub Packages as @aveloux/mlatex --
-# and the Python wheels; and the docs site is told. Build packed and tested
-# them in its own run, versioned as VERSION says, so what is published is
-# what passed, and a new version is VERSION changed on main. A tag pushed by hand releases the same
-# way when it is VERSION's own.
+# package, @aveloux/mlatex, on npm and on GitHub Packages, and the Python
+# wheels; and the docs site is told. Build packed and tested them in its own
+# run, versioned as VERSION says, so what is published is what passed, and a
+# new version is VERSION changed on main. A tag pushed by hand releases the
+# same way when it is VERSION's own.
 #
 # Each place is published to once: a run finds what is there already and
 # ships only the rest, so a step that failed is retried by running this
@@ -77,7 +77,7 @@ jobs:
           else
             ship=true
             gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1 || github=true
-            npm view "mlatex@$version" version > /dev/null 2>&1 || npm=true
+            npm view "@aveloux/mlatex@$version" version > /dev/null 2>&1 || npm=true
           fi
           echo "Build run $RUN, $commit: version $version; shipped: $ship; GitHub release to make: $github; npm to publish: $npm"
           {
@@ -114,10 +114,10 @@ jobs:
           generate_release_notes: true
 
   # The package bindings/javascript describes -- the WebAssembly module, its
-  # Node entry, its types and its README -- as Build packed it. The token is
-  # the repository's NPM_TOKEN secret; provenance ties the package to this
-  # run. The tarball is named with ./ in front, or npm takes bin/... for a
-  # GitHub repository.
+  # Node entry, its types and its README -- as Build packed it, named
+  # @aveloux/mlatex here as well, for a run packed while it was still mlatex:
+  # npm refuses mlatex itself, as too near katex and slate. The token is the
+  # repository's NPM_TOKEN secret; provenance ties the package to this run.
   npm:
     name: npm
     needs: [ version, github ]
@@ -146,12 +146,14 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          tar -xzOf ./bin/mlatex-*.tgz package/package.json
-          npm publish ./bin/mlatex-*.tgz --access public --provenance
+          tar -xzf ./bin/*.tgz
+          cd package
+          npm pkg set name=@aveloux/mlatex
+          cat package.json
+          npm publish --access public --provenance
 
   # The same package on GitHub Packages, where the repository's page lists
-  # it. GitHub's registry takes a package only under its owner's scope, so
-  # there it is @aveloux/mlatex.
+  # it; GitHub's registry takes a package only under its owner's scope.
   packages:
     name: GitHub Packages
     needs: [ version, github ]
@@ -186,7 +188,7 @@ jobs:
             echo "::notice::@aveloux/mlatex@$VERSION is on GitHub Packages already."
             exit 0
           fi
-          tar -xzf ./bin/mlatex-*.tgz
+          tar -xzf ./bin/*.tgz
           cd package
           npm pkg set name=@aveloux/mlatex
           npm publish

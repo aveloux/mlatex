@@ -820,8 +820,8 @@ page's text goes.
 - **Building and releasing are two workflows.** `build.yml` builds, tests
   and packages on every push, tag and pull request; once it passes on a
   pushed tag `v*`, `release.yml` ships what that run packaged: every package
-  on a GitHub release, then the npm package and the Python wheels, both as
-  `mlatex` and versioned as the tag is. npm takes the repository's
+  on a GitHub release, then the npm package, `@aveloux/mlatex`, and the
+  Python wheels, `mlatex`, versioned as the tag is. npm takes the repository's
   `NPM_TOKEN` secret, with provenance, and publishes the package Build
   packed and tested -- its Node entry, its types and its README with it.
   PyPI takes trusted publishing through the `pypi` environment, and is
@@ -900,7 +900,7 @@ page's text goes.
   file's, what a primitive composes, is still a line and a column alone, and
   those are the only lines `--file-line-error` still adds a name to. The
   Session's methods, and the C and WebAssembly ones, are the same.
-- **The WebAssembly module is the npm package `mlatex`.** `bindings/javascript`
+- **The WebAssembly module is the npm package `@aveloux/mlatex`.** `bindings/javascript`
   holds the package: the three files the build leaves, types for the factory
   and the session in `latex.d.ts`, and `node.js`, Node's entry, which finds
   `latex.wasm` and `latex.data` beside itself. A page, a worker or a bundler
@@ -1058,6 +1058,11 @@ font folders are listed only for a script the engine carries no face for.
 - The release's npm step failed: `npm publish bin/mlatex-0.1.2.tgz` took
   `bin/mlatex-0.1.2.tgz` for a GitHub repository and tried to clone it. The
   tarball is now named as a path, `./bin/...`.
+- npm refused the package's name: it takes no new name it finds too near
+  a popular one, and `mlatex` is too near `katex` and `slate`. The package
+  is `@aveloux/mlatex`, as it already was on GitHub Packages; the release
+  names a package packed before the change so as it publishes it, and the
+  Python package keeps the name `mlatex`.
 
 ### Tests
 

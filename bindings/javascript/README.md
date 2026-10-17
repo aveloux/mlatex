@@ -1,15 +1,15 @@
-# mlatex
+# @aveloux/mlatex
 
 A LaTeX typesetting engine, rewritten from the ground up in modern C++ and compiled to WebAssembly. It turns LaTeX into PDF in a web page, a worker or Node, with no TeX installation behind it and nothing sent anywhere.
 
 ```bash
-npm install mlatex
+npm install @aveloux/mlatex
 ```
 
 ## A document
 
 ```js
-import Latex from "mlatex";
+import Latex from "@aveloux/mlatex";
 
 const engine = await Latex();
 const session = new engine.Session();
@@ -24,7 +24,7 @@ const pdf = session.pdf(); // a Uint8Array of its own
 session.delete();
 ```
 
-CommonJS works the same way: `const Latex = require("mlatex")`.
+CommonJS works the same way: `const Latex = require("@aveloux/mlatex")`.
 
 ## A session
 

@@ -1,5 +1,5 @@
 {
-  "name": "mlatex",
+  "name": "@aveloux/mlatex",
   "version": "0.0.0",
   "description": "A LaTeX typesetting engine rewritten from the ground up, compiled to WebAssembly for web pages, workers and Node.",
   "keywords": ["latex", "tex", "typesetting", "pdf", "wasm", "webassembly"],
