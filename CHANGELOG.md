@@ -807,9 +807,9 @@ page's text goes.
 - **The sample paper is set on GitHub.** The Windows x64 runner sets
   `build/main.mtex` with the program it just built and keeps the result as
   `main.pdf`, to open and see how the engine sets a real paper: from any
-  run of the [Build workflow](https://github.com/modernized-latex/mlatex/actions/workflows/build.yml),
+  run of the [Build workflow](https://github.com/modern-latex/mlatex/actions/workflows/build.yml),
   under its artifacts, and once a version is tagged, at
-  [releases/latest/download/main.pdf](https://github.com/modernized-latex/mlatex/releases/latest/download/main.pdf).
+  [releases/latest/download/main.pdf](https://github.com/modern-latex/mlatex/releases/latest/download/main.pdf).
 - **The package documents are with the tests.** The 523 sample documents,
   one per package and class, move from `build/packages/` to
   `tests/packages/`, beside the test that sets every one of them;
@@ -820,7 +820,7 @@ page's text goes.
 - **Building and releasing are two workflows.** `build.yml` builds, tests
   and packages on every push, tag and pull request; once it passes on a
   pushed tag `v*`, `release.yml` ships what that run packaged: every package
-  on a GitHub release, then the npm package, `@modernized-latex/mlatex`, and the
+  on a GitHub release, then the npm package, `@modern-latex/mlatex`, and the
   Python wheels, `mlatex`, versioned as the tag is. npm takes the repository's
   `NPM_TOKEN` secret, with provenance, and publishes the package Build
   packed and tested -- its Node entry, its types and its README with it.
@@ -844,18 +844,18 @@ page's text goes.
   they have all passed, with Emscripten kept between runs as vcpkg's builds
   are. `release.yml` looks at each place it publishes to -- the GitHub
   release, npm, and now GitHub Packages, where the repository's page lists
-  the package as `@modernized-latex/mlatex` -- and publishes only what is missing, so
+  the package as `@modern-latex/mlatex` -- and publishes only what is missing, so
   running it again for the same Build run, from the Actions tab or with
   `gh workflow run release.yml -f run=<id>`, retries just what failed.
 - **A release tells the docs site.** Once the GitHub release is made,
-  `release.yml` sends the new tag to modernized-latex/docs as its `mlatex-tag` event,
+  `release.yml` sends the new tag to modern-latex/docs as its `mlatex-tag` event,
   so the site's Reference workflow writes the package reference and copies
   the code of conduct from that tag at once, rather than at its daily run.
   It takes a `DOCS_TOKEN` secret allowed to write the site's repository, and
   without one the step says so and the site catches up within a day.
-- **The project's organization is modernized-latex.** The repositories are
-  `modernized-latex/mlatex`, `modernized-latex/docs` and
-  `modernized-latex/workspace`, and the npm package `@modernized-latex/mlatex`;
+- **The project's organization is modern-latex.** The repositories are
+  `modern-latex/mlatex`, `modern-latex/docs` and
+  `modern-latex/workspace`, and the npm package `@modern-latex/mlatex`;
   every link, badge, workflow and package names them so.
 
 ### For programs
@@ -904,7 +904,7 @@ page's text goes.
   file's, what a primitive composes, is still a line and a column alone, and
   those are the only lines `--file-line-error` still adds a name to. The
   Session's methods, and the C and WebAssembly ones, are the same.
-- **The WebAssembly module is the npm package `@modernized-latex/mlatex`.** `bindings/javascript`
+- **The WebAssembly module is the npm package `@modern-latex/mlatex`.** `bindings/javascript`
   holds the package: the three files the build leaves, types for the factory
   and the session in `latex.d.ts`, and `node.js`, Node's entry, which finds
   `latex.wasm` and `latex.data` beside itself. A page, a worker or a bundler
@@ -1064,7 +1064,7 @@ font folders are listed only for a script the engine carries no face for.
   tarball is now named as a path, `./bin/...`.
 - npm refused the package's name: it takes no new name it finds too near
   a popular one, and `mlatex` is too near `katex` and `slate`. The package
-  is `@modernized-latex/mlatex`, as it already was on GitHub Packages; the release
+  is `@modern-latex/mlatex`, as it already was on GitHub Packages; the release
   names a package packed before the change so as it publishes it, and the
   Python package keeps the name `mlatex`.
 

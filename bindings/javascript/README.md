@@ -1,15 +1,15 @@
-# @modernized-latex/mlatex
+# @modern-latex/mlatex
 
 A LaTeX typesetting engine, rewritten from the ground up in modern C++ and compiled to WebAssembly. It turns LaTeX into PDF in a web page, a worker or Node, with no TeX installation behind it and nothing sent anywhere.
 
 ```bash
-npm install @modernized-latex/mlatex
+npm install @modern-latex/mlatex
 ```
 
 ## A document
 
 ```js
-import Latex from "@modernized-latex/mlatex";
+import Latex from "@modern-latex/mlatex";
 
 const engine = await Latex();
 const session = new engine.Session();
@@ -24,7 +24,7 @@ const pdf = session.pdf(); // a Uint8Array of its own
 session.delete();
 ```
 
-CommonJS works the same way: `const Latex = require("@modernized-latex/mlatex")`.
+CommonJS works the same way: `const Latex = require("@modern-latex/mlatex")`.
 
 ## A session
 
@@ -66,7 +66,7 @@ The engine starts no threads and makes no network requests: a picture from a URL
 
 ## Links
 
-- [Source and issues](https://github.com/modernized-latex/mlatex)
-- [Releases](https://github.com/modernized-latex/mlatex/releases), with the command line for Windows, macOS and Linux
+- [Source and issues](https://github.com/modern-latex/mlatex)
+- [Releases](https://github.com/modern-latex/mlatex/releases), with the command line for Windows, macOS and Linux
 
 mLaTeX is licensed under the GNU Affero General Public License, version 3.

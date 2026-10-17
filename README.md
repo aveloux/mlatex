@@ -10,25 +10,25 @@
   <a href="https://en.cppreference.com/w/cpp/compiler_support">
     <img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-26-blue?logo=c%2B%2B"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/actions">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/modernized-latex/mlatex/build.yml?branch=main&label=build"
+  <a href="https://github.com/modern-latex/mlatex/actions">
+    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/modern-latex/mlatex/build.yml?branch=main&label=build"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex">
+  <a href="https://github.com/modern-latex/mlatex">
     <img alt="Platforms" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/stargazers">
-    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/modernized-latex/mlatex?color=239dad&label=stars"
+  <a href="https://github.com/modern-latex/mlatex/stargazers">
+    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/modern-latex/mlatex?color=239dad&label=stars"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/issues">
-    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/modernized-latex/mlatex?color=5865F2&label=issues"
+  <a href="https://github.com/modern-latex/mlatex/issues">
+    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/modern-latex/mlatex?color=5865F2&label=issues"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/pulls">
+  <a href="https://github.com/modern-latex/mlatex/pulls">
     <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-A561FF"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/commits/main">
-    <img alt="Last Commit" src="https://img.shields.io/github/last-commit/modernized-latex/mlatex?color=success"
+  <a href="https://github.com/modern-latex/mlatex/commits/main">
+    <img alt="Last Commit" src="https://img.shields.io/github/last-commit/modern-latex/mlatex?color=success"
   ></a>
-  <a href="https://github.com/modernized-latex/mlatex/blob/main/LICENSE">
+  <a href="https://github.com/modern-latex/mlatex/blob/main/LICENSE">
     <img alt="AGPL v3 License" src="https://img.shields.io/badge/license-AGPL%20v3-brightgreen"
   ></a>
 </p>

@@ -1,6 +1,6 @@
 # Ships what Build made once it has passed on main with a VERSION not yet
 # released: the tag and a GitHub release with every package, then the npm
-# package, @modernized-latex/mlatex, on npm and on GitHub Packages, and the Python
+# package, @modern-latex/mlatex, on npm and on GitHub Packages, and the Python
 # wheels; and the docs site is told. Build packed and tested them in its own
 # run, versioned as VERSION says, so what is published is what passed, and a
 # new version is VERSION changed on main. A tag pushed by hand releases the
@@ -77,7 +77,7 @@ jobs:
           else
             ship=true
             gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1 || github=true
-            npm view "@modernized-latex/mlatex@$version" version > /dev/null 2>&1 || npm=true
+            npm view "@modern-latex/mlatex@$version" version > /dev/null 2>&1 || npm=true
           fi
           echo "Build run $RUN, $commit: version $version; shipped: $ship; GitHub release to make: $github; npm to publish: $npm"
           {
@@ -115,7 +115,7 @@ jobs:
 
   # The package bindings/javascript describes -- the WebAssembly module, its
   # Node entry, its types and its README -- as Build packed it, named
-  # @modernized-latex/mlatex here as well, for a run packed while it was still mlatex:
+  # @modern-latex/mlatex here as well, for a run packed while it was still mlatex:
   # npm refuses mlatex itself, as too near katex and slate. The token is the
   # repository's NPM_TOKEN secret; provenance ties the package to this run.
   npm:
@@ -148,7 +148,7 @@ jobs:
         run: |
           tar -xzf ./bin/*.tgz
           cd package
-          npm pkg set name=@modernized-latex/mlatex
+          npm pkg set name=@modern-latex/mlatex
           cat package.json
           npm publish --access public --provenance
 
@@ -177,26 +177,26 @@ jobs:
         with:
           node-version: 24
           registry-url: https://npm.pkg.github.com
-          scope: "@modernized-latex"
+          scope: "@modern-latex"
 
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          if npm view "@modernized-latex/mlatex@$VERSION" version > /dev/null 2>&1; then
-            echo "::notice::@modernized-latex/mlatex@$VERSION is on GitHub Packages already."
+          if npm view "@modern-latex/mlatex@$VERSION" version > /dev/null 2>&1; then
+            echo "::notice::@modern-latex/mlatex@$VERSION is on GitHub Packages already."
             exit 0
           fi
           tar -xzf ./bin/*.tgz
           cd package
-          npm pkg set name=@modernized-latex/mlatex
+          npm pkg set name=@modern-latex/mlatex
           npm publish
 
-  # Tells the docs site, modernized-latex/docs, that a version is out, so its Reference
+  # Tells the docs site, modern-latex/docs, that a version is out, so its Reference
   # workflow writes the package reference from the new tag at once rather
   # than at its daily run. The token is the repository's DOCS_TOKEN secret,
-  # one allowed to write modernized-latex/docs' contents; without it the site still
+  # one allowed to write modern-latex/docs' contents; without it the site still
   # finds the tag on its own within a day.
   docs:
     name: Docs
@@ -212,8 +212,8 @@ jobs:
             echo "::notice::There is no DOCS_TOKEN secret, so the docs site finds $TAG at its daily run."
             exit 0
           fi
-          gh api repos/modernized-latex/docs/dispatches -f event_type=mlatex-tag -f "client_payload[tag]=$TAG"
-          echo "Sent $TAG to modernized-latex/docs."
+          gh api repos/modern-latex/docs/dispatches -f event_type=mlatex-tag -f "client_payload[tag]=$TAG"
+          echo "Sent $TAG to modern-latex/docs."
 
   # Through PyPI's trusted publishing, for this workflow and the `pypi`
   # environment, alongside a new GitHub release. Allowed to fail on its own:
