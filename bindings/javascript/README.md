@@ -1,15 +1,15 @@
-# @modern-latex/mlatex
+# mlatex
 
 A LaTeX typesetting engine, rewritten from the ground up in modern C++ and compiled to WebAssembly. It turns LaTeX into PDF in a web page, a worker or Node, with no TeX installation behind it and nothing sent anywhere.
 
 ```bash
-npm install @modern-latex/mlatex
+npm install mlatex
 ```
 
 ## A document
 
 ```js
-import Latex from "@modern-latex/mlatex";
+import Latex from "mlatex";
 
 const engine = await Latex();
 const session = new engine.Session();
@@ -24,7 +24,7 @@ const pdf = session.pdf(); // a Uint8Array of its own
 session.delete();
 ```
 
-CommonJS works the same way: `const Latex = require("@modern-latex/mlatex")`.
+CommonJS works the same way: `const Latex = require("mlatex")`.
 
 ## A session
 
