@@ -842,6 +842,9 @@ page's text goes.
 - **The npm package's version is VERSION's too.** CMake writes it into
   `bindings/javascript/package.json` whenever `VERSION` changes, so the file
   a commit holds says what the release will publish, rather than `0.0.0`.
+- **`version` in Node.** The package's Node entry gives its version as
+  `Latex.version`, read from its own `package.json`, and `latex.d.ts`
+  declares it.
 - **Build runs in stages, and a release finishes what it started.** The
   platforms build side by side, and the WebAssembly module after them once
   they have all passed, with Emscripten kept between runs as vcpkg's builds

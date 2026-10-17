@@ -4,4 +4,8 @@ const path = require("node:path");
 
 const Latex = require("./latex.js");
 
-module.exports = (options) => Latex({ locateFile: (name) => path.join(__dirname, name), ...options });
+const engine = (options) => Latex({ locateFile: (name) => path.join(__dirname, name), ...options });
+// The VERSION file's, which CMake writes into package.json and the release packs.
+engine.version = require("./package.json").version;
+
+module.exports = engine;

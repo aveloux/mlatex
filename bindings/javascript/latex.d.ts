@@ -5,6 +5,9 @@
 declare function Latex(options?: Latex.Options): Promise<Latex.Engine>;
 
 declare namespace Latex {
+	/** The package's version, as the engine's VERSION file says. In Node only. */
+	const version: string;
+
 	interface Options {
 		/** The address of latex.wasm or latex.data, given its name and latex.js's folder. */
 		locateFile?: (path: string, prefix: string) => string;
