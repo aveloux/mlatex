@@ -845,6 +845,11 @@ page's text goes.
 - **`version` in Node.** The package's Node entry gives its version as
   `Latex.version`, read from its own `package.json`, and `latex.d.ts`
   declares it.
+- **A release's title is VERSION's second line.** `VERSION` keeps the
+  version on its first line, which is all CMake, the packages and the tag
+  read, and may carry the release's title on a second, such as `Reading real
+  LaTeX`; the GitHub release is named with it, or with the tag when there is
+  none.
 - **Build runs in stages, and a release finishes what it started.** The
   platforms build side by side, and the WebAssembly module after them once
   they have all passed, with Emscripten kept between runs as vcpkg's builds

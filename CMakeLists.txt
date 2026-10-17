@@ -66,8 +66,9 @@ if (CMAKE_HOST_WIN32)
     endif ()
 endif ()
 
-# The version is VERSION's: `mlatex --version`, the packages' names and every
-# release take it from there, so a new version is that one line changed.
+# The version is VERSION's first line: `mlatex --version`, the packages' names
+# and every release take it from there, so a new version is that one line
+# changed. A second line, when there is one, is the release's title.
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" version LIMIT_COUNT 1)
 project(latex VERSION ${version} LANGUAGES C CXX)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)

@@ -259,7 +259,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          version=$(tr -d '[:space:]' < VERSION)
+          version=$(head -n 1 VERSION | tr -d '[:space:]')
           cmake --install "$TREE" --prefix stage
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp stage/bin/*.dll bindings/python/mlatex
@@ -386,7 +386,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          version=$(tr -d '[:space:]' < VERSION)
+          version=$(head -n 1 VERSION | tr -d '[:space:]')
           mkdir -p bin
           (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
 
@@ -397,7 +397,7 @@ jobs:
       - name: Pack the npm package
         shell: bash
         run: |
-          version=$(tr -d '[:space:]' < VERSION)
+          version=$(head -n 1 VERSION | tr -d '[:space:]')
           cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE bindings/javascript
           (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
