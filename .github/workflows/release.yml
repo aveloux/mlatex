@@ -95,6 +95,8 @@ jobs:
 
   # Makes the tag at the commit Build ran on, unless it is there already, and
   # names the release with VERSION's second line, or the tag when there is none.
+  # Its notes are releases/<version>.md at that commit, written by hand as every
+  # release's are; without one, GitHub's list of what was merged stands in.
   github:
     name: GitHub
     needs: version
@@ -111,13 +113,30 @@ jobs:
           run-id: ${{ needs.version.outputs.run }}
           github-token: ${{ github.token }}
 
+      - name: Notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          COMMIT: ${{ needs.version.outputs.commit }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/contents/releases/$VERSION.md?ref=$COMMIT" --jq .content 2> /dev/null |
+            base64 -d > notes.md 2> /dev/null || true
+          if [ -s notes.md ]; then
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::There is no releases/$VERSION.md, so the notes are GitHub's list of what was merged."
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: ${{ needs.version.outputs.title || format('v{0}', needs.version.outputs.version) }}
           target_commitish: ${{ needs.version.outputs.commit }}
+          body_path: notes.md
           files: bin/*
-          generate_release_notes: true
+          generate_release_notes: ${{ steps.notes.outputs.generate }}
 
   # The package bindings/javascript describes -- the WebAssembly module, its
   # Node entry, its types and its README -- as Build packed it, named mlatex

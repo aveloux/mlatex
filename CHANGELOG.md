@@ -850,6 +850,11 @@ page's text goes.
   read, and may carry the release's title on a second, such as `Reading real
   LaTeX`; the GitHub release is named with it, or with the tag when there is
   none.
+- **Every release's notes are in `releases/`.** `releases/<version>.md` holds
+  a release's notes as they read on GitHub -- a line on what it brings, its
+  features, fixes and changes -- from 0.0.1 on, and `release.yml` publishes
+  the new version's file with its release; without one, GitHub's list of
+  what was merged stands in.
 - **Build runs in stages, and a release finishes what it started.** The
   platforms build side by side, and the WebAssembly module after them once
   they have all passed, with Emscripten kept between runs as vcpkg's builds
