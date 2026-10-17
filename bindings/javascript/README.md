@@ -34,7 +34,7 @@ A session keeps what it is handed from one document to the next, so a program th
 | --- | --- |
 | `set(name, value)`, `unset(name)` | A value the document reads with `\variable{name}`. |
 | `define(name, arity, handler)`, `forget(name)` | A command your code answers: `handler` is called with each argument's text, and what it returns is set in the command's place. |
-| `provide(name, content)`, `withdraw(name)` | A file under the name a document uses for it, as a `Uint8Array` or a string: `chapter.tex` for `\input{chapter}`, `logo.png` for `\includegraphics{logo.png}`, `references.bib` for `\bibliography{references}`. |
+| `provide(name, content)`, `withdraw(name)` | A file under the name a document uses for it, as a `Uint8Array` or a string: `letterhead/main.mtex` for `\usepackage{letterhead}`, `chapter.tex` for `\input{chapter}`, `logo.png` for `\includegraphics{logo.png}`, `references.bib` for `\bibliography{references}`. |
 | `typeset(document)` | Sets a document, and says whether it was set with nothing reported. |
 | `snippet(text)` | Sets a piece of LaTeX alone, such as a formula or a table, on a page cropped to it. |
 | `pdf()` | The last PDF made. |
@@ -44,8 +44,11 @@ A session keeps what it is handed from one document to the next, so a program th
 ```js
 session.set("customer", "Acme Corporation");
 session.define("balance", 1, (account) => ledger[account].toFixed(2));
+session.provide("letterhead/main.mtex", String.raw`\newcommand{\letterhead}{\textbf{Acme}}`);
 session.provide("logo.png", new Uint8Array(await logo.arrayBuffer()));
 ```
+
+A package is a folder holding one file, `main.mtex`, written in the same language as a document; `.sty` and `.cls` files are not read. Classes are part of the engine.
 
 ## Where it runs
 
